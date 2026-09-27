@@ -2,17 +2,18 @@ import React, { createContext, useContext, useEffect, useRef, useState, useCallb
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { soundFx } from '../utils/audio';
+import { getAllClientQuotes } from '../services/clientFallbackData';
 
 const SocketContext = createContext(null);
 
 export function SocketProvider({ children }) {
   const { token, user } = useAuth();
   const socketRef = useRef(null);
-  const quotesRef = useRef({});
+  const quotesRef = useRef(getAllClientQuotes());
   const listenersRef = useRef(new Map());
   const [connectionStatus, setConnectionStatus] = useState('connecting'); // 'online' | 'connecting' | 'offline'
   const [latencyMs, setLatencyMs] = useState(12);
-  const [quotes, setQuotes] = useState({});
+  const [quotes, setQuotes] = useState(() => getAllClientQuotes());
   const [notifications, setNotifications] = useState([]);
   const [activeSubscriptions, setActiveSubscriptions] = useState(new Set());
   const activeSubscriptionsRef = useRef(new Set());

@@ -18,12 +18,14 @@ import {
   Sparkles
 } from 'lucide-react';
 
+import { getNSEIndiaFallbackData } from '../services/clientFallbackData';
+
 // Module-level in-memory cache for instant zero-spinner tab switching
 let nseMemoryCache = null;
 
 export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSelectSymbol, isActive = true }) {
-  const [data, setData] = useState(nseMemoryCache);
-  const [loading, setLoading] = useState(!nseMemoryCache);
+  const [data, setData] = useState(() => nseMemoryCache || getNSEIndiaFallbackData());
+  const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('gainers');
   const [selectedHeroIndex, setSelectedHeroIndex] = useState('NIFTY 50');
   const [showSectorDetails, setShowSectorDetails] = useState(true);

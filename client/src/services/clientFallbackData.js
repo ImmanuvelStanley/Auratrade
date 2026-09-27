@@ -254,6 +254,17 @@ export function getPreciousMetalsFallbackData() {
   const istDate = now.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' });
 
   return {
+    istTime,
+    istDate,
+    mcxStatus: 'MCX TRADING - LIVE',
+    isMcxOpen: true,
+    usdInrRate: 83.54,
+    goldPriceUsd: 2642.80,
+    silverPriceUsd: 31.85,
+    goldMcxPrice: 149709,
+    silverMcxPrice: 247500,
+    goldSilverRatio: 82.98,
+    ratioSignal: 'Silver Undervalued (Bullish Relative Momentum)',
     status: {
       isLive: true,
       istTimeString: istTime,
