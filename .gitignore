@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+
+# Environment secrets (NEVER commit)
+.env
+.env.local
+.env.production
+
+# Production builds
+dist/
+build/
+
+# Runtime user data (contains passwords, portfolios, OTPs)
+server/data.json
+server/data.json.tmp
+server/data.json.bak
+server/data.snapshot.json
+data.json*
+
+# Logs
+*.log
+security-audit.log
+
+# Test files
+server/test-*.js
+
+# Scratch / temp
+scratch/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Agents / AI
+.agents/
+.gemini/

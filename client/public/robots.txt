@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Disallow private API and user-specific paths
+Disallow: /api/
+Disallow: /socket.io/
+
+Sitemap: https://yourdomain.com/sitemap.xml
