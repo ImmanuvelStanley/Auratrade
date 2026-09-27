@@ -11,7 +11,7 @@
     "dev:server": "npm --prefix server run dev",
     "dev:client": "npm --prefix client run dev",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
-    "build": "npm --prefix client run build",
+    "build": "npm run build --workspaces --if-present",
     "start": "node server/src/server.js"
   },
   "dependencies": {
