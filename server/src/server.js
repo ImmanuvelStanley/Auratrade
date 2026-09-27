@@ -142,7 +142,11 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/security', securityRoutes);
 
 // Client Static Files & Single Page App (SPA) Handling
-const clientDistPath = path.join(__dirname, '../../client/dist');
+const candidatePaths = [
+  path.join(__dirname, '../../dist'),
+  path.join(__dirname, '../../client/dist')
+];
+const clientDistPath = candidatePaths.find(p => fs.existsSync(p)) || candidatePaths[0];
 const hasClientDist = fs.existsSync(clientDistPath);
 
 if (hasClientDist) {
