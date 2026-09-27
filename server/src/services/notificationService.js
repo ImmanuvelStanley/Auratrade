@@ -5,7 +5,6 @@ class NotificationService {
   constructor() {
     this.emailTransporter = null;
     this.etherealTransporter = null;
-    this.getTwilioClient();
   }
 
   getTwilioClient() {
@@ -150,23 +149,35 @@ class NotificationService {
       cleanPhone = '+' + cleanPhone;
     }
 
-    // Option 1: Twilio SMS Gateway (Worldwide)
-    const twilioClient = this.getTwilioClient();
+    // Option 1: Twilio SMS Gateway (Worldwide via official REST API)
+    const twilioSid = (process.env.TWILIO_ACCOUNT_SID || '').trim();
+    const twilioAuth = (process.env.TWILIO_AUTH_TOKEN || '').trim();
     const twilioFromNumber = (process.env.TWILIO_PHONE_NUMBER || '').trim();
     let twilioNotice = null;
 
-    if (twilioClient && twilioFromNumber) {
+    if (twilioSid && twilioAuth && twilioFromNumber) {
       try {
-        const res = await twilioClient.messages.create({
-          body: textMessage,
-          from: twilioFromNumber,
-          to: cleanPhone
-        });
-        console.log(`📱 [REAL SMS DELIVERED via Twilio] SID: ${res.sid} to ${cleanPhone}`);
-        return { delivered: true, method: 'twilio', destination: cleanPhone, sid: res.sid };
+        const authHeader = 'Basic ' + Buffer.from(`${twilioSid}:${twilioAuth}`).toString('base64');
+        const params = new URLSearchParams();
+        params.append('To', cleanPhone);
+        params.append('From', twilioFromNumber);
+        params.append('Body', textMessage);
+
+        const res = await axios.post(
+          `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`,
+          params.toString(),
+          {
+            headers: {
+              Authorization: authHeader,
+              'Content-Type': 'application/x-www-form-urlencoded'
+            }
+          }
+        );
+        console.log(`📱 [REAL SMS DELIVERED via Twilio] SID: ${res.data?.sid} to ${cleanPhone}`);
+        return { delivered: true, method: 'twilio', destination: cleanPhone, sid: res.data?.sid };
       } catch (err) {
-        twilioNotice = err.message;
-        console.error(`❌ [TWILIO SMS ERROR] Failed to send SMS to ${cleanPhone}:`, err.message);
+        twilioNotice = err.response?.data?.message || err.message;
+        console.error(`❌ [TWILIO SMS ERROR] Failed to send SMS to ${cleanPhone}:`, twilioNotice);
       }
     }
 
