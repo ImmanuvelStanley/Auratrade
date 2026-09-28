@@ -77,7 +77,7 @@ router.post('/send-otp', async (req, res) => {
 // Verify OTP
 router.post('/verify-otp', async (req, res) => {
   try {
-    const { identifier, code, otpToken } = req.body;
+    const { identifier, code, otpToken, password } = req.body;
     if (!identifier || !code) {
       return res.status(400).json({ success: false, error: 'Destination and 6-digit OTP code are required.' });
     }
@@ -95,6 +95,7 @@ router.post('/verify-otp', async (req, res) => {
             decoded.code === code.toString().trim() &&
             decoded.identifier.toLowerCase() === identifier.toString().trim().toLowerCase()
           ) {
+            if (password && !decoded.password) decoded.password = password;
             user = await store.verifyOtpWithPayload(decoded);
           } else {
             throw storeErr;
@@ -107,6 +108,13 @@ router.post('/verify-otp', async (req, res) => {
       }
     }
 
+    // If password was provided on the client and user password isn't set to it, update it immediately
+    if (password && password.length >= 6) {
+      const salt = await bcrypt.genSalt(10);
+      user.passwordHash = await bcrypt.hash(password, salt);
+      store.save(true);
+    }
+
     const token = jwt.sign({
       userId: user.id,
       email: user.email,
@@ -115,6 +123,17 @@ router.post('/verify-otp', async (req, res) => {
       minBalance: user.minBalance !== undefined ? user.minBalance : 100,
       createdAt: user.createdAt
     }, config.jwtSecret, { expiresIn: '7d' });
+
+    const accountVaultToken = jwt.sign({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone || '',
+      passwordHash: user.passwordHash,
+      minBalance: user.minBalance,
+      createdAt: user.createdAt
+    }, config.jwtSecret, { expiresIn: '90d' });
+
     const portfolio = await store.getPortfolio(user.id);
 
     console.log(`✅ [AUTH SUCCESS] User authenticated via OTP: ${user.name} (${user.email || user.phone})`);
@@ -122,6 +141,7 @@ router.post('/verify-otp', async (req, res) => {
     res.json({
       success: true,
       token,
+      vaultToken: accountVaultToken,
       user: {
         id: user.id,
         email: user.email,
@@ -158,11 +178,23 @@ router.post('/register', async (req, res) => {
       minBalance: user.minBalance !== undefined ? user.minBalance : 100,
       createdAt: user.createdAt
     }, config.jwtSecret, { expiresIn: '7d' });
+
+    const accountVaultToken = jwt.sign({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone || '',
+      passwordHash: user.passwordHash,
+      minBalance: user.minBalance,
+      createdAt: user.createdAt
+    }, config.jwtSecret, { expiresIn: '90d' });
+
     const portfolio = await store.getPortfolio(user.id);
 
     res.status(201).json({
       success: true,
       token,
+      vaultToken: accountVaultToken,
       user: {
         id: user.id,
         email: user.email,
@@ -182,23 +214,13 @@ router.post('/register', async (req, res) => {
 // Sign In — Strictly requires a valid password; passwordless is OTP-only
 router.post('/login', async (req, res) => {
   try {
-    const { identifier, email, phone, password } = req.body;
+    const { identifier, email, phone, password, vaultToken } = req.body;
     const targetIdentifier = (identifier || email || phone || '').trim();
 
     if (!targetIdentifier) {
       return res.status(400).json({ success: false, error: 'Please enter your email address or mobile number.' });
     }
 
-    const user = await store.findUserByEmailOrPhone(targetIdentifier);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        userNotFound: true,
-        error: `No registered account found with '${targetIdentifier}'. Please switch to Create Account to sign up.`
-      });
-    }
-
-    // Password is MANDATORY for the password login flow
     if (!password || typeof password !== 'string' || !password.trim()) {
       return res.status(400).json({
         success: false,
@@ -207,16 +229,83 @@ router.post('/login', async (req, res) => {
       });
     }
 
+    let user = await store.findUserByEmailOrPhone(targetIdentifier);
+
+    // 1. If user not in container memory, restore from signed vaultToken
+    if (!user && vaultToken) {
+      try {
+        const decodedVault = jwt.verify(vaultToken, config.jwtSecret);
+        if (
+          decodedVault.email &&
+          decodedVault.email.toLowerCase() === targetIdentifier.toLowerCase() &&
+          decodedVault.passwordHash
+        ) {
+          const isVaultMatch = await bcrypt.compare(password, decodedVault.passwordHash);
+          if (isVaultMatch) {
+            user = await store.restoreUserFromVault(decodedVault);
+          }
+        }
+      } catch (vaultErr) {}
+    }
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        userNotFound: true,
+        error: `No registered account found with '${targetIdentifier}'. Please switch to Create Account to sign up.`
+      });
+    }
+
     // Verify the password against the stored hash
-    const isMatch = user.passwordHash ? await bcrypt.compare(password, user.passwordHash) : false;
-    if (!isMatch) {
-      if (user.passwordHash && user.passwordHash.startsWith('otp_verified_')) {
-        return res.status(401).json({
-          success: false,
-          error: 'This account was authenticated with OTP and does not have a permanent password yet. Please use "Sign In with OTP" or "Forgot Password" to set a password.'
-        });
+    let isMatch = user.passwordHash ? await bcrypt.compare(password, user.passwordHash) : false;
+
+    // Check casing variations (e.g. mobile auto-capitalizing first letter)
+    if (!isMatch && user.passwordHash) {
+      if (password.toLowerCase() !== password) {
+        isMatch = await bcrypt.compare(password.toLowerCase(), user.passwordHash);
       }
-      return res.status(401).json({ success: false, error: 'Invalid email or password. Please try again or use "Forgot Password".' });
+      if (!isMatch) {
+        const capitalized = password.charAt(0).toUpperCase() + password.slice(1);
+        if (capitalized !== password) {
+          isMatch = await bcrypt.compare(capitalized, user.passwordHash);
+        }
+      }
+    }
+
+    // If account was originally OTP-verified and never had a manual password set:
+    if (!isMatch && user.passwordHash && user.passwordHash.startsWith('otp_verified_') && password.length >= 6) {
+      const salt = await bcrypt.genSalt(10);
+      user.passwordHash = await bcrypt.hash(password, salt);
+      store.save(true);
+      isMatch = true;
+      console.log(`✅ [PASSWORD INITIALIZED] User ${user.email} set permanent password via login.`);
+    }
+
+    // Also check vaultToken if container has an outdated hash
+    if (!isMatch && vaultToken) {
+      try {
+        const decodedVault = jwt.verify(vaultToken, config.jwtSecret);
+        if (
+          decodedVault.email &&
+          decodedVault.email.toLowerCase() === targetIdentifier.toLowerCase() &&
+          decodedVault.passwordHash
+        ) {
+          const isVaultMatch = await bcrypt.compare(password, decodedVault.passwordHash);
+          if (isVaultMatch) {
+            user.passwordHash = decodedVault.passwordHash;
+            store.save(true);
+            isMatch = true;
+          }
+        }
+      } catch (vaultErr) {}
+    }
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        canOtpVerify: true,
+        error: 'Invalid password. Click "Sign in with 6-Digit Email OTP" below to authenticate and update your password.'
+      });
     }
 
     const token = jwt.sign({
@@ -227,6 +316,17 @@ router.post('/login', async (req, res) => {
       minBalance: user.minBalance !== undefined ? user.minBalance : 100,
       createdAt: user.createdAt
     }, config.jwtSecret, { expiresIn: '7d' });
+
+    const accountVaultToken = jwt.sign({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone || '',
+      passwordHash: user.passwordHash,
+      minBalance: user.minBalance,
+      createdAt: user.createdAt
+    }, config.jwtSecret, { expiresIn: '90d' });
+
     const portfolio = await store.getPortfolio(user.id);
 
     console.log(`✅ [SIGN IN SUCCESS] User logged in: ${user.name} (${targetIdentifier})`);
@@ -234,6 +334,7 @@ router.post('/login', async (req, res) => {
     res.json({
       success: true,
       token,
+      vaultToken: accountVaultToken,
       user: {
         id: user.id,
         email: user.email,
@@ -419,10 +520,21 @@ router.post('/reset-password', async (req, res) => {
     const portfolio = await store.getPortfolio(user.id);
     console.log(`✅ [PASSWORD RESET SUCCESS] User reset password & signed in: ${user.name} (${user.email})`);
 
+    const accountVaultToken = jwt.sign({
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone || '',
+      passwordHash: user.passwordHash,
+      minBalance: user.minBalance,
+      createdAt: user.createdAt
+    }, config.jwtSecret, { expiresIn: '90d' });
+
     res.json({
       success: true,
       message: 'Password reset successfully! Welcome back to AuraTrade.',
       token: authToken,
+      vaultToken: accountVaultToken,
       user: {
         id: user.id,
         email: user.email,

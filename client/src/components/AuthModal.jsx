@@ -73,6 +73,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const [canOtpVerify, setCanOtpVerify] = useState(false);
 
   const digitInputRefs = useRef([]);
 
@@ -126,6 +127,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
     setError('');
     setSuccessMsg('');
     setUserNotFound(false);
+    setCanOtpVerify(false);
     if (newMode === 'forgot' && signInIdentifier.includes('@')) {
       setForgotEmail(signInIdentifier.trim());
     }
@@ -157,6 +159,9 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
       if (err.userNotFound) {
         setUserNotFound(true);
       }
+      if (err.canOtpVerify || err.message?.toLowerCase().includes('password')) {
+        setCanOtpVerify(true);
+      }
     } finally {
       setLoading(false);
     }
@@ -184,7 +189,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         identifier,
         channel: 'email',
         purpose: 'login',
-        email: identifier
+        email: identifier,
+        password: signInPassword || ''
       });
 
       if (resp.otpToken) setOtpToken(resp.otpToken);
@@ -436,7 +442,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         await verifyOtp({
           identifier: signInIdentifier.trim(),
           code: fullCode,
-          otpToken
+          otpToken,
+          password: signInPassword || ''
         });
         if (onClose) onClose();
       } else if (otpPurpose === 'reset') {
@@ -1187,6 +1194,34 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                 >
                   {error}
                 </div>
+              )}
+
+              {error && canOtpVerify && mode === 'signin' && (
+                <button
+                  type="button"
+                  onClick={handleRequestSignInOtp}
+                  disabled={loading}
+                  style={{
+                    padding: '0.6rem 0.85rem',
+                    background: 'rgba(6, 182, 212, 0.12)',
+                    border: '1px solid rgba(6, 182, 212, 0.35)',
+                    color: '#06b6d4',
+                    borderRadius: '7px',
+                    fontSize: '0.78rem',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.45rem',
+                    marginTop: '-0.3rem',
+                    transition: 'all 0.15s ease'
+                  }}
+                  id="auth-verify-and-update-pwd-btn"
+                >
+                  <Mail size={14} />
+                  <span>Verify with Email OTP & Set Current Password</span>
+                </button>
               )}
 
               {/* Form for OTP input and (if reset) New Password */}

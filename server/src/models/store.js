@@ -489,6 +489,42 @@ class DataStore {
     return user;
   }
 
+  async restoreUserFromVault(vault) {
+    if (!vault || !vault.email) return null;
+    const targetEmail = vault.email.trim().toLowerCase();
+    let user = await this.findUserByEmail(targetEmail);
+    if (!user) {
+      const id = vault.id || ('usr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5));
+      user = {
+        id,
+        email: targetEmail,
+        phone: vault.phone || '',
+        passwordHash: vault.passwordHash || '',
+        name: vault.name || targetEmail.split('@')[0],
+        minBalance: vault.minBalance !== undefined ? parseFloat(vault.minBalance) : 100,
+        traderProfile: null,
+        createdAt: vault.createdAt || new Date().toISOString()
+      };
+      this.users.set(id, user);
+      if (!this.portfolios.has(id)) {
+        this.portfolios.set(id, {
+          userId: id,
+          cashBalance: 1000.00,
+          holdings: [],
+          transactions: []
+        });
+      }
+      if (!this.watchlists.has(id)) {
+        this.watchlists.set(id, new Set(['AAPL', 'MSFT', 'NVDA', 'TSLA', 'GOLD']));
+      }
+      this.save(true);
+    } else if (vault.passwordHash && vault.passwordHash !== user.passwordHash) {
+      user.passwordHash = vault.passwordHash;
+      this.save(true);
+    }
+    return user;
+  }
+
   async createUser(email, password, name, initialBalance, phone = '', minBalance = 100) {
     const existing = await this.findUserByEmail(email);
     if (existing) throw new Error('User already exists with this email.');

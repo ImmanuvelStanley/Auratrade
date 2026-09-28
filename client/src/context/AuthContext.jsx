@@ -50,23 +50,28 @@ export function AuthProvider({ children }) {
   };
 
   // Verify 6-Digit OTP and Establish Authenticated Session
-  const verifyOtp = async ({ identifier, code, otpToken, name, phone }) => {
+  const verifyOtp = async ({ identifier, code, otpToken, name, phone, password }) => {
+    const cleanId = identifier ? identifier.trim().toLowerCase() : '';
     const res = await fetch('/api/auth/verify-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identifier, code, otpToken })
+      body: JSON.stringify({ identifier: cleanId, code, otpToken, password })
     });
     const data = await res.json();
     if (!data.success) {
       throw new Error(data.error || 'Verification failed. Please check the 6-digit code.');
     }
 
+    if (data.vaultToken && cleanId) {
+      localStorage.setItem('auratrade_vault_' + cleanId, data.vaultToken);
+    }
+
     // Save metadata locally for seamless serverless cold-start resilience
     try {
-      if (identifier && identifier.includes('@')) {
+      if (cleanId && cleanId.includes('@')) {
         const savedAccounts = JSON.parse(localStorage.getItem('auratrade_local_accounts') || '{}');
-        savedAccounts[identifier.trim().toLowerCase()] = {
-          name: name || data.user?.name || identifier.split('@')[0],
+        savedAccounts[cleanId] = {
+          name: name || data.user?.name || cleanId.split('@')[0],
           phone: phone || data.user?.phone || ''
         };
         localStorage.setItem('auratrade_local_accounts', JSON.stringify(savedAccounts));
@@ -85,27 +90,30 @@ export function AuthProvider({ children }) {
     if (!password || !password.trim()) {
       throw new Error('Password is required. Use the OTP sign-in option if you registered without a password.');
     }
+    const cleanId = identifier.trim().toLowerCase();
+    const vaultToken = localStorage.getItem('auratrade_vault_' + cleanId) || '';
+
     let res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identifier, email: identifier, password })
+      body: JSON.stringify({ identifier: cleanId, email: cleanId, password, vaultToken })
     });
     let data = await res.json();
 
     // If serverless container restarted and lost in-memory state (without MongoDB),
     // automatically re-provision the account if registered from this client
-    if (!data.success && data.userNotFound && identifier.includes('@')) {
+    if (!data.success && data.userNotFound && cleanId.includes('@')) {
       try {
         const savedAccounts = JSON.parse(localStorage.getItem('auratrade_local_accounts') || '{}');
-        const accountData = savedAccounts[identifier.trim().toLowerCase()];
+        const accountData = savedAccounts[cleanId];
         if (accountData) {
           const autoRegRes = await fetch('/api/auth/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              email: identifier.trim().toLowerCase(),
+              email: cleanId,
               password,
-              name: accountData.name || identifier.split('@')[0],
+              name: accountData.name || cleanId.split('@')[0],
               initialBalance: 1000,
               phone: accountData.phone || ''
             })
@@ -124,7 +132,12 @@ export function AuthProvider({ children }) {
       const err = new Error(data.error || 'Login failed');
       if (data.userNotFound) err.userNotFound = true;
       if (data.requiresPassword) err.requiresPassword = true;
+      if (data.canOtpVerify) err.canOtpVerify = true;
       throw err;
+    }
+
+    if (data.vaultToken && cleanId) {
+      localStorage.setItem('auratrade_vault_' + cleanId, data.vaultToken);
     }
 
     setUser(data.user);
@@ -135,18 +148,23 @@ export function AuthProvider({ children }) {
   };
 
   const register = async (email, password, name, initialBalance, phone) => {
+    const cleanEmail = email.trim().toLowerCase();
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, name, initialBalance, phone })
+      body: JSON.stringify({ email: cleanEmail, password, name, initialBalance, phone })
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Registration failed');
 
+    if (data.vaultToken && cleanEmail) {
+      localStorage.setItem('auratrade_vault_' + cleanEmail, data.vaultToken);
+    }
+
     // Save metadata locally for seamless serverless cold-start resilience
     try {
       const savedAccounts = JSON.parse(localStorage.getItem('auratrade_local_accounts') || '{}');
-      savedAccounts[email.trim().toLowerCase()] = { name, phone };
+      savedAccounts[cleanEmail] = { name, phone };
       localStorage.setItem('auratrade_local_accounts', JSON.stringify(savedAccounts));
     } catch (e) {}
 
@@ -198,6 +216,9 @@ export function AuthProvider({ children }) {
     if (!data.success) throw new Error(data.error || 'Password reset failed.');
 
     if (data.token && data.user) {
+      if (data.vaultToken && email) {
+        localStorage.setItem('auratrade_vault_' + email.trim().toLowerCase(), data.vaultToken);
+      }
       setUser(data.user);
       setToken(data.token);
       localStorage.setItem('auratrade_token', data.token);
