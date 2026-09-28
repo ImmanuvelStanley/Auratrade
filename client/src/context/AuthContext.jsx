@@ -175,15 +175,29 @@ export function AuthProvider({ children }) {
     return data;
   };
 
-  // Reset Password — verify OTP from email then set new password
-  const resetPassword = async (email, code, newPassword) => {
+  // Reset Password — verify Token or OTP from email then set new password & auto-login
+  const resetPassword = async (email, code, newPassword, resetToken = null) => {
     const res = await fetch('/api/auth/reset-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, code, newPassword })
+      body: JSON.stringify({ email, code, newPassword, token: resetToken })
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Password reset failed.');
+
+    if (data.token && data.user) {
+      setUser(data.user);
+      setToken(data.token);
+      localStorage.setItem('auratrade_token', data.token);
+      localStorage.removeItem('auratrade_logged_out');
+    }
+    return data;
+  };
+
+  const verifyResetToken = async (resetToken) => {
+    const res = await fetch(`/api/auth/verify-reset-token?token=${encodeURIComponent(resetToken)}`);
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Reset link is invalid or expired.');
     return data;
   };
 
@@ -239,6 +253,7 @@ export function AuthProvider({ children }) {
         updateProfile,
         forgotPassword,
         resetPassword,
+        verifyResetToken,
         changePassword,
         deleteAccount
       }}

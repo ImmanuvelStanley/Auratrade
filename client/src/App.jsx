@@ -118,11 +118,31 @@ export function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
   const [tradeTargetSymbol, setTradeTargetSymbol] = useState('AAPL');
+  const [resetTokenData, setResetTokenData] = useState(null);
 
-  // No auto-popup — users can browse freely without logging in
+  // Detect password reset link from email (e.g. ?action=reset-password&token=...&email=...)
+  useEffect(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const action = urlParams.get('action');
+      const tokenParam = urlParams.get('token') || urlParams.get('resetToken');
+      const emailParam = urlParams.get('email');
+
+      if (action === 'reset-password' || tokenParam) {
+        setResetTokenData({
+          token: tokenParam || '',
+          email: emailParam ? decodeURIComponent(emailParam) : ''
+        });
+        setIsAuthModalOpen(true);
+      }
+    } catch (e) {}
+  }, []);
 
   const handleOpenAuthModal = useCallback(() => setIsAuthModalOpen(true), []);
-  const handleCloseAuthModal = useCallback(() => setIsAuthModalOpen(false), []);
+  const handleCloseAuthModal = useCallback(() => {
+    setIsAuthModalOpen(false);
+    setResetTokenData(null);
+  }, []);
   const handleOpenProfile = useCallback(() => {
     if (!token) { setIsAuthModalOpen(true); return; }
     setActiveTab('profile');
@@ -624,7 +644,10 @@ export function App() {
       />
 
       {isAuthModalOpen && (
-        <AuthModal onClose={handleCloseAuthModal} />
+        <AuthModal
+          onClose={handleCloseAuthModal}
+          initialResetData={resetTokenData}
+        />
       )}
 
       {/* Autonomous Cyber Security Defense Center Modal */}

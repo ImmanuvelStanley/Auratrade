@@ -31,8 +31,8 @@ const COUNTRY_CODES = [
   { code: '+81', country: 'JP', flag: '🇯🇵' }
 ];
 
-export function AuthModal({ onClose, closable = true }) {
-  const { sendOtp, verifyOtp, login, register, forgotPassword, resetPassword } = useAuth();
+export function AuthModal({ onClose, closable = true, initialResetData = null }) {
+  const { sendOtp, verifyOtp, login, register, forgotPassword, resetPassword, verifyResetToken } = useAuth();
 
   // Mode: 'signin' | 'register' | 'forgot'
   const [mode, setMode] = useState('signin');
@@ -40,6 +40,7 @@ export function AuthModal({ onClose, closable = true }) {
   const [step, setStep] = useState(1);
   // Purpose for OTP step: 'register' | 'login' | 'reset'
   const [otpPurpose, setOtpPurpose] = useState('register');
+  const [resetToken, setResetToken] = useState(initialResetData?.token || '');
 
   // Sign In State
   const [signInIdentifier, setSignInIdentifier] = useState('');
@@ -87,16 +88,30 @@ export function AuthModal({ onClose, closable = true }) {
     };
   }, [cooldown]);
 
+  // Handle initialResetData (e.g. from password reset link in email)
+  useEffect(() => {
+    if (initialResetData && initialResetData.token) {
+      setMode('forgot');
+      setStep(2);
+      setOtpPurpose('reset');
+      setResetToken(initialResetData.token);
+      if (initialResetData.email) {
+        setForgotEmail(initialResetData.email);
+        setMaskedDestination(initialResetData.email);
+      }
+    }
+  }, [initialResetData]);
+
   // Focus first OTP digit box when advancing to step 2
   useEffect(() => {
-    if (step === 2) {
+    if (step === 2 && !resetToken) {
       setTimeout(() => {
         if (digitInputRefs.current[0]) {
           digitInputRefs.current[0].focus();
         }
       }, 80);
     }
-  }, [step]);
+  }, [step, resetToken]);
 
   const getFullPhone = () => {
     if (!phoneNumber || !phoneNumber.trim()) return '';
@@ -409,9 +424,13 @@ export function AuthModal({ onClose, closable = true }) {
   const handleVerifySubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     const fullCode = otpDigits.join('');
-    if (fullCode.length !== 6) {
-      setError('Please enter the complete 6-digit code.');
-      return;
+
+    // If resetting via email link with verified resetToken, 6-digit code is optional
+    if (otpPurpose !== 'reset' || !resetToken) {
+      if (fullCode.length !== 6) {
+        setError('Please enter the complete 6-digit code.');
+        return;
+      }
     }
 
     setError('');
@@ -423,7 +442,10 @@ export function AuthModal({ onClose, closable = true }) {
           identifier: email.trim(),
           code: fullCode
         });
-        if (onClose) onClose();
+        setSuccessMsg('Account verified & created successfully! Welcome to AuraTrade.');
+        setTimeout(() => {
+          if (onClose) onClose();
+        }, 500);
       } else if (otpPurpose === 'login') {
         await verifyOtp({
           identifier: signInIdentifier.trim(),
@@ -442,12 +464,18 @@ export function AuthModal({ onClose, closable = true }) {
           return;
         }
 
-        // Reset password via API
-        await resetPassword(forgotEmail.trim(), fullCode, resetNewPassword);
+        // Reset password via API (supports token from link OR 6-digit code)
+        await resetPassword(forgotEmail.trim(), fullCode || null, resetNewPassword, resetToken || null);
+        setSuccessMsg('Password reset successfully! Logged in.');
 
-        // Auto-login user with the new password
-        await login(forgotEmail.trim(), resetNewPassword);
-        if (onClose) onClose();
+        // Clean query params from URL
+        if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        setTimeout(() => {
+          if (onClose) onClose();
+        }, 500);
       }
     } catch (err) {
       setError(err.message || 'Verification failed. Please check the code and try again.');
@@ -850,7 +878,7 @@ export function AuthModal({ onClose, closable = true }) {
 
               {/* MODE 2: CREATE ACCOUNT FORM */}
               {mode === 'register' && (
-                <form onSubmit={handleRegisterDirect} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                <form onSubmit={handleRegisterSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                   {/* Full Name */}
                   <div className="input-group">
                     <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Full Name</label>
@@ -873,7 +901,7 @@ export function AuthModal({ onClose, closable = true }) {
                   <div className="input-group">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Email Address</label>
-                      <span style={{ fontSize: '0.68rem', color: '#06b6d4', fontWeight: 600 }}>Receives OTP</span>
+                      <span style={{ fontSize: '0.68rem', color: '#06b6d4', fontWeight: 600 }}>Receives Verification OTP</span>
                     </div>
                     <div className="auth-input-wrapper">
                       <Mail size={15} className="auth-input-icon" />
@@ -935,7 +963,7 @@ export function AuthModal({ onClose, closable = true }) {
                   <div className="input-group">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Mobile Number</label>
-                      <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Client contact detail</span>
+                      <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Optional contact</span>
                     </div>
                     <div style={{ display: 'flex', gap: '0.4rem' }}>
                       <select
@@ -976,13 +1004,14 @@ export function AuthModal({ onClose, closable = true }) {
                     </div>
                   </div>
 
+                  {/* Primary: Send OTP to Email */}
                   <button
                     type="submit"
                     className="btn btn-primary"
                     disabled={loading}
                     style={{
                       width: '100%',
-                      padding: '0.7rem',
+                      padding: '0.75rem',
                       fontSize: '0.85rem',
                       fontWeight: 700,
                       marginTop: '0.2rem',
@@ -996,28 +1025,29 @@ export function AuthModal({ onClose, closable = true }) {
                     {loading ? (
                       <>
                         <RefreshCw size={14} className="spin" />
-                        <span>Creating Account...</span>
+                        <span>Sending OTP to your Email...</span>
                       </>
                     ) : (
                       <>
-                        <UserPlus size={15} />
-                        <span>Create Account & Start Trading</span>
+                        <Mail size={15} />
+                        <span>Send 6-Digit Email OTP & Create Account</span>
+                        <ArrowRight size={14} />
                       </>
                     )}
                   </button>
 
-                  {/* Optional OTP Verification Path */}
+                  {/* Secondary: Instant Demo Sandbox Access */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0.1rem 0' }}>
                     <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
                     <span style={{ fontSize: '0.68rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      or verify with otp
+                      or fast track
                     </span>
                     <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
                   </div>
 
                   <button
                     type="button"
-                    onClick={handleRegisterSendOtp}
+                    onClick={handleRegisterDirect}
                     disabled={loading}
                     style={{
                       width: '100%',
@@ -1035,10 +1065,10 @@ export function AuthModal({ onClose, closable = true }) {
                       gap: '0.45rem',
                       transition: 'all 0.15s ease'
                     }}
-                    id="auth-register-otp-btn"
+                    id="auth-instant-register-btn"
                   >
-                    <Mail size={13} color="var(--accent-cyan)" />
-                    <span>Register via Email OTP verification</span>
+                    <UserPlus size={13} color="var(--accent-cyan)" />
+                    <span>Instant Sandbox Registration (Skip Email OTP)</span>
                   </button>
                 </form>
               )}
@@ -1237,40 +1267,57 @@ export function AuthModal({ onClose, closable = true }) {
 
               {/* Form for OTP input and (if reset) New Password */}
               <form onSubmit={handleVerifySubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.95rem' }}>
-                <div className="input-group">
-                  <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.4rem' }}>
-                    Enter 6-Digit Code
-                  </label>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.4rem' }}>
-                    {otpDigits.map((digit, idx) => (
-                      <input
-                        key={idx}
-                        ref={(el) => (digitInputRefs.current[idx] = el)}
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={6}
-                        value={digit}
-                        onChange={(e) => handleDigitChange(idx, e.target.value)}
-                        onKeyDown={(e) => handleKeyDown(idx, e)}
-                        id={`otp-box-${idx}`}
-                        style={{
-                          width: '100%',
-                          height: '46px',
-                          textAlign: 'center',
-                          fontSize: '1.25rem',
-                          fontWeight: 700,
-                          fontFamily: 'var(--font-mono)',
-                          borderRadius: '8px',
-                          border: digit ? '1.5px solid var(--accent-cyan)' : '1px solid var(--border-subtle)',
-                          background: digit ? 'rgba(6, 182, 212, 0.08)' : 'var(--bg-input)',
-                          color: 'var(--text-primary)',
-                          outline: 'none',
-                          transition: 'all 0.15s ease'
-                        }}
-                      />
-                    ))}
+                {resetToken ? (
+                  <div style={{
+                    padding: '0.75rem 0.9rem',
+                    background: 'rgba(16, 185, 129, 0.12)',
+                    border: '1px solid rgba(16, 185, 129, 0.35)',
+                    borderRadius: '8px',
+                    color: '#34d399',
+                    fontSize: '0.78rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.45rem'
+                  }}>
+                    <CheckCircle2 size={16} />
+                    <span>Security link verified for <strong>{forgotEmail}</strong>. Enter your new password below:</span>
                   </div>
-                </div>
+                ) : (
+                  <div className="input-group">
+                    <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.4rem' }}>
+                      Enter 6-Digit Code
+                    </label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.4rem' }}>
+                      {otpDigits.map((digit, idx) => (
+                        <input
+                          key={idx}
+                          ref={(el) => (digitInputRefs.current[idx] = el)}
+                          type="text"
+                          inputMode="numeric"
+                          maxLength={6}
+                          value={digit}
+                          onChange={(e) => handleDigitChange(idx, e.target.value)}
+                          onKeyDown={(e) => handleKeyDown(idx, e)}
+                          id={`otp-box-${idx}`}
+                          style={{
+                            width: '100%',
+                            height: '46px',
+                            textAlign: 'center',
+                            fontSize: '1.25rem',
+                            fontWeight: 700,
+                            fontFamily: 'var(--font-mono)',
+                            borderRadius: '8px',
+                            border: digit ? '1.5px solid var(--accent-cyan)' : '1px solid var(--border-subtle)',
+                            background: digit ? 'rgba(6, 182, 212, 0.08)' : 'var(--bg-input)',
+                            color: 'var(--text-primary)',
+                            outline: 'none',
+                            transition: 'all 0.15s ease'
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* Additional Fields if Resetting Password */}
                 {otpPurpose === 'reset' && (
@@ -1366,7 +1413,7 @@ export function AuthModal({ onClose, closable = true }) {
                 <button
                   type="submit"
                   className="btn btn-primary"
-                  disabled={loading || otpDigits.join('').length !== 6}
+                  disabled={loading || (!resetToken && otpDigits.join('').length !== 6)}
                   style={{
                     width: '100%',
                     padding: '0.7rem',
@@ -1382,17 +1429,17 @@ export function AuthModal({ onClose, closable = true }) {
                   {loading ? (
                     <>
                       <RefreshCw size={14} className="spin" />
-                      <span>Verifying...</span>
+                      <span>{otpPurpose === 'reset' ? 'Saving Password...' : 'Verifying...'}</span>
                     </>
                   ) : (
                     <>
                       <CheckCircle2 size={15} />
                       <span>
                         {otpPurpose === 'reset'
-                          ? 'Reset Password & Enter'
+                          ? 'Save New Password & Enter'
                           : otpPurpose === 'login'
                           ? 'Verify & Sign In'
-                          : 'Verify & Enter'}
+                          : 'Verify & Complete Registration'}
                       </span>
                     </>
                   )}

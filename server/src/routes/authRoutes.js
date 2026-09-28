@@ -246,7 +246,7 @@ router.get('/me', requireAuth, async (req, res) => {
 });
 
 // =========================================================
-// Forgot Password — Send OTP to registered email for reset
+// Forgot Password — Send reset link & OTP code to email
 // =========================================================
 router.post('/forgot-password', async (req, res) => {
   try {
@@ -258,11 +258,11 @@ router.post('/forgot-password', async (req, res) => {
     }
 
     const user = await store.findUserByEmail(targetEmail);
-    // Always return the same response to prevent user enumeration
+    // Always return generic confirmation for security, but proceed if user exists
     if (!user) {
       return res.json({
         success: true,
-        message: 'If an account with that email exists, a reset code has been sent.'
+        message: 'If an account with that email exists, password reset instructions have been sent.'
       });
     }
 
@@ -274,16 +274,24 @@ router.post('/forgot-password', async (req, res) => {
       email: targetEmail
     });
 
-    const deliveryStatus = await notificationService.sendEmailOtp(targetEmail, otpData.code, 'reset');
+    const resetToken = jwt.sign(
+      { userId: user.id, email: targetEmail, purpose: 'pwd_reset' },
+      config.jwtSecret,
+      { expiresIn: '15m' }
+    );
+
+    // Send real email with clickable link & 6-digit code
+    const deliveryStatus = await notificationService.sendPasswordResetEmail(targetEmail, resetToken, otpData.code);
     const isLocalOrNoSmtp = !process.env.SMTP_USER || deliveryStatus?.method === 'ethereal' || !deliveryStatus?.delivered;
 
     res.json({
       success: true,
-      message: `Password reset code sent to ${otpData.maskedDestination}`,
+      message: `Password reset link & code sent to ${otpData.maskedDestination}`,
       maskedDestination: otpData.maskedDestination,
       deliveryStatus: {
         ...(deliveryStatus || {}),
-        demoCode: isLocalOrNoSmtp ? otpData.code : undefined
+        demoCode: isLocalOrNoSmtp ? otpData.code : undefined,
+        resetUrl: deliveryStatus?.resetUrl
       },
       demoCode: isLocalOrNoSmtp ? otpData.code : undefined,
       expiresIn: otpData.expiresIn,
@@ -294,40 +302,105 @@ router.post('/forgot-password', async (req, res) => {
   }
 });
 
+// Verify reset token validity
+router.get('/verify-reset-token', async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) return res.status(400).json({ success: false, error: 'Token is required' });
+    const decoded = jwt.verify(token, config.jwtSecret);
+    if (decoded.purpose !== 'pwd_reset') {
+      return res.status(400).json({ success: false, error: 'Invalid reset link' });
+    }
+    const user = (await store.findUserById(decoded.userId)) || (decoded.email ? await store.findUserByEmail(decoded.email) : null);
+    if (!user) return res.status(404).json({ success: false, error: 'User account not found' });
+    res.json({
+      success: true,
+      email: user.email,
+      name: user.name
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, error: 'Reset link has expired or is invalid.' });
+  }
+});
+
 // =========================================================
-// Reset Password — Verify OTP then set a new password
+// Reset Password — Verify Token OR OTP then set new password & login
 // =========================================================
 router.post('/reset-password', async (req, res) => {
   try {
-    const { email, code, newPassword } = req.body;
+    const { email, code, token, newPassword } = req.body;
     const targetEmail = (email || '').trim().toLowerCase();
 
-    if (!targetEmail || !code || !newPassword) {
-      return res.status(400).json({ success: false, error: 'Email, verification code, and new password are required.' });
-    }
-    if (newPassword.length < 8) {
-      return res.status(400).json({ success: false, error: 'New password must be at least 8 characters.' });
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ success: false, error: 'New password must be at least 8 characters long.' });
     }
 
-    // Verify OTP (this also auto-creates user if needed, but user must exist here)
-    const user = await store.verifyOtp({ identifier: targetEmail, code });
+    let user = null;
+
+    // 1. If reset token provided (from clicking link in email)
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, config.jwtSecret);
+        if (decoded.purpose !== 'pwd_reset') {
+          return res.status(400).json({ success: false, error: 'Invalid reset token.' });
+        }
+        user = await store.findUserById(decoded.userId);
+        if (!user && decoded.email) {
+          user = await store.findUserByEmail(decoded.email);
+        }
+      } catch (tokenErr) {
+        return res.status(400).json({ success: false, error: 'Password reset link has expired or is invalid. Please request a new one.' });
+      }
+    } else if (code && targetEmail) {
+      // 2. If 6-digit code provided
+      user = await store.verifyOtp({ identifier: targetEmail, code });
+    } else {
+      return res.status(400).json({ success: false, error: 'Valid reset token or 6-digit code with email is required.' });
+    }
+
     if (!user) {
-      return res.status(400).json({ success: false, error: 'OTP verification failed.' });
+      return res.status(404).json({ success: false, error: 'User account not found.' });
     }
 
     // Hash and store the new password
-    const salt = await bcrypt.genSalt(12);
+    const salt = await bcrypt.genSalt(10);
     const hash = await bcrypt.hash(newPassword, salt);
-    const storedUser = await store.findUserById(user.id);
-    if (!storedUser) {
-      return res.status(404).json({ success: false, error: 'User not found.' });
+    user.passwordHash = hash;
+    store.save(true);
+
+    if (store.isMongoConnected) {
+      const { User } = require('../models/schemas');
+      User.findOneAndUpdate({ id: user.id }, { passwordHash: hash }).catch(e => console.error('[Auth] Mongo password update error:', e.message));
     }
-    storedUser.passwordHash = hash;
-    store.save();
 
-    console.log(`✅ [PASSWORD RESET] User reset password: ${storedUser.name} (${targetEmail})`);
+    // Issue fresh authentication token so user is immediately logged in
+    const authToken = jwt.sign({
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone || '',
+      minBalance: user.minBalance !== undefined ? user.minBalance : 100,
+      createdAt: user.createdAt
+    }, config.jwtSecret, { expiresIn: '7d' });
 
-    res.json({ success: true, message: 'Password reset successfully. You can now log in with your new password.' });
+    const portfolio = await store.getPortfolio(user.id);
+    console.log(`✅ [PASSWORD RESET SUCCESS] User reset password & signed in: ${user.name} (${user.email})`);
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully! Welcome back to AuraTrade.',
+      token: authToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        phone: user.phone || '',
+        name: user.name,
+        minBalance: user.minBalance !== undefined ? user.minBalance : 100,
+        cashBalance: portfolio.cashBalance,
+        traderProfile: user.traderProfile || null,
+        createdAt: user.createdAt
+      }
+    });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }

@@ -30,41 +30,81 @@ class NotificationService {
     const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587;
 
     if (smtpUser && smtpPass) {
+      const cleanUser = smtpUser.trim();
+      const cleanPass = smtpPass.replace(/\s+/g, '');
+      if (cleanUser.includes('@gmail.com') || smtpHost.includes('gmail')) {
+        return nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+            user: cleanUser,
+            pass: cleanPass
+          }
+        });
+      }
       return nodemailer.createTransport({
         host: smtpHost,
         port: smtpPort,
         secure: smtpPort === 465,
         auth: {
-          user: smtpUser,
-          pass: smtpPass
+          user: cleanUser,
+          pass: cleanPass
         }
       });
     }
     return null;
   }
 
-  // Send real email OTP
-  async sendEmailOtp(toEmail, code, purpose = 'login') {
-    const subject = `Your AuraTrade Verification Code: ${code}`;
+  // Send real email OTP (for registration and MFA login)
+  async sendEmailOtp(toEmail, code, purpose = 'register') {
+    const isRegister = purpose === 'register';
+    const subject = isRegister
+      ? `${code} is your AuraTrade registration verification code`
+      : `${code} is your AuraTrade verification code`;
+    const actionText = isRegister
+      ? 'To complete your AuraTrade account registration, please enter the one-time verification code below:'
+      : 'A sign-in request was received for your AuraTrade account. Use this one-time code to authenticate:';
+
     const htmlContent = `
-      <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; background: #0c1424; color: #ffffff; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-        <div style="text-align: center; margin-bottom: 24px;">
-          <h1 style="color: #06b6d4; margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.02em;">AuraTrade Workstation</h1>
-          <p style="color: #94a3b8; font-size: 13px; margin: 6px 0 0 0;">Multi-Factor Authentication Security</p>
-        </div>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+      </head>
+      <body style="margin: 0; padding: 20px; background-color: #050b14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #ffffff;">
+        <div style="max-width: 520px; margin: 0 auto; background: #0c1424; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);">
+          <div style="background: linear-gradient(90deg, #10b981 0%, #06b6d4 50%, #6366f1 100%); height: 4px;"></div>
+          <div style="padding: 30px 24px;">
+            <div style="text-align: center; margin-bottom: 24px;">
+              <h1 style="color: #06b6d4; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.02em;">AuraTrade</h1>
+              <p style="color: #94a3b8; font-size: 13px; margin: 4px 0 0 0;">Institutional Trading Workstation</p>
+            </div>
 
-        <div style="background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: 10px; padding: 20px; text-align: center; margin-bottom: 20px;">
-          <p style="color: #94a3b8; font-size: 13px; margin: 0 0 10px 0;">Your 6-digit one-time verification code is:</p>
-          <div style="font-family: 'Courier New', Courier, monospace; font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #ffffff; background: #061120; padding: 12px; border-radius: 8px; border: 1px dashed #06b6d4; display: inline-block;">
-            ${code}
+            <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 22px;">
+              <p style="color: #e2e8f0; font-size: 14px; line-height: 1.5; margin: 0 0 16px 0;">
+                ${actionText}
+              </p>
+              <div style="font-family: 'Courier New', Courier, monospace; font-size: 38px; font-weight: 800; letter-spacing: 8px; color: #ffffff; background: #061120; padding: 14px 20px; border-radius: 10px; border: 1px dashed #06b6d4; display: inline-block;">
+                ${code}
+              </div>
+              <p style="color: #f59e0b; font-size: 12px; margin: 16px 0 0 0; font-weight: 500;">
+                ⏱️ This code will expire in 10 minutes.
+              </p>
+            </div>
+
+            <p style="color: #64748b; font-size: 12px; line-height: 1.6; margin: 0; text-align: center;">
+              If you didn't request this code, you can safely ignore this email. Never share this security code with anyone.
+            </p>
           </div>
-          <p style="color: #f59e0b; font-size: 12px; margin: 12px 0 0 0;">⏱️ This code will expire in 5 minutes.</p>
+          <div style="background: #080e1a; padding: 14px 20px; border-top: 1px solid rgba(255, 255, 255, 0.05); text-align: center;">
+            <p style="color: #475569; font-size: 11px; margin: 0;">
+              © ${new Date().getFullYear()} AuraTrade. All rights reserved.
+            </p>
+          </div>
         </div>
-
-        <p style="color: #64748b; font-size: 12px; line-height: 1.5; margin: 0; text-align: center;">
-          If you did not request this security code, please ignore this email or contact security immediately. Never share this code with anyone.
-        </p>
-      </div>
+      </body>
+      </html>
     `;
 
     // 1. If real SMTP (Gmail, Outlook, etc.) is configured in .env
@@ -113,14 +153,14 @@ class NotificationService {
       console.log(`   To: ${toEmail}`);
       console.log(`   Verification Code: >>> [ ${code} ] <<<`);
       console.log(`   🔗 View Delivered Email: ${previewUrl}`);
-      console.log(`   💡 To deliver to personal Gmail, add SMTP_USER & SMTP_PASS in server/.env`);
+      console.log(`   💡 Configure SMTP_USER & SMTP_PASS in Vercel for personal inbox delivery`);
       console.log(`======================================================\n`);
 
       return {
         delivered: true,
         method: 'ethereal',
         previewUrl,
-        notice: 'Sent to real web inbox. Configure Gmail in server/.env to receive in personal inbox.'
+        notice: 'Sent to virtual test inbox. Add SMTP_USER & SMTP_PASS to Vercel for personal Gmail delivery.'
       };
     } catch (err) {
       console.error('[NotificationService] Ethereal fallback failed:', err.message);
@@ -134,7 +174,137 @@ class NotificationService {
     return {
       delivered: false,
       method: 'terminal-fallback',
-      notice: 'Configure SMTP_USER & SMTP_PASS in server/.env for personal inbox delivery.'
+      notice: 'Configure SMTP_USER & SMTP_PASS in Vercel for personal Gmail delivery.'
+    };
+  }
+
+  // Send real Password Reset Email with clickable link & backup code
+  async sendPasswordResetEmail(toEmail, resetToken, resetCode) {
+    const baseUrl = process.env.APP_URL || process.env.CLIENT_URL || 'https://auratrade.in';
+    const resetUrl = `${baseUrl.replace(/\/$/, '')}/?action=reset-password&token=${encodeURIComponent(resetToken)}&email=${encodeURIComponent(toEmail)}`;
+    const subject = `Reset Your AuraTrade Password`;
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${subject}</title>
+      </head>
+      <body style="margin: 0; padding: 20px; background-color: #050b14; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #ffffff;">
+        <div style="max-width: 520px; margin: 0 auto; background: #0c1424; border-radius: 14px; border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden; box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);">
+          <div style="background: linear-gradient(90deg, #10b981 0%, #06b6d4 50%, #6366f1 100%); height: 4px;"></div>
+          <div style="padding: 30px 24px;">
+            <div style="text-align: center; margin-bottom: 24px;">
+              <h1 style="color: #06b6d4; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.02em;">AuraTrade</h1>
+              <p style="color: #94a3b8; font-size: 13px; margin: 4px 0 0 0;">Institutional Security & Account Recovery</p>
+            </div>
+
+            <div style="background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(6, 182, 212, 0.25); border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 22px;">
+              <h2 style="color: #ffffff; font-size: 18px; margin: 0 0 12px 0;">Reset Your Password</h2>
+              <p style="color: #cbd5e1; font-size: 14px; line-height: 1.5; margin: 0 0 22px 0;">
+                We received a request to reset the password for <strong>${toEmail}</strong>. Click the button below to choose a new password:
+              </p>
+
+              <a href="${resetUrl}" target="_blank" style="display: inline-block; background: linear-gradient(135deg, #06b6d4 0%, #2563eb 100%); color: #ffffff; text-decoration: none; font-weight: 700; font-size: 15px; padding: 13px 32px; border-radius: 8px; box-shadow: 0 4px 14px rgba(6, 182, 212, 0.4); margin-bottom: 20px;">
+                Reset My Password ↗
+              </a>
+
+              <div style="border-top: 1px dashed rgba(255, 255, 255, 0.12); margin: 18px 0; padding-top: 16px;">
+                <p style="color: #94a3b8; font-size: 12px; margin: 0 0 8px 0;">Or enter this 6-digit security code:</p>
+                <div style="font-family: 'Courier New', Courier, monospace; font-size: 30px; font-weight: 800; letter-spacing: 6px; color: #06b6d4; background: #061120; padding: 8px 18px; border-radius: 8px; display: inline-block;">
+                  ${resetCode}
+                </div>
+              </div>
+
+              <p style="color: #f59e0b; font-size: 12px; margin: 14px 0 0 0; font-weight: 500;">
+                ⏱️ This reset link & code expire in 15 minutes.
+              </p>
+            </div>
+
+            <p style="color: #64748b; font-size: 11px; line-height: 1.5; margin: 0; text-align: center;">
+              Button not working? Copy and paste this URL into your browser:<br/>
+              <a href="${resetUrl}" style="color: #06b6d4; word-break: break-all;">${resetUrl}</a>
+            </p>
+            <p style="color: #475569; font-size: 11px; line-height: 1.5; margin: 14px 0 0 0; text-align: center;">
+              If you didn't request a password reset, please ignore this email. Your account is completely secure.
+            </p>
+          </div>
+          <div style="background: #080e1a; padding: 14px 20px; border-top: 1px solid rgba(255, 255, 255, 0.05); text-align: center;">
+            <p style="color: #475569; font-size: 11px; margin: 0;">
+              © ${new Date().getFullYear()} AuraTrade. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
+    `;
+
+    const transporter = this.getEmailTransporter();
+    if (transporter) {
+      try {
+        const fromAddress = process.env.SMTP_FROM || `"AuraTrade Security" <${process.env.SMTP_USER}>`;
+        await transporter.sendMail({
+          from: fromAddress,
+          to: toEmail,
+          subject,
+          html: htmlContent
+        });
+        console.log(`✉️ [REAL PASSWORD RESET EMAIL DELIVERED via Gmail] Sent to ${toEmail}`);
+        return { delivered: true, method: 'smtp', destination: toEmail, resetUrl };
+      } catch (err) {
+        console.error(`❌ [EMAIL DELIVERY ERROR] Failed to send reset email to ${toEmail}:`, err.message);
+      }
+    }
+
+    // Ethereal Fallback
+    try {
+      if (!this.etherealTransporter) {
+        const testAccount = await nodemailer.createTestAccount();
+        this.etherealTransporter = nodemailer.createTransport({
+          host: 'smtp.ethereal.email',
+          port: 587,
+          secure: false,
+          auth: {
+            user: testAccount.user,
+            pass: testAccount.pass
+          }
+        });
+      }
+
+      const info = await this.etherealTransporter.sendMail({
+        from: '"AuraTrade Security" <security@auratrade.io>',
+        to: toEmail,
+        subject,
+        html: htmlContent
+      });
+
+      const previewUrl = nodemailer.getTestMessageUrl(info);
+      console.log(`\n======================================================`);
+      console.log(`✉️ [PASSWORD RESET SENT via Ethereal Inbox]`);
+      console.log(`   To: ${toEmail}`);
+      console.log(`   🔗 Direct Reset URL: ${resetUrl}`);
+      console.log(`   Verification Code: >>> [ ${resetCode} ] <<<`);
+      console.log(`   🔗 View Delivered Email: ${previewUrl}`);
+      console.log(`======================================================\n`);
+
+      return {
+        delivered: true,
+        method: 'ethereal',
+        previewUrl,
+        resetUrl,
+        notice: 'Sent to virtual test inbox. Add SMTP_USER & SMTP_PASS to Vercel for personal Gmail delivery.'
+      };
+    } catch (err) {
+      console.error('[NotificationService] Ethereal reset email fallback failed:', err.message);
+    }
+
+    return {
+      delivered: false,
+      method: 'terminal-fallback',
+      resetUrl,
+      notice: 'Configure SMTP_USER & SMTP_PASS in Vercel for personal Gmail delivery.'
     };
   }
 
