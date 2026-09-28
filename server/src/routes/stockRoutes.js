@@ -47,6 +47,24 @@ router.get('/history/:symbol', async (req, res) => {
 
 const predictionService = require('../services/predictionService');
 
+// Ultra-fast live ticks batch stream for Serverless and high-frequency real-time updates
+router.get('/live-ticks', async (req, res) => {
+  try {
+    const rawSymbols = req.query.symbols;
+    let symbols = [];
+    if (rawSymbols && typeof rawSymbols === 'string') {
+      symbols = rawSymbols.split(',').map(s => s.trim().toUpperCase()).filter(Boolean);
+    }
+    const ticks = await marketDataService.getLiveTicksBatch(symbols);
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.json({ success: true, timestamp: Date.now(), ticks });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Get market indices ribbon (Enhanced multi-market ticker tape)
 router.get('/indices', async (req, res) => {
   try {

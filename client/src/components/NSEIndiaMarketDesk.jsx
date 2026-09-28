@@ -109,26 +109,28 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
 
   // Render SVG live wave sparkline with pulsing beacon tip
   const renderSparkline = (points, isBull, sym) => {
-    if (!points || points.length < 2) return null;
-    const min = Math.min(...points);
-    const max = Math.max(...points);
+    if (!points || !Array.isArray(points) || points.length < 2) return null;
+    const validPoints = points.map(p => Number(p)).filter(p => !isNaN(p));
+    if (validPoints.length < 2) return null;
+    const min = Math.min(...validPoints);
+    const max = Math.max(...validPoints);
     const range = max - min || 1;
     const width = 220;
     const height = 36;
     const pad = 4;
     const h = height - pad * 2;
-    const coords = points.map((p, i) => {
-      const x = pad + (i / (points.length - 1)) * (width - pad * 2);
+    const coords = validPoints.map((p, i) => {
+      const x = pad + (i / (validPoints.length - 1)) * (width - pad * 2);
       const y = pad + h - ((p - min) / range) * h;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
+      return `${(Number(x) || 0).toFixed(1)},${(Number(y) || 0).toFixed(1)}`;
     });
     const pathD = `M ${coords.join(' L ')}`;
     const areaD = `${pathD} L ${width - pad},${height} L ${pad},${height} Z`;
-    const lastCoord = coords[coords.length - 1].split(',');
-    const lastX = parseFloat(lastCoord[0]);
-    const lastY = parseFloat(lastCoord[1]);
+    const lastCoord = coords[coords.length - 1]?.split(',') || ['0', '0'];
+    const lastX = parseFloat(lastCoord[0]) || 0;
+    const lastY = parseFloat(lastCoord[1]) || 0;
     const color = isBull ? '#10b981' : '#f43f5e';
-    const gradId = `nse-grad-${sym.replace(/[^a-zA-Z0-9]/g, '')}`;
+    const gradId = `nse-grad-${String(sym || 'idx').replace(/[^a-zA-Z0-9]/g, '')}`;
 
     return (
       <div style={{ position: 'relative', width: '100%', height: '36px', margin: '0.5rem 0' }}>
@@ -222,7 +224,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
               <span>•</span>
               <span>Exchange: <strong>NSE India / Mumbai</strong></span>
               <span>•</span>
-              <span>Turnover: <strong style={{ color: 'var(--text-primary)' }}>₹{marketBreadth?.totalTurnoverCr?.toLocaleString('en-IN')} Cr</strong></span>
+              <span>Turnover: <strong style={{ color: 'var(--text-primary)' }}>₹{(Number(marketBreadth?.totalTurnoverCr) || Number(marketBreadth?.turnoverCr) || 0).toLocaleString('en-IN')} Cr</strong></span>
             </div>
           </div>
         </div>
@@ -260,9 +262,12 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
         </div>
         <div className="nse-marquee-track">
           {[...(heroIndices || []), ...(sectoralIndices || []), ...(currencyDesk || []), ...(heroIndices || []), ...(sectoralIndices || [])].map((item, idx) => {
-            const sym = item.symbol || item.pair;
-            const isBull = (item.change !== undefined ? item.change : item.changePercent) >= 0;
-            const priceVal = item.price || item.ltp;
+            if (!item) return null;
+            const sym = item.symbol || item.pair || 'INDEX';
+            const chgVal = item.change !== undefined && item.change !== null ? Number(item.change) : Number(item.changePercent ?? item.pChange ?? 0);
+            const isBull = chgVal >= 0;
+            const priceVal = Number(item.price ?? item.ltp ?? 0);
+            const chgPctVal = Number(item.changePercent ?? item.pChange ?? 0);
             const flashClass = flashingSymbols[sym] || '';
             return (
               <div
@@ -273,11 +278,11 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
               >
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)' }}>{sym}</span>
                 <span className={`font-mono ${flashClass}`} style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  {sym === 'INDIA VIX' ? '' : '₹'}{priceVal?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {sym === 'INDIA VIX' ? '' : '₹'}{priceVal ? priceVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}
                 </span>
                 <span style={{ fontSize: '0.72rem', fontWeight: 700, color: isBull ? 'var(--bull-green)' : 'var(--bear-red)', display: 'inline-flex', alignItems: 'center' }}>
                   {isBull ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
-                  {isBull ? '+' : ''}{item.changePercent?.toFixed(2)}%
+                  {isBull ? '+' : ''}{chgPctVal.toFixed(2)}%
                 </span>
               </div>
             );
@@ -295,8 +300,12 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
         }}
       >
         {heroIndices?.map((idx) => {
-          const isBull = idx.change >= 0;
+          if (!idx) return null;
+          const chg = Number(idx.change ?? 0);
+          const chgPct = Number(idx.changePercent ?? idx.pChange ?? 0);
+          const isBull = (idx.change !== undefined && idx.change !== null ? chg : chgPct) >= 0;
           const isSelected = selectedHeroIndex === idx.symbol;
+          const price = Number(idx.price ?? idx.ltp ?? 0);
 
           return (
             <div
@@ -314,7 +323,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                   <div>
                     <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.04em' }}>
-                      {idx.category}
+                      {idx.category || 'Index'}
                     </span>
                     <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>{idx.name}</h3>
                   </div>
@@ -323,7 +332,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                     style={{ fontSize: '0.75rem', fontWeight: 700, padding: '0.25rem 0.55rem' }}
                   >
                     {isBull ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                    {isBull ? '+' : ''}{idx.changePercent?.toFixed(2)}%
+                    {isBull ? '+' : ''}{chgPct.toFixed(2)}%
                   </span>
                 </div>
 
@@ -340,10 +349,10 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                       transition: 'all 0.15s ease'
                     }}
                   >
-                    {idx.symbol === 'INDIA VIX' ? '' : '₹'}{idx.price?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {idx.symbol === 'INDIA VIX' ? '' : '₹'}{price ? price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}
                   </span>
                   <span className={`font-mono ${isBull ? 'text-bull' : 'text-bear'}`} style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                    {isBull ? '+' : ''}{idx.change?.toFixed(2)}
+                    {isBull ? '+' : ''}{chg.toFixed(2)}
                   </span>
                   {tickDirections[idx.symbol] && (
                     <span
@@ -408,7 +417,10 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
       {(() => {
         const currentSector = heroIndices?.find(h => h.symbol === selectedHeroIndex) || heroIndices?.[0];
         if (!currentSector || !showSectorDetails) return null;
-        const isBull = currentSector.change >= 0;
+        const secChg = Number(currentSector.change ?? 0);
+        const secChgPct = Number(currentSector.changePercent ?? currentSector.pChange ?? 0);
+        const isBull = (currentSector.change !== undefined && currentSector.change !== null ? secChg : secChgPct) >= 0;
+        const secPrice = Number(currentSector.price ?? currentSector.ltp ?? 0);
 
         return (
           <div
@@ -455,7 +467,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                         padding: '0.2rem 0.6rem'
                       }}
                     >
-                      {isBull ? '▲ +' : '▼ '}{currentSector.changePercent?.toFixed(2)}% ({isBull ? '+' : ''}{currentSector.change?.toFixed(2)})
+                      {isBull ? '▲ +' : '▼ '}{secChgPct.toFixed(2)}% ({isBull ? '+' : ''}{secChg.toFixed(2)})
                     </span>
                   </div>
                   <p style={{ margin: '0.25rem 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
@@ -468,7 +480,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Index Benchmark Level</div>
                   <div className="font-mono" style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                    {currentSector.symbol === 'INDIA VIX' ? '' : '₹'}{currentSector.price?.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {currentSector.symbol === 'INDIA VIX' ? '' : '₹'}{secPrice ? secPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}
                   </div>
                 </div>
                 <button
@@ -608,7 +620,10 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                 }}
               >
                 {currentSector.constituents?.map((stk, i) => {
-                  const isStkBull = stk.changePercent >= 0;
+                  if (!stk) return null;
+                  const stkChgPct = Number(stk.changePercent ?? stk.pChange ?? 0);
+                  const isStkBull = stkChgPct >= 0;
+                  const stkPrice = Number(stk.price ?? stk.ltp ?? 0);
                   return (
                     <div
                       key={stk.symbol || i}
@@ -635,10 +650,10 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                         </div>
                         <div style={{ textAlign: 'right' }}>
                           <div className="font-mono" style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                            ₹{stk.price?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                            ₹{stkPrice ? stkPrice.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '--'}
                           </div>
                           <span style={{ fontSize: '0.74rem', fontWeight: 700, color: isStkBull ? 'var(--bull-green)' : 'var(--bear-red)' }}>
-                            {isStkBull ? '+' : ''}{stk.changePercent?.toFixed(2)}%
+                            {isStkBull ? '+' : ''}{stkChgPct.toFixed(2)}%
                           </span>
                         </div>
                       </div>
@@ -702,13 +717,13 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                   background: 'var(--border-subtle)'
                 }}
               >
-                <div style={{ width: `${marketBreadth?.advancesPercent}%`, background: 'var(--bull-green)', transition: 'width 0.5s ease' }} />
-                <div style={{ width: `${100 - marketBreadth?.advancesPercent - marketBreadth?.declinesPercent}%`, background: 'var(--text-muted)' }} />
-                <div style={{ width: `${marketBreadth?.declinesPercent}%`, background: 'var(--bear-red)', transition: 'width 0.5s ease' }} />
+                <div style={{ width: `${Number(marketBreadth?.advancesPercent) || 50}%`, background: 'var(--bull-green)', transition: 'width 0.5s ease' }} />
+                <div style={{ width: `${Math.max(0, 100 - (Number(marketBreadth?.advancesPercent) || 50) - (Number(marketBreadth?.declinesPercent) || 45))}%`, background: 'var(--text-muted)' }} />
+                <div style={{ width: `${Number(marketBreadth?.declinesPercent) || 45}%`, background: 'var(--bear-red)', transition: 'width 0.5s ease' }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', fontSize: '0.75rem', marginTop: '0.5rem', color: 'var(--text-muted)' }}>
-                <span>Unchanged: <strong style={{ color: 'var(--text-secondary)' }}>{marketBreadth?.unchanged}</strong></span>
-                <span>A/D Ratio: <strong style={{ color: 'var(--text-primary)' }}>{(marketBreadth?.advances / (marketBreadth?.declines || 1)).toFixed(2)}</strong></span>
+                <span>Unchanged: <strong style={{ color: 'var(--text-secondary)' }}>{marketBreadth?.unchanged ?? 0}</strong></span>
+                <span>A/D Ratio: <strong style={{ color: 'var(--text-primary)' }}>{(Number(marketBreadth?.advances || 0) / (Number(marketBreadth?.declines) || 1)).toFixed(2)}</strong></span>
               </div>
             </div>
 
@@ -717,13 +732,13 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
               <div style={{ padding: '0.75rem', background: 'var(--bg-input)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)' }}>
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Traded Turnover</span>
                 <p className="font-mono" style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-cyan)', marginTop: '0.2rem' }}>
-                  ₹{marketBreadth?.totalTurnoverCr?.toLocaleString('en-IN')} Cr
+                  ₹{(Number(marketBreadth?.totalTurnoverCr) || 0).toLocaleString('en-IN')} Cr
                 </p>
               </div>
               <div style={{ padding: '0.75rem', background: 'var(--bg-input)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)' }}>
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Total Traded Volume</span>
                 <p className="font-mono" style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.2rem' }}>
-                  {marketBreadth?.totalVolumeFormatted} Shares
+                  {marketBreadth?.totalVolumeFormatted || marketBreadth?.volumeShares || '--'} Shares
                 </p>
               </div>
             </div>
@@ -735,29 +750,37 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
               NSE Currency Derivatives (INR Crosses)
             </span>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', marginTop: '0.5rem' }}>
-              {currencyDesk?.map(c => (
-                <div key={c.pair} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.45rem 0.6rem', background: 'var(--bg-input)', borderRadius: 'var(--radius-sm)' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)' }}>{c.pair}</span>
-                  <div style={{ textAlign: 'right' }}>
-                    <span
-                      className={`font-mono ${flashingSymbols[c.pair] || ''}`}
-                      style={{
-                        fontSize: '0.8rem',
-                        fontWeight: 700,
-                        color: 'var(--text-primary)',
-                        display: 'inline-block',
-                        borderRadius: '3px',
-                        padding: '1px 4px'
-                      }}
-                    >
-                      ₹{c.ltp.toFixed(2)}
-                    </span>
-                    <span style={{ fontSize: '0.7rem', color: c.change >= 0 ? 'var(--bull-green)' : 'var(--bear-red)', marginLeft: '0.35rem' }}>
-                      {c.change >= 0 ? '+' : ''}{c.changePercent.toFixed(2)}%
-                    </span>
+              {currencyDesk?.map(c => {
+                if (!c) return null;
+                const cChgPct = Number(c.changePercent ?? c.pChange ?? 0);
+                const cChg = Number(c.change ?? 0);
+                const cLtp = Number(c.ltp ?? c.price ?? 0);
+                const isBull = (c.change !== undefined && c.change !== null ? cChg : cChgPct) >= 0;
+
+                return (
+                  <div key={c.pair} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.45rem 0.6rem', background: 'var(--bg-input)', borderRadius: 'var(--radius-sm)' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)' }}>{c.pair}</span>
+                    <div style={{ textAlign: 'right' }}>
+                      <span
+                        className={`font-mono ${flashingSymbols[c.pair] || ''}`}
+                        style={{
+                          fontSize: '0.8rem',
+                          fontWeight: 700,
+                          color: 'var(--text-primary)',
+                          display: 'inline-block',
+                          borderRadius: '3px',
+                          padding: '1px 4px'
+                        }}
+                      >
+                        ₹{cLtp.toFixed(2)}
+                      </span>
+                      <span style={{ fontSize: '0.7rem', color: isBull ? 'var(--bull-green)' : 'var(--bear-red)', marginLeft: '0.35rem' }}>
+                        {isBull ? '+' : ''}{cChgPct.toFixed(2)}%
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -781,7 +804,11 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
             }}
           >
             {sectoralIndices?.map((sec) => {
-              const isBull = sec.changePercent >= 0;
+              if (!sec) return null;
+              const secChgPct = Number(sec.changePercent ?? sec.pChange ?? 0);
+              const isBull = secChgPct >= 0;
+              const secPrice = Number(sec.price ?? sec.ltp ?? 0);
+
               return (
                 <div
                   key={sec.symbol}
@@ -811,7 +838,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                         padding: '1px 4px'
                       }}
                     >
-                      ₹{sec.price.toLocaleString('en-IN')}
+                      ₹{secPrice ? secPrice.toLocaleString('en-IN') : '--'}
                     </span>
                     <span
                       className="font-mono"
@@ -821,7 +848,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                         color: isBull ? 'var(--bull-green)' : 'var(--bear-red)'
                       }}
                     >
-                      {isBull ? '+' : ''}{sec.changePercent.toFixed(2)}%
+                      {isBull ? '+' : ''}{secChgPct.toFixed(2)}%
                     </span>
                   </div>
                 </div>
@@ -910,7 +937,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                 mostActiveVolume) || []).map((stock) => {
                 if (!stock) return null;
                 const chg = Number(stock.change || 0);
-                const chgPct = Number(stock.changePercent || 0);
+                const chgPct = Number(stock.changePercent ?? stock.pChange ?? 0);
                 const isBull = chgPct >= 0;
 
                 const rowFlash = flashingSymbols[stock.symbol] === 'tick-flash-up' ? 'nse-row-flash-up' : flashingSymbols[stock.symbol] === 'tick-flash-down' ? 'nse-row-flash-down' : '';
@@ -939,7 +966,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                           padding: '1px 5px'
                         }}
                       >
-                        ₹{Number(stock.ltp || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        ₹{Number(stock.ltp || stock.price || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
@@ -957,17 +984,17 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <span className="font-mono" style={{ color: 'var(--text-secondary)' }}>
-                        {stock.turnoverCr ? `₹${stock.turnoverCr.toLocaleString()} Cr` : stock.volume}
+                        {stock.turnoverCr ? `₹${Number(stock.turnoverCr).toLocaleString()} Cr` : (stock.volume || '--')}
                       </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <span className="font-mono" style={{ color: 'var(--bull-green)', fontSize: '0.8rem' }}>
-                        {stock.high52 ? `₹${stock.high52.toLocaleString('en-IN')}` : '--'}
+                        {stock.high52 ? `₹${Number(stock.high52).toLocaleString('en-IN')}` : '--'}
                       </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <span className="font-mono" style={{ color: 'var(--bear-red)', fontSize: '0.8rem' }}>
-                        {stock.low52 ? `₹${stock.low52.toLocaleString('en-IN')}` : '--'}
+                        {stock.low52 ? `₹${Number(stock.low52).toLocaleString('en-IN')}` : '--'}
                       </span>
                     </td>
                     <td style={{ textAlign: 'center' }}>

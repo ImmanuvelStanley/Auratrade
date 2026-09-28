@@ -13,10 +13,14 @@ const { User, Portfolio, Watchlist, Alert, Notification } = require('./schemas')
  */
 class DataStore {
   constructor() {
-    this.storageFile = path.join(__dirname, '../../data.json');
-    this.tempFile = path.join(__dirname, '../../data.json.tmp');
-    this.backupFile = path.join(__dirname, '../../data.json.bak');
-    this.snapshotFile = path.join(__dirname, '../../data.snapshot.json');
+    const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+    const serverlessTmp = '/tmp';
+    this.primarySeedFile = path.join(__dirname, '../../data.json');
+
+    this.storageFile = isServerless ? path.join(serverlessTmp, 'data.json') : path.join(__dirname, '../../data.json');
+    this.tempFile = isServerless ? path.join(serverlessTmp, 'data.json.tmp') : path.join(__dirname, '../../data.json.tmp');
+    this.backupFile = isServerless ? path.join(serverlessTmp, 'data.json.bak') : path.join(__dirname, '../../data.json.bak');
+    this.snapshotFile = isServerless ? path.join(serverlessTmp, 'data.snapshot.json') : path.join(__dirname, '../../data.snapshot.json');
 
     this.users = new Map();
     this.watchlists = new Map(); // userId -> Set of symbols
@@ -37,6 +41,9 @@ class DataStore {
     this.snapshotTimer = setInterval(() => {
       this.createSnapshot();
     }, 60 * 60 * 1000);
+    if (this.snapshotTimer && typeof this.snapshotTimer.unref === 'function') {
+      this.snapshotTimer.unref();
+    }
 
     // 3. Connect to MongoDB Atlas if URI is provided
     if (config.mongoUri) {
@@ -174,6 +181,15 @@ class DataStore {
       } catch (e) {
         console.warn('[DataStore] Backup file recovery failed.');
       }
+    }
+
+    // Attempt 3: If in serverless and /tmp is clean, bootstrap from repository seed file
+    if ((!raw || raw.trim().length === 0) && this.primarySeedFile && fs.existsSync(this.primarySeedFile)) {
+      try {
+        raw = fs.readFileSync(this.primarySeedFile, 'utf8');
+        loadedFrom = 'repository seed data.json';
+        console.log('🌱 [DataStore] Bootstrapped serverless memory store from repository seed.');
+      } catch (e) {}
     }
 
     if (raw) {

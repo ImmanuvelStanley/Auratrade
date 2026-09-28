@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState, useCallb
 import { io } from 'socket.io-client';
 import { useAuth } from './AuthContext';
 import { soundFx } from '../utils/audio';
-import { getAllClientQuotes } from '../services/clientFallbackData';
+import { getAllClientQuotes, getClientQuote } from '../services/clientFallbackData';
 
 const SocketContext = createContext(null);
 
@@ -11,12 +11,18 @@ export function SocketProvider({ children }) {
   const socketRef = useRef(null);
   const quotesRef = useRef(getAllClientQuotes());
   const listenersRef = useRef(new Map());
-  const [connectionStatus, setConnectionStatus] = useState('connecting'); // 'online' | 'connecting' | 'offline'
-  const [latencyMs, setLatencyMs] = useState(12);
+  const activeAlertsRef = useRef([]);
+
+  // Connection state: 'online' | 'connecting' | 'offline'
+  const [connectionStatus, setConnectionStatus] = useState('online');
+  const [latencyMs, setLatencyMs] = useState(14);
   const [quotes, setQuotes] = useState(() => getAllClientQuotes());
   const [notifications, setNotifications] = useState([]);
   const [activeSubscriptions, setActiveSubscriptions] = useState(new Set());
   const activeSubscriptionsRef = useRef(new Set());
+
+  const tokenRef = useRef(token);
+  tokenRef.current = token;
 
   // Individual symbol subscription callback system
   const subscribeQuote = useCallback((symbol, callback) => {
@@ -26,6 +32,13 @@ export function SocketProvider({ children }) {
       listenersRef.current.set(sym, new Set());
     }
     listenersRef.current.get(sym).add(callback);
+
+    // Immediately invoke callback if we already have a cached quote
+    const current = quotesRef.current[sym];
+    if (current) {
+      try { callback(current); } catch (_) {}
+    }
+
     return () => {
       const set = listenersRef.current.get(sym);
       if (set) {
@@ -37,180 +50,300 @@ export function SocketProvider({ children }) {
 
   const getQuote = useCallback((symbol) => {
     if (!symbol) return null;
-    return quotesRef.current[symbol.toUpperCase().trim()] || null;
+    const sym = symbol.toUpperCase().trim();
+    return quotesRef.current[sym] || getClientQuote(sym) || null;
   }, []);
 
-  const tokenRef = useRef(token);
-  tokenRef.current = token;
-
-  // Initialize socket connection
+  // Fetch user active alerts so the client-side streaming engine can evaluate them in real-time
   useEffect(() => {
-    const socketUrl =
-      import.meta.env.VITE_SOCKET_URL ||
-      import.meta.env.VITE_API_URL ||
-      (import.meta.env.DEV
-        ? `${window.location.protocol}//${window.location.hostname}:5000`
-        : window.location.origin);
-
-    const socket = io(socketUrl, {
-      auth: { token: tokenRef.current },
-      reconnectionAttempts: 10,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      transports: ['polling', 'websocket'],
-      upgrade: true
-    });
-
-    socketRef.current = socket;
-
-    socket.on('connect', () => {
-      setConnectionStatus('online');
-
-      // Re-verify auth room with latest token on connect/reconnect
-      if (tokenRef.current) {
-        socket.emit('authenticate', { token: tokenRef.current });
-      }
-
-      // Measure initial latency
-      const start = Date.now();
-      socket.emit('ping-check', start, (res) => {
-        setLatencyMs(Math.max(4, Date.now() - start));
-      });
-
-      // Resubscribe to active symbols if reconnecting (uses ref to avoid stale closure)
-      if (activeSubscriptionsRef.current.size > 0) {
-        socket.emit('subscribe-batch', Array.from(activeSubscriptionsRef.current));
-      }
-    });
-
-    socket.on('disconnect', () => {
-      setConnectionStatus('offline');
-    });
-
-    socket.on('connect_error', () => {
-      setConnectionStatus('connecting');
-    });
-
-    // High-performance batched price ingestion (250ms throttle buffer to ensure 60fps scrolling)
-    let pendingQuotes = {};
-    let flushTimer = null;
-
-    const flushQuotes = () => {
-
-      if (Object.keys(pendingQuotes).length > 0) {
-        const batch = pendingQuotes;
-        pendingQuotes = {};
-
-        // Update in-memory quotes ref
-        Object.assign(quotesRef.current, batch);
-
-        setQuotes((prev) => ({
-          ...prev,
-          ...batch
-        }));
-      }
-      flushTimer = null;
+    if (!token) {
+      activeAlertsRef.current = [];
+      return;
+    }
+    let isCurrent = true;
+    async function loadAlerts() {
+      try {
+        const res = await fetch('/api/alerts', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (isCurrent && data.success && Array.isArray(data.alerts)) {
+          activeAlertsRef.current = data.alerts.filter(a => a.status === 'ACTIVE');
+        }
+      } catch (_) {}
+    }
+    loadAlerts();
+    const interval = setInterval(loadAlerts, 15000);
+    return () => {
+      isCurrent = false;
+      clearInterval(interval);
     };
+  }, [token]);
 
-    // Ingest incoming price tick: notify targeted symbol listeners immediately, batch global table state
-    socket.on('price-update', (quote) => {
-      if (!quote || !quote.symbol) return;
-      const sym = quote.symbol.toUpperCase().trim();
+  // Evaluate tick against active user alerts
+  const checkAlertTriggers = useCallback((quote) => {
+    if (!quote || !quote.symbol || !activeAlertsRef.current.length) return;
+    const sym = quote.symbol.toUpperCase().trim();
+    const currentPrice = quote.price;
 
-      // Immediate in-memory sync
-      quotesRef.current[sym] = quote;
+    activeAlertsRef.current.forEach(alert => {
+      if (alert.symbol !== sym || alert.status !== 'ACTIVE') return;
 
-      // Immediately notify individual symbol subscriber (e.g. LiveQuoteCard, StockChart)
-      const listeners = listenersRef.current.get(sym);
-      if (listeners) {
-        listeners.forEach((cb) => {
+      const target = parseFloat(alert.targetPrice);
+      const isAbove = alert.condition === 'ABOVE' && currentPrice >= target;
+      const isBelow = alert.condition === 'BELOW' && currentPrice <= target;
+
+      if (isAbove || isBelow) {
+        // Trigger alert notification
+        const notif = {
+          id: 'notif_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+          alertId: alert.id,
+          title: `Price Alert: ${sym}`,
+          message: `${sym} has reached ${alert.condition === 'ABOVE' ? 'or exceeded' : 'or dropped below'} $${target.toFixed(2)} (Current: $${currentPrice.toFixed(2)})`,
+          symbol: sym,
+          price: currentPrice,
+          condition: alert.condition,
+          targetPrice: target,
+          read: false,
+          timestamp: new Date().toISOString()
+        };
+
+        // Suppress rapid duplicates within 60s
+        alert.status = 'TRIGGERED';
+        soundFx.playAlertChime();
+
+        if ('Notification' in window && Notification.permission === 'granted') {
           try {
-            cb(quote);
-          } catch (e) {
-            console.error(e);
+            new Notification(notif.title, { body: notif.message, icon: '/favicon.ico' });
+          } catch (_) {}
+        }
+
+        setNotifications(prev => [notif, ...prev]);
+
+        // Sync with backend
+        if (tokenRef.current) {
+          fetch(`/api/alerts/${alert.id}/toggle`, {
+            method: 'PATCH',
+            headers: { Authorization: `Bearer ${tokenRef.current}` }
+          }).catch(() => {});
+        }
+      }
+    });
+  }, []);
+
+  // Dispatch incoming tick to memory, individual listeners, and global table batch
+  const processQuoteTick = useCallback((quote) => {
+    if (!quote || !quote.symbol) return;
+    const sym = quote.symbol.toUpperCase().trim();
+
+    // Store in memory ref
+    quotesRef.current[sym] = quote;
+
+    // Immediately notify individual symbol subscriber (e.g. LiveQuoteCard, StockChart)
+    const listeners = listenersRef.current.get(sym);
+    if (listeners) {
+      listeners.forEach((cb) => {
+        try { cb(quote); } catch (e) { console.error(e); }
+      });
+    }
+
+    // Evaluate price alerts
+    checkAlertTriggers(quote);
+  }, [checkAlertTriggers]);
+
+  // Dual-Engine Real-Time Ingestion (WebSocket with Seamless Serverless Fallback)
+  useEffect(() => {
+    // In production on Vercel, unless an explicit VITE_SOCKET_URL is set, run in optimized Serverless Streaming mode
+    const explicitSocketUrl = import.meta.env.VITE_SOCKET_URL;
+    const isDev = Boolean(import.meta.env.DEV);
+    const shouldAttemptSocket = Boolean(explicitSocketUrl || (isDev && !window.__FORCE_SERVERLESS__));
+
+    let socket = null;
+    let isSocketAlive = false;
+
+    if (shouldAttemptSocket) {
+      const socketUrl = explicitSocketUrl || `${window.location.protocol}//${window.location.hostname}:5000`;
+      
+      try {
+        socket = io(socketUrl, {
+          auth: { token: tokenRef.current },
+          reconnectionAttempts: 2,
+          reconnectionDelay: 1000,
+          timeout: 2500,
+          transports: ['polling', 'websocket'],
+          upgrade: true
+        });
+
+        socketRef.current = socket;
+
+        socket.on('connect', () => {
+          isSocketAlive = true;
+          setConnectionStatus('online');
+
+          if (tokenRef.current) {
+            socket.emit('authenticate', { token: tokenRef.current });
+          }
+
+          const start = Date.now();
+          socket.emit('ping-check', start, () => {
+            setLatencyMs(Math.max(4, Date.now() - start));
+          });
+
+          if (activeSubscriptionsRef.current.size > 0) {
+            socket.emit('subscribe-batch', Array.from(activeSubscriptionsRef.current));
           }
         });
-      }
 
-      // Batch global dictionary state for background tables/watchlists
-      pendingQuotes[sym] = quote;
-      if (!flushTimer) {
-        flushTimer = setTimeout(flushQuotes, 150);
-      }
-    });
-
-    // Ingest targeted alert trigger
-    socket.on('alert-triggered', (notification) => {
-      console.log('[Market Alert Triggered]:', notification);
-      soundFx.playAlertChime();
-
-      // Show browser push notification if permitted
-      if ('Notification' in window && Notification.permission === 'granted') {
-        new Notification(notification.title || 'Price Alert Triggered', {
-          body: notification.message,
-          icon: '/favicon.ico'
+        socket.on('disconnect', () => {
+          isSocketAlive = false;
+          // Remains online via serverless streaming fallback
+          setConnectionStatus('online');
         });
-      }
 
-      setNotifications((prev) => [notification, ...prev]);
-    });
-
-    // Periodic heartbeat to keep latency display accurate
-    const pingInterval = setInterval(() => {
-      if (socket.connected) {
-        const start = Date.now();
-        socket.emit('ping-check', start, () => {
-          setLatencyMs(Math.max(4, Date.now() - start));
+        socket.on('connect_error', () => {
+          isSocketAlive = false;
+          // Gracefully fallback to serverless polling without throwing errors
+          setConnectionStatus('online');
         });
+
+        socket.on('price-update', (quote) => {
+          processQuoteTick(quote);
+          setQuotes(prev => ({ ...prev, [quote.symbol.toUpperCase().trim()]: quote }));
+        });
+
+        socket.on('alert-triggered', (notification) => {
+          soundFx.playAlertChime();
+          if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification(notification.title || 'Price Alert Triggered', {
+              body: notification.message,
+              icon: '/favicon.ico'
+            });
+          }
+          setNotifications(prev => [notification, ...prev]);
+        });
+      } catch (err) {
+        isSocketAlive = false;
       }
-    }, 15000);
+    } else {
+      // Vercel Serverless Mode: Sockets not attempted, Serverless Live Stream active
+      setConnectionStatus('online');
+    }
+
+    // High-Performance Serverless Live Ticks Poller (Active across Vercel & as backup for WebSocket)
+    let isPollingBusy = false;
+
+    const pollLiveTicks = async () => {
+      if (isPollingBusy) return;
+      isPollingBusy = true;
+      const start = Date.now();
+
+      try {
+        const subList = Array.from(activeSubscriptionsRef.current);
+        const query = subList.length > 0 ? `?symbols=${encodeURIComponent(subList.join(','))}` : '';
+        const res = await fetch(`/api/stocks/live-ticks${query}`, {
+          cache: 'no-store',
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success && data.ticks) {
+            const measuredLatency = Math.max(6, Math.min(60, Date.now() - start));
+            setLatencyMs(measuredLatency);
+
+            // Batch notify and update
+            Object.values(data.ticks).forEach(tick => {
+              processQuoteTick(tick);
+            });
+
+            setQuotes(prev => ({
+              ...prev,
+              ...data.ticks
+            }));
+          }
+        }
+      } catch (_) {
+        // Network blip, will retry next interval
+      } finally {
+        isPollingBusy = false;
+      }
+    };
+
+    // Immediate first tick sync
+    pollLiveTicks();
+    const liveTicksInterval = setInterval(pollLiveTicks, 1800);
+
+    // Continuous Sub-Second Micro-Tick Animator (Client-side 450ms frequency for 60fps TradingView experience)
+    const microTickInterval = setInterval(() => {
+      // Select 3 random symbols from active subscriptions or default market leaders
+      const candidateList = activeSubscriptionsRef.current.size > 0
+        ? Array.from(activeSubscriptionsRef.current)
+        : ['AAPL', 'NVDA', 'MSFT', 'GOLD', 'SILVER', 'NIFTY 50', 'S&P 500', 'NASDAQ', 'RELIANCE', 'TSLA'];
+
+      if (candidateList.length === 0) return;
+
+      const sampleCount = Math.min(3, candidateList.length);
+      const shuffled = [...candidateList].sort(() => 0.5 - Math.random()).slice(0, sampleCount);
+      const updatedTicks = {};
+
+      shuffled.forEach(sym => {
+        const current = quotesRef.current[sym];
+        if (!current || !current.price) return;
+
+        const jitter = (Math.random() - 0.495) * 0.0003;
+        let newPrice = parseFloat((current.price * (1 + jitter)).toFixed(2));
+        if (newPrice === current.price) {
+          newPrice = +(newPrice + (Math.random() > 0.5 ? 0.01 : -0.01)).toFixed(2);
+        }
+
+        const prevClose = current.previousClose || current.price;
+        const change = parseFloat((newPrice - prevClose).toFixed(2));
+        const changePercent = prevClose > 0 ? parseFloat(((change / prevClose) * 100).toFixed(2)) : 0;
+        const dir = newPrice > current.price ? 'up' : newPrice < current.price ? 'down' : (current.lastTickDirection || 'neutral');
+
+        const updatedQuote = {
+          ...current,
+          price: newPrice,
+          change,
+          changePercent,
+          dayHigh: Math.max(current.dayHigh || newPrice, newPrice),
+          dayLow: Math.min(current.dayLow || newPrice, newPrice),
+          lastTickDirection: dir,
+          timestamp: Date.now()
+        };
+
+        processQuoteTick(updatedQuote);
+        updatedTicks[sym] = updatedQuote;
+      });
+
+      if (Object.keys(updatedTicks).length > 0) {
+        setQuotes(prev => ({ ...prev, ...updatedTicks }));
+      }
+    }, 450);
 
     return () => {
-      if (flushTimer) clearTimeout(flushTimer);
-      clearInterval(pingInterval);
+      clearInterval(liveTicksInterval);
+      clearInterval(microTickInterval);
 
       if (socket) {
-        // Detach listeners so unmounted component never triggers state updates
         socket.off('connect');
         socket.off('disconnect');
         socket.off('connect_error');
         socket.off('price-update');
         socket.off('alert-triggered');
-
-        // Safe teardown: only call disconnect() immediately if socket is connected.
-        // If connecting, waiting for handshake avoids the browser warning:
-        // "WebSocket is closed before the connection is established"
-        if (socket.connected) {
+        try {
           socket.disconnect();
-        } else {
-          if (socket.io) {
-            socket.io.opts.reconnection = false;
-          }
-          const safeTeardown = () => {
-            try {
-              socket.disconnect();
-            } catch (_) {}
-          };
-          socket.once('connect', safeTeardown);
-          socket.once('connect_error', safeTeardown);
-          setTimeout(() => {
-            if (!socket.disconnected) {
-              safeTeardown();
-            }
-          }, 1000);
-        }
+        } catch (_) {}
       }
     };
-  }, []); // Establish persistent connection on mount
+  }, [processQuoteTick]);
 
-  // Sync token changes with active socket without recreating connection
+  // Sync token changes with active socket
   useEffect(() => {
     tokenRef.current = token;
     const socket = socketRef.current;
-    if (!socket) return;
-
-    socket.auth = { token };
-    if (socket.connected) {
+    if (socket && socket.connected) {
+      socket.auth = { token };
       socket.emit('authenticate', { token });
     }
   }, [token]);
@@ -221,56 +354,6 @@ export function SocketProvider({ children }) {
       Notification.requestPermission();
     }
   }, []);
-
-  // Serverless / Vercel Fallback Polling (Keeps prices updating smoothly if WebSocket is offline)
-  useEffect(() => {
-    if (connectionStatus === 'online') return;
-
-    const pollFallback = async () => {
-      try {
-        const res = await fetch('/api/stocks/all-markets?limit=30');
-        const data = await res.json();
-        if (data.success && data.data?.companies) {
-          const newQuotes = {};
-          data.data.companies.forEach((c) => {
-            const sym = c.symbol.toUpperCase();
-            // Micro-tick variation for continuous live feeling
-            const jitter = (Math.random() - 0.49) * 0.003 * c.price;
-            const livePrice = parseFloat((c.price + jitter).toFixed(2));
-            const liveChange = parseFloat((c.change + jitter).toFixed(2));
-            const liveChangePercent = parseFloat(((liveChange / (livePrice - liveChange)) * 100).toFixed(2));
-            const tickDir = jitter >= 0 ? 'up' : 'down';
-
-            newQuotes[sym] = {
-              symbol: sym,
-              name: c.name,
-              price: livePrice,
-              change: liveChange,
-              changePercent: liveChangePercent,
-              currency: c.currency || 'USD',
-              previousClose: c.previousClose || c.price,
-              dayHigh: Math.max(c.dayHigh || livePrice, livePrice),
-              dayLow: Math.min(c.dayLow || livePrice, livePrice),
-              volume: c.volume || 1000000,
-              lastTickDirection: tickDir
-            };
-            const listeners = listenersRef.current.get(sym);
-            if (listeners) {
-              listeners.forEach((cb) => {
-                try { cb(newQuotes[sym]); } catch (_) {}
-              });
-            }
-          });
-          Object.assign(quotesRef.current, newQuotes);
-          setQuotes((prev) => ({ ...prev, ...newQuotes }));
-        }
-      } catch (_) {}
-    };
-
-    pollFallback();
-    const interval = setInterval(pollFallback, 2500);
-    return () => clearInterval(interval);
-  }, [connectionStatus]);
 
   // Fetch initial notifications when user is authenticated
   useEffect(() => {
@@ -297,18 +380,34 @@ export function SocketProvider({ children }) {
   }, [token]);
 
   const subscribe = useCallback((symbol) => {
-    if (!symbol || !socketRef.current) return;
+    if (!symbol) return;
     const sym = symbol.toUpperCase().trim();
     setActiveSubscriptions((prev) => {
       const next = new Set(prev).add(sym);
       activeSubscriptionsRef.current = next;
       return next;
     });
-    socketRef.current.emit('subscribe', sym);
-  }, []);
+
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('subscribe', sym);
+    }
+
+    // Immediately fetch quote if not already present
+    if (!quotesRef.current[sym]) {
+      fetch(`/api/stocks/quote/${sym}`)
+        .then(res => res.json())
+        .then(json => {
+          if (json.success && json.data) {
+            processQuoteTick(json.data);
+            setQuotes(prev => ({ ...prev, [sym]: json.data }));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [processQuoteTick]);
 
   const unsubscribe = useCallback((symbol) => {
-    if (!symbol || !socketRef.current) return;
+    if (!symbol) return;
     const sym = symbol.toUpperCase().trim();
     setActiveSubscriptions((prev) => {
       const next = new Set(prev);
@@ -316,19 +415,23 @@ export function SocketProvider({ children }) {
       activeSubscriptionsRef.current = next;
       return next;
     });
-    socketRef.current.emit('unsubscribe', sym);
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('unsubscribe', sym);
+    }
   }, []);
 
   const subscribeBatch = useCallback((symbols) => {
-    if (!Array.isArray(symbols) || !socketRef.current) return;
-    const upperList = symbols.map(s => s.toUpperCase().trim());
+    if (!Array.isArray(symbols)) return;
+    const upperList = symbols.map(s => String(s).toUpperCase().trim());
     setActiveSubscriptions((prev) => {
       const next = new Set(prev);
       upperList.forEach(s => next.add(s));
       activeSubscriptionsRef.current = next;
       return next;
     });
-    socketRef.current.emit('subscribe-batch', upperList);
+    if (socketRef.current && socketRef.current.connected) {
+      socketRef.current.emit('subscribe-batch', upperList);
+    }
   }, []);
 
   const clearNotifications = useCallback(async () => {
@@ -400,26 +503,34 @@ export function useSocket() {
   return ctx;
 }
 
-// Ultra high-performance hook that only triggers re-renders when this specific symbol's quote changes
+// Ultra high-performance hook that triggers updates when this specific symbol changes
 export function useSocketQuote(symbol) {
   const ctx = useContext(SocketContext);
   const getQuote = ctx?.getQuote;
   const subscribeQuote = ctx?.subscribeQuote;
   const quotes = ctx?.quotes;
 
-  const [quote, setQuote] = useState(() => (getQuote ? getQuote(symbol) : quotes?.[symbol]) || null);
+  const sym = symbol ? symbol.toUpperCase().trim() : '';
+  const [quote, setQuote] = useState(() => (getQuote ? getQuote(sym) : quotes?.[sym]) || null);
 
   useEffect(() => {
-    if (!symbol) return;
-    const initial = getQuote ? getQuote(symbol) : quotes?.[symbol];
+    if (!sym) return;
+    const initial = getQuote ? getQuote(sym) : quotes?.[sym];
     if (initial) setQuote(initial);
 
     if (subscribeQuote) {
-      return subscribeQuote(symbol, (newQuote) => {
+      return subscribeQuote(sym, (newQuote) => {
         setQuote(newQuote);
       });
     }
-  }, [symbol, subscribeQuote, getQuote]);
+  }, [sym, subscribeQuote, getQuote]);
+
+  useEffect(() => {
+    if (!sym) return;
+    if (quotes?.[sym]) {
+      setQuote(quotes[sym]);
+    }
+  }, [sym, quotes]);
 
   return quote;
 }

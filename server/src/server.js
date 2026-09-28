@@ -121,6 +121,15 @@ ingestionWorker.setSocketServer(io);
 securitySentinel.setSocketServer(io);
 setupSocketManager(io);
 
+// Clean response for /socket.io in serverless mode (prevents index.html rewrite or JSON parse error)
+app.all('/socket.io*', (req, res) => {
+  res.status(200).json({
+    status: 'serverless_stream_active',
+    message: 'AuraTrade real-time streaming is active via serverless live ticks.',
+    upgrade: false
+  });
+});
+
 // Health Check
 app.get('/api/health', (req, res) => {
   res.json({

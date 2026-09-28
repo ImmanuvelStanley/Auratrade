@@ -4478,6 +4478,123 @@ class MarketDataService {
     });
   }
 
+  // High-performance batch live ticks generator for serverless streaming
+  async getLiveTicksBatch(symbols = []) {
+    const defaultList = [
+      'NIFTY 50', 'S&P 500', 'BANK NIFTY', 'NASDAQ', 'SENSEX', 'DOW JONES',
+      'GOLD', 'SILVER', 'GOLD.MCX', 'SILVER.MCX', 'BTC/USD', 'USD/INR',
+      'AAPL', 'NVDA', 'MSFT', 'TSLA', 'AMZN', 'GOOGL', 'META',
+      'RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'TATAMOTORS', 'SBIN'
+    ];
+
+    const list = Array.isArray(symbols) && symbols.length > 0 
+      ? Array.from(new Set([...defaultList, ...symbols.map(s => String(s).toUpperCase().trim())]))
+      : defaultList;
+
+    const results = {};
+    const ribbon = await this.getIndicesRibbon();
+    const ribbonMap = new Map();
+    ribbon.forEach(r => {
+      ribbonMap.set(r.symbol.toUpperCase().trim(), r);
+    });
+
+    for (const rawSym of list) {
+      if (!rawSym || typeof rawSym !== 'string') continue;
+      const sym = rawSym.toUpperCase().trim();
+      const canonical = resolveCanonicalSymbol(sym);
+
+      // 1. Check if in ribbon (indices, commodities, major FX)
+      if (ribbonMap.has(sym) || ribbonMap.has(canonical)) {
+        const item = ribbonMap.get(sym) || ribbonMap.get(canonical);
+        results[sym] = {
+          symbol: sym,
+          name: item.name,
+          price: item.price,
+          change: item.change,
+          changePercent: item.changePercent,
+          currency: item.currency || 'USD',
+          dayHigh: parseFloat((item.price * 1.008).toFixed(2)),
+          dayLow: parseFloat((item.price * 0.992).toFixed(2)),
+          volume: 2500000,
+          previousClose: parseFloat((item.price - item.change).toFixed(2)),
+          lastTickDirection: item.tickDirection || (item.change >= 0 ? 'up' : 'down'),
+          timestamp: Date.now()
+        };
+        continue;
+      }
+
+      // 2. Check if in marketState or STOCK_CATALOG
+      let state = marketState.get(canonical) || marketState.get(sym);
+      const catInfo = STOCK_CATALOG[canonical] || STOCK_CATALOG[sym];
+
+      if (!state && catInfo) {
+        state = {
+          symbol: sym,
+          name: catInfo.name,
+          price: catInfo.basePrice,
+          previousClose: catInfo.basePrice,
+          dayHigh: parseFloat((catInfo.basePrice * 1.01).toFixed(2)),
+          dayLow: parseFloat((catInfo.basePrice * 0.99).toFixed(2)),
+          volume: 2000000,
+          currency: catInfo.currency || 'USD',
+          lastTickDirection: 'neutral'
+        };
+        marketState.set(sym, state);
+      }
+
+      if (state) {
+        // Micro-tick generation (+/- 0.05% realistic market fluctuation)
+        const jitter = (Math.random() - 0.495) * 0.001;
+        const newPrice = Math.max(0.01, parseFloat((state.price * (1 + jitter)).toFixed(2)));
+        const dir = newPrice > state.price ? 'up' : newPrice < state.price ? 'down' : (state.lastTickDirection || 'neutral');
+        const prevClose = state.previousClose || (catInfo ? catInfo.basePrice : newPrice);
+        const change = parseFloat((newPrice - prevClose).toFixed(2));
+        const changePercent = prevClose > 0 ? parseFloat(((change / prevClose) * 100).toFixed(2)) : 0;
+
+        state.price = newPrice;
+        state.lastTickDirection = dir;
+        state.dayHigh = Math.max(state.dayHigh || newPrice, newPrice);
+        state.dayLow = Math.min(state.dayLow || newPrice, newPrice);
+        state.volume = (state.volume || 1000000) + Math.floor(Math.random() * 200) + 10;
+
+        results[sym] = {
+          symbol: sym,
+          name: state.name || (catInfo ? catInfo.name : sym),
+          price: newPrice,
+          change,
+          changePercent,
+          currency: state.currency || (catInfo ? catInfo.currency : 'USD'),
+          dayHigh: state.dayHigh,
+          dayLow: state.dayLow,
+          volume: state.volume,
+          previousClose: prevClose,
+          lastTickDirection: dir,
+          timestamp: Date.now()
+        };
+      } else {
+        // Fallback simulated quote
+        const tick = this.generateSimulatedTick(sym);
+        results[sym] = {
+          symbol: sym,
+          name: tick.name || sym,
+          price: tick.price,
+          change: tick.change,
+          changePercent: tick.changePercent,
+          currency: 'USD',
+          dayHigh: tick.dayHigh,
+          dayLow: tick.dayLow,
+          volume: tick.volume,
+          previousClose: tick.previousClose,
+          lastTickDirection: tick.lastTickDirection,
+          timestamp: Date.now()
+        };
+      }
+    }
+
+    return results;
+  }
+
+
   // =========================================================================
   // INVESTING.COM MAJOR INDICES REPLICATION (Global Stock Market Portal)
   // =========================================================================
