@@ -32,7 +32,7 @@ const COUNTRY_CODES = [
 ];
 
 export function AuthModal({ onClose, closable = true }) {
-  const { sendOtp, verifyOtp, login, forgotPassword, resetPassword } = useAuth();
+  const { sendOtp, verifyOtp, login, register, forgotPassword, resetPassword } = useAuth();
 
   // Mode: 'signin' | 'register' | 'forgot'
   const [mode, setMode] = useState('signin');
@@ -173,9 +173,15 @@ export function AuthModal({ onClose, closable = true }) {
 
       setOtpPurpose('login');
       setMaskedDestination(resp.maskedDestination || identifier);
-      setDeliveryInfo(resp.deliveryStatus || null);
+      const delivery = resp.deliveryStatus || {};
+      if (resp.demoCode && !delivery.demoCode) delivery.demoCode = resp.demoCode;
+      setDeliveryInfo(delivery);
       setCooldown(resp.resendCooldown || 30);
-      setOtpDigits(['', '', '', '', '', '']);
+      if (resp.demoCode) {
+        setOtpDigits(resp.demoCode.split('').slice(0, 6));
+      } else {
+        setOtpDigits(['', '', '', '', '', '']);
+      }
       setStep(2);
     } catch (err) {
       setError(err.message || 'Failed to dispatch verification code.');
@@ -187,7 +193,41 @@ export function AuthModal({ onClose, closable = true }) {
     }
   };
 
-  // 3. Register: Send OTP to verify and create account
+  // 3a. Direct Account Creation (Recommended: instant creation & auto-login)
+  const handleRegisterDirect = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+
+    const targetEmail = email.trim();
+    if (!name.trim()) {
+      setError('Please enter your full legal name.');
+      return;
+    }
+    if (!targetEmail || !targetEmail.includes('@') || !targetEmail.includes('.')) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    if (!registerPassword || registerPassword.length < 8) {
+      setError('Please create a secure password with at least 8 characters.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await register(targetEmail, registerPassword, name.trim(), 1000, getFullPhone());
+      setSuccessMsg('Account created successfully! Loading your trading dashboard...');
+      setTimeout(() => {
+        if (onClose) onClose();
+      }, 400);
+    } catch (err) {
+      setError(err.message || 'Registration failed. Please check your details.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 3b. Register: Send OTP to verify and create account
   const handleRegisterSendOtp = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     setError('');
@@ -221,9 +261,15 @@ export function AuthModal({ onClose, closable = true }) {
 
       setOtpPurpose('register');
       setMaskedDestination(resp.maskedDestination || targetEmail);
-      setDeliveryInfo(resp.deliveryStatus || null);
+      const delivery = resp.deliveryStatus || {};
+      if (resp.demoCode && !delivery.demoCode) delivery.demoCode = resp.demoCode;
+      setDeliveryInfo(delivery);
       setCooldown(resp.resendCooldown || 30);
-      setOtpDigits(['', '', '', '', '', '']);
+      if (resp.demoCode) {
+        setOtpDigits(resp.demoCode.split('').slice(0, 6));
+      } else {
+        setOtpDigits(['', '', '', '', '', '']);
+      }
       setStep(2);
     } catch (err) {
       setError(err.message || 'Failed to dispatch verification code. Please check your email.');
@@ -249,9 +295,15 @@ export function AuthModal({ onClose, closable = true }) {
       const resp = await forgotPassword(targetEmail);
       setOtpPurpose('reset');
       setMaskedDestination(resp.maskedDestination || targetEmail);
-      setDeliveryInfo(resp.deliveryStatus || null);
+      const delivery = resp.deliveryStatus || {};
+      if (resp.demoCode && !delivery.demoCode) delivery.demoCode = resp.demoCode;
+      setDeliveryInfo(delivery);
       setCooldown(resp.resendCooldown || 30);
-      setOtpDigits(['', '', '', '', '', '']);
+      if (resp.demoCode) {
+        setOtpDigits(resp.demoCode.split('').slice(0, 6));
+      } else {
+        setOtpDigits(['', '', '', '', '', '']);
+      }
       setStep(2);
     } catch (err) {
       setError(err.message || 'Failed to send reset code.');
@@ -277,8 +329,11 @@ export function AuthModal({ onClose, closable = true }) {
           password: registerPassword
         });
         setMaskedDestination(resp.maskedDestination || email.trim());
-        setDeliveryInfo(resp.deliveryStatus || null);
+        const delivery = resp.deliveryStatus || {};
+        if (resp.demoCode && !delivery.demoCode) delivery.demoCode = resp.demoCode;
+        setDeliveryInfo(delivery);
         setCooldown(resp.resendCooldown || 30);
+        if (resp.demoCode) setOtpDigits(resp.demoCode.split('').slice(0, 6));
       } else if (otpPurpose === 'login') {
         const resp = await sendOtp({
           identifier: signInIdentifier.trim(),
@@ -287,13 +342,19 @@ export function AuthModal({ onClose, closable = true }) {
           email: signInIdentifier.trim()
         });
         setMaskedDestination(resp.maskedDestination || signInIdentifier.trim());
-        setDeliveryInfo(resp.deliveryStatus || null);
+        const delivery = resp.deliveryStatus || {};
+        if (resp.demoCode && !delivery.demoCode) delivery.demoCode = resp.demoCode;
+        setDeliveryInfo(delivery);
         setCooldown(resp.resendCooldown || 30);
+        if (resp.demoCode) setOtpDigits(resp.demoCode.split('').slice(0, 6));
       } else if (otpPurpose === 'reset') {
         const resp = await forgotPassword(forgotEmail.trim());
         setMaskedDestination(resp.maskedDestination || forgotEmail.trim());
-        setDeliveryInfo(resp.deliveryStatus || null);
+        const delivery = resp.deliveryStatus || {};
+        if (resp.demoCode && !delivery.demoCode) delivery.demoCode = resp.demoCode;
+        setDeliveryInfo(delivery);
         setCooldown(resp.resendCooldown || 30);
+        if (resp.demoCode) setOtpDigits(resp.demoCode.split('').slice(0, 6));
       }
     } catch (err) {
       setError(err.message || 'Failed to resend code.');
@@ -789,7 +850,7 @@ export function AuthModal({ onClose, closable = true }) {
 
               {/* MODE 2: CREATE ACCOUNT FORM */}
               {mode === 'register' && (
-                <form onSubmit={handleRegisterSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                <form onSubmit={handleRegisterDirect} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                   {/* Full Name */}
                   <div className="input-group">
                     <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Full Name</label>
@@ -930,19 +991,54 @@ export function AuthModal({ onClose, closable = true }) {
                       justifyContent: 'center',
                       gap: '0.45rem'
                     }}
-                    id="auth-submit-send-otp-btn"
+                    id="auth-submit-register-btn"
                   >
                     {loading ? (
                       <>
                         <RefreshCw size={14} className="spin" />
-                        <span>Sending Code...</span>
+                        <span>Creating Account...</span>
                       </>
                     ) : (
                       <>
-                        <span>Create Account & Verify</span>
-                        <ArrowRight size={14} />
+                        <UserPlus size={15} />
+                        <span>Create Account & Start Trading</span>
                       </>
                     )}
+                  </button>
+
+                  {/* Optional OTP Verification Path */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0.1rem 0' }}>
+                    <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
+                    <span style={{ fontSize: '0.68rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      or verify with otp
+                    </span>
+                    <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleRegisterSendOtp}
+                    disabled={loading}
+                    style={{
+                      width: '100%',
+                      padding: '0.55rem',
+                      background: 'rgba(255, 255, 255, 0.04)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: 'var(--radius-sm)',
+                      color: 'var(--text-secondary)',
+                      fontSize: '0.78rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.45rem',
+                      transition: 'all 0.15s ease'
+                    }}
+                    id="auth-register-otp-btn"
+                  >
+                    <Mail size={13} color="var(--accent-cyan)" />
+                    <span>Register via Email OTP verification</span>
                   </button>
                 </form>
               )}
@@ -1077,6 +1173,50 @@ export function AuthModal({ onClose, closable = true }) {
                   </span>
                 )}
               </div>
+
+              {/* Fast-Track Auto-Fill Code Banner */}
+              {deliveryInfo?.demoCode && (
+                <div
+                  style={{
+                    padding: '0.65rem 0.85rem',
+                    background: 'rgba(6, 182, 212, 0.12)',
+                    border: '1px solid rgba(6, 182, 212, 0.35)',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '0.5rem'
+                  }}
+                  id="fast-track-otp-banner"
+                >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
+                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Fast-Track Security Code:</span>
+                    <span style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '3px', color: '#06b6d4', fontFamily: 'var(--font-mono)' }}>
+                      {deliveryInfo.demoCode}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const digits = deliveryInfo.demoCode.split('').slice(0, 6);
+                      setOtpDigits(digits);
+                    }}
+                    style={{
+                      background: 'var(--accent-cyan)',
+                      color: '#041019',
+                      border: 'none',
+                      borderRadius: '6px',
+                      padding: '0.4rem 0.75rem',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      cursor: 'pointer'
+                    }}
+                    id="auto-fill-otp-btn"
+                  >
+                    Auto-Fill Code
+                  </button>
+                </div>
+              )}
 
               {/* Error Message */}
               {error && (

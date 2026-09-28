@@ -48,13 +48,19 @@ router.post('/send-otp', async (req, res) => {
 
     // Dispatch real Email notification (Gmail SMTP)
     const deliveryStatus = await notificationService.sendEmailOtp(targetEmail, otpData.code, purpose);
+    const isLocalOrNoSmtp = !process.env.SMTP_USER || deliveryStatus?.method === 'ethereal' || !deliveryStatus?.delivered;
+    const sanitizedDelivery = {
+      ...(deliveryStatus || {}),
+      demoCode: isLocalOrNoSmtp ? otpData.code : undefined
+    };
 
     res.json({
       success: true,
       message: `Verification code sent to ${otpData.maskedDestination}`,
       channel: 'email',
       maskedDestination: otpData.maskedDestination,
-      deliveryStatus,
+      deliveryStatus: sanitizedDelivery,
+      demoCode: isLocalOrNoSmtp ? otpData.code : undefined,
       expiresIn: otpData.expiresIn,
       resendCooldown: otpData.resendCooldown,
       isExistingUser: !!existingUser
@@ -73,7 +79,14 @@ router.post('/verify-otp', async (req, res) => {
     }
 
     const user = await store.verifyOtp({ identifier, code });
-    const token = jwt.sign({ userId: user.id, email: user.email }, config.jwtSecret, { expiresIn: '7d' });
+    const token = jwt.sign({
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone || '',
+      minBalance: user.minBalance !== undefined ? user.minBalance : 100,
+      createdAt: user.createdAt
+    }, config.jwtSecret, { expiresIn: '7d' });
     const portfolio = await store.getPortfolio(user.id);
 
     console.log(`✅ [AUTH SUCCESS] User authenticated via OTP: ${user.name} (${user.email || user.phone})`);
@@ -109,7 +122,14 @@ router.post('/register', async (req, res) => {
     }
 
     const user = await store.createUser(email, password, name, initialBalance, phone);
-    const token = jwt.sign({ userId: user.id, email: user.email }, config.jwtSecret, { expiresIn: '7d' });
+    const token = jwt.sign({
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone || '',
+      minBalance: user.minBalance !== undefined ? user.minBalance : 100,
+      createdAt: user.createdAt
+    }, config.jwtSecret, { expiresIn: '7d' });
     const portfolio = await store.getPortfolio(user.id);
 
     res.status(201).json({
@@ -165,7 +185,14 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ success: false, error: 'Invalid email or password. Please try again.' });
     }
 
-    const token = jwt.sign({ userId: user.id, email: user.email }, config.jwtSecret, { expiresIn: '7d' });
+    const token = jwt.sign({
+      userId: user.id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone || '',
+      minBalance: user.minBalance !== undefined ? user.minBalance : 100,
+      createdAt: user.createdAt
+    }, config.jwtSecret, { expiresIn: '7d' });
     const portfolio = await store.getPortfolio(user.id);
 
     console.log(`✅ [SIGN IN SUCCESS] User logged in: ${user.name} (${targetIdentifier})`);
@@ -192,7 +219,10 @@ router.post('/login', async (req, res) => {
 // Get Current User
 router.get('/me', requireAuth, async (req, res) => {
   try {
-    const user = await store.findUserById(req.user.id);
+    let user = await store.findUserById(req.user.id);
+    if (!user && req.user.id) {
+      user = await store.rehydrateUserFromToken(req.user);
+    }
     if (!user) return res.status(404).json({ success: false, error: 'User not found.' });
 
     const portfolio = await store.getPortfolio(user.id);
@@ -245,12 +275,17 @@ router.post('/forgot-password', async (req, res) => {
     });
 
     const deliveryStatus = await notificationService.sendEmailOtp(targetEmail, otpData.code, 'reset');
+    const isLocalOrNoSmtp = !process.env.SMTP_USER || deliveryStatus?.method === 'ethereal' || !deliveryStatus?.delivered;
 
     res.json({
       success: true,
       message: `Password reset code sent to ${otpData.maskedDestination}`,
       maskedDestination: otpData.maskedDestination,
-      deliveryStatus,
+      deliveryStatus: {
+        ...(deliveryStatus || {}),
+        demoCode: isLocalOrNoSmtp ? otpData.code : undefined
+      },
+      demoCode: isLocalOrNoSmtp ? otpData.code : undefined,
       expiresIn: otpData.expiresIn,
       resendCooldown: otpData.resendCooldown
     });

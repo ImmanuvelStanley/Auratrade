@@ -11,7 +11,10 @@ async function requireAuth(req, res, next) {
   const token = authHeader.split(' ')[1];
   try {
     const decoded = jwt.verify(token, config.jwtSecret);
-    const user = await store.findUserById(decoded.userId);
+    let user = await store.findUserById(decoded.userId);
+    if (!user && decoded.userId) {
+      user = await store.rehydrateUserFromToken(decoded);
+    }
     if (!user) {
       return res.status(401).json({ success: false, error: 'User account not found or token expired.' });
     }
@@ -28,7 +31,10 @@ async function optionalAuth(req, res, next) {
     const token = authHeader.split(' ')[1];
     try {
       const decoded = jwt.verify(token, config.jwtSecret);
-      const user = await store.findUserById(decoded.userId);
+      let user = await store.findUserById(decoded.userId);
+      if (!user && decoded.userId) {
+        user = await store.rehydrateUserFromToken(decoded);
+      }
       if (user) {
         req.user = { id: user.id, email: user.email, name: user.name };
       }

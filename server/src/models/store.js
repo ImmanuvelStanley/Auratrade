@@ -325,20 +325,80 @@ class DataStore {
 
   // --- User Operations ---
   async findUserById(id) {
-    return this.users.get(id) || null;
+    if (!id) return null;
+    let user = this.users.get(id);
+    if (user) return user;
+
+    // Check MongoDB Atlas if connected
+    if (this.isMongoConnected) {
+      try {
+        const doc = await User.findOne({ id }).lean();
+        if (doc) {
+          this.users.set(doc.id, doc);
+          return doc;
+        }
+      } catch (e) {}
+    }
+
+    // Check disk storage in case written by a concurrent instance
+    try {
+      if (fs.existsSync(this.storageFile)) {
+        const raw = fs.readFileSync(this.storageFile, 'utf8');
+        const data = JSON.parse(raw);
+        if (data.users && Array.isArray(data.users)) {
+          const diskUser = data.users.find(u => u.id === id);
+          if (diskUser) {
+            this.users.set(diskUser.id, diskUser);
+            return diskUser;
+          }
+        }
+      }
+    } catch (e) {}
+
+    return null;
   }
 
   async findUserByEmail(email) {
     if (!email) return null;
     const target = email.trim().toLowerCase();
-    return Array.from(this.users.values()).find(u => u.email && u.email.trim().toLowerCase() === target) || null;
+    let user = Array.from(this.users.values()).find(u => u.email && u.email.trim().toLowerCase() === target) || null;
+    if (user) return user;
+
+    // Check MongoDB Atlas if connected
+    if (this.isMongoConnected) {
+      try {
+        const doc = await User.findOne({ email: new RegExp('^' + target.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') }).lean();
+        if (doc) {
+          this.users.set(doc.id, doc);
+          return doc;
+        }
+      } catch (e) {}
+    }
+
+    // Check disk storage
+    try {
+      if (fs.existsSync(this.storageFile)) {
+        const raw = fs.readFileSync(this.storageFile, 'utf8');
+        const data = JSON.parse(raw);
+        if (data.users && Array.isArray(data.users)) {
+          const diskUser = data.users.find(u => u.email && u.email.trim().toLowerCase() === target);
+          if (diskUser) {
+            this.users.set(diskUser.id, diskUser);
+            return diskUser;
+          }
+        }
+      }
+    } catch (e) {}
+
+    return null;
   }
 
   async findUserByPhone(phone) {
     if (!phone) return null;
     const target = this.normalizePhone(phone);
     if (!target) return null;
-    return Array.from(this.users.values()).find(u => {
+
+    let user = Array.from(this.users.values()).find(u => {
       if (!u.phone) return false;
       const stored = this.normalizePhone(u.phone);
       if (stored === target) return true;
@@ -347,6 +407,44 @@ class DataStore {
       }
       return false;
     }) || null;
+    if (user) return user;
+
+    // Check MongoDB Atlas if connected
+    if (this.isMongoConnected) {
+      try {
+        const doc = await User.findOne({
+          $or: [
+            { phone: target },
+            { phone: new RegExp(target.slice(-10) + '$') }
+          ]
+        }).lean();
+        if (doc) {
+          this.users.set(doc.id, doc);
+          return doc;
+        }
+      } catch (e) {}
+    }
+
+    // Check disk storage
+    try {
+      if (fs.existsSync(this.storageFile)) {
+        const raw = fs.readFileSync(this.storageFile, 'utf8');
+        const data = JSON.parse(raw);
+        if (data.users && Array.isArray(data.users)) {
+          const diskUser = data.users.find(u => {
+            if (!u.phone) return false;
+            const stored = this.normalizePhone(u.phone);
+            return stored === target || (stored.length >= 10 && target.length >= 10 && stored.slice(-10) === target.slice(-10));
+          });
+          if (diskUser) {
+            this.users.set(diskUser.id, diskUser);
+            return diskUser;
+          }
+        }
+      }
+    } catch (e) {}
+
+    return null;
   }
 
   async findUserByEmailOrPhone(identifier) {
@@ -359,6 +457,36 @@ class DataStore {
     const byPhone = await this.findUserByPhone(raw);
     if (byPhone) return byPhone;
     return this.findUserByEmail(raw);
+  }
+
+  async rehydrateUserFromToken(decoded) {
+    if (!decoded || !decoded.userId) return null;
+    const userId = decoded.userId;
+    let user = this.users.get(userId);
+    if (!user) {
+      user = {
+        id: userId,
+        email: decoded.email || '',
+        phone: decoded.phone || '',
+        name: decoded.name || decoded.email?.split('@')[0] || 'Trader',
+        minBalance: decoded.minBalance !== undefined ? decoded.minBalance : 100,
+        createdAt: decoded.createdAt || new Date().toISOString()
+      };
+      this.users.set(userId, user);
+      if (!this.portfolios.has(userId)) {
+        this.portfolios.set(userId, {
+          userId,
+          cashBalance: 1000.00,
+          holdings: [],
+          transactions: []
+        });
+      }
+      if (!this.watchlists.has(userId)) {
+        this.watchlists.set(userId, new Set(['AAPL', 'MSFT', 'NVDA', 'TSLA', 'GOLD']));
+      }
+      this.save();
+    }
+    return user;
   }
 
   async createUser(email, password, name, initialBalance, phone = '', minBalance = 100) {

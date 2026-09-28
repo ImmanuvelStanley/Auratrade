@@ -73,12 +73,41 @@ export function AuthProvider({ children }) {
     if (!password || !password.trim()) {
       throw new Error('Password is required. Use the OTP sign-in option if you registered without a password.');
     }
-    const res = await fetch('/api/auth/login', {
+    let res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ identifier, email: identifier, password })
     });
-    const data = await res.json();
+    let data = await res.json();
+
+    // If serverless container restarted and lost in-memory state (without MongoDB),
+    // automatically re-provision the account if registered from this client
+    if (!data.success && data.userNotFound && identifier.includes('@')) {
+      try {
+        const savedAccounts = JSON.parse(localStorage.getItem('auratrade_local_accounts') || '{}');
+        const accountData = savedAccounts[identifier.trim().toLowerCase()];
+        if (accountData) {
+          const autoRegRes = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: identifier.trim().toLowerCase(),
+              password,
+              name: accountData.name || identifier.split('@')[0],
+              initialBalance: 1000,
+              phone: accountData.phone || ''
+            })
+          });
+          const autoRegData = await autoRegRes.json();
+          if (autoRegData.success) {
+            data = autoRegData;
+          }
+        }
+      } catch (e) {
+        // Fall through to standard error handling
+      }
+    }
+
     if (!data.success) {
       const err = new Error(data.error || 'Login failed');
       if (data.userNotFound) err.userNotFound = true;
@@ -101,6 +130,13 @@ export function AuthProvider({ children }) {
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Registration failed');
+
+    // Save metadata locally for seamless serverless cold-start resilience
+    try {
+      const savedAccounts = JSON.parse(localStorage.getItem('auratrade_local_accounts') || '{}');
+      savedAccounts[email.trim().toLowerCase()] = { name, phone };
+      localStorage.setItem('auratrade_local_accounts', JSON.stringify(savedAccounts));
+    } catch (e) {}
 
     setUser(data.user);
     setToken(data.token);
