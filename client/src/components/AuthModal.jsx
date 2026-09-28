@@ -67,6 +67,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
   const [maskedDestination, setMaskedDestination] = useState('');
   const [cooldown, setCooldown] = useState(0);
   const [deliveryInfo, setDeliveryInfo] = useState(null);
+  const [otpToken, setOtpToken] = useState('');
 
   // Status & Feedback
   const [error, setError] = useState('');
@@ -186,17 +187,12 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         email: identifier
       });
 
+      if (resp.otpToken) setOtpToken(resp.otpToken);
       setOtpPurpose('login');
       setMaskedDestination(resp.maskedDestination || identifier);
-      const delivery = resp.deliveryStatus || {};
-      if (resp.demoCode && !delivery.demoCode) delivery.demoCode = resp.demoCode;
-      setDeliveryInfo(delivery);
+      setDeliveryInfo(resp.deliveryStatus || {});
       setCooldown(resp.resendCooldown || 30);
-      if (resp.demoCode) {
-        setOtpDigits(resp.demoCode.split('').slice(0, 6));
-      } else {
-        setOtpDigits(['', '', '', '', '', '']);
-      }
+      setOtpDigits(['', '', '', '', '', '']);
       setStep(2);
     } catch (err) {
       setError(err.message || 'Failed to dispatch verification code.');
@@ -274,17 +270,12 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         password: registerPassword
       });
 
+      if (resp.otpToken) setOtpToken(resp.otpToken);
       setOtpPurpose('register');
       setMaskedDestination(resp.maskedDestination || targetEmail);
-      const delivery = resp.deliveryStatus || {};
-      if (resp.demoCode && !delivery.demoCode) delivery.demoCode = resp.demoCode;
-      setDeliveryInfo(delivery);
+      setDeliveryInfo(resp.deliveryStatus || {});
       setCooldown(resp.resendCooldown || 30);
-      if (resp.demoCode) {
-        setOtpDigits(resp.demoCode.split('').slice(0, 6));
-      } else {
-        setOtpDigits(['', '', '', '', '', '']);
-      }
+      setOtpDigits(['', '', '', '', '', '']);
       setStep(2);
     } catch (err) {
       setError(err.message || 'Failed to dispatch verification code. Please check your email.');
@@ -308,17 +299,12 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
     setLoading(true);
     try {
       const resp = await forgotPassword(targetEmail);
+      if (resp.otpToken) setOtpToken(resp.otpToken);
       setOtpPurpose('reset');
       setMaskedDestination(resp.maskedDestination || targetEmail);
-      const delivery = resp.deliveryStatus || {};
-      if (resp.demoCode && !delivery.demoCode) delivery.demoCode = resp.demoCode;
-      setDeliveryInfo(delivery);
+      setDeliveryInfo(resp.deliveryStatus || {});
       setCooldown(resp.resendCooldown || 30);
-      if (resp.demoCode) {
-        setOtpDigits(resp.demoCode.split('').slice(0, 6));
-      } else {
-        setOtpDigits(['', '', '', '', '', '']);
-      }
+      setOtpDigits(['', '', '', '', '', '']);
       setStep(2);
     } catch (err) {
       setError(err.message || 'Failed to send reset code.');
@@ -343,12 +329,11 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
           phone: getFullPhone(),
           password: registerPassword
         });
+        if (resp.otpToken) setOtpToken(resp.otpToken);
         setMaskedDestination(resp.maskedDestination || email.trim());
-        const delivery = resp.deliveryStatus || {};
-        if (resp.demoCode && !delivery.demoCode) delivery.demoCode = resp.demoCode;
-        setDeliveryInfo(delivery);
+        setDeliveryInfo(resp.deliveryStatus || {});
         setCooldown(resp.resendCooldown || 30);
-        if (resp.demoCode) setOtpDigits(resp.demoCode.split('').slice(0, 6));
+        setOtpDigits(['', '', '', '', '', '']);
       } else if (otpPurpose === 'login') {
         const resp = await sendOtp({
           identifier: signInIdentifier.trim(),
@@ -356,20 +341,18 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
           purpose: 'login',
           email: signInIdentifier.trim()
         });
+        if (resp.otpToken) setOtpToken(resp.otpToken);
         setMaskedDestination(resp.maskedDestination || signInIdentifier.trim());
-        const delivery = resp.deliveryStatus || {};
-        if (resp.demoCode && !delivery.demoCode) delivery.demoCode = resp.demoCode;
-        setDeliveryInfo(delivery);
+        setDeliveryInfo(resp.deliveryStatus || {});
         setCooldown(resp.resendCooldown || 30);
-        if (resp.demoCode) setOtpDigits(resp.demoCode.split('').slice(0, 6));
+        setOtpDigits(['', '', '', '', '', '']);
       } else if (otpPurpose === 'reset') {
         const resp = await forgotPassword(forgotEmail.trim());
+        if (resp.otpToken) setOtpToken(resp.otpToken);
         setMaskedDestination(resp.maskedDestination || forgotEmail.trim());
-        const delivery = resp.deliveryStatus || {};
-        if (resp.demoCode && !delivery.demoCode) delivery.demoCode = resp.demoCode;
-        setDeliveryInfo(delivery);
+        setDeliveryInfo(resp.deliveryStatus || {});
         setCooldown(resp.resendCooldown || 30);
-        if (resp.demoCode) setOtpDigits(resp.demoCode.split('').slice(0, 6));
+        setOtpDigits(['', '', '', '', '', '']);
       }
     } catch (err) {
       setError(err.message || 'Failed to resend code.');
@@ -440,7 +423,10 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
       if (otpPurpose === 'register') {
         await verifyOtp({
           identifier: email.trim(),
-          code: fullCode
+          code: fullCode,
+          otpToken,
+          name: name.trim(),
+          phone: getFullPhone()
         });
         setSuccessMsg('Account verified & created successfully! Welcome to AuraTrade.');
         setTimeout(() => {
@@ -449,7 +435,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
       } else if (otpPurpose === 'login') {
         await verifyOtp({
           identifier: signInIdentifier.trim(),
-          code: fullCode
+          code: fullCode,
+          otpToken
         });
         if (onClose) onClose();
       } else if (otpPurpose === 'reset') {
@@ -1178,75 +1165,12 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                       Verification code sent to <strong style={{ color: 'var(--text-primary)' }}>{maskedDestination}</strong>
                     </span>
                   </div>
-
-                  {deliveryInfo?.previewUrl && (
-                    <a
-                      href={deliveryInfo.previewUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        fontSize: '0.74rem',
-                        color: '#06b6d4',
-                        textDecoration: 'underline',
-                        fontWeight: 600
-                      }}
-                      id="view-ethereal-email-link"
-                    >
-                      Open Email Inbox ↗
-                    </a>
-                  )}
                 </div>
 
-                {deliveryInfo?.notice && (
-                  <span style={{ fontSize: '0.73rem', color: '#eab308', lineHeight: 1.35 }}>
-                    ⚠️ {deliveryInfo.notice}
-                  </span>
-                )}
+                <span style={{ fontSize: '0.73rem', color: '#94a3b8', lineHeight: 1.4 }}>
+                  ✉️ Please check your email inbox (and spam or junk folder) for your 6-digit verification code.
+                </span>
               </div>
-
-              {/* Fast-Track Auto-Fill Code Banner */}
-              {deliveryInfo?.demoCode && (
-                <div
-                  style={{
-                    padding: '0.65rem 0.85rem',
-                    background: 'rgba(6, 182, 212, 0.12)',
-                    border: '1px solid rgba(6, 182, 212, 0.35)',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '0.5rem'
-                  }}
-                  id="fast-track-otp-banner"
-                >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                    <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Fast-Track Security Code:</span>
-                    <span style={{ fontSize: '1.05rem', fontWeight: 800, letterSpacing: '3px', color: '#06b6d4', fontFamily: 'var(--font-mono)' }}>
-                      {deliveryInfo.demoCode}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const digits = deliveryInfo.demoCode.split('').slice(0, 6);
-                      setOtpDigits(digits);
-                    }}
-                    style={{
-                      background: 'var(--accent-cyan)',
-                      color: '#041019',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '0.4rem 0.75rem',
-                      fontSize: '0.75rem',
-                      fontWeight: 700,
-                      cursor: 'pointer'
-                    }}
-                    id="auto-fill-otp-btn"
-                  >
-                    Auto-Fill Code
-                  </button>
-                </div>
-              )}
 
               {/* Error Message */}
               {error && (

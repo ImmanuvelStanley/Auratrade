@@ -24,34 +24,23 @@ class NotificationService {
 
   getEmailTransporter() {
     require('dotenv').config();
-    const smtpUser = process.env.SMTP_USER;
-    const smtpPass = process.env.SMTP_PASS;
-    const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com';
-    const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 587;
+    const smtpUser = (process.env.SMTP_USER || 'immanuvelstanley@gmail.com').trim();
+    const smtpPass = (process.env.SMTP_PASS || 'swptzscremieciug').replace(/\s+/g, '');
+    const smtpHost = (process.env.SMTP_HOST || 'smtp.gmail.com').trim();
+    const smtpPort = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : 465;
 
-    if (smtpUser && smtpPass) {
-      const cleanUser = smtpUser.trim();
-      const cleanPass = smtpPass.replace(/\s+/g, '');
-      if (cleanUser.includes('@gmail.com') || smtpHost.includes('gmail')) {
-        return nodemailer.createTransport({
-          service: 'gmail',
-          auth: {
-            user: cleanUser,
-            pass: cleanPass
-          }
-        });
+    return nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: {
+        user: smtpUser,
+        pass: smtpPass
+      },
+      tls: {
+        rejectUnauthorized: false
       }
-      return nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpPort === 465,
-        auth: {
-          user: cleanUser,
-          pass: cleanPass
-        }
-      });
-    }
-    return null;
+    });
   }
 
   // Send real email OTP (for registration and MFA login)
@@ -111,7 +100,8 @@ class NotificationService {
     const transporter = this.getEmailTransporter();
     if (transporter) {
       try {
-        const fromAddress = process.env.SMTP_FROM || `"AuraTrade Security" <${process.env.SMTP_USER}>`;
+        const smtpUser = (process.env.SMTP_USER || 'immanuvelstanley@gmail.com').trim();
+        const fromAddress = process.env.SMTP_FROM || `"AuraTrade Security" <${smtpUser}>`;
         await transporter.sendMail({
           from: fromAddress,
           to: toEmail,
@@ -244,7 +234,8 @@ class NotificationService {
     const transporter = this.getEmailTransporter();
     if (transporter) {
       try {
-        const fromAddress = process.env.SMTP_FROM || `"AuraTrade Security" <${process.env.SMTP_USER}>`;
+        const smtpUser = (process.env.SMTP_USER || 'immanuvelstanley@gmail.com').trim();
+        const fromAddress = process.env.SMTP_FROM || `"AuraTrade Security" <${smtpUser}>`;
         await transporter.sendMail({
           from: fromAddress,
           to: toEmail,

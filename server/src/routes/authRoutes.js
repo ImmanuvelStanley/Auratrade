@@ -20,13 +20,6 @@ router.post('/send-otp', async (req, res) => {
     }
 
     const existingUser = await store.findUserByEmail(targetEmail);
-    if (purpose === 'register' && existingUser) {
-      return res.status(400).json({
-        success: false,
-        isExistingUser: true,
-        error: 'An account with this email already exists. Please switch to Sign In to log in.'
-      });
-    }
 
     if (purpose === 'login' && !existingUser) {
       return res.status(404).json({
@@ -46,21 +39,32 @@ router.post('/send-otp', async (req, res) => {
       password: password || ''
     });
 
-    // Dispatch real Email notification (Gmail SMTP)
+    // Dispatch real Email notification via Gmail SMTP (port 465 SSL)
     const deliveryStatus = await notificationService.sendEmailOtp(targetEmail, otpData.code, purpose);
-    const isLocalOrNoSmtp = !process.env.SMTP_USER || deliveryStatus?.method === 'ethereal' || !deliveryStatus?.delivered;
-    const sanitizedDelivery = {
-      ...(deliveryStatus || {}),
-      demoCode: isLocalOrNoSmtp ? otpData.code : undefined
-    };
+
+    // Sign stateless OTP session token so verification works across all serverless containers & cold starts
+    const otpToken = jwt.sign({
+      identifier: targetEmail.toLowerCase(),
+      code: otpData.code,
+      purpose,
+      name: name || (existingUser ? existingUser.name : ''),
+      email: targetEmail.toLowerCase(),
+      phone: phone ? phone.trim() : (existingUser ? existingUser.phone : ''),
+      password: password || '',
+      type: 'otp_session'
+    }, config.jwtSecret, { expiresIn: '15m' });
 
     res.json({
       success: true,
       message: `Verification code sent to ${otpData.maskedDestination}`,
       channel: 'email',
       maskedDestination: otpData.maskedDestination,
-      deliveryStatus: sanitizedDelivery,
-      demoCode: isLocalOrNoSmtp ? otpData.code : undefined,
+      deliveryStatus: {
+        delivered: deliveryStatus?.delivered || false,
+        method: deliveryStatus?.method || 'smtp',
+        destination: targetEmail
+      },
+      otpToken,
       expiresIn: otpData.expiresIn,
       resendCooldown: otpData.resendCooldown,
       isExistingUser: !!existingUser
@@ -73,12 +77,36 @@ router.post('/send-otp', async (req, res) => {
 // Verify OTP
 router.post('/verify-otp', async (req, res) => {
   try {
-    const { identifier, code } = req.body;
+    const { identifier, code, otpToken } = req.body;
     if (!identifier || !code) {
       return res.status(400).json({ success: false, error: 'Destination and 6-digit OTP code are required.' });
     }
 
-    const user = await store.verifyOtp({ identifier, code });
+    let user;
+    try {
+      user = await store.verifyOtp({ identifier, code });
+    } catch (storeErr) {
+      // Serverless container fallback: verify via signed stateless otpToken
+      if (otpToken) {
+        try {
+          const decoded = jwt.verify(otpToken, config.jwtSecret);
+          if (
+            decoded.type === 'otp_session' &&
+            decoded.code === code.toString().trim() &&
+            decoded.identifier.toLowerCase() === identifier.toString().trim().toLowerCase()
+          ) {
+            user = await store.verifyOtpWithPayload(decoded);
+          } else {
+            throw storeErr;
+          }
+        } catch (jwtErr) {
+          throw storeErr;
+        }
+      } else {
+        throw storeErr;
+      }
+    }
+
     const token = jwt.sign({
       userId: user.id,
       email: user.email,
@@ -182,7 +210,13 @@ router.post('/login', async (req, res) => {
     // Verify the password against the stored hash
     const isMatch = user.passwordHash ? await bcrypt.compare(password, user.passwordHash) : false;
     if (!isMatch) {
-      return res.status(401).json({ success: false, error: 'Invalid email or password. Please try again.' });
+      if (user.passwordHash && user.passwordHash.startsWith('otp_verified_')) {
+        return res.status(401).json({
+          success: false,
+          error: 'This account was authenticated with OTP and does not have a permanent password yet. Please use "Sign In with OTP" or "Forgot Password" to set a password.'
+        });
+      }
+      return res.status(401).json({ success: false, error: 'Invalid email or password. Please try again or use "Forgot Password".' });
     }
 
     const token = jwt.sign({
@@ -282,18 +316,17 @@ router.post('/forgot-password', async (req, res) => {
 
     // Send real email with clickable link & 6-digit code
     const deliveryStatus = await notificationService.sendPasswordResetEmail(targetEmail, resetToken, otpData.code);
-    const isLocalOrNoSmtp = !process.env.SMTP_USER || deliveryStatus?.method === 'ethereal' || !deliveryStatus?.delivered;
 
     res.json({
       success: true,
       message: `Password reset link & code sent to ${otpData.maskedDestination}`,
       maskedDestination: otpData.maskedDestination,
       deliveryStatus: {
-        ...(deliveryStatus || {}),
-        demoCode: isLocalOrNoSmtp ? otpData.code : undefined,
+        delivered: deliveryStatus?.delivered || false,
+        method: deliveryStatus?.method || 'smtp',
+        destination: targetEmail,
         resetUrl: deliveryStatus?.resetUrl
       },
-      demoCode: isLocalOrNoSmtp ? otpData.code : undefined,
       expiresIn: otpData.expiresIn,
       resendCooldown: otpData.resendCooldown
     });

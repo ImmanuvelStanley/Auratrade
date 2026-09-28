@@ -50,16 +50,28 @@ export function AuthProvider({ children }) {
   };
 
   // Verify 6-Digit OTP and Establish Authenticated Session
-  const verifyOtp = async ({ identifier, code }) => {
+  const verifyOtp = async ({ identifier, code, otpToken, name, phone }) => {
     const res = await fetch('/api/auth/verify-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identifier, code })
+      body: JSON.stringify({ identifier, code, otpToken })
     });
     const data = await res.json();
     if (!data.success) {
       throw new Error(data.error || 'Verification failed. Please check the 6-digit code.');
     }
+
+    // Save metadata locally for seamless serverless cold-start resilience
+    try {
+      if (identifier && identifier.includes('@')) {
+        const savedAccounts = JSON.parse(localStorage.getItem('auratrade_local_accounts') || '{}');
+        savedAccounts[identifier.trim().toLowerCase()] = {
+          name: name || data.user?.name || identifier.split('@')[0],
+          phone: phone || data.user?.phone || ''
+        };
+        localStorage.setItem('auratrade_local_accounts', JSON.stringify(savedAccounts));
+      }
+    } catch (e) {}
 
     setUser(data.user);
     setToken(data.token);

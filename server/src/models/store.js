@@ -621,6 +621,12 @@ class DataStore {
     if (record.email) this.otps.delete(record.email.toLowerCase());
     if (record.phone) this.otps.delete(this.normalizePhone(record.phone));
 
+    return await this.verifyOtpWithPayload(record);
+  }
+
+  async verifyOtpWithPayload(record) {
+    if (!record || !record.identifier) throw new Error('Invalid OTP record.');
+
     // Find or create user
     let user = await this.findUserByEmailOrPhone(record.identifier);
     if (!user && record.email) user = await this.findUserByEmail(record.email);
@@ -635,6 +641,11 @@ class DataStore {
       user = await this.createUser(autoEmail, initialPassword, autoName, 1000, autoPhone);
     } else {
       let updated = false;
+      if (record.password && record.password.length >= 6) {
+        const salt = await bcrypt.genSalt(10);
+        user.passwordHash = await bcrypt.hash(record.password, salt);
+        updated = true;
+      }
       if (record.phone && (!user.phone || user.phone === '')) {
         user.phone = record.phone;
         updated = true;
