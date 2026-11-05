@@ -616,9 +616,9 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
             position: 'fixed',
             bottom: '16px',
             right: '16px',
-            width: isExpanded ? 'min(820px, calc(100vw - 32px))' : 'min(480px, calc(100vw - 32px))',
-            height: isExpanded ? 'calc(100vh - 86px)' : 'min(620px, calc(100vh - 96px))',
-            maxHeight: isExpanded ? 'calc(100vh - 86px)' : 'calc(100vh - 96px)',
+            width: isExpanded ? 'min(820px, calc(100vw - 32px))' : 'min(520px, calc(100vw - 24px))',
+            height: isExpanded ? 'calc(100vh - 86px)' : 'min(640px, calc(100vh - 90px))',
+            maxHeight: isExpanded ? 'calc(100vh - 86px)' : 'calc(100vh - 90px)',
             zIndex: 2500,
             display: 'flex',
             flexDirection: 'column',
@@ -647,24 +647,24 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
           {/* Header */}
           <div
             style={{
-              padding: isExpanded ? '0.85rem 1.25rem' : '0.75rem 1rem',
+              padding: isExpanded ? '0.85rem 1.25rem' : '0.7rem 0.9rem',
               borderBottom: '1px solid var(--border-subtle)',
               background: 'var(--bg-card-hover)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              gap: '0.65rem',
+              gap: '0.5rem',
               flexShrink: 0
             }}
           >
             {/* Left: Avatar + Title & Model Badge Column */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flex: '1 1 auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0, flex: '1 1 auto', overflow: 'hidden' }}>
               {/* Radar Avatar Icon */}
               <div
                 style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '11px',
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
                   background: 'linear-gradient(145deg, #0d1a30 0%, #060b17 100%)',
                   border: '1px solid rgba(6, 182, 212, 0.4)',
                   boxShadow: '0 4px 14px rgba(0, 0, 0, 0.6), 0 0 12px rgba(6, 182, 212, 0.25)',
@@ -676,7 +676,7 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
                   position: 'relative'
                 }}
               >
-                <Activity size={19} strokeWidth={2.4} />
+                <Activity size={18} strokeWidth={2.4} />
                 <span
                   style={{
                     position: 'absolute',
@@ -692,18 +692,18 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
                 />
               </div>
 
-              {/* Title & Badge 2-Row Stack (Never Wraps Awkwardly) */}
-              <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              {/* Title & Badge 2-Row Stack (Never Overflows into Controls) */}
+              <div style={{ minWidth: 0, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.18rem' }}>
                 <div style={{
                   fontWeight: 800,
-                  fontSize: '0.92rem',
+                  fontSize: isExpanded ? '0.94rem' : '0.86rem',
                   fontFamily: 'var(--font-brand)',
                   color: 'var(--text-primary)',
                   letterSpacing: '-0.01em',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  lineHeight: 1.2
+                  lineHeight: 1.15
                 }}>
                   AuraTrade Strategy Desk
                 </div>
@@ -711,9 +711,9 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.4rem',
-                  marginTop: '0.2rem',
-                  minWidth: 0
+                  gap: '0.35rem',
+                  minWidth: 0,
+                  overflow: 'hidden'
                 }}>
                   {/* Interactive Model Switcher Badge */}
                   <button
@@ -725,46 +725,50 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
                       setIsConfigOpen(true);
                     }}
                     style={{
-                      fontSize: '0.62rem',
-                      padding: '0.12rem 0.42rem',
+                      fontSize: '0.58rem',
+                      padding: '0.1rem 0.38rem',
                       borderRadius: '4px',
                       background: geminiKey.trim() && selectedModel !== 'institutional-quant' ? 'rgba(56, 189, 248, 0.16)' : 'rgba(16, 185, 129, 0.16)',
                       color: geminiKey.trim() && selectedModel !== 'institutional-quant' ? '#38bdf8' : '#34d399',
                       border: geminiKey.trim() && selectedModel !== 'institutional-quant' ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid rgba(16, 185, 129, 0.35)',
                       fontFamily: 'var(--font-mono)',
-                      letterSpacing: '0.04em',
+                      letterSpacing: '0.03em',
                       fontWeight: 700,
                       cursor: 'pointer',
                       display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '0.25rem',
+                      gap: '0.22rem',
                       whiteSpace: 'nowrap',
-                      flexShrink: 0,
+                      maxWidth: '100%',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
                       lineHeight: 1.2,
                       transition: 'all 0.15s ease'
                     }}
                     title="Click to Switch AI Engine / Configure API Key"
                   >
-                    <Cpu size={10} />
-                    <span style={{ whiteSpace: 'nowrap' }}>{getActiveModelBadge()}</span>
+                    <Cpu size={10} style={{ flexShrink: 0 }} />
+                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{getActiveModelBadge()}</span>
                   </button>
 
-                  <span style={{
-                    fontSize: '0.68rem',
-                    color: 'var(--text-muted)',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    lineHeight: 1.2
-                  }}>
-                    • Institutional Advisory
-                  </span>
+                  {isExpanded && (
+                    <span style={{
+                      fontSize: '0.68rem',
+                      color: 'var(--text-muted)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      lineHeight: 1.2
+                    }}>
+                      • Institutional Advisory
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
 
             {/* Right: Header Controls */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0 }}>
               {/* New Chat Button */}
               <button
                 className="assistant-hdr-btn"
