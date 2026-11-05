@@ -832,41 +832,6 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                       </>
                     )}
                   </button>
-
-                  {/* Or Sign In with OTP */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0.2rem 0' }}>
-                    <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
-                    <span style={{ fontSize: '0.7rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      or passwordless
-                    </span>
-                    <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleRequestSignInOtp}
-                    disabled={loading}
-                    style={{
-                      width: '100%',
-                      padding: '0.6rem',
-                      background: 'rgba(255, 255, 255, 0.04)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-sm)',
-                      color: 'var(--text-primary)',
-                      fontSize: '0.8rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.45rem',
-                      transition: 'all 0.15s ease'
-                    }}
-                    id="auth-otp-signin-btn"
-                  >
-                    <Mail size={14} color="var(--accent-cyan)" />
-                    <span>Sign in with 6-Digit Email OTP</span>
-                  </button>
                 </form>
               )}
 
@@ -1022,47 +987,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                         <span>Sending OTP to your Email...</span>
                       </>
                     ) : (
-                      <>
-                        <Mail size={15} />
-                        <span>Send 6-Digit Email OTP & Create Account</span>
-                        <ArrowRight size={14} />
-                      </>
+                      <span>Create Account</span>
                     )}
-                  </button>
-
-                  {/* Secondary: Instant Demo Sandbox Access */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: '0.1rem 0' }}>
-                    <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
-                    <span style={{ fontSize: '0.68rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      or fast track
-                    </span>
-                    <div style={{ flex: 1, height: '1px', background: 'var(--border-subtle)' }} />
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleRegisterDirect}
-                    disabled={loading}
-                    style={{
-                      width: '100%',
-                      padding: '0.55rem',
-                      background: 'rgba(255, 255, 255, 0.04)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: 'var(--radius-sm)',
-                      color: 'var(--text-secondary)',
-                      fontSize: '0.78rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.45rem',
-                      transition: 'all 0.15s ease'
-                    }}
-                    id="auth-instant-register-btn"
-                  >
-                    <UserPlus size={13} color="var(--accent-cyan)" />
-                    <span>Instant Sandbox Registration (Skip Email OTP)</span>
                   </button>
                 </form>
               )}
