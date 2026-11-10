@@ -14,7 +14,6 @@ import {
   RotateCcw,
   Sparkles,
   History,
-  Clock,
   X
 } from 'lucide-react';
 import { useSocketQuote } from '../context/SocketContext';
@@ -48,7 +47,6 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
   });
-  const calendarPopoverRef = useRef(null);
 
   const quote = propQuote || socketQuote || fallbackQuote;
   const prevPriceRef = useRef(quote?.price);
@@ -83,23 +81,14 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
     prevPriceRef.current = quote.price;
   }, [quote?.price]);
 
-  // Close calendar popover on outside click or Escape key
+  // Close calendar drawer on Escape key
   useEffect(() => {
     if (!isCalendarOpen) return;
-    const handleClickOutside = (e) => {
-      if (calendarPopoverRef.current && !calendarPopoverRef.current.contains(e.target)) {
-        setIsCalendarOpen(false);
-      }
-    };
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') setIsCalendarOpen(false);
     };
-    document.addEventListener('mousedown', handleClickOutside);
     window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isCalendarOpen]);
 
   // Listen for external calendar date changes (e.g. from StockChart)
@@ -138,25 +127,25 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
     );
   }, [symbol, selectedDateStr, dateSnapshot.mode, dateSnapshot.price]);
 
-  const handleSelectDate = (isoStr, closePopover = false) => {
+  const handleSelectDate = (isoStr, closePanel = false) => {
     if (!isoStr) return;
     setSelectedDateStr(isoStr);
     const parts = isoStr.split('-').map(Number);
     if (parts.length === 3 && !parts.some(isNaN)) {
       setViewMonthDate(new Date(parts[0], parts[1] - 1, 1));
     }
-    if (closePopover) {
+    if (closePanel) {
       setIsCalendarOpen(false);
     }
   };
 
-  const handleShiftDays = (deltaDays, closePopover = false) => {
+  const handleShiftDays = (deltaDays) => {
     const parts = (selectedDateStr || todayISO).split('-').map(Number);
     const base = parts.length === 3 && !parts.some(isNaN)
       ? new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0)
       : new Date();
     base.setDate(base.getDate() + deltaDays);
-    handleSelectDate(toISODateString(base), closePopover);
+    handleSelectDate(toISODateString(base), false);
   };
 
   const handlePresetOffset = (offsetDays, offsetMonths = 0, offsetYears = 0) => {
@@ -179,7 +168,6 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
     const prevMonthDays = new Date(year, month, 0).getDate();
 
     const cells = [];
-    // Leading days from previous month
     for (let i = firstDayOfWeek - 1; i >= 0; i--) {
       const d = new Date(year, month - 1, prevMonthDays - i);
       cells.push({
@@ -188,7 +176,6 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
         inCurrentMonth: false
       });
     }
-    // Current month days
     for (let dNum = 1; dNum <= daysInMonth; dNum++) {
       const d = new Date(year, month, dNum);
       cells.push({
@@ -197,7 +184,6 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
         inCurrentMonth: true
       });
     }
-    // Trailing days to complete 42 cells (6 rows)
     const remaining = 42 - cells.length;
     for (let j = 1; j <= remaining; j++) {
       const d = new Date(year, month + 1, j);
@@ -232,8 +218,8 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
   const isBull = activeChange >= 0;
 
   return (
-    <div className="glass-card" style={{ minWidth: 0, maxWidth: '100%', width: '100%', boxSizing: 'border-box', overflow: 'visible', position: 'relative' }}>
-      <div className="glass-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '1.15rem', minWidth: 0, width: '100%', boxSizing: 'border-box' }}>
+    <div className="glass-card" style={{ minWidth: 0, maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
+      <div className="glass-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0, width: '100%', boxSizing: 'border-box' }}>
         {/* Top Header: Symbol Info & Action Buttons */}
         <div className="live-quote-header-row" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', minWidth: 0, width: '100%' }}>
           <div style={{ flex: '1 1 auto', minWidth: 0, maxWidth: '100%' }}>
@@ -271,353 +257,84 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
               <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>•</span>
 
               {/* Interactive Past & Future Calendar Trigger Pill */}
-              <div ref={calendarPopoverRef} style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
-                <div
+              <div
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  borderRadius: '6px',
+                  background: isCalendarOpen
+                    ? 'rgba(56, 189, 248, 0.16)'
+                    : !isLiveMode
+                    ? (isPastMode ? 'rgba(245, 158, 11, 0.14)' : 'rgba(6, 182, 212, 0.14)')
+                    : 'rgba(255, 255, 255, 0.05)',
+                  border: isCalendarOpen
+                    ? '1px solid rgba(56, 189, 248, 0.55)'
+                    : !isLiveMode
+                    ? (isPastMode ? '1px solid rgba(245, 158, 11, 0.45)' : '1px solid rgba(6, 182, 212, 0.45)')
+                    : '1px solid rgba(148, 163, 184, 0.22)',
+                  padding: '1px',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <button
+                  type="button"
+                  onClick={() => handleShiftDays(-1)}
+                  title="Previous Day (Past Market)"
                   style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    padding: '0.18rem 0.28rem',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    borderRadius: '6px',
-                    background: isCalendarOpen
-                      ? 'rgba(56, 189, 248, 0.16)'
-                      : !isLiveMode
-                      ? (isPastMode ? 'rgba(245, 158, 11, 0.14)' : 'rgba(6, 182, 212, 0.14)')
-                      : 'rgba(255, 255, 255, 0.05)',
-                    border: isCalendarOpen
-                      ? '1px solid rgba(56, 189, 248, 0.55)'
-                      : !isLiveMode
-                      ? (isPastMode ? '1px solid rgba(245, 158, 11, 0.45)' : '1px solid rgba(6, 182, 212, 0.45)')
-                      : '1px solid rgba(148, 163, 184, 0.22)',
-                    padding: '1px',
-                    transition: 'all 0.15s ease'
+                    borderRadius: '4px'
                   }}
                 >
-                  {/* Step 1 Day Back Button */}
-                  <button
-                    type="button"
-                    onClick={() => handleShiftDays(-1)}
-                    title="Previous Day (Past Market)"
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'var(--text-muted)',
-                      cursor: 'pointer',
-                      padding: '0.18rem 0.28rem',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      borderRadius: '4px'
-                    }}
-                  >
-                    <ChevronLeft size={12} />
-                  </button>
+                  <ChevronLeft size={12} />
+                </button>
 
-                  {/* Main Clickable Date Pill */}
-                  <button
-                    type="button"
-                    onClick={() => setIsCalendarOpen((prev) => !prev)}
-                    title="Click to open Calendar and inspect Past or Future Market"
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: !isLiveMode ? (isPastMode ? '#fcd34d' : '#38bdf8') : 'var(--text-primary)',
-                      fontSize: '0.76rem',
-                      fontWeight: 700,
-                      fontFamily: 'var(--font-mono)',
-                      cursor: 'pointer',
-                      padding: '0.16rem 0.4rem',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.35rem',
-                      whiteSpace: 'nowrap'
-                    }}
-                  >
-                    <span role="img" aria-label="calendar">📅</span>
-                    <span>{dateSnapshot.formattedDate}</span>
-                    <span style={{ fontSize: '0.62rem', opacity: 0.75 }}>▾</span>
-                  </button>
+                <button
+                  type="button"
+                  onClick={() => setIsCalendarOpen((prev) => !prev)}
+                  title="Click to toggle Past & Future Market Calendar"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: !isLiveMode ? (isPastMode ? '#fcd34d' : '#38bdf8') : 'var(--text-primary)',
+                    fontSize: '0.76rem',
+                    fontWeight: 700,
+                    fontFamily: 'var(--font-mono)',
+                    cursor: 'pointer',
+                    padding: '0.16rem 0.4rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  <span role="img" aria-label="calendar">📅</span>
+                  <span>{dateSnapshot.formattedDate}</span>
+                  <span style={{ fontSize: '0.62rem', opacity: 0.8 }}>{isCalendarOpen ? '▴' : '▾'}</span>
+                </button>
 
-                  {/* Step 1 Day Forward Button */}
-                  <button
-                    type="button"
-                    onClick={() => handleShiftDays(1)}
-                    title="Next Day (Future Market)"
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'var(--text-muted)',
-                      cursor: 'pointer',
-                      padding: '0.18rem 0.28rem',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      borderRadius: '4px'
-                    }}
-                  >
-                    <ChevronRight size={12} />
-                  </button>
-                </div>
-
-                {/* Interactive Past & Future Market Calendar Popover */}
-                {isCalendarOpen && (
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 'calc(100% + 8px)',
-                      left: 0,
-                      zIndex: 120,
-                      width: '320px',
-                      maxWidth: 'calc(100vw - 32px)',
-                      background: 'rgba(11, 18, 33, 0.98)',
-                      border: '1px solid rgba(56, 189, 248, 0.4)',
-                      borderRadius: '12px',
-                      boxShadow: '0 18px 42px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.05)',
-                      padding: '0.85rem',
-                      backdropFilter: 'blur(16px)',
-                      color: '#f8fafc'
-                    }}
-                  >
-                    {/* Popover Header */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem', paddingBottom: '0.45rem', borderBottom: '1px solid rgba(148, 163, 184, 0.14)' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <Calendar size={14} style={{ color: '#38bdf8' }} />
-                        <span style={{ fontSize: '0.74rem', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#e2e8f0' }}>
-                          Past & Future Market Calendar
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setIsCalendarOpen(false)}
-                        style={{
-                          background: 'rgba(255,255,255,0.06)',
-                          border: 'none',
-                          color: '#94a3b8',
-                          borderRadius: '4px',
-                          padding: '2px 4px',
-                          cursor: 'pointer',
-                          display: 'inline-flex'
-                        }}
-                      >
-                        <X size={13} />
-                      </button>
-                    </div>
-
-                    {/* Quick Horizon Jump Presets (Past & Future) */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '0.7rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
-                        <span style={{ fontSize: '0.64rem', color: '#fbbf24', fontWeight: 700, textTransform: 'uppercase', width: '44px' }}>
-                          ◀ Past
-                        </span>
-                        {[
-                          { label: '-1W', d: -7, m: 0, y: 0 },
-                          { label: '-1M', d: 0, m: -1, y: 0 },
-                          { label: '-3M', d: 0, m: -3, y: 0 },
-                          { label: '-6M', d: 0, m: -6, y: 0 },
-                          { label: '-1Y', d: 0, m: 0, y: -1 },
-                          { label: '-5Y', d: 0, m: 0, y: -5 }
-                        ].map((p) => (
-                          <button
-                            key={p.label}
-                            type="button"
-                            onClick={() => handlePresetOffset(p.d, p.m, p.y)}
-                            style={{
-                              flex: 1,
-                              padding: '0.2rem 0',
-                              fontSize: '0.66rem',
-                              fontWeight: 700,
-                              fontFamily: 'var(--font-mono)',
-                              borderRadius: '4px',
-                              border: '1px solid rgba(245, 158, 11, 0.3)',
-                              background: 'rgba(245, 158, 11, 0.1)',
-                              color: '#fcd34d',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            {p.label}
-                          </button>
-                        ))}
-                      </div>
-
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '4px' }}>
-                        <span style={{ fontSize: '0.64rem', color: '#38bdf8', fontWeight: 700, textTransform: 'uppercase', width: '44px' }}>
-                          Future ▶
-                        </span>
-                        {[
-                          { label: '+1W', d: 7, m: 0, y: 0 },
-                          { label: '+1M', d: 0, m: 1, y: 0 },
-                          { label: '+3M', d: 0, m: 3, y: 0 },
-                          { label: '+6M', d: 0, m: 6, y: 0 },
-                          { label: '+1Y', d: 0, m: 0, y: 1 },
-                          { label: '+5Y', d: 0, m: 0, y: 5 }
-                        ].map((p) => (
-                          <button
-                            key={p.label}
-                            type="button"
-                            onClick={() => handlePresetOffset(p.d, p.m, p.y)}
-                            style={{
-                              flex: 1,
-                              padding: '0.2rem 0',
-                              fontSize: '0.66rem',
-                              fontWeight: 700,
-                              fontFamily: 'var(--font-mono)',
-                              borderRadius: '4px',
-                              border: '1px solid rgba(56, 189, 248, 0.3)',
-                              background: 'rgba(56, 189, 248, 0.1)',
-                              color: '#38bdf8',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            {p.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Month & Year Navigation Bar */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.45rem', background: 'rgba(255,255,255,0.04)', padding: '0.25rem 0.4rem', borderRadius: '6px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                        <button
-                          type="button"
-                          onClick={() => setViewMonthDate(new Date(viewMonthDate.getFullYear() - 1, viewMonthDate.getMonth(), 1))}
-                          title="Previous Year"
-                          style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '2px 4px', display: 'inline-flex' }}
-                        >
-                          <ChevronsLeft size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setViewMonthDate(new Date(viewMonthDate.getFullYear(), viewMonthDate.getMonth() - 1, 1))}
-                          title="Previous Month"
-                          style={{ background: 'transparent', border: 'none', color: '#e2e8f0', cursor: 'pointer', padding: '2px 4px', display: 'inline-flex' }}
-                        >
-                          <ChevronLeft size={14} />
-                        </button>
-                      </div>
-
-                      <span className="font-mono" style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f8fafc' }}>
-                        {viewMonthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                      </span>
-
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-                        <button
-                          type="button"
-                          onClick={() => setViewMonthDate(new Date(viewMonthDate.getFullYear(), viewMonthDate.getMonth() + 1, 1))}
-                          title="Next Month"
-                          style={{ background: 'transparent', border: 'none', color: '#e2e8f0', cursor: 'pointer', padding: '2px 4px', display: 'inline-flex' }}
-                        >
-                          <ChevronRight size={14} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setViewMonthDate(new Date(viewMonthDate.getFullYear() + 1, viewMonthDate.getMonth(), 1))}
-                          title="Next Year"
-                          style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '2px 4px', display: 'inline-flex' }}
-                        >
-                          <ChevronsRight size={14} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Weekday Headers */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', textAlign: 'center', marginBottom: '4px' }}>
-                      {WEEKDAYS.map((w) => (
-                        <span key={w} style={{ fontSize: '0.64rem', fontWeight: 700, color: '#64748b' }}>
-                          {w}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Interactive 42-Cell Calendar Grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '3px', marginBottom: '0.65rem' }}>
-                      {calendarDays.map((cell) => {
-                        const isSelected = cell.iso === selectedDateStr;
-                        const isToday = cell.iso === todayISO;
-                        const isFutureCell = cell.iso > todayISO;
-
-                        let bg = 'transparent';
-                        let border = '1px solid transparent';
-                        let color = cell.inCurrentMonth ? '#cbd5e1' : '#475569';
-
-                        if (isSelected) {
-                          bg = isToday
-                            ? 'linear-gradient(135deg, #10b981, #059669)'
-                            : isFutureCell
-                            ? 'linear-gradient(135deg, #06b6d4, #6366f1)'
-                            : 'linear-gradient(135deg, #f59e0b, #d97706)';
-                          color = '#ffffff';
-                        } else if (isToday) {
-                          bg = 'rgba(16, 185, 129, 0.16)';
-                          border = '1px solid rgba(16, 185, 129, 0.5)';
-                          color = '#34d399';
-                        }
-
-                        return (
-                          <button
-                            key={cell.iso}
-                            type="button"
-                            onClick={() => handleSelectDate(cell.iso, false)}
-                            style={{
-                              padding: '0.28rem 0',
-                              fontSize: '0.7rem',
-                              fontFamily: 'var(--font-mono)',
-                              fontWeight: isSelected || isToday ? 800 : 500,
-                              borderRadius: '5px',
-                              background: bg,
-                              border,
-                              color,
-                              cursor: 'pointer',
-                              transition: 'all 0.12s ease'
-                            }}
-                          >
-                            {cell.dayNum}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Direct Date Input & Reset to Live Footer */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.45rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(148, 163, 184, 0.14)' }}>
-                      <input
-                        type="date"
-                        value={selectedDateStr}
-                        min="2015-01-01"
-                        max="2036-12-31"
-                        onChange={(e) => {
-                          if (e.target.value) handleSelectDate(e.target.value, false);
-                        }}
-                        style={{
-                          flex: 1,
-                          background: 'rgba(15, 23, 42, 0.9)',
-                          border: '1px solid rgba(148, 163, 184, 0.28)',
-                          borderRadius: '6px',
-                          color: '#f8fafc',
-                          padding: '0.25rem 0.45rem',
-                          fontSize: '0.72rem',
-                          fontFamily: 'var(--font-mono)'
-                        }}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleResetToLive}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px',
-                          padding: '0.28rem 0.6rem',
-                          borderRadius: '6px',
-                          fontSize: '0.7rem',
-                          fontWeight: 800,
-                          fontFamily: 'var(--font-mono)',
-                          background: isLiveMode ? 'rgba(16, 185, 129, 0.15)' : 'linear-gradient(135deg, #10b981, #059669)',
-                          color: isLiveMode ? '#34d399' : '#ffffff',
-                          border: '1px solid rgba(16, 185, 129, 0.4)',
-                          cursor: 'pointer',
-                          whiteSpace: 'nowrap'
-                        }}
-                      >
-                        <RotateCcw size={11} />
-                        Live Today
-                      </button>
-                    </div>
-                  </div>
-                )}
+                <button
+                  type="button"
+                  onClick={() => handleShiftDays(1)}
+                  title="Next Day (Future Market)"
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-muted)',
+                    cursor: 'pointer',
+                    padding: '0.18rem 0.28rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    borderRadius: '4px'
+                  }}
+                >
+                  <ChevronRight size={12} />
+                </button>
               </div>
 
               <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>•</span>
@@ -632,7 +349,6 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
           </div>
 
           <div className="live-quote-actions-cluster" style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap', minWidth: 0 }}>
-            {/* Watchlist Toggle */}
             <button
               className="btn btn-secondary live-quote-action-btn"
               onClick={onToggleWatchlist}
@@ -651,7 +367,6 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
               )}
             </button>
 
-            {/* Set Alert Button */}
             <button
               className="btn btn-secondary live-quote-action-btn"
               onClick={onOpenAlertModal}
@@ -661,7 +376,6 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
               <span>Set Alert</span>
             </button>
 
-            {/* Trade Button */}
             <button
               className="btn btn-bull live-quote-action-btn live-quote-trade-btn"
               onClick={onOpenTradeModal}
@@ -672,6 +386,334 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
             </button>
           </div>
         </div>
+
+        {/* Inline Expandable Past & Future Market Calendar Panel (Zero Overlap & Zero Clipping) */}
+        {isCalendarOpen && (
+          <div
+            style={{
+              width: '100%',
+              boxSizing: 'border-box',
+              background: 'rgba(11, 18, 33, 0.92)',
+              border: '1px solid rgba(56, 189, 248, 0.35)',
+              borderRadius: '10px',
+              padding: '0.85rem 1rem',
+              boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 8px 24px rgba(0, 0, 0, 0.35)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem'
+            }}
+          >
+            {/* Panel Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', paddingBottom: '0.45rem', borderBottom: '1px solid rgba(148, 163, 184, 0.14)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <Calendar size={14} style={{ color: '#38bdf8', flexShrink: 0 }} />
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#e2e8f0' }}>
+                  Past & Future Market Time-Machine Calendar
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                {!isLiveMode && (
+                  <button
+                    type="button"
+                    onClick={handleResetToLive}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '0.2rem 0.55rem',
+                      borderRadius: '5px',
+                      fontSize: '0.68rem',
+                      fontWeight: 800,
+                      fontFamily: 'var(--font-mono)',
+                      background: 'rgba(16, 185, 129, 0.18)',
+                      color: '#34d399',
+                      border: '1px solid rgba(16, 185, 129, 0.45)',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <RotateCcw size={11} />
+                    Live Today
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsCalendarOpen(false)}
+                  title="Close Calendar"
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.06)',
+                    border: '1px solid rgba(148, 163, 184, 0.2)',
+                    color: '#94a3b8',
+                    borderRadius: '5px',
+                    padding: '3px 5px',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center'
+                  }}
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            </div>
+
+            {/* Responsive 2-Column Calendar Workbench */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 245px), 1fr))', gap: '0.9rem', alignItems: 'start' }}>
+              {/* Left Column: Quick Horizon Presets & Direct Date Picker */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                {/* Past Presets Row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontWeight: 800, textTransform: 'uppercase', minWidth: '58px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    ◀ Past
+                  </span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '4px', flex: 1 }}>
+                    {[
+                      { label: '-1W', d: -7, m: 0, y: 0 },
+                      { label: '-1M', d: 0, m: -1, y: 0 },
+                      { label: '-3M', d: 0, m: -3, y: 0 },
+                      { label: '-6M', d: 0, m: -6, y: 0 },
+                      { label: '-1Y', d: 0, m: 0, y: -1 },
+                      { label: '-5Y', d: 0, m: 0, y: -5 }
+                    ].map((p) => (
+                      <button
+                        key={p.label}
+                        type="button"
+                        onClick={() => handlePresetOffset(p.d, p.m, p.y)}
+                        style={{
+                          padding: '0.26rem 0',
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          fontFamily: 'var(--font-mono)',
+                          borderRadius: '5px',
+                          border: '1px solid rgba(245, 158, 11, 0.35)',
+                          background: 'rgba(245, 158, 11, 0.12)',
+                          color: '#fcd34d',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Future Presets Row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span style={{ fontSize: '0.65rem', color: '#38bdf8', fontWeight: 800, textTransform: 'uppercase', minWidth: '58px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    Future ▶
+                  </span>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '4px', flex: 1 }}>
+                    {[
+                      { label: '+1W', d: 7, m: 0, y: 0 },
+                      { label: '+1M', d: 0, m: 1, y: 0 },
+                      { label: '+3M', d: 0, m: 3, y: 0 },
+                      { label: '+6M', d: 0, m: 6, y: 0 },
+                      { label: '+1Y', d: 0, m: 0, y: 1 },
+                      { label: '+5Y', d: 0, m: 0, y: 5 }
+                    ].map((p) => (
+                      <button
+                        key={p.label}
+                        type="button"
+                        onClick={() => handlePresetOffset(p.d, p.m, p.y)}
+                        style={{
+                          padding: '0.26rem 0',
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          fontFamily: 'var(--font-mono)',
+                          borderRadius: '5px',
+                          border: '1px solid rgba(56, 189, 248, 0.35)',
+                          background: 'rgba(56, 189, 248, 0.12)',
+                          color: '#38bdf8',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Direct Jump Date Input + Live Reset */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginTop: '0.15rem' }}>
+                  <input
+                    type="date"
+                    value={selectedDateStr}
+                    min="2015-01-01"
+                    max="2036-12-31"
+                    onChange={(e) => {
+                      if (e.target.value) handleSelectDate(e.target.value, false);
+                    }}
+                    style={{
+                      flex: 1,
+                      background: 'rgba(15, 23, 42, 0.95)',
+                      border: '1px solid rgba(148, 163, 184, 0.3)',
+                      borderRadius: '6px',
+                      color: '#f8fafc',
+                      padding: '0.32rem 0.5rem',
+                      fontSize: '0.74rem',
+                      fontFamily: 'var(--font-mono)'
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleResetToLive}
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '0.34rem 0.65rem',
+                      borderRadius: '6px',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      fontFamily: 'var(--font-mono)',
+                      background: isLiveMode ? 'rgba(16, 185, 129, 0.15)' : 'linear-gradient(135deg, #10b981, #059669)',
+                      color: isLiveMode ? '#34d399' : '#ffffff',
+                      border: '1px solid rgba(16, 185, 129, 0.45)',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    <RotateCcw size={12} />
+                    Today
+                  </button>
+                </div>
+
+                {/* Active Date Summary Box */}
+                <div
+                  style={{
+                    padding: '0.45rem 0.65rem',
+                    borderRadius: '6px',
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid rgba(148, 163, 184, 0.14)',
+                    fontSize: '0.72rem',
+                    fontFamily: 'var(--font-mono)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.2rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#94a3b8' }}>Selected Date:</span>
+                    <strong style={{ color: '#f8fafc' }}>{dateSnapshot.formattedDate}</strong>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ color: '#94a3b8' }}>{isLiveMode ? 'Market Status:' : 'vs Live ($' + quote.price.toFixed(2) + '):'}</span>
+                    {isLiveMode ? (
+                      <strong style={{ color: '#34d399' }}>● Real-Time Live Tape</strong>
+                    ) : (
+                      <strong style={{ color: dateSnapshot.vsLiveChange >= 0 ? 'var(--bull-green)' : 'var(--bear-red)' }}>
+                        {dateSnapshot.vsLiveChange >= 0 ? '+' : ''}${dateSnapshot.vsLiveChange.toFixed(2)} ({dateSnapshot.vsLivePercent >= 0 ? '+' : ''}{dateSnapshot.vsLivePercent.toFixed(2)}%)
+                      </strong>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Full Month & Year Calendar Grid */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                {/* Month & Year Navigation Bar */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255, 255, 255, 0.04)', padding: '0.25rem 0.45rem', borderRadius: '6px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setViewMonthDate(new Date(viewMonthDate.getFullYear() - 1, viewMonthDate.getMonth(), 1))}
+                      title="Previous Year"
+                      style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '2px 5px', display: 'inline-flex' }}
+                    >
+                      <ChevronsLeft size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMonthDate(new Date(viewMonthDate.getFullYear(), viewMonthDate.getMonth() - 1, 1))}
+                      title="Previous Month"
+                      style={{ background: 'transparent', border: 'none', color: '#e2e8f0', cursor: 'pointer', padding: '2px 5px', display: 'inline-flex' }}
+                    >
+                      <ChevronLeft size={14} />
+                    </button>
+                  </div>
+
+                  <span className="font-mono" style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f8fafc' }}>
+                    {viewMonthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                  </span>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setViewMonthDate(new Date(viewMonthDate.getFullYear(), viewMonthDate.getMonth() + 1, 1))}
+                      title="Next Month"
+                      style={{ background: 'transparent', border: 'none', color: '#e2e8f0', cursor: 'pointer', padding: '2px 5px', display: 'inline-flex' }}
+                    >
+                      <ChevronRight size={14} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setViewMonthDate(new Date(viewMonthDate.getFullYear() + 1, viewMonthDate.getMonth(), 1))}
+                      title="Next Year"
+                      style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '2px 5px', display: 'inline-flex' }}
+                    >
+                      <ChevronsRight size={14} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Weekday Headers */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', textAlign: 'center' }}>
+                  {WEEKDAYS.map((w) => (
+                    <span key={w} style={{ fontSize: '0.64rem', fontWeight: 700, color: '#64748b' }}>
+                      {w}
+                    </span>
+                  ))}
+                </div>
+
+                {/* 42-Cell Day Grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '3px' }}>
+                  {calendarDays.map((cell) => {
+                    const isSelected = cell.iso === selectedDateStr;
+                    const isToday = cell.iso === todayISO;
+                    const isFutureCell = cell.iso > todayISO;
+
+                    let bg = 'rgba(255, 255, 255, 0.015)';
+                    let border = '1px solid transparent';
+                    let color = cell.inCurrentMonth ? '#cbd5e1' : '#475569';
+
+                    if (isSelected) {
+                      bg = isToday
+                        ? 'linear-gradient(135deg, #10b981, #059669)'
+                        : isFutureCell
+                        ? 'linear-gradient(135deg, #06b6d4, #6366f1)'
+                        : 'linear-gradient(135deg, #f59e0b, #d97706)';
+                      color = '#ffffff';
+                    } else if (isToday) {
+                      bg = 'rgba(16, 185, 129, 0.16)';
+                      border = '1px solid rgba(16, 185, 129, 0.5)';
+                      color = '#34d399';
+                    }
+
+                    return (
+                      <button
+                        key={cell.iso}
+                        type="button"
+                        onClick={() => handleSelectDate(cell.iso, false)}
+                        style={{
+                          padding: '0.26rem 0',
+                          fontSize: '0.7rem',
+                          fontFamily: 'var(--font-mono)',
+                          fontWeight: isSelected || isToday ? 800 : 500,
+                          borderRadius: '5px',
+                          background: bg,
+                          border,
+                          color,
+                          cursor: 'pointer',
+                          transition: 'all 0.12s ease'
+                        }}
+                      >
+                        {cell.dayNum}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Past / Future Market Time-Machine Status Banner when not on Today */}
         {!isLiveMode && (

@@ -1,8 +1,8 @@
 /**
- * Institutional Market Time-Machine & Future Forecast Calendar Engine
- * Computes deterministic historical market snapshots for any past calendar date
- * and quantitative AI market projections for any future calendar date.
- */
+* Institutional Market Time-Machine & Future Forecast Calendar Engine
+* Computes deterministic historical market snapshots for any past calendar date
+* and quantitative AI market projections for any future calendar date.
+*/
 
 export function toISODateString(dateObj = new Date()) {
   const d = new Date(dateObj);
