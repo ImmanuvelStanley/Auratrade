@@ -756,10 +756,12 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
                       }}
                       title="Click to Switch AI Engine / Configure API Key"
                     >
-                      <Cpu size={10} />
-                      <span>{getActiveModelBadge()}</span>
+                      <Cpu size={10} style={{ flexShrink: 0 }} />
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getActiveModelBadge()}</span>
                     </button>
-                    <span className="assistant-header-live-tag">• LIVE TELEMETRY</span>
+                    {isExpanded && (
+                      <span className="assistant-header-live-tag">• LIVE TELEMETRY</span>
+                    )}
                   </div>
                 </div>
               </div>
