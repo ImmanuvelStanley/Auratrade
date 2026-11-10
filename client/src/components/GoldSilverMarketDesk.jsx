@@ -1222,8 +1222,8 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
 
       {/* Quick Multi-Currency Pill Switcher Bar */}
       <div className="glass-card bullion-currency-bar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', minWidth: 0 }}>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontWeight: 700, flexShrink: 0 }}>
+        <div className="bullion-currency-main-group" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', minWidth: 0, flex: '1 1 auto' }}>
+          <span className="bullion-currency-label" style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontWeight: 700, flexShrink: 0 }}>
             <DollarSign size={14} style={{ color: 'var(--warning-amber)' }} />
             Display Currency:
           </span>
@@ -1248,9 +1248,10 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                 <button
                   key={item.code}
                   type="button"
+                  className={`bullion-currency-pill-btn ${item.isDefault ? 'is-default-currency' : ''} ${isSelected ? 'active' : ''}`}
                   onClick={() => handleQuickCurrencySelect(item.code)}
                   style={{
-                    padding: '0.25rem 0.55rem',
+                    padding: '0.3rem 0.6rem',
                     fontSize: '0.74rem',
                     borderRadius: 'var(--radius-sm)',
                     border: isSelected ? '1px solid var(--warning-amber)' : '1px solid var(--border-subtle)',
@@ -1260,13 +1261,17 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                     cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '0.25rem',
+                    justifyContent: 'center',
+                    gap: '0.28rem',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    lineHeight: 1.2,
                     transition: 'all 0.2s ease'
                   }}
                   title={`Switch live market prices to ${currObj?.name || item.code} (${currObj?.symbol})`}
                 >
                   <span>{item.label}</span>
-                  {item.isDefault && <span style={{ fontSize: '0.62rem', opacity: 0.8, textTransform: 'uppercase' }}>[Default]</span>}
+                  {item.isDefault && <span style={{ fontSize: '0.6rem', opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.02em' }}>[Default]</span>}
                 </button>
               );
             })}
@@ -1274,7 +1279,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
         </div>
 
         {/* Currency Indicator */}
-        <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+        <div className="bullion-currency-active-status" style={{ fontSize: '0.74rem', color: 'var(--text-muted)', flexShrink: 0 }}>
           Active: <strong style={{ color: 'var(--warning-amber)' }}>{currentCurrency.symbol} {currentCurrency.code}</strong>
           {' '}({activeCurrency === 'USD' ? 'Default Dollar' : `${currentCurrency.name} • 1 USD = ${currentCurrency.symbol}${fxRates[activeCurrency]?.toLocaleString()}`})
         </div>

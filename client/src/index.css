@@ -4850,20 +4850,127 @@ select option:checked {
 }
 @media (max-width: 768px) {
   .bullion-currency-bar {
-    padding: 0.65rem 0.85rem;
+    padding: 0.75rem 0.85rem;
     flex-direction: column;
     align-items: stretch;
-    gap: 0.65rem;
+    gap: 0.55rem;
+  }
+  .bullion-currency-main-group {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100%;
+    gap: 0.5rem !important;
   }
   .bullion-currency-pills-wrap {
-    overflow-x: auto;
-    flex-wrap: nowrap;
-    padding-bottom: 0.25rem;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.38rem;
+    width: 100%;
+    overflow: visible;
   }
-  .bullion-currency-pills-wrap::-webkit-scrollbar {
-    display: none;
+  .bullion-currency-pill-btn {
+    width: 100%;
+    height: 32px;
+    padding: 0 0.35rem !important;
+    font-size: 0.72rem !important;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+  .bullion-currency-pill-btn.is-default-currency {
+    grid-column: span 2;
+  }
+  .bullion-currency-active-status {
+    padding-top: 0.45rem;
+    border-top: 1px solid var(--border-subtle);
+    font-size: 0.72rem !important;
+    line-height: 1.35;
+  }
+
+  .market-filter-bar {
+    padding: 0.85rem !important;
+  }
+  .market-filter-pills-group {
+    width: 100%;
+    gap: 0.38rem !important;
+  }
+  .market-filter-pills-group .tier-filter-btn {
+    flex: 1 1 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-size: 0.74rem !important;
+    padding: 0.38rem 0.6rem !important;
+  }
+  .market-filter-row-tiers {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.65rem !important;
+  }
+  .market-filter-search-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 1 100% !important;
+  }
+  .market-filter-row-controls,
+  .market-filter-subrow {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.6rem !important;
+    width: 100% !important;
+  }
+  .market-filter-item {
+    display: flex !important;
+    align-items: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    gap: 0.5rem !important;
+  }
+  .market-filter-label {
+    min-width: 62px;
+    flex-shrink: 0;
+    font-size: 0.76rem !important;
+  }
+  .market-filter-select {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    font-size: 0.78rem !important;
+  }
+  .market-filter-item .column-view-segmented {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between;
+    overflow: hidden;
+    box-sizing: border-box;
+  }
+  .market-filter-item .column-view-btn {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 0.68rem !important;
+    padding: 0.32rem 0.28rem !important;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .market-filter-sort-select {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    width: auto !important;
+    font-size: 0.76rem !important;
+    padding: 0.38rem 1.65rem 0.38rem 0.55rem !important;
+  }
+  .market-filter-sort-dir-btn {
+    flex: 0 0 auto !important;
+    padding: 0.38rem 0.58rem !important;
+    font-size: 0.74rem !important;
+  }
+}
+@media (max-width: 390px) {
+  .bullion-currency-pills-wrap {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 .bullion-hero-banner {
