@@ -861,9 +861,9 @@ export function UserProfile({
         />
 
         <div className="profile-hero-grid">
-          {/* LEFT COLUMN: Unified Trader Identity & Credentials */}
+          {/* LEFT COLUMN: Unified Trader Identity & Institutional Account Specifications */}
           <div className="profile-trader-identity-col">
-            {/* Top Identity Row: Avatar + Name + Badges + Role */}
+            {/* 1. Top Executive Account Holder Row: Avatar + Name + Institutional Verification + Client ID */}
             <div className="profile-identity-header">
               {/* Avatar Badge with Online Status Ring */}
               <div className="profile-avatar-wrap">
@@ -876,12 +876,11 @@ export function UserProfile({
                 />
               </div>
 
-              {/* Trader Details */}
+              {/* Trader Account Header Info */}
               <div className="profile-trader-info">
-                {/* Row 1: Name + Verification Badges */}
                 <div className="profile-name-badges-wrap">
                   {isEditingName ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                       <input
                         type="text"
                         value={editName}
@@ -892,7 +891,7 @@ export function UserProfile({
                           color: 'var(--text-primary)',
                           borderRadius: 'var(--radius-sm)',
                           padding: '0.35rem 0.75rem',
-                          fontSize: '1.1rem',
+                          fontSize: '1.05rem',
                           fontWeight: 700
                         }}
                         autoFocus
@@ -923,9 +922,9 @@ export function UserProfile({
                       <button
                         onClick={() => { setIsEditingName(true); setEditName(user.name || ''); }}
                         style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
-                        title="Edit Display Name"
+                        title="Edit Account Holder Name"
                       >
-                        <Edit2 size={14} />
+                        <Edit2 size={13} />
                       </button>
                     </div>
                   )}
@@ -934,47 +933,31 @@ export function UserProfile({
                     <span
                       className="badge-pill"
                       style={{
-                        background: 'rgba(6, 182, 212, 0.12)',
-                        border: '1px solid rgba(6, 182, 212, 0.3)',
-                        color: 'var(--accent-cyan)',
-                        fontSize: '0.68rem',
+                        background: 'rgba(16, 185, 129, 0.14)',
+                        border: '1px solid rgba(16, 185, 129, 0.35)',
+                        color: '#34d399',
+                        fontSize: '0.66rem',
                         fontWeight: 800,
-                        padding: '0.15rem 0.55rem',
+                        padding: '0.14rem 0.5rem',
+                        letterSpacing: '0.03em'
+                      }}
+                    >
+                      <CheckCircle2 size={11} /> KYC VERIFIED
+                    </span>
+
+                    <span
+                      className="badge-pill"
+                      style={{
+                        background: 'rgba(6, 182, 212, 0.14)',
+                        border: '1px solid rgba(6, 182, 212, 0.35)',
+                        color: 'var(--accent-cyan)',
+                        fontSize: '0.66rem',
+                        fontWeight: 800,
+                        padding: '0.14rem 0.5rem',
                         letterSpacing: '0.03em'
                       }}
                     >
                       <Award size={11} /> PRO WORKSTATION
-                    </span>
-
-                    <span
-                      className="badge-pill"
-                      style={{
-                        background: 'rgba(16, 185, 129, 0.12)',
-                        border: '1px solid rgba(16, 185, 129, 0.3)',
-                        color: '#34d399',
-                        fontSize: '0.68rem',
-                        fontWeight: 800,
-                        padding: '0.15rem 0.55rem',
-                        letterSpacing: '0.03em'
-                      }}
-                    >
-                      <CheckCircle2 size={11} /> VERIFIED
-                    </span>
-
-                    <span
-                      className="badge-pill"
-                      style={{
-                        background: safeZoneStatus === 'OPTIMAL' ? 'rgba(16, 185, 129, 0.12)' : safeZoneStatus === 'WARNING' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(244, 63, 94, 0.12)',
-                        border: safeZoneStatus === 'OPTIMAL' ? '1px solid rgba(16, 185, 129, 0.3)' : safeZoneStatus === 'WARNING' ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(244, 63, 94, 0.3)',
-                        color: safeZoneStatus === 'OPTIMAL' ? '#34d399' : safeZoneStatus === 'WARNING' ? 'var(--warning-amber)' : '#fb7185',
-                        fontSize: '0.68rem',
-                        fontWeight: 800,
-                        padding: '0.15rem 0.55rem',
-                        letterSpacing: '0.03em'
-                      }}
-                      title={`Safe Zone Minimum Reserve: $${minBalance.toLocaleString()}`}
-                    >
-                      <ShieldCheck size={11} /> SAFE ZONE: ${minBalance.toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -983,47 +966,123 @@ export function UserProfile({
                   <p style={{ color: '#f87171', fontSize: '0.75rem', margin: '0.1rem 0' }}>{nameError}</p>
                 )}
 
-                {/* Row 2: Institutional Role & Specialization */}
-                <div className="profile-spec-row">
-                  <span className="profile-persona-chip">
-                    <Briefcase size={13} />
-                    {traderProfile.tradingPersona || 'Precious Metals Bullion Speculator'}
+                {/* Secondary Account Identifier Line right under Name */}
+                <div className="profile-account-subline">
+                  <span className="profile-uid-inline">
+                    <ShieldCheck size={12} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
+                    <span>UID:</span>
+                    <strong className="font-mono" style={{ color: 'var(--accent-cyan)' }}>
+                      {(user.id || 'usr_demo').slice(0, 16).toUpperCase()}
+                    </strong>
                   </span>
-                  <div className="profile-spec-sub">
-                    <span className="profile-spec-dot">•</span>
-                    <span>{traderProfile.experienceLevel || 'Advanced (3-5 yrs)'}</span>
-                    <span className="profile-spec-dot">•</span>
-                    <span className="profile-risk-text">{traderProfile.riskAppetite || 'Moderate Growth'}</span>
-                  </div>
+                  <span className="profile-spec-dot">•</span>
+                  <span
+                    className="badge-pill"
+                    style={{
+                      background: safeZoneStatus === 'OPTIMAL' ? 'rgba(16, 185, 129, 0.12)' : safeZoneStatus === 'WARNING' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(244, 63, 94, 0.12)',
+                      border: safeZoneStatus === 'OPTIMAL' ? '1px solid rgba(16, 185, 129, 0.3)' : safeZoneStatus === 'WARNING' ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(244, 63, 94, 0.3)',
+                      color: safeZoneStatus === 'OPTIMAL' ? '#34d399' : safeZoneStatus === 'WARNING' ? 'var(--warning-amber)' : '#fb7185',
+                      fontSize: '0.64rem',
+                      fontWeight: 800,
+                      padding: '0.1rem 0.45rem',
+                      letterSpacing: '0.03em'
+                    }}
+                    title={`Safe Zone Minimum Reserve: $${minBalance.toLocaleString()}`}
+                  >
+                    <ShieldCheck size={10} /> SAFE ZONE: ${minBalance.toLocaleString()} ({safeZoneStatus})
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Row 3: Account Metadata Chips Grid (Spans Full Width Under Avatar & Details!) */}
-            <div className="profile-meta-chips-grid">
-              <div className="profile-meta-chip" title={user.email}>
-                <Mail size={13} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
-                <span className="profile-meta-chip-val" style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{user.email}</span>
+            {/* 2. Institutional Trading Desk & Risk Mandate Banner (Full Width) */}
+            <div className="profile-mandate-banner">
+              <div className="profile-mandate-main">
+                <span className="profile-mandate-tag">DESK MANDATE</span>
+                <span className="profile-persona-chip">
+                  <Briefcase size={13} style={{ flexShrink: 0 }} />
+                  <span>{traderProfile.tradingPersona || 'Precious Metals Bullion Speculator'}</span>
+                </span>
               </div>
+              <div className="profile-mandate-metrics">
+                <span className="profile-mandate-pill">
+                  <span className="profile-mandate-pill-label">Tier:</span>
+                  <strong>{traderProfile.experienceLevel || 'Advanced (3-5 yrs)'}</strong>
+                </span>
+                <span className="profile-mandate-pill">
+                  <span className="profile-mandate-pill-label">Risk:</span>
+                  <strong className="profile-risk-text">{traderProfile.riskAppetite || 'Moderate Growth'}</strong>
+                </span>
+                <span className="profile-mandate-pill">
+                  <span className="profile-mandate-pill-label">Clearance:</span>
+                  <strong style={{ color: '#34d399' }}>Spot &amp; Margin (T+0)</strong>
+                </span>
+              </div>
+            </div>
 
-              <div className="profile-meta-chip" title="Verified Mobile Contact">
-                <Smartphone size={13} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
-                <span className="profile-meta-chip-val" style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
-                  {user.phone ? user.phone.replace(/(\+\d{2})(\d{5})(\d{5})/, '$1 $2 $3') : '+91 72007 59491'}
+            {/* 3. Structured Professional Trading Account Specifications Grid (Ordered by Priority) */}
+            <div className="profile-meta-chips-grid">
+              <div className="profile-meta-chip" title={`Client Account ID: ${(user.id || 'usr_demo').toUpperCase()}`}>
+                <ShieldCheck size={13} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
+                <span className="profile-meta-chip-label">Account ID</span>
+                <span className="profile-meta-chip-val font-mono" style={{ color: 'var(--accent-cyan)', fontWeight: 700, fontSize: '0.74rem' }}>
+                  {(user.id || 'usr_demo').slice(0, 16).toUpperCase()}
                 </span>
               </div>
 
-              <div className="profile-meta-chip">
-                <Calendar size={13} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
-                <span className="profile-meta-chip-label">Joined:</span>
-                <span className="profile-meta-chip-val" style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{formattedDate}</span>
+              <div className="profile-meta-chip" title="Primary Execution Exchange & Regional Hub">
+                <Globe size={13} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
+                <span className="profile-meta-chip-label">Primary Hub</span>
+                <span className="profile-meta-chip-val" style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                  {currentRegion.flag} {traderProfile.preferredHub || currentRegion.defaultCity}
+                </span>
               </div>
 
-              <div className="profile-meta-chip" title={`Trader UID: ${user.id || 'usr_demo'}`}>
-                <ShieldCheck size={13} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
-                <span className="profile-meta-chip-label">UID:</span>
-                <span className="profile-meta-chip-val" style={{ fontFamily: 'var(--font-mono)', color: 'var(--accent-cyan)', fontWeight: 700, fontSize: '0.74rem' }}>
-                  {(user.id || 'usr_demo').slice(0, 16).toUpperCase()}
+              <div className="profile-meta-chip" title="Regulatory KYC & Tax Clearance">
+                <IdCard size={13} style={{ color: '#34d399', flexShrink: 0 }} />
+                <span className="profile-meta-chip-label">KYC &amp; ID</span>
+                <span className="profile-meta-chip-val" style={{ color: '#34d399', fontWeight: 700 }}>
+                  {traderProfile.idType || 'PASSPORT'} • {maskIdNumber(traderProfile.idNumber || 'P89201452')}
+                </span>
+              </div>
+
+              <div className="profile-meta-chip" title="Base Valuation Currency & Safe Reserve Floor">
+                <Coins size={13} style={{ color: 'var(--warning-amber)', flexShrink: 0 }} />
+                <span className="profile-meta-chip-label">Settlement</span>
+                <span className="profile-meta-chip-val" style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                  {currentCurrency.code} ({currentCurrency.symbol}) • Floor ${minBalance.toLocaleString()}
+                </span>
+              </div>
+
+              <div className="profile-meta-chip" title={user.email}>
+                <Mail size={13} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
+                <span className="profile-meta-chip-label">Reg. Email</span>
+                <span className="profile-meta-chip-val" style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                  {user.email}
+                </span>
+              </div>
+
+              <div className="profile-meta-chip" title="Verified 2FA & Trade Alert Mobile">
+                <Smartphone size={13} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
+                <span className="profile-meta-chip-label">Mobile No.</span>
+                <span className="profile-meta-chip-val font-mono" style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.75rem' }}>
+                  {user.phone ? user.phone.replace(/^\+?(\d{1,3})\s*(\d{5})(\d{5})$/, '+$1 $2 $3') : '+91 72007 59491'}
+                </span>
+              </div>
+
+              <div className="profile-meta-chip" title="Target Precious Metals & Cash Allocation">
+                <Layers size={13} style={{ color: '#818cf8', flexShrink: 0 }} />
+                <span className="profile-meta-chip-label">Allocation</span>
+                <span className="profile-meta-chip-val" style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
+                  {traderProfile.targetGoldAlloc || 40}% Au • {traderProfile.targetSilverAlloc || 25}% Ag • {traderProfile.targetCashAlloc || 35}% Cash
+                </span>
+              </div>
+
+              <div className="profile-meta-chip" title="Institutional Workstation Onboarding Date">
+                <Calendar size={13} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
+                <span className="profile-meta-chip-label">Onboarded</span>
+                <span className="profile-meta-chip-val" style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
+                  {formattedDate}
                 </span>
               </div>
             </div>
