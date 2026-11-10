@@ -360,7 +360,7 @@ export const StockChart = React.memo(function StockChart({
     ctx.lineWidth = 1;
     const gridSteps = 5;
 
-    ctx.font = '11px "JetBrains Mono", monospace';
+    ctx.font = '11px "IBM Plex Mono", monospace';
     ctx.fillStyle = '#64748b';
     ctx.textAlign = 'left';
 
@@ -410,7 +410,7 @@ export const StockChart = React.memo(function StockChart({
       ctx.stroke();
       ctx.restore();
 
-      ctx.font = '10px "JetBrains Mono", monospace';
+      ctx.font = '10px "IBM Plex Mono", monospace';
       ctx.fillStyle = '#64748b';
       ctx.textAlign = 'center';
       ctx.fillText(lbl, x, padding.top + chartH + 18);
@@ -438,7 +438,7 @@ export const StockChart = React.memo(function StockChart({
       ctx.lineTo(padding.left + chartW, peakY);
       ctx.stroke();
 
-      ctx.font = 'bold 9px "JetBrains Mono", monospace';
+      ctx.font = 'bold 9px "IBM Plex Mono", monospace';
       ctx.fillStyle = '#10b981';
       ctx.textAlign = 'left';
       ctx.fillText(`${range} HIGH: $${maxCandle.high.toFixed(2)}`, padding.left + 8, peakY - 4);
@@ -576,7 +576,7 @@ export const StockChart = React.memo(function StockChart({
 
       // Target Label Pill on right Y-axis
       const targetTxt = `TARGET $${lockedAsset.targetPrice.toFixed(2)} (+${lockedAsset.profitGainPercent}%)`;
-      ctx.font = 'bold 10px "JetBrains Mono", monospace';
+      ctx.font = 'bold 10px "IBM Plex Mono", monospace';
       const tW = ctx.measureText(targetTxt).width + 14;
       ctx.fillStyle = 'rgba(16, 185, 129, 0.95)';
       if (ctx.roundRect) {

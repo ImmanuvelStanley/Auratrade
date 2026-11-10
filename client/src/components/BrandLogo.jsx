@@ -100,10 +100,10 @@ export function BrandLogo({
           <span
             className="brand-word-aura"
             style={{
-              fontFamily: "'Outfit', sans-serif",
-              fontWeight: 900,
+              fontFamily: "var(--font-brand)",
+              fontWeight: 800,
               fontSize: wordmarkSize,
-              letterSpacing: '-0.02em',
+              letterSpacing: '-0.03em',
               color: 'var(--text-primary)'
             }}
           >
@@ -112,10 +112,10 @@ export function BrandLogo({
           <span
             className="brand-word-trade"
             style={{
-              fontFamily: "'Outfit', sans-serif",
-              fontWeight: 700,
+              fontFamily: "var(--font-brand)",
+              fontWeight: 600,
               fontSize: wordmarkSize,
-              letterSpacing: '-0.02em',
+              letterSpacing: '-0.03em',
               color: 'var(--brand-trade-color, #475569)'
             }}
           >
@@ -129,10 +129,10 @@ export function BrandLogo({
           style={{
             fontSize: subtextSize,
             color: '#64748b',
-            letterSpacing: '0.14em',
+            letterSpacing: '0.16em',
             textTransform: 'uppercase',
             fontWeight: 700,
-            fontFamily: "'Plus Jakarta Sans', sans-serif"
+            fontFamily: "var(--font-label)"
           }}
         >
           {subtitle || 'Institutional Workstation'}

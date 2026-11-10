@@ -45,11 +45,13 @@
   --status-triggered-color: #f43f5e;
   --status-triggered-bg: rgba(244, 63, 94, 0.15);
   --status-triggered-border: rgba(244, 63, 94, 0.35);
-  --font-brand: "Outfit", sans-serif;
+  --font-brand: "Space Grotesk", -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-label: "Chakra Petch", "Space Grotesk", sans-serif;
+  --font-editorial: "Newsreader", Georgia, serif;
   --font-sans:
-    "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     sans-serif;
-  --font-mono: "JetBrains Mono", monospace;
+  --font-mono: "IBM Plex Mono", monospace;
   --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   --shadow-glow-cyan: 0 0 25px rgba(6, 182, 212, 0.25);
   --shadow-glow-green: 0 0 20px rgba(16, 185, 129, 0.3);
@@ -143,12 +145,85 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-family: var(--font-sans);
+  font-feature-settings: "cv02" 1, "cv03" 1, "cv04" 1, "cv11" 1, "tnum" 1;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
   overflow-x: hidden;
   position: relative;
+}
+
+/* =========================================================================
+   WORLD-STANDARD 5-TIER INSTITUTIONAL TYPOGRAPHY SYSTEM
+   1. --font-brand ("Space Grotesk"): Executive Titles, Brand & Card Headers
+   2. --font-label ("Chakra Petch"): Terminal Telemetry, Tabs, Badges & TH
+   3. --font-mono ("IBM Plex Mono"): Live Tickers, Prices, P&L & Quantities
+   4. --font-editorial ("Newsreader"): Strategy Personas & Research Insights
+   5. --font-sans ("Inter"): High-Legibility Company Names & Analytical UI
+   ========================================================================= */
+h1,
+h2,
+h3,
+h4,
+.glass-card-title,
+.modal-title,
+.footer-nav-title,
+.ai-header-title,
+.profile-name-heading,
+.brand-logo {
+  font-family: var(--font-brand);
+  letter-spacing: -0.025em;
+}
+
+th,
+.custom-table th,
+.market-table th,
+.watchlist-table th,
+.tab-btn,
+.segmented-tab-btn,
+.column-view-btn,
+.tier-filter-btn,
+.chip-btn,
+.badge-pill,
+.status-pill,
+.market-ribbon-badge,
+.profile-mandate-tag,
+.profile-meta-chip-label,
+.profile-mandate-pill-label,
+.market-filter-label,
+.bullion-currency-label,
+.input-label,
+.kyc-form-field label,
+.ai-quant-badge,
+.kyc-ocr-badge,
+.brand-subtext {
+  font-family: var(--font-label);
+  letter-spacing: 0.045em;
+}
+
+.font-mono,
+.market-ribbon-item,
+.ribbon-sym,
+.ribbon-price,
+.ribbon-change,
+.nse-ticker-chip,
+.bullion-currency-pill-btn,
+.profile-meta-chip-val.font-mono,
+code,
+pre {
+  font-family: var(--font-mono) !important;
+  font-variant-numeric: tabular-nums slashed-zero;
+  font-feature-settings: "tnum" 1, "zero" 1;
+}
+
+.profile-persona-chip,
+.ai-markdown-body blockquote,
+.editorial-accent {
+  font-family: var(--font-editorial);
+  font-style: italic;
+  font-weight: 600;
+  letter-spacing: 0.01em;
 }
 body:before {
   content: "";

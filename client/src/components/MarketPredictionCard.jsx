@@ -176,7 +176,7 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
     // Draw Subtle Grid & Y-Axis Labels
     ctx.strokeStyle = theme === 'light' ? 'rgba(0, 0, 0, 0.06)' : 'rgba(255, 255, 255, 0.04)';
     ctx.lineWidth = 1;
-    ctx.font = '10px "JetBrains Mono", monospace';
+    ctx.font = '10px "IBM Plex Mono", monospace';
     ctx.fillStyle = '#64748b';
     ctx.textAlign = 'left';
 
