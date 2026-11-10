@@ -5610,7 +5610,7 @@ canvas {
 }
 .profile-hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 280px;
+  grid-template-columns: minmax(0, 1fr) 295px;
   gap: 1.25rem;
   align-items: stretch;
   position: relative;
@@ -5621,24 +5621,38 @@ canvas {
 .profile-trader-identity-col {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  justify-content: space-between;
+  gap: 0.75rem;
   min-width: 0;
   width: 100%;
+  height: 100%;
+}
+.profile-hero-right-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.48rem;
+  width: 100%;
+  height: 100%;
 }
 .profile-identity-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  column-gap: 0.95rem;
+  row-gap: 0.42rem;
   align-items: center;
-  gap: 0.9rem;
   min-width: 0;
   width: 100%;
 }
 .profile-avatar-wrap {
   position: relative;
   flex-shrink: 0;
+  grid-row: 1 / 3;
+  align-self: center;
 }
 .profile-avatar-box {
-  width: 54px;
-  height: 54px;
+  width: 56px;
+  height: 56px;
   border-radius: 14px;
   background: linear-gradient(135deg, #06b6d4, #3b82f6, #6366f1);
   display: flex;
@@ -5662,83 +5676,63 @@ canvas {
   border: 2px solid #090d16;
   box-shadow: 0 0 8px #10b981;
 }
-.profile-trader-info {
-  min-width: 0;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.32rem;
-}
 .profile-name-badges-wrap {
+  grid-column: 2;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+  min-width: 0;
 }
 .profile-name-row {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.38rem;
   min-width: 0;
 }
 .profile-name-heading {
-  font-size: 1.38rem;
+  font-size: 1.4rem;
   font-weight: 800;
   color: var(--text-primary);
   letter-spacing: -0.02em;
   margin: 0;
   font-family: var(--font-brand);
   text-transform: capitalize;
-  line-height: 1.15;
+  line-height: 1.1;
 }
 .profile-badges-row {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.38rem;
   flex-wrap: wrap;
 }
-.profile-account-subline {
-  display: flex;
-  align-items: center;
-  gap: 0.45rem;
-  flex-wrap: wrap;
-  font-size: 0.74rem;
-  color: var(--text-secondary);
-}
-.profile-uid-inline {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  font-weight: 700;
-}
-.profile-mandate-banner {
+.profile-mandate-inline-bar {
+  grid-column: 2;
   background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(99, 102, 241, 0.05) 100%);
-  border: 1px solid rgba(6, 182, 212, 0.24);
-  border-radius: 9px;
-  padding: 0.52rem 0.75rem;
+  border: 1px solid rgba(6, 182, 212, 0.22);
+  border-radius: 7px;
+  padding: 0.34rem 0.65rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
-  gap: 0.45rem 0.85rem;
+  gap: 0.35rem 0.75rem;
   width: 100%;
   box-sizing: border-box;
 }
 .profile-mandate-main {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.45rem;
   flex-wrap: wrap;
   min-width: 0;
 }
 .profile-mandate-tag {
-  font-size: 0.6rem;
+  font-size: 0.58rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  padding: 0.14rem 0.42rem;
+  padding: 0.12rem 0.4rem;
   border-radius: 4px;
   background: rgba(6, 182, 212, 0.18);
   border: 1px solid rgba(6, 182, 212, 0.35);
@@ -5748,10 +5742,10 @@ canvas {
 .profile-persona-chip {
   color: var(--text-primary);
   font-weight: 800;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.32rem;
   min-width: 0;
 }
 .profile-persona-chip svg {
@@ -5760,26 +5754,27 @@ canvas {
 .profile-mandate-metrics {
   display: flex;
   align-items: center;
-  gap: 0.4rem 0.7rem;
+  gap: 0.38rem 0.55rem;
   flex-wrap: wrap;
-  font-size: 0.73rem;
+  font-size: 0.72rem;
 }
 .profile-mandate-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.28rem;
+  gap: 0.25rem;
   color: var(--text-primary);
   white-space: nowrap;
 }
 .profile-mandate-pill-label {
   color: var(--text-muted);
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   text-transform: uppercase;
   font-weight: 700;
   letter-spacing: 0.03em;
 }
 .profile-spec-dot {
   color: var(--text-muted);
+  opacity: 0.6;
 }
 .profile-risk-text {
   color: var(--warning-amber);
@@ -5787,8 +5782,8 @@ canvas {
 }
 .profile-meta-chips-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.42rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.48rem;
   width: 100%;
   box-sizing: border-box;
 }
@@ -5796,10 +5791,11 @@ canvas {
   background: rgba(255, 255, 255, 0.028);
   border: 1px solid var(--border-subtle);
   border-radius: 7px;
-  padding: 0.42rem 0.65rem;
+  padding: 0 0.65rem;
+  height: 36px;
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.42rem;
   font-size: 0.75rem;
   min-width: 0;
   overflow: hidden;
@@ -5808,8 +5804,8 @@ canvas {
 .profile-meta-chip-label {
   color: var(--text-muted);
   flex-shrink: 0;
-  width: 78px;
-  font-size: 0.65rem;
+  width: 68px;
+  font-size: 0.64rem;
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -5820,6 +5816,11 @@ canvas {
   white-space: nowrap;
   min-width: 0;
   flex: 1;
+}
+@media (max-width: 1180px) {
+  .profile-meta-chips-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 @media (max-width: 1080px) {
   .profile-hero-grid {
@@ -5832,8 +5833,13 @@ canvas {
     padding: 1rem 0.95rem !important;
   }
   .profile-identity-header {
-    align-items: flex-start;
-    gap: 0.75rem;
+    grid-template-columns: 48px minmax(0, 1fr);
+    column-gap: 0.75rem;
+    row-gap: 0.55rem;
+  }
+  .profile-avatar-wrap {
+    grid-row: 1;
+    align-self: flex-start;
   }
   .profile-avatar-box {
     width: 48px;
@@ -5844,28 +5850,33 @@ canvas {
   .profile-name-heading {
     font-size: 1.25rem;
   }
-  .profile-mandate-banner {
+  .profile-mandate-inline-bar {
+    grid-column: 1 / -1;
     flex-direction: column;
     align-items: flex-start;
-    padding: 0.55rem 0.68rem;
-    gap: 0.38rem;
+    padding: 0.5rem 0.65rem;
+    gap: 0.35rem;
   }
   .profile-mandate-metrics {
     width: 100%;
-    padding-top: 0.32rem;
+    padding-top: 0.3rem;
     border-top: 1px solid rgba(255, 255, 255, 0.06);
     justify-content: space-between;
-    gap: 0.35rem 0.5rem;
+    gap: 0.3rem 0.45rem;
+  }
+  .profile-mandate-metrics .profile-spec-dot {
+    display: none;
   }
   .profile-meta-chips-grid {
     grid-template-columns: 1fr;
     gap: 0.35rem;
   }
   .profile-meta-chip {
-    padding: 0.42rem 0.6rem;
+    padding: 0 0.6rem;
+    height: 36px;
   }
   .profile-meta-chip-label {
-    width: 82px;
+    width: 76px;
   }
 }
 .kyc-form-card {
