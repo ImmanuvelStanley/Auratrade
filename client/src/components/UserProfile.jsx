@@ -1187,12 +1187,12 @@ export function UserProfile({
             </div>
 
             {/* Quick Action Commands */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
               <button
                 className="btn btn-primary"
                 onClick={() => onNavigateTab && onNavigateTab('dashboard')}
                 style={{
-                  flex: 1,
+                  width: '100%',
                   padding: '0.45rem 0.8rem',
                   fontSize: '0.78rem',
                   fontWeight: 700,
@@ -1207,22 +1207,6 @@ export function UserProfile({
                 }}
               >
                 <Zap size={13} /> Open Workstation
-              </button>
-
-              <button
-                className="btn btn-secondary"
-                onClick={logout}
-                style={{
-                  padding: '0.45rem 0.75rem',
-                  fontSize: '0.78rem',
-                  gap: '0.35rem',
-                  borderRadius: '7px',
-                  justifyContent: 'center',
-                  height: '36px'
-                }}
-                title="Sign out from session"
-              >
-                <LogOut size={12} /> Sign Out
               </button>
             </div>
           </div>
