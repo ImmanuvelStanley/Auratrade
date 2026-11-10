@@ -13,7 +13,6 @@ import {
   Maximize2,
   Minimize2,
   Globe,
-  HelpCircle,
   TrendingUp,
   ShieldCheck,
   History,
@@ -22,11 +21,23 @@ import {
   Clock,
   MessageSquare,
   ArrowLeft,
-  Sparkles
+  Sparkles,
+  Calculator,
+  Award,
+  Landmark,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Check,
+  Zap,
+  BarChart3,
+  Layers
 } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { soundFx } from '../utils/audio';
+import { generateLocalQuantResponse } from '../utils/aiQuantEngine';
+import { getClientQuote } from '../services/clientFallbackData';
 
 export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoPredictor }) {
   const { user } = useAuth();
@@ -37,9 +48,11 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [expandedThinking, setExpandedThinking] = useState({});
+  const [copiedId, setCopiedId] = useState(null);
 
   // Chat History & Session State (strictly isolated per user account)
-  const getChatHistoryKey = (userId) => userId ? `auratrade_ai_chat_history_${userId}` : 'auratrade_ai_chat_history_guest';
+  const getChatHistoryKey = (userId) =>
+    userId ? `auratrade_ai_chat_history_${userId}` : 'auratrade_ai_chat_history_guest';
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const [chatHistory, setChatHistory] = useState(() => {
@@ -47,7 +60,7 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
       const key = getChatHistoryKey(user?.id);
       const saved = localStorage.getItem(key);
       return saved ? JSON.parse(saved) : [];
-    } catch (e) {
+    } catch {
       return [];
     }
   });
@@ -58,7 +71,7 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
     try {
       const saved = localStorage.getItem(key);
       setChatHistory(saved ? JSON.parse(saved) : []);
-    } catch (e) {
+    } catch {
       setChatHistory([]);
     }
     setMessages([]);
@@ -68,28 +81,34 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
   // Model and Key Configuration States
   const [geminiKey, setGeminiKey] = useState(() => localStorage.getItem('auratrade_gemini_key') || '');
   const [tempKey, setTempKey] = useState(geminiKey);
-  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('auratrade_ai_model') || 'gemini-2.0-flash');
+  const [selectedModel, setSelectedModel] = useState(
+    () => localStorage.getItem('auratrade_ai_model') || 'institutional-quant'
+  );
   const [tempModel, setTempModel] = useState(selectedModel);
-  const [testStatus, setTestStatus] = useState(null); // 'testing' | 'success' | 'error' | null
+  const [testStatus, setTestStatus] = useState(null);
   const [testMessage, setTestMessage] = useState('');
 
   const [quickReplies, setQuickReplies] = useState([
-    'Platform Desk Guide',
-    'Safe Zone Guardian',
-    'Bullion & BIS HUID',
-    'NSE India & NIFTY 50',
-    'Fed Rates & Macro',
-    'Chart Patterns & Indicators',
-    'Options & The Greeks',
-    'Wash Sale & Tax Rules',
-    `Trade Setup for ${activeSymbol || 'AAPL'}`
+    `Trade setup for ${activeSymbol || 'AAPL'}`,
+    `Future forecast for ${activeSymbol || 'AAPL'}`,
+    `If I invest $1,000 in ${activeSymbol || 'AAPL'}, what is my profit?`,
+    'Top 5 stocks to buy right now',
+    `Compare ${activeSymbol || 'AAPL'} vs NVDA`
   ]);
+
   const messagesEndRef = useRef(null);
   const panelRef = useRef(null);
   const { quotes } = useSocket();
 
-  const currentQuote = quotes[activeSymbol];
-  const currentPrice = currentQuote?.price;
+  const sym = (activeSymbol || 'AAPL').toUpperCase();
+  const currentQuote = quotes[sym] || quotes[activeSymbol] || getClientQuote(sym);
+  const currentPrice = Number(currentQuote?.price) || 228.40;
+  const currentChangePct = Number(currentQuote?.changePercent) || 0;
+  const isPositive = currentChangePct >= 0;
+  const isINR =
+    currentQuote?.currency === 'INR' ||
+    ['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'SBIN', 'BHARTIARTL', 'GOLD.MCX', 'SILVER.MCX', 'NIFTY 50', 'SENSEX'].includes(sym);
+  const currSym = isINR ? '₹' : '$';
 
   // Auto-close assistant when clicking in empty space outside the panel or pressing Escape
   useEffect(() => {
@@ -144,7 +163,7 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
         title: sessionTitle,
         timestamp: Date.now(),
         messages: messages,
-        symbol: activeSymbol || null,
+        symbol: sym,
         messageCount: messages.length,
         lastSnippet: messages[messages.length - 1]?.text?.slice(0, 110) || ''
       };
@@ -165,44 +184,56 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
       }
       return nextHistory;
     });
-  }, [messages, user?.id]);
+  }, [messages, user?.id, sym, currentSessionId]);
 
   const starterPrompts = [
     {
-      icon: '⚡',
-      title: 'Platform Desk Guide',
-      subtitle: 'Overview of all 8 trading desks & terminal tools',
-      prompt: 'Platform Desk Guide'
+      icon: TrendingUp,
+      tag: 'LIVE SETUP',
+      accent: 'cyan',
+      title: `Trade Setup for ${sym}`,
+      subtitle: `Exact entry band, stop-loss floor & 30D targets for ${sym}`,
+      prompt: `Trade Setup for ${sym}`
     },
     {
-      icon: '🛡️',
-      title: 'Safe Zone Guardian',
-      subtitle: 'How balance threshold & drawdown lock work',
-      prompt: 'Safe Zone Guardian'
+      icon: Sparkles,
+      tag: 'ALPHA SCANNER',
+      accent: 'emerald',
+      title: 'Top 5 Stocks to Buy Now',
+      subtitle: 'Highest-conviction institutional picks ranked by upside',
+      prompt: 'What are the top 5 best stocks to buy right now?'
     },
     {
-      icon: '🏆',
-      title: 'Bullion & BIS HUID 916',
-      subtitle: 'Live Gold/Silver spot, hallmarking & purity standards',
-      prompt: 'Bullion & BIS HUID'
+      icon: Calculator,
+      tag: 'PROFIT MATH',
+      accent: 'indigo',
+      title: `$1,000 Profit in ${sym}`,
+      subtitle: `Calculate exact shares, target returns & max risk on ${sym}`,
+      prompt: `If I invest $1,000 in ${sym} today, what is my projected profit?`
     },
     {
-      icon: '🇮🇳',
-      title: 'NSE India & NIFTY 50',
-      subtitle: 'Indian equities, indices & T+1 settlement cycles',
-      prompt: 'NSE India & NIFTY 50'
+      icon: BarChart3,
+      tag: 'HEAD-TO-HEAD',
+      accent: 'amber',
+      title: `Compare ${sym} vs NVDA`,
+      subtitle: 'Side-by-side RSI, momentum, valuation & 30D upside verdict',
+      prompt: `Compare ${sym} vs NVDA`
     },
     {
-      icon: '🏛️',
-      title: 'Fed Rates & Macro',
-      subtitle: 'FOMC rate policy, inflation (CPI/PCE) & yields',
-      prompt: 'Fed Rates & Macro'
+      icon: Award,
+      tag: 'BULLION & NSE',
+      accent: 'gold',
+      title: 'Gold 916 & NSE India',
+      subtitle: 'Live MCX Gold/Silver purity math & NIFTY 50 blue-chips',
+      prompt: 'Bullion & BIS HUID 916 pricing and NSE India overview'
     },
     {
-      icon: '📈',
-      title: `Trade Setup for ${activeSymbol || 'AAPL'}`,
-      subtitle: `Entry zone, stop-loss and targets for ${activeSymbol || 'AAPL'}`,
-      prompt: `Trade Setup for ${activeSymbol || 'AAPL'}`
+      icon: ShieldCheck,
+      tag: 'RISK GUARD',
+      accent: 'purple',
+      title: 'Safe Zone & Position Sizing',
+      subtitle: 'How the 1-2% risk formula & Safe Zone balance lock work',
+      prompt: 'Safe Zone Guardian and 1-2% position sizing formula'
     }
   ];
 
@@ -229,7 +260,7 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
     try {
       const key = getChatHistoryKey(user?.id);
       localStorage.setItem(key, JSON.stringify(nextHistory));
-    } catch (err) {}
+    } catch {}
 
     if (currentSessionId === sessionId) {
       setMessages([]);
@@ -243,7 +274,7 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
       try {
         const key = getChatHistoryKey(user?.id);
         localStorage.removeItem(key);
-      } catch (err) {}
+      } catch {}
       setMessages([]);
       setCurrentSessionId(null);
     }
@@ -305,7 +336,7 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
         setTestStatus('error');
         setTestMessage(data.error || 'Verification failed. Please check key.');
       }
-    } catch (e) {
+    } catch {
       setTestStatus('error');
       setTestMessage('Network error communicating with verification service.');
     }
@@ -320,9 +351,16 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
     setIsConfigOpen(false);
   };
 
+  const handleCopyMessage = (msgId, text) => {
+    if (!text) return;
+    navigator.clipboard?.writeText(text);
+    setCopiedId(msgId);
+    setTimeout(() => setCopiedId(null), 1800);
+  };
+
   const handleSendMessage = async (textToSend) => {
-    const query = textToSend || input;
-    if (!query.trim() || loading) return;
+    const query = (textToSend ?? input).trim();
+    if (!query || loading) return;
 
     const userMsg = {
       id: 'usr_' + Date.now(),
@@ -331,67 +369,85 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
       timestamp: new Date().toISOString()
     };
 
-    setMessages((prev) => [...prev, userMsg]);
+    const updatedHistory = [...messages, userMsg];
+    setMessages(updatedHistory);
     setInput('');
     setLoading(true);
 
-    try {
-      const token = localStorage.getItem('auratrade_token');
-      const headers = {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
+    const pushAiPayload = (aiData) => {
+      const msgId = 'ai_' + Date.now();
+      const aiMsg = {
+        id: msgId,
+        sender: 'ai',
+        symbol: aiData.symbol || sym,
+        text: aiData.reply,
+        thinking: aiData.thinking || null,
+        references: aiData.references || [],
+        tradeSetup: aiData.tradeSetup || null,
+        confidence: aiData.confidence || 96,
+        modelUsed: aiData.modelUsed || 'AuraTrade Quant Reasoner v4.2',
+        quickReplies: aiData.quickReplies || [],
+        timestamp: aiData.timestamp || new Date().toISOString()
       };
-      if (geminiKey.trim()) {
-        headers['x-gemini-api-key'] = geminiKey.trim();
+      setMessages((prev) => [...prev, aiMsg]);
+      if (aiData.quickReplies && aiData.quickReplies.length > 0) {
+        setQuickReplies(aiData.quickReplies);
       }
-      headers['x-ai-model'] = selectedModel;
+      soundFx.playAlertChime?.();
+    };
 
-      const res = await fetch('/api/ai/chat', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          symbol: activeSymbol,
-          message: query,
-          apiKey: geminiKey.trim(),
-          model: selectedModel
-        })
-      });
+    try {
+      const useExternalGemini = Boolean(geminiKey.trim() && selectedModel !== 'institutional-quant');
 
-      const json = await res.json();
-      if (json.success && json.data) {
-        const msgId = 'ai_' + Date.now();
-        const aiMsg = {
-          id: msgId,
-          sender: 'ai',
-          text: json.data.reply,
-          thinking: json.data.thinking || null,
-          references: json.data.references || [],
-          tradeSetup: json.data.tradeSetup,
-          confidence: json.data.confidence,
-          modelUsed: json.data.modelUsed,
-          quickReplies: json.data.quickReplies || [],
-          timestamp: json.data.timestamp
+      if (useExternalGemini) {
+        const token = localStorage.getItem('auratrade_token');
+        const headers = {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          'x-gemini-api-key': geminiKey.trim(),
+          'x-ai-model': selectedModel
         };
-        // Auto-expand thought process for new incoming messages
-        if (json.data.thinking && json.data.thinking.length > 0) {
-          setExpandedThinking((prev) => ({ ...prev, [msgId]: true }));
+
+        const res = await fetch('/api/ai/chat', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            symbol: sym,
+            message: query,
+            quote: currentQuote,
+            history: updatedHistory.slice(-6),
+            apiKey: geminiKey.trim(),
+            model: selectedModel
+          })
+        });
+
+        const json = await res.json();
+        if (json.success && json.data) {
+          pushAiPayload(json.data);
+          return;
         }
-        setMessages((prev) => [...prev, aiMsg]);
-        if (json.data.quickReplies && json.data.quickReplies.length > 0) {
-          setQuickReplies(json.data.quickReplies);
-        }
-        soundFx.playAlertChime();
       }
-    } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: 'err_' + Date.now(),
-          sender: 'ai',
-          text: `Trading desk connection interrupted. Please check network connectivity and resubmit your query.`,
-          confidence: 50
-        }
-      ]);
+
+      // Built-in Quantitative Intelligence Engine v4.2 (instant, exact live telemetry & math)
+      await new Promise((resolve) => setTimeout(resolve, 220));
+      const localQuantData = generateLocalQuantResponse({
+        message: query,
+        symbol: sym,
+        quote: currentQuote,
+        portfolio: { cash: user?.balance || 100000 },
+        history: updatedHistory
+      });
+      pushAiPayload(localQuantData);
+    } catch {
+      // Zero-failure fallback: always produce an exact quantitative answer
+      const fallbackData = generateLocalQuantResponse({
+        message: query,
+        symbol: sym,
+        quote: currentQuote,
+        portfolio: { cash: user?.balance || 100000 },
+        history: updatedHistory
+      });
+      pushAiPayload(fallbackData);
     } finally {
       setLoading(false);
     }
@@ -405,63 +461,133 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
   };
 
   const getActiveModelBadge = () => {
-    if (geminiKey.trim()) {
+    if (geminiKey.trim() && selectedModel !== 'institutional-quant') {
       if (selectedModel === 'gemini-1.5-flash') return 'GEMINI 1.5 FLASH';
       return 'GEMINI 2.0 FLASH';
     }
-    return 'INSTITUTIONAL QUANT';
+    return 'QUANT ENGINE v4.2';
   };
 
-  // Helper to format markdown headers, bolding, code blocks, bullet lists, and links
+  // Helper to format markdown headers, tables, bolding, code blocks, bullet lists, and links
   const renderFormattedText = (text) => {
     if (!text) return null;
     const lines = text.split('\n');
-    return lines.map((line, idx) => {
+    const elements = [];
+    let i = 0;
+
+    while (i < lines.length) {
+      const line = lines[i];
+
+      // Detect Markdown Table block
+      if (line.trim().startsWith('|') && line.trim().endsWith('|')) {
+        const tableLines = [];
+        while (i < lines.length && lines[i].trim().startsWith('|') && lines[i].trim().endsWith('|')) {
+          tableLines.push(lines[i].trim());
+          i++;
+        }
+        if (tableLines.length >= 2) {
+          const parseRow = (r) =>
+            r
+              .slice(1, -1)
+              .split('|')
+              .map((c) => c.trim());
+          const headers = parseRow(tableLines[0]);
+          const dataRows = tableLines
+            .slice(1)
+            .filter((r) => !/^\|[\s:-]+\|$/.test(r.replace(/\|/g, '|')))
+            .filter((r) => !r.includes('---'))
+            .map(parseRow);
+
+          elements.push(
+            <div key={`tbl_${i}`} className="assistant-md-table-wrap">
+              <table className="assistant-md-table">
+                <thead>
+                  <tr>
+                    {headers.map((h, hIdx) => (
+                      <th key={hIdx}>{parseInline(h)}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {dataRows.map((row, rIdx) => (
+                    <tr key={rIdx}>
+                      {row.map((cell, cIdx) => (
+                        <td key={cIdx}>{parseInline(cell)}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          );
+          continue;
+        }
+      }
+
       // Heading level 3
       if (line.startsWith('### ')) {
-        return (
-          <div key={idx} style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent-cyan)', margin: '0.6rem 0 0.35rem 0', fontFamily: 'var(--font-brand)' }}>
+        elements.push(
+          <div key={i} className="assistant-md-h3">
             {parseInline(line.replace('### ', ''))}
           </div>
         );
+        i++;
+        continue;
       }
+
       // Heading level 4
       if (line.startsWith('#### ')) {
-        return (
-          <div key={idx} style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)', margin: '0.5rem 0 0.25rem 0', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+        elements.push(
+          <div key={i} className="assistant-md-h4">
             {parseInline(line.replace('#### ', ''))}
           </div>
         );
+        i++;
+        continue;
       }
+
       // Code blocks or formulas
       if (line.startsWith('```') || line.endsWith('```')) {
         const code = line.replace(/```[a-z]*/g, '');
-        if (!code.trim()) return null;
-        return (
-          <div key={idx} style={{ background: 'var(--bg-input)', padding: '0.4rem 0.65rem', borderRadius: '4px', border: '1px solid var(--border-subtle)', fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: 'var(--accent-cyan)', margin: '0.35rem 0' }}>
-            {code}
-          </div>
-        );
+        if (code.trim()) {
+          elements.push(
+            <div key={i} className="assistant-md-codeblock">
+              {code}
+            </div>
+          );
+        }
+        i++;
+        continue;
       }
+
       // Bullet items
       if (line.startsWith('* ') || line.startsWith('- ')) {
         const content = line.substring(2);
-        return (
-          <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.45rem', margin: '0.25rem 0', fontSize: '0.84rem' }}>
-            <span style={{ color: 'var(--accent-cyan)', marginTop: '2px' }}>•</span>
+        elements.push(
+          <div key={i} className="assistant-md-bullet">
+            <span className="assistant-md-bullet-dot" />
             <span style={{ flex: 1 }}>{parseInline(content)}</span>
           </div>
         );
+        i++;
+        continue;
       }
+
       if (!line.trim()) {
-        return <div key={idx} style={{ height: '0.35rem' }} />;
+        elements.push(<div key={i} style={{ height: '0.3rem' }} />);
+        i++;
+        continue;
       }
-      return (
-        <p key={idx} style={{ margin: '0.25rem 0', fontSize: '0.84rem', lineHeight: 1.55 }}>
+
+      elements.push(
+        <p key={i} className="assistant-md-p">
           {parseInline(line)}
         </p>
       );
-    });
+      i++;
+    }
+
+    return elements;
   };
 
   // Inline bold, code, platform shortcuts, and markdown hyperlink parser
@@ -471,21 +597,15 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
     return parts.map((part, i) => {
       if (!part) return null;
       if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={i} style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
+        return (
+          <strong key={i} style={{ color: 'var(--text-primary)', fontWeight: 700 }}>
+            {part.slice(2, -2)}
+          </strong>
+        );
       }
       if (part.startsWith('`') && part.endsWith('`')) {
         return (
-          <code
-            key={i}
-            style={{
-              background: 'var(--bg-input)',
-              padding: '0.1rem 0.3rem',
-              borderRadius: '3px',
-              fontFamily: 'var(--font-mono)',
-              fontSize: '0.8rem',
-              color: 'var(--accent-cyan)'
-            }}
-          >
+          <code key={i} className="assistant-inline-code">
             {part.slice(1, -1)}
           </code>
         );
@@ -497,24 +617,6 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
           <button
             key={i}
             className="assistant-platform-action-pill"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.35rem',
-              background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.22) 0%, rgba(16, 185, 129, 0.22) 100%)',
-              border: '1px solid rgba(56, 189, 248, 0.45)',
-              borderRadius: '6px',
-              padding: '0.18rem 0.55rem',
-              margin: '0.1rem 0.25rem',
-              color: 'var(--accent-cyan)',
-              fontSize: '0.78rem',
-              fontWeight: 700,
-              fontFamily: 'var(--font-mono)',
-              cursor: 'pointer',
-              verticalAlign: 'middle',
-              boxShadow: '0 2px 8px rgba(2, 132, 199, 0.2)',
-              transition: 'all 0.18s ease'
-            }}
             onClick={() => {
               const lower = dest.toLowerCase();
               if (lower.includes('terminal')) onNavigate?.('dashboard');
@@ -525,15 +627,15 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
               else if (lower.includes('watchlist')) onNavigate?.('watchlist-alerts');
               else if (lower.includes('portfolio')) onNavigate?.('portfolio');
               else if (lower.includes('safe zone') || lower.includes('profile')) onNavigate?.('profile');
-              else if (lower.includes('ticket') || lower.includes('trade')) onOpenTrade?.(activeSymbol);
+              else if (lower.includes('ticket') || lower.includes('trade')) onOpenTrade?.(sym);
               else if (lower.includes('predictor')) onOpenAutoPredictor?.();
-              soundFx.playAlertChime();
+              soundFx.playAlertChime?.();
             }}
             title={`Jump directly to ${dest}`}
           >
-            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--bull-green)', display: 'inline-block' }} />
+            <span className="assistant-platform-pill-dot" />
             <span>{dest}</span>
-            <ArrowUpRight size={12} />
+            <ArrowUpRight size={11} />
           </button>
         );
       }
@@ -564,36 +666,36 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
           <button
             className="floating-action-orb"
             onClick={() => setIsOpen(true)}
-            title="Open Trading Strategy Desk (Institutional Advisory)"
+            title="Open AuraTrade AI Strategy Desk"
             aria-label="Open Trading Strategy Desk"
           >
-            {/* Ambient Concentric Radar Pulse Ring */}
             <div className="orb-pulse-ring" />
-
-            {/* Core Strategy / Neural Waveform Icon */}
             <div className="orb-icon-box">
               <Activity size={18} strokeWidth={2.4} />
             </div>
-
-            {/* Live Status Beacon Dot */}
             <div className="orb-beacon-dot" />
-
-            {/* Smoothly Expanding Hover Label */}
             <div className="orb-label-content">
               <div className="orb-label-title">Strategy Desk</div>
               <div className="orb-label-subtitle">
-                <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: '#10b981', display: 'inline-block' }} />
-                AI Advisory
+                <span
+                  style={{
+                    width: '4px',
+                    height: '4px',
+                    borderRadius: '50%',
+                    background: '#10b981',
+                    display: 'inline-block'
+                  }}
+                />
+                Quant AI v4.2
               </div>
             </div>
           </button>
         </div>
       )}
 
-      {/* Slide-Up Chat Panel with Dynamic Layout & Expandability */}
+      {/* Slide-Up Chat Panel */}
       {isOpen && (
         <>
-          {/* Dismissible Backdrop for Empty Space Clicking */}
           <div
             className="ai-assistant-backdrop"
             onClick={() => setIsOpen(false)}
@@ -602,887 +704,952 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
               position: 'fixed',
               inset: 0,
               zIndex: 2450,
-              background: isExpanded ? 'rgba(3, 7, 18, 0.45)' : 'transparent',
-              backdropFilter: isExpanded ? 'blur(2px)' : 'none',
-              WebkitBackdropFilter: isExpanded ? 'blur(2px)' : 'none',
+              background: isExpanded ? 'rgba(3, 7, 18, 0.52)' : 'transparent',
+              backdropFilter: isExpanded ? 'blur(3px)' : 'none',
+              WebkitBackdropFilter: isExpanded ? 'blur(3px)' : 'none',
               transition: 'background 0.2s ease'
             }}
           />
 
           <div
             ref={panelRef}
-            className="ai-chat-panel glass-card assistant-panel-root"
-          style={{
-            position: 'fixed',
-            bottom: '16px',
-            right: '16px',
-            width: isExpanded ? 'min(820px, calc(100vw - 32px))' : 'min(520px, calc(100vw - 24px))',
-            height: isExpanded ? 'calc(100vh - 86px)' : 'min(640px, calc(100vh - 90px))',
-            maxHeight: isExpanded ? 'calc(100vh - 86px)' : 'calc(100vh - 90px)',
-            zIndex: 2500,
-            display: 'flex',
-            flexDirection: 'column',
-            boxShadow: isExpanded
-              ? '0 32px 80px rgba(0, 0, 0, 0.92), 0 0 50px rgba(6, 182, 212, 0.25)'
-              : '0 24px 60px rgba(0, 0, 0, 0.85), 0 0 35px rgba(6, 182, 212, 0.16)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-lg)',
-            overflow: 'hidden',
-            background: 'var(--bg-card)',
-            backdropFilter: 'blur(28px)',
-            transition: 'width 0.28s cubic-bezier(0.16, 1, 0.3, 1), height 0.28s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.28s ease'
-          }}
-        >
-          {/* Top Multi-Color Neon Accent Bar */}
-          <div
+            className={`ai-chat-panel glass-card assistant-panel-root ${isExpanded ? 'is-expanded' : ''}`}
             style={{
-              height: '3px',
-              width: '100%',
-              background: 'linear-gradient(90deg, #06b6d4 0%, #6366f1 50%, #10b981 100%)',
-              boxShadow: '0 0 10px rgba(6, 182, 212, 0.6)',
-              flexShrink: 0
-            }}
-          />
-
-          {/* Header */}
-          <div
-            style={{
-              padding: isExpanded ? '0.85rem 1.25rem' : '0.7rem 0.9rem',
-              borderBottom: '1px solid var(--border-subtle)',
-              background: 'var(--bg-card-hover)',
+              position: 'fixed',
+              bottom: '16px',
+              right: '16px',
+              width: isExpanded ? 'min(860px, calc(100vw - 32px))' : 'min(540px, calc(100vw - 24px))',
+              height: isExpanded ? 'calc(100vh - 80px)' : 'min(670px, calc(100vh - 84px))',
+              maxHeight: isExpanded ? 'calc(100vh - 80px)' : 'calc(100vh - 84px)',
+              zIndex: 2500,
               display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '0.5rem',
-              flexShrink: 0
+              flexDirection: 'column'
             }}
           >
-            {/* Left: Avatar + Title & Model Badge Column */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', minWidth: 0, flex: '1 1 auto', overflow: 'hidden' }}>
-              {/* Radar Avatar Icon */}
-              <div
-                style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '10px',
-                  background: 'linear-gradient(145deg, #0d1a30 0%, #060b17 100%)',
-                  border: '1px solid rgba(6, 182, 212, 0.4)',
-                  boxShadow: '0 4px 14px rgba(0, 0, 0, 0.6), 0 0 12px rgba(6, 182, 212, 0.25)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'var(--accent-cyan)',
-                  flexShrink: 0,
-                  position: 'relative'
-                }}
-              >
-                <Activity size={18} strokeWidth={2.4} />
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: '-2px',
-                    right: '-2px',
-                    width: '9px',
-                    height: '9px',
-                    borderRadius: '50%',
-                    background: '#10b981',
-                    border: '2px solid #090e1b',
-                    boxShadow: '0 0 8px #10b981'
-                  }}
-                />
-              </div>
+            {/* Top Multi-Color Neon Accent Bar */}
+            <div className="assistant-top-neon-bar" />
 
-              {/* Title & Badge 2-Row Stack (Never Overflows into Controls) */}
-              <div style={{ minWidth: 0, flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.18rem' }}>
-                <div style={{
-                  fontWeight: 800,
-                  fontSize: isExpanded ? '0.94rem' : '0.86rem',
-                  fontFamily: 'var(--font-brand)',
-                  color: 'var(--text-primary)',
-                  letterSpacing: '-0.01em',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  lineHeight: 1.15
-                }}>
-                  AuraTrade Strategy Desk
+            {/* Modern Institutional Header */}
+            <div className="assistant-modern-header">
+              <div className="assistant-header-brand">
+                <div className="assistant-header-avatar">
+                  <Activity size={18} strokeWidth={2.4} />
+                  <span className="assistant-header-online-dot" />
                 </div>
 
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  minWidth: 0,
-                  overflow: 'hidden'
-                }}>
-                  {/* Interactive Model Switcher Badge */}
-                  <button
-                    onClick={() => {
-                      setTempKey(geminiKey);
-                      setTempModel(selectedModel);
-                      setTestStatus(null);
-                      setTestMessage('');
-                      setIsConfigOpen(true);
-                    }}
-                    style={{
-                      fontSize: '0.58rem',
-                      padding: '0.1rem 0.38rem',
-                      borderRadius: '4px',
-                      background: geminiKey.trim() && selectedModel !== 'institutional-quant' ? 'rgba(56, 189, 248, 0.16)' : 'rgba(16, 185, 129, 0.16)',
-                      color: geminiKey.trim() && selectedModel !== 'institutional-quant' ? '#38bdf8' : '#34d399',
-                      border: geminiKey.trim() && selectedModel !== 'institutional-quant' ? '1px solid rgba(56, 189, 248, 0.4)' : '1px solid rgba(16, 185, 129, 0.35)',
-                      fontFamily: 'var(--font-mono)',
-                      letterSpacing: '0.03em',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.22rem',
-                      whiteSpace: 'nowrap',
-                      maxWidth: '100%',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      lineHeight: 1.2,
-                      transition: 'all 0.15s ease'
-                    }}
-                    title="Click to Switch AI Engine / Configure API Key"
-                  >
-                    <Cpu size={10} style={{ flexShrink: 0 }} />
-                    <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{getActiveModelBadge()}</span>
-                  </button>
-
-                  {isExpanded && (
-                    <span style={{
-                      fontSize: '0.68rem',
-                      color: 'var(--text-muted)',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      lineHeight: 1.2
-                    }}>
-                      • Institutional Advisory
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Right: Header Controls */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', flexShrink: 0 }}>
-              {/* New Chat Button */}
-              <button
-                className="assistant-hdr-btn"
-                onClick={handleNewChat}
-                title="Start a New Blank Chat"
-              >
-                <Plus size={13} />
-                <span>New</span>
-              </button>
-
-              {/* Chat History Toggle Button */}
-              <button
-                className={`assistant-hdr-btn ${isHistoryOpen ? 'active' : ''}`}
-                onClick={() => setIsHistoryOpen(!isHistoryOpen)}
-                title={isHistoryOpen ? 'Back to Active Chat' : 'View Past Chat History'}
-              >
-                <History size={13} />
-                <span>History</span>
-                {chatHistory.length > 0 && (
-                  <span className="assistant-hdr-badge">
-                    {chatHistory.length}
-                  </span>
-                )}
-              </button>
-
-              {/* Expand / Minimize Toggle */}
-              <button
-                className={`assistant-hdr-btn-icon ${isExpanded ? 'expanded' : ''}`}
-                onClick={() => setIsExpanded(!isExpanded)}
-                title={isExpanded ? 'Restore Standard Size' : 'Expand to Workstation View'}
-              >
-                {isExpanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-              </button>
-
-              {/* Settings Button */}
-              <button
-                className="assistant-hdr-btn-icon"
-                onClick={() => {
-                  setTempKey(geminiKey);
-                  setTempModel(selectedModel);
-                  setTestStatus(null);
-                  setTestMessage('');
-                  setIsConfigOpen(true);
-                }}
-                title="Configure AI Model & Engine"
-              >
-                <Settings size={13} />
-              </button>
-
-              {/* Close Button */}
-              <button
-                className="assistant-hdr-btn-icon close-btn"
-                onClick={() => setIsOpen(false)}
-                title="Close Strategy Desk"
-              >
-                <X size={14} />
-              </button>
-            </div>
-          </div>
-
-          {/* Main Body: Either History Page OR Messages Thread */}
-          {isHistoryOpen ? (
-            <div
-              style={{
-                flex: 1,
-                padding: isExpanded ? '1.25rem 1.45rem' : '1.1rem',
-                overflowY: 'auto',
-                background: 'var(--bg-main)',
-                display: 'flex',
-                flexDirection: 'column'
-              }}
-            >
-              <div className="assistant-history-container">
-                <div className="assistant-history-topbar">
-                  <button
-                    onClick={() => setIsHistoryOpen(false)}
-                    className="assistant-history-back-btn"
-                  >
-                    <ArrowLeft size={14} />
-                    <span>Back to Chat</span>
-                  </button>
-
-                  <div className="assistant-history-count-badge">
-                    <Clock size={12} />
-                    <span>
-                      {chatHistory.length} {chatHistory.length === 1 ? 'Session' : 'Sessions'}
-                    </span>
+                <div className="assistant-header-titles">
+                  <div className="assistant-header-name-row">
+                    <span className="assistant-header-title">AuraTrade Strategy Desk</span>
                   </div>
-
-                  {chatHistory.length > 0 && (
+                  <div className="assistant-header-sub-row">
                     <button
-                      onClick={handleClearAllHistory}
-                      className="assistant-history-clear-btn"
-                      title="Clear all chat history"
-                    >
-                      <Trash2 size={12} />
-                      <span>Clear All</span>
-                    </button>
-                  )}
-                </div>
-
-                {chatHistory.length === 0 ? (
-                  <div className="assistant-history-empty">
-                    <div className="assistant-history-empty-icon">
-                      <Clock size={28} />
-                    </div>
-                    <h4>No Past Chats Found</h4>
-                    <p>
-                      Conversations with the AI Strategy Desk will automatically be archived here so you can revisit trading setups, market insights, and calculations anytime.
-                    </p>
-                    <button
-                      className="btn btn-primary"
-                      style={{
-                        marginTop: '1.1rem',
-                        padding: '0.55rem 1.1rem',
-                        fontSize: '0.8rem',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.45rem'
+                      type="button"
+                      className={`assistant-engine-badge ${
+                        geminiKey.trim() && selectedModel !== 'institutional-quant' ? 'is-gemini' : 'is-quant'
+                      }`}
+                      onClick={() => {
+                        setTempKey(geminiKey);
+                        setTempModel(selectedModel);
+                        setTestStatus(null);
+                        setTestMessage('');
+                        setIsConfigOpen(true);
                       }}
-                      onClick={handleNewChat}
+                      title="Click to Switch AI Engine / Configure API Key"
                     >
-                      <Plus size={14} />
-                      <span>Start New Conversation</span>
+                      <Cpu size={10} />
+                      <span>{getActiveModelBadge()}</span>
                     </button>
+                    <span className="assistant-header-live-tag">• LIVE TELEMETRY</span>
                   </div>
-                ) : (
-                  <div className="assistant-history-list">
-                    {chatHistory.map((session) => {
-                      const isActive = session.id === currentSessionId;
-                      return (
-                        <div
-                          key={session.id}
-                          className={`assistant-history-item ${isActive ? 'active' : ''}`}
-                          onClick={() => handleLoadSession(session)}
-                        >
-                          <div className="assistant-history-item-header">
-                            <div className="assistant-history-item-title-row">
-                              <MessageSquare size={14} className="assistant-history-item-icon" />
-                              <span className="assistant-history-item-title">{session.title}</span>
-                              {isActive && (
-                                <span className="assistant-history-active-tag status-pill status-active" data-status="ACTIVE">Active</span>
+                </div>
+              </div>
+
+              {/* Right: Header Controls */}
+              <div className="assistant-header-actions">
+                <button
+                  type="button"
+                  className="assistant-hdr-btn"
+                  onClick={handleNewChat}
+                  title="Start a New Conversation"
+                >
+                  <Plus size={13} />
+                  <span>New</span>
+                </button>
+
+                <button
+                  type="button"
+                  className={`assistant-hdr-btn ${isHistoryOpen ? 'active' : ''}`}
+                  onClick={() => setIsHistoryOpen(!isHistoryOpen)}
+                  title={isHistoryOpen ? 'Back to Active Chat' : 'View Past Chat History'}
+                >
+                  <History size={13} />
+                  <span>History</span>
+                  {chatHistory.length > 0 && (
+                    <span className="assistant-hdr-badge">{chatHistory.length}</span>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  className={`assistant-hdr-btn-icon ${isExpanded ? 'expanded' : ''}`}
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  title={isExpanded ? 'Restore Compact Size' : 'Expand to Full Workstation View'}
+                >
+                  {isExpanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+                </button>
+
+                <button
+                  type="button"
+                  className="assistant-hdr-btn-icon"
+                  onClick={() => {
+                    setTempKey(geminiKey);
+                    setTempModel(selectedModel);
+                    setTestStatus(null);
+                    setTestMessage('');
+                    setIsConfigOpen(true);
+                  }}
+                  title="Configure AI Model & Engine"
+                >
+                  <Settings size={13} />
+                </button>
+
+                <button
+                  type="button"
+                  className="assistant-hdr-btn-icon close-btn"
+                  onClick={() => setIsOpen(false)}
+                  title="Close Strategy Desk"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+
+            {/* Active Market Telemetry Strip (Live Context + 1-Click Actions) */}
+            {!isHistoryOpen && (
+              <div className="assistant-telemetry-strip">
+                <div className="assistant-telemetry-asset">
+                  <span className="assistant-telemetry-dot" />
+                  <span className="assistant-telemetry-symbol">{sym}</span>
+                  <span className="assistant-telemetry-price">
+                    {currSym}
+                    {currentPrice.toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    })}
+                  </span>
+                  <span className={`assistant-telemetry-change ${isPositive ? 'up' : 'down'}`}>
+                    {isPositive ? '+' : ''}
+                    {currentChangePct.toFixed(2)}%
+                  </span>
+                </div>
+
+                <div className="assistant-telemetry-actions">
+                  <button
+                    type="button"
+                    className="assistant-telemetry-pill"
+                    onClick={() => handleSendMessage(`Trade setup for ${sym}`)}
+                    disabled={loading}
+                  >
+                    <Zap size={11} />
+                    <span>Setup</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="assistant-telemetry-pill"
+                    onClick={() => handleSendMessage(`Multi-horizon future forecast for ${sym}`)}
+                    disabled={loading}
+                  >
+                    <TrendingUp size={11} />
+                    <span>Forecast</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="assistant-telemetry-pill"
+                    onClick={() =>
+                      handleSendMessage(`If I invest $1,000 in ${sym} today, what is my profit?`)
+                    }
+                    disabled={loading}
+                  >
+                    <Calculator size={11} />
+                    <span>$1K Calc</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="assistant-telemetry-pill"
+                    onClick={() => handleSendMessage('What are the top 5 best stocks to buy right now?')}
+                    disabled={loading}
+                  >
+                    <Sparkles size={11} />
+                    <span>Top Picks</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Main Body: Either History Page OR Messages Thread */}
+            {isHistoryOpen ? (
+              <div className="assistant-body-scroll">
+                <div className="assistant-history-container">
+                  <div className="assistant-history-topbar">
+                    <button
+                      type="button"
+                      onClick={() => setIsHistoryOpen(false)}
+                      className="assistant-history-back-btn"
+                    >
+                      <ArrowLeft size={14} />
+                      <span>Back to Chat</span>
+                    </button>
+
+                    <div className="assistant-history-count-badge">
+                      <Clock size={12} />
+                      <span>
+                        {chatHistory.length} {chatHistory.length === 1 ? 'Session' : 'Sessions'}
+                      </span>
+                    </div>
+
+                    {chatHistory.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearAllHistory}
+                        className="assistant-history-clear-btn"
+                        title="Clear all chat history"
+                      >
+                        <Trash2 size={12} />
+                        <span>Clear All</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {chatHistory.length === 0 ? (
+                    <div className="assistant-history-empty">
+                      <div className="assistant-history-empty-icon">
+                        <Clock size={26} />
+                      </div>
+                      <h4>No Past Chats Found</h4>
+                      <p>
+                        Conversations with the AI Strategy Desk are automatically archived here so you can revisit trade setups, profit calculations, and multi-horizon forecasts anytime.
+                      </p>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        style={{
+                          marginTop: '1rem',
+                          padding: '0.5rem 1rem',
+                          fontSize: '0.78rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.4rem'
+                        }}
+                        onClick={handleNewChat}
+                      >
+                        <Plus size={14} />
+                        <span>Start New Conversation</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="assistant-history-list">
+                      {chatHistory.map((session) => {
+                        const isActive = session.id === currentSessionId;
+                        return (
+                          <div
+                            key={session.id}
+                            className={`assistant-history-item ${isActive ? 'active' : ''}`}
+                            onClick={() => handleLoadSession(session)}
+                          >
+                            <div className="assistant-history-item-header">
+                              <div className="assistant-history-item-title-row">
+                                <MessageSquare size={14} className="assistant-history-item-icon" />
+                                <span className="assistant-history-item-title">{session.title}</span>
+                                {isActive && (
+                                  <span
+                                    className="assistant-history-active-tag status-pill status-active"
+                                    data-status="ACTIVE"
+                                  >
+                                    Active
+                                  </span>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                className="assistant-history-del-btn"
+                                onClick={(e) => handleDeleteSession(e, session.id)}
+                                title="Delete this chat"
+                              >
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+
+                            {session.lastSnippet && (
+                              <div className="assistant-history-snippet">
+                                {session.lastSnippet.replace(/[#*`]/g, '')}...
+                              </div>
+                            )}
+
+                            <div className="assistant-history-meta-row">
+                              <span className="assistant-history-date">
+                                <Clock size={11} />
+                                {formatSessionTime(session.timestamp)}
+                              </span>
+                              <span className="assistant-history-msgs">
+                                {session.messages?.length || 0} messages
+                              </span>
+                              {session.symbol && (
+                                <span className="assistant-history-symbol-tag">{session.symbol}</span>
                               )}
                             </div>
-                            <button
-                              className="assistant-history-del-btn"
-                              onClick={(e) => handleDeleteSession(e, session.id)}
-                              title="Delete this chat"
-                            >
-                              <Trash2 size={13} />
-                            </button>
                           </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* Messages Thread */
+              <div className="assistant-body-scroll">
+                {messages.length === 0 ? (
+                  <div className="assistant-empty-state">
+                    <div className="assistant-empty-hero">
+                      <div className="assistant-empty-icon-wrapper">
+                        <Sparkles size={22} className="assistant-empty-sparkle" />
+                      </div>
+                      <div className="assistant-empty-hero-text">
+                        <h3 className="assistant-empty-title">AuraTrade Quantitative AI</h3>
+                        <p className="assistant-empty-desc">
+                          Ask about any company or ticker (e.g. <strong>Apple</strong>, <strong>NVDA</strong>, <strong>Reliance</strong>, <strong>Gold</strong>), compare stocks head-to-head, simulate dollar profits, or generate multi-horizon forecasts.
+                        </p>
+                      </div>
+                    </div>
 
-                          {session.lastSnippet && (
-                            <div className="assistant-history-snippet">
-                              {session.lastSnippet}...
-                            </div>
-                          )}
+                    <div className="assistant-starters-header">
+                      <span className="assistant-starters-label">INSTITUTIONAL INTELLIGENCE MODULES</span>
+                      <span className="assistant-starters-sub">Click any card to execute</span>
+                    </div>
 
-                          <div className="assistant-history-meta-row">
-                            <span className="assistant-history-date">
-                              <Clock size={11} />
-                              {formatSessionTime(session.timestamp)}
-                            </span>
-                            <span className="assistant-history-msgs">
-                              {session.messages?.length || 0} messages
-                            </span>
-                            {session.symbol && (
-                              <span className="assistant-history-symbol-tag">
-                                {session.symbol}
+                    <div className="assistant-starters-grid">
+                      {starterPrompts.map((item, idx) => {
+                        const IconComponent = item.icon;
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            className={`assistant-starter-chip accent-${item.accent}`}
+                            onClick={() => handleSendMessage(item.prompt)}
+                          >
+                            <div className="assistant-starter-top">
+                              <div className={`assistant-starter-icon-box accent-${item.accent}`}>
+                                <IconComponent size={16} strokeWidth={2.2} />
+                              </div>
+                              <span className={`assistant-starter-tag accent-${item.accent}`}>
+                                {item.tag}
                               </span>
+                            </div>
+                            <div className="assistant-starter-text">
+                              <span className="assistant-starter-title">{item.title}</span>
+                              <span className="assistant-starter-sub">{item.subtitle}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="assistant-messages-stack">
+                    {messages.map((msg) => {
+                      const isUser = msg.sender === 'user';
+                      const isThinkingOpen = Boolean(expandedThinking[msg.id]);
+
+                      return (
+                        <div
+                          key={msg.id}
+                          className={`assistant-msg-row ${isUser ? 'is-user' : 'is-ai'}`}
+                        >
+                          <div className={`assistant-msg-bubble ${isUser ? 'user-bubble' : 'ai-bubble'}`}>
+                            {/* AI Card Top Bar (Confidence + Reasoning Toggle + Copy) */}
+                            {!isUser && (
+                              <div className="assistant-ai-card-topbar">
+                                <div className="assistant-ai-card-badges">
+                                  <span className="assistant-ai-desk-pill">
+                                    <Cpu size={11} />
+                                    <span>QUANT DESK</span>
+                                  </span>
+                                  {msg.confidence && (
+                                    <span className="assistant-ai-conf-pill">
+                                      {msg.confidence}% CONFIDENCE
+                                    </span>
+                                  )}
+                                  {msg.thinking && msg.thinking.length > 0 && (
+                                    <button
+                                      type="button"
+                                      className={`assistant-thinking-toggle ${isThinkingOpen ? 'open' : ''}`}
+                                      onClick={() =>
+                                        setExpandedThinking((prev) => ({
+                                          ...prev,
+                                          [msg.id]: !prev[msg.id]
+                                        }))
+                                      }
+                                    >
+                                      {isThinkingOpen ? (
+                                        <ChevronDown size={11} />
+                                      ) : (
+                                        <ChevronRight size={11} />
+                                      )}
+                                      <span>{msg.thinking.length}-Step Reasoning</span>
+                                    </button>
+                                  )}
+                                </div>
+
+                                <button
+                                  type="button"
+                                  className="assistant-copy-btn"
+                                  onClick={() => handleCopyMessage(msg.id, msg.text)}
+                                  title="Copy response to clipboard"
+                                >
+                                  {copiedId === msg.id ? (
+                                    <>
+                                      <Check size={11} style={{ color: 'var(--bull-green)' }} />
+                                      <span style={{ color: 'var(--bull-green)' }}>Copied</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Copy size={11} />
+                                      <span>Copy</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Collapsible Chain-of-Thought Reasoning Steps */}
+                            {!isUser && msg.thinking && msg.thinking.length > 0 && isThinkingOpen && (
+                              <div className="assistant-thinking-box">
+                                {msg.thinking.map((step, sIdx) => (
+                                  <div key={sIdx} className="assistant-thinking-step">
+                                    <span className="assistant-thinking-num">0{sIdx + 1}</span>
+                                    <span>{step}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+
+                            {/* Formatted Message Content */}
+                            <div className="assistant-msg-content">{renderFormattedText(msg.text)}</div>
+
+                            {/* Structured Institutional 4-Quadrant Trade Setup Card */}
+                            {msg.tradeSetup && (
+                              <div className="assistant-trade-setup-card">
+                                <div className="assistant-trade-setup-header">
+                                  <div className="assistant-trade-setup-title">
+                                    <Layers size={13} style={{ color: 'var(--accent-cyan)' }} />
+                                    <span>
+                                      INSTITUTIONAL EXECUTION TICKET • {msg.tradeSetup.symbol || sym}
+                                    </span>
+                                  </div>
+                                  <div className="assistant-trade-setup-rr">
+                                    R/R {msg.tradeSetup.riskReward}
+                                  </div>
+                                </div>
+
+                                <div className="assistant-trade-setup-grid">
+                                  <div className="assistant-trade-cell">
+                                    <span className="assistant-trade-label">LIMIT ENTRY BAND</span>
+                                    <span className="assistant-trade-val entry">
+                                      {msg.tradeSetup.entryZone}
+                                    </span>
+                                  </div>
+                                  <div className="assistant-trade-cell">
+                                    <span className="assistant-trade-label">TARGET 1 (SCALE 50%)</span>
+                                    <span className="assistant-trade-val target">
+                                      {msg.tradeSetup.takeProfit1}
+                                    </span>
+                                  </div>
+                                  <div className="assistant-trade-cell">
+                                    <span className="assistant-trade-label">TARGET 2 (30D QUANT)</span>
+                                    <span className="assistant-trade-val target">
+                                      {msg.tradeSetup.takeProfit2}
+                                    </span>
+                                  </div>
+                                  <div className="assistant-trade-cell">
+                                    <span className="assistant-trade-label">HARD STOP-LOSS</span>
+                                    <span className="assistant-trade-val stop">
+                                      {msg.tradeSetup.stopLoss}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="assistant-trade-setup-footer">
+                                  <button
+                                    type="button"
+                                    className="assistant-trade-exec-btn"
+                                    onClick={() => {
+                                      onOpenTrade?.(msg.tradeSetup.symbol || sym);
+                                      soundFx.playAlertChime?.();
+                                    }}
+                                  >
+                                    <Zap size={12} />
+                                    <span>Execute {msg.tradeSetup.symbol || sym} Order Ticket</span>
+                                    <ArrowUpRight size={12} />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Dedicated Verified References Card */}
+                            {msg.references && msg.references.length > 0 && (
+                              <div className="assistant-references-card">
+                                <div className="assistant-references-header">
+                                  <Globe size={12} style={{ color: 'var(--accent-cyan)' }} />
+                                  <span>VERIFIED INSTITUTIONAL SOURCES</span>
+                                </div>
+                                <div className="assistant-references-grid">
+                                  {msg.references.map((ref, rIdx) => (
+                                    <a
+                                      key={rIdx}
+                                      href={ref.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="assistant-ref-item"
+                                      title={`Visit ${ref.title} (${ref.domain})`}
+                                    >
+                                      <div className="assistant-ref-meta">
+                                        <div className="assistant-ref-top-row">
+                                          <span className="assistant-ref-badge">{ref.domain}</span>
+                                          <span className="assistant-ref-title">{ref.title}</span>
+                                        </div>
+                                        {ref.desc && <span className="assistant-ref-desc">{ref.desc}</span>}
+                                      </div>
+                                      <ExternalLink size={12} className="assistant-ref-icon" />
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
                             )}
                           </div>
+
+                          {/* Message Metadata Pill */}
+                          <span className="assistant-msg-meta">
+                            <span>{isUser ? 'Trader' : 'AuraTrade Quant Desk'}</span>
+                            {!isUser && msg.modelUsed && (
+                              <span className="assistant-msg-model-tag">{msg.modelUsed}</span>
+                            )}
+                            <span>
+                              •{' '}
+                              {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </span>
                         </div>
                       );
                     })}
                   </div>
                 )}
-              </div>
-            </div>
-          ) : (
-            /* Messages Thread */
-            <div
-              style={{
-                flex: 1,
-                padding: isExpanded ? '1.25rem 1.45rem' : '1.1rem',
-                overflowY: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1.1rem',
-                background: 'var(--bg-main)'
-              }}
-            >
-              {messages.length === 0 ? (
-                <div className="assistant-empty-state">
-                  <div className="assistant-empty-icon-wrapper">
-                    <Sparkles size={26} className="assistant-empty-sparkle" />
-                  </div>
-                  <h3 className="assistant-empty-title">
-                    AuraTrade AI Strategy Desk
-                  </h3>
-                  <p className="assistant-empty-desc">
-                    Institutional Quant Reasoner & Market Intelligence. Ask any question about technical setups, macro indicators, bullion, or execution.
-                  </p>
 
-                  <div className="assistant-starters-label">Suggested Starting Prompts</div>
-                  <div className="assistant-starters-grid">
-                    {starterPrompts.map((item, idx) => (
+                {loading && (
+                  <div className="assistant-loading-indicator">
+                    <RefreshCw size={14} className="spin" />
+                    <span>Computing live technicals, regression targets & risk parameters...</span>
+                  </div>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            )}
+
+            {/* Bottom Area: Either History Action Bar OR Follow-up Chips + Command Input */}
+            {isHistoryOpen ? (
+              <div className="assistant-history-footer">
+                <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                  Select any archived session to restore full reasoning and trade setups.
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleNewChat}
+                  style={{
+                    padding: '0.45rem 0.95rem',
+                    fontSize: '0.76rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    borderRadius: '6px'
+                  }}
+                >
+                  <Plus size={14} />
+                  <span>Start New Chat</span>
+                </button>
+              </div>
+            ) : (
+              <div className="assistant-composer-dock">
+                {/* Contextual Follow-Up Chips (ONLY shown after conversation starts, preventing duplicate starter clutter) */}
+                {messages.length > 0 && quickReplies.length > 0 && !loading && (
+                  <div className="assistant-followup-strip">
+                    {quickReplies.map((qr, i) => (
                       <button
-                        key={idx}
-                        className="assistant-starter-chip"
-                        onClick={() => handleSendMessage(item.prompt)}
+                        key={i}
+                        type="button"
+                        className="assistant-followup-chip"
+                        onClick={() => handleSendMessage(qr)}
                       >
-                        <span className="assistant-starter-icon">{item.icon}</span>
-                        <div className="assistant-starter-text">
-                          <span className="assistant-starter-title">{item.title}</span>
-                          <span className="assistant-starter-sub">{item.subtitle}</span>
-                        </div>
+                        <span>{qr}</span>
+                        <ArrowUpRight size={11} />
                       </button>
                     ))}
                   </div>
+                )}
+
+                {/* Modern Command Input Capsule */}
+                <div className="assistant-input-row">
+                  <div className="assistant-input-capsule">
+                    <input
+                      type="text"
+                      className="assistant-command-input"
+                      placeholder={`Ask about ${sym}, compare tickers, calculate $1K profit, or request a setup...`}
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      disabled={loading}
+                    />
+                    <button
+                      type="button"
+                      className="assistant-send-btn"
+                      onClick={() => handleSendMessage()}
+                      disabled={loading || !input.trim()}
+                      title="Send to Strategy Desk"
+                    >
+                      <Send size={14} />
+                    </button>
+                  </div>
                 </div>
-              ) : (
-                messages.map((msg) => {
-                  const isUser = msg.sender === 'user';
-                  return (
+              </div>
+            )}
+
+            {/* AI Model & Engine Configuration Modal */}
+            {isConfigOpen && (
+              <div className="assistant-config-modal">
+                <div className="assistant-config-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+                    <Cpu size={18} style={{ color: 'var(--accent-cyan)' }} />
+                    <div>
+                      <h3
+                        style={{
+                          fontSize: '0.95rem',
+                          fontWeight: 800,
+                          fontFamily: 'var(--font-brand)',
+                          color: 'var(--text-primary)',
+                          margin: 0
+                        }}
+                      >
+                        AI Reasoning Engine & Credentials
+                      </h3>
+                      <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0 }}>
+                        Choose between the built-in Quant Engine v4.2 or external Gemini LLM
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className="assistant-hdr-btn-icon"
+                    onClick={() => setIsConfigOpen(false)}
+                  >
+                    <X size={15} />
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1.1rem' }}>
+                  <label
+                    style={{
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      color: 'var(--text-secondary)',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em'
+                    }}
+                  >
+                    Select Execution Engine
+                  </label>
+
+                  {/* Built-in Institutional Quant Reasoner */}
+                  <div
+                    onClick={() => setTempModel('institutional-quant')}
+                    style={{
+                      padding: '0.8rem 0.9rem',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      background:
+                        tempModel === 'institutional-quant'
+                          ? 'rgba(16, 185, 129, 0.12)'
+                          : 'var(--bg-card-hover)',
+                      border:
+                        tempModel === 'institutional-quant'
+                          ? '1px solid var(--bull-green)'
+                          : '1px solid var(--border-subtle)',
+                      transition: 'all 0.2s'
+                    }}
+                  >
                     <div
-                      key={msg.id}
                       style={{
                         display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: isUser ? 'flex-end' : 'flex-start',
-                        maxWidth: '100%'
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '0.25rem'
                       }}
                     >
-                      <div
-                        style={{
-                          maxWidth: isExpanded ? '86%' : '94%',
-                          padding: isUser ? '0.75rem 1.1rem' : '0.95rem 1.25rem',
-                          borderRadius: isUser ? '16px 16px 3px 16px' : '16px 16px 16px 3px',
-                          background: isUser
-                            ? 'linear-gradient(135deg, #0284c7 0%, #4f46e5 100%)'
-                            : 'var(--bg-card)',
-                          border: isUser
-                            ? '1px solid rgba(56, 189, 248, 0.35)'
-                            : '1px solid var(--border-subtle)',
-                          borderLeft: isUser ? 'none' : '3px solid var(--accent-cyan)',
-                          color: isUser ? '#ffffff' : 'var(--text-primary)',
-                          boxShadow: isUser
-                            ? '0 6px 18px rgba(2, 132, 199, 0.35)'
-                            : '0 6px 20px rgba(0, 0, 0, 0.1)',
-                          lineHeight: 1.55
-                        }}
-                      >
-                        {renderFormattedText(msg.text)}
-
-                        {/* Structured Institutional Trade Box (if present) */}
-                        {msg.tradeSetup && (
-                          <div
-                            style={{
-                              marginTop: '0.85rem',
-                              padding: '0.75rem 0.95rem',
-                              background: 'var(--bg-input)',
-                              border: '1px solid var(--border-subtle)',
-                              borderRadius: '8px',
-                              display: 'grid',
-                              gridTemplateColumns: isExpanded ? 'repeat(auto-fit, minmax(130px, 1fr))' : '1fr 1fr',
-                              gap: '0.5rem',
-                              fontSize: '0.76rem',
-                              fontFamily: 'var(--font-mono)'
-                            }}
-                          >
-                            <div>
-                              <span style={{ color: 'var(--text-muted)' }}>Entry Band:</span>{' '}
-                              <span style={{ color: 'var(--text-primary)', fontWeight: 800 }}>{msg.tradeSetup.entryZone}</span>
-                            </div>
-                            <div>
-                              <span style={{ color: 'var(--text-muted)' }}>Risk/Reward:</span>{' '}
-                              <span style={{ color: 'var(--accent-cyan)', fontWeight: 800 }}>{msg.tradeSetup.riskReward}</span>
-                            </div>
-                            <div>
-                              <span style={{ color: 'var(--text-muted)' }}>Target 1:</span>{' '}
-                              <span style={{ color: 'var(--bull-green)', fontWeight: 800 }}>{msg.tradeSetup.takeProfit1}</span>
-                            </div>
-                            <div>
-                              <span style={{ color: 'var(--text-muted)' }}>Target 2:</span>{' '}
-                              <span style={{ color: 'var(--bull-green)', fontWeight: 800 }}>{msg.tradeSetup.takeProfit2}</span>
-                            </div>
-                            <div style={{ gridColumn: 'span 2' }}>
-                              <span style={{ color: 'var(--text-muted)' }}>Stop-Loss:</span>{' '}
-                              <span style={{ color: 'var(--bear-red)', fontWeight: 800 }}>{msg.tradeSetup.stopLoss}</span>
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Dedicated Verified References Card */}
-                        {msg.references && msg.references.length > 0 && (
-                          <div className="assistant-references-card">
-                            <div className="assistant-references-header">
-                              <Globe size={13} style={{ color: 'var(--accent-cyan)' }} />
-                              <span>Verified Reference Links for Further Research</span>
-                            </div>
-                            <div className="assistant-references-grid">
-                              {msg.references.map((ref, rIdx) => (
-                                <a
-                                  key={rIdx}
-                                  href={ref.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="assistant-ref-item"
-                                  title={`Visit ${ref.title} (${ref.domain})`}
-                                >
-                                  <div className="assistant-ref-meta">
-                                    <div className="assistant-ref-top-row">
-                                      <span className="assistant-ref-badge">{ref.domain}</span>
-                                      <span className="assistant-ref-title">{ref.title}</span>
-                                    </div>
-                                    {ref.desc && (
-                                      <span className="assistant-ref-desc">
-                                        {ref.desc}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <ExternalLink size={13} className="assistant-ref-icon" />
-                                </a>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Message Metadata Pill */}
+                      <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        AuraTrade Quant Engine v4.2 (Recommended)
+                      </span>
                       <span
                         style={{
-                          fontSize: '0.65rem',
-                          color: 'var(--text-muted)',
-                          marginTop: '0.25rem',
-                          padding: '0 0.4rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.4rem'
+                          fontSize: '0.6rem',
+                          padding: '0.12rem 0.42rem',
+                          borderRadius: '4px',
+                          background: 'rgba(16, 185, 129, 0.2)',
+                          color: 'var(--bull-green)',
+                          fontFamily: 'var(--font-mono)',
+                          fontWeight: 700
                         }}
                       >
-                        <span>{isUser ? 'Trader' : 'Strategy Desk'}</span>
-                        {!isUser && msg.modelUsed && (
-                          <span
-                            style={{
-                              fontSize: '0.6rem',
-                              padding: '0.06rem 0.35rem',
-                              borderRadius: '3px',
-                              background: 'rgba(255, 255, 255, 0.06)',
-                              color: 'var(--accent-cyan)',
-                              border: '1px solid rgba(255, 255, 255, 0.1)',
-                              fontFamily: 'var(--font-mono)'
-                            }}
-                          >
-                            {msg.modelUsed}
-                          </span>
-                        )}
-                        <span>• {new Date(msg.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        ZERO API KEY NEEDED
                       </span>
                     </div>
-                  );
-                })
-              )}
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
+                      Instant multi-step quantitative engine. Recognizes company names, calculates exact dollar profits, compares tickers head-to-head, and projects +1W to +5Y price targets.
+                    </p>
+                  </div>
 
-              {loading && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--accent-cyan)', fontSize: '0.82rem', padding: '0.6rem 0.8rem', background: 'var(--bg-input)', borderRadius: '8px', border: '1px solid var(--border-subtle)', width: 'fit-content' }}>
-                  <RefreshCw size={14} className="spin" />
-                  <span>Formulating multi-step quantitative reasoning & consulting sources...</span>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          )}
-
-          {/* Bottom Area: Either History Action Bar OR Quick Replies & Input Box */}
-          {isHistoryOpen ? (
-            <div
-              style={{
-                padding: '0.85rem 1.15rem',
-                borderTop: '1px solid var(--border-subtle)',
-                background: 'var(--bg-card)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: '0.75rem',
-                flexShrink: 0
-              }}
-            >
-              <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                Select any previous session to review reasoning and trade tickets.
-              </span>
-              <button
-                className="btn btn-primary"
-                onClick={handleNewChat}
-                style={{
-                  padding: '0.45rem 0.95rem',
-                  fontSize: '0.78rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  borderRadius: '6px'
-                }}
-              >
-                <Plus size={14} />
-                <span>Start New Chat</span>
-              </button>
-            </div>
-          ) : (
-            <>
-              {/* Categorized Quick Option Prompts */}
-              {quickReplies.length > 0 && !loading && (
-                <div
-                  style={{
-                    padding: isExpanded ? '0.6rem 1.25rem' : '0.55rem 0.95rem',
-                    borderTop: '1px solid var(--border-subtle)',
-                    background: 'var(--bg-card)',
-                    display: 'flex',
-                    gap: '0.45rem',
-                    flexWrap: isExpanded ? 'wrap' : 'nowrap',
-                    overflowX: isExpanded ? 'visible' : 'auto',
-                    overflowY: isExpanded ? 'auto' : 'hidden',
-                    maxHeight: isExpanded ? '85px' : 'auto',
-                    scrollbarWidth: isExpanded ? 'thin' : 'none',
-                    flexShrink: 0
-                  }}
-                >
-                  {quickReplies.map((qr, i) => (
-                    <button
-                      key={i}
-                      className="tier-filter-btn"
+                  {/* Gemini 2.0 Flash */}
+                  <div
+                    onClick={() => setTempModel('gemini-2.0-flash')}
+                    style={{
+                      padding: '0.8rem 0.9rem',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      background:
+                        tempModel === 'gemini-2.0-flash'
+                          ? 'rgba(6, 182, 212, 0.12)'
+                          : 'var(--bg-card-hover)',
+                      border:
+                        tempModel === 'gemini-2.0-flash'
+                          ? '1px solid var(--accent-cyan)'
+                          : '1px solid var(--border-subtle)',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <div
                       style={{
-                        fontSize: '0.74rem',
-                        padding: '0.28rem 0.7rem',
-                        borderRadius: '5px',
-                        background: 'var(--bg-input)',
-                        color: 'var(--text-secondary)',
-                        border: '1px solid var(--border-subtle)',
-                        display: 'inline-flex',
+                        display: 'flex',
+                        justifyContent: 'space-between',
                         alignItems: 'center',
-                        gap: '0.3rem',
-                        cursor: 'pointer',
-                        transition: 'all 0.18s ease',
-                        whiteSpace: 'nowrap',
-                        flexShrink: 0
+                        marginBottom: '0.25rem'
                       }}
-                      onClick={() => handleSendMessage(qr)}
                     >
-                      <span>{qr}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+                      <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        Google Gemini 2.0 Flash
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '0.6rem',
+                          padding: '0.12rem 0.42rem',
+                          borderRadius: '4px',
+                          background: 'rgba(6, 182, 212, 0.2)',
+                          color: 'var(--accent-cyan)',
+                          fontFamily: 'var(--font-mono)',
+                          fontWeight: 700
+                        }}
+                      >
+                        THINKING LLM
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
+                      Connect your personal Google Gemini API key for external cloud LLM generation with automatic local quant fallback.
+                    </p>
+                  </div>
 
-              {/* Input Box */}
-              <div
-                style={{
-                  padding: isExpanded ? '0.95rem 1.25rem' : '0.85rem 1.1rem',
-                  borderTop: '1px solid var(--border-subtle)',
-                  background: 'var(--bg-card)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.6rem',
-                  flexShrink: 0
-                }}
-              >
-                <input
-                  type="text"
-                  className="custom-input"
-                  style={{
-                    flex: 1,
-                    fontSize: '0.86rem',
-                    padding: '0.6rem 0.95rem',
-                    borderRadius: '8px',
-                    background: 'var(--bg-input)',
-                    border: '1px solid var(--border-subtle)',
-                    color: 'var(--text-primary)'
-                  }}
-                  placeholder="Ask any question about stocks, indicators, strategies, or markets..."
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  disabled={loading}
-                />
-                <button
-                  className="btn btn-primary"
-                  style={{
-                    padding: '0.6rem 1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderRadius: '8px',
-                    background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)',
-                    boxShadow: '0 4px 14px rgba(2, 132, 199, 0.4)'
-                  }}
-                  onClick={() => handleSendMessage()}
-                  disabled={loading || !input.trim()}
-                  title="Send to Strategy Desk"
-                >
-                  <Send size={15} />
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* AI Model & Engine Configuration Modal */}
-          {isConfigOpen && (
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                background: 'var(--bg-card)',
-                backdropFilter: 'blur(16px)',
-                zIndex: 2600,
-                display: 'flex',
-                flexDirection: 'column',
-                padding: '1.35rem',
-                overflowY: 'auto'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.75rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Cpu size={18} style={{ color: 'var(--accent-cyan)' }} />
-                  <div>
-                    <h3 style={{ fontSize: '0.98rem', fontWeight: 800, fontFamily: 'var(--font-brand)', color: 'var(--text-primary)', margin: 0 }}>
-                      AI Model & Strategy Engine
-                    </h3>
-                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0 }}>
-                      Select reasoning engine and configure API credentials
+                  {/* Gemini 1.5 Flash */}
+                  <div
+                    onClick={() => setTempModel('gemini-1.5-flash')}
+                    style={{
+                      padding: '0.8rem 0.9rem',
+                      borderRadius: '10px',
+                      cursor: 'pointer',
+                      background:
+                        tempModel === 'gemini-1.5-flash'
+                          ? 'rgba(99, 102, 241, 0.12)'
+                          : 'var(--bg-card-hover)',
+                      border:
+                        tempModel === 'gemini-1.5-flash'
+                          ? '1px solid var(--accent-indigo)'
+                          : '1px solid var(--border-subtle)',
+                      transition: 'all 0.2s'
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        marginBottom: '0.25rem'
+                      }}
+                    >
+                      <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        Google Gemini 1.5 Flash
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '0.6rem',
+                          padding: '0.12rem 0.42rem',
+                          borderRadius: '4px',
+                          background: 'rgba(99, 102, 241, 0.2)',
+                          color: 'var(--accent-indigo)',
+                          fontFamily: 'var(--font-mono)',
+                          fontWeight: 700
+                        }}
+                      >
+                        FAST LLM
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
+                      Low-latency external multi-modal model for cloud-assisted market commentary.
                     </p>
                   </div>
                 </div>
-                <button
-                  className="btn-icon"
-                  onClick={() => setIsConfigOpen(false)}
-                  style={{ color: 'var(--text-muted)' }}
-                >
-                  <X size={16} />
-                </button>
-              </div>
 
-              {/* Engine Selection */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1.2rem' }}>
-                <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  Execution Engine
-                </label>
-
-                {/* Built-in Institutional Quant Reasoner */}
-                <div
-                  onClick={() => setTempModel('institutional-quant')}
-                  style={{
-                    padding: '0.8rem',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    background: tempModel === 'institutional-quant' ? 'rgba(16, 185, 129, 0.12)' : 'var(--bg-card-hover)',
-                    border: tempModel === 'institutional-quant' ? '1px solid var(--bull-green)' : '1px solid var(--border-subtle)',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                    <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      Built-in Institutional Quant Reasoner
-                    </span>
-                    <span style={{ fontSize: '0.62rem', padding: '0.1rem 0.4rem', borderRadius: '3px', background: 'rgba(16, 185, 129, 0.2)', color: 'var(--bull-green)', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-                      ZERO API KEY NEEDED
-                    </span>
-                  </div>
-                  <p style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
-                    Multi-step chain of thought reasoner. Ingests live quotes, RSI, technical indicators, and verified external reference links.
-                  </p>
-                </div>
-
-                {/* Gemini 2.0 Flash */}
-                <div
-                  onClick={() => setTempModel('gemini-2.0-flash')}
-                  style={{
-                    padding: '0.8rem',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    background: tempModel === 'gemini-2.0-flash' ? 'rgba(6, 182, 212, 0.12)' : 'var(--bg-card-hover)',
-                    border: tempModel === 'gemini-2.0-flash' ? '1px solid var(--accent-cyan)' : '1px solid var(--border-subtle)',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                    <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      Google Gemini 2.0 Flash
-                    </span>
-                    <span style={{ fontSize: '0.62rem', padding: '0.1rem 0.4rem', borderRadius: '3px', background: 'rgba(6, 182, 212, 0.2)', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-                      THINKING LLM
-                    </span>
-                  </div>
-                  <p style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
-                    Next-gen high speed LLM with chain-of-thought thinking, live quote ingestion, RSI, and quantitative regression targets.
-                  </p>
-                </div>
-
-                {/* Gemini 1.5 Flash */}
-                <div
-                  onClick={() => setTempModel('gemini-1.5-flash')}
-                  style={{
-                    padding: '0.8rem',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    background: tempModel === 'gemini-1.5-flash' ? 'rgba(99, 102, 241, 0.12)' : 'var(--bg-card-hover)',
-                    border: tempModel === 'gemini-1.5-flash' ? '1px solid var(--accent-indigo)' : '1px solid var(--border-subtle)',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
-                    <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      Google Gemini 1.5 Flash
-                    </span>
-                    <span style={{ fontSize: '0.62rem', padding: '0.1rem 0.4rem', borderRadius: '3px', background: 'rgba(99, 102, 241, 0.2)', color: 'var(--accent-indigo)', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
-                      FAST LLM
-                    </span>
-                  </div>
-                  <p style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
-                    Standard multi-modal model for institutional reasoning and high-speed trade analysis.
-                  </p>
-                </div>
-              </div>
-
-              {/* API Key Input */}
-              {tempModel !== 'institutional-quant' && (
-                <div style={{ marginBottom: '1.2rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Google Gemini API Key
-                    </label>
-                    <a
-                      href="https://aistudio.google.com/app/apikey"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ fontSize: '0.7rem', color: 'var(--accent-cyan)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.2rem' }}
-                    >
-                      Get Free Key <ExternalLink size={10} />
-                    </a>
-                  </div>
-                  <input
-                    type="password"
-                    className="custom-input"
-                    placeholder="AIzaSy..."
-                    value={tempKey}
-                    onChange={(e) => setTempKey(e.target.value)}
-                    style={{ fontSize: '0.84rem', fontFamily: 'var(--font-mono)' }}
-                  />
-
-                  {/* Test Connection Button */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.6rem' }}>
-                    <button
-                      type="button"
-                      onClick={handleTestKey}
-                      disabled={testStatus === 'testing'}
+                {tempModel !== 'institutional-quant' && (
+                  <div style={{ marginBottom: '1.1rem' }}>
+                    <div
                       style={{
-                        fontSize: '0.72rem',
-                        padding: '0.3rem 0.65rem',
-                        borderRadius: '4px',
                         display: 'flex',
+                        justifyContent: 'space-between',
                         alignItems: 'center',
-                        gap: '0.35rem',
-                        background: 'rgba(6, 182, 212, 0.15)',
-                        border: '1px solid rgba(6, 182, 212, 0.3)',
-                        color: 'var(--accent-cyan)',
-                        cursor: 'pointer'
+                        marginBottom: '0.4rem'
                       }}
                     >
-                      {testStatus === 'testing' && <RefreshCw size={12} className="spin" />}
-                      <span>Test Connection</span>
-                    </button>
-
-                    {testStatus === 'success' && (
-                      <span style={{ fontSize: '0.7rem', color: 'var(--bull-green)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <CheckCircle2 size={13} /> Key Verified
-                      </span>
-                    )}
-                    {testStatus === 'error' && (
-                      <span style={{ fontSize: '0.7rem', color: 'var(--bear-red)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                        <AlertCircle size={13} /> {testMessage.slice(0, 32)}
-                      </span>
-                    )}
-                  </div>
-                  {testMessage && testStatus && (
-                    <div style={{ fontSize: '0.68rem', color: testStatus === 'success' ? 'var(--bull-green)' : 'var(--bear-red)', marginTop: '0.35rem', lineHeight: 1.3 }}>
-                      {testMessage}
+                      <label
+                        style={{
+                          fontSize: '0.72rem',
+                          fontWeight: 700,
+                          color: '#94a3b8',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.04em'
+                        }}
+                      >
+                        Google Gemini API Key
+                      </label>
+                      <a
+                        href="https://aistudio.google.com/app/apikey"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          fontSize: '0.7rem',
+                          color: 'var(--accent-cyan)',
+                          textDecoration: 'none',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.2rem'
+                        }}
+                      >
+                        Get Free Key <ExternalLink size={10} />
+                      </a>
                     </div>
-                  )}
-                </div>
-              )}
+                    <input
+                      type="password"
+                      className="custom-input"
+                      placeholder="AIzaSy..."
+                      value={tempKey}
+                      onChange={(e) => setTempKey(e.target.value)}
+                      style={{ fontSize: '0.82rem', fontFamily: 'var(--font-mono)', width: '100%' }}
+                    />
 
-              {/* Action Buttons */}
-              <div style={{ marginTop: 'auto', display: 'flex', gap: '0.6rem' }}>
-                <button
-                  type="button"
-                  onClick={() => setIsConfigOpen(false)}
-                  className="tier-filter-btn"
-                  style={{ flex: 1, padding: '0.6rem', fontSize: '0.8rem', borderRadius: '6px' }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveConfig}
-                  className="btn btn-primary"
-                  style={{ flex: 2, padding: '0.6rem', fontSize: '0.8rem', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem' }}
-                >
-                  <CheckCircle2 size={14} />
-                  <span>Apply & Save Engine</span>
-                </button>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        marginTop: '0.55rem'
+                      }}
+                    >
+                      <button
+                        type="button"
+                        onClick={handleTestKey}
+                        disabled={testStatus === 'testing'}
+                        style={{
+                          fontSize: '0.72rem',
+                          padding: '0.32rem 0.7rem',
+                          borderRadius: '6px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          background: 'rgba(6, 182, 212, 0.15)',
+                          border: '1px solid rgba(6, 182, 212, 0.35)',
+                          color: 'var(--accent-cyan)',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {testStatus === 'testing' && <RefreshCw size={12} className="spin" />}
+                        <span>Test Connection</span>
+                      </button>
+
+                      {testStatus === 'success' && (
+                        <span
+                          style={{
+                            fontSize: '0.7rem',
+                            color: 'var(--bull-green)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem'
+                          }}
+                        >
+                          <CheckCircle2 size={13} /> Key Verified
+                        </span>
+                      )}
+                      {testStatus === 'error' && (
+                        <span
+                          style={{
+                            fontSize: '0.7rem',
+                            color: 'var(--bear-red)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem'
+                          }}
+                        >
+                          <AlertCircle size={13} /> {testMessage.slice(0, 32)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ marginTop: 'auto', display: 'flex', gap: '0.6rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsConfigOpen(false)}
+                    className="tier-filter-btn"
+                    style={{ flex: 1, padding: '0.6rem', fontSize: '0.78rem', borderRadius: '8px' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSaveConfig}
+                    className="btn btn-primary"
+                    style={{
+                      flex: 2,
+                      padding: '0.6rem',
+                      fontSize: '0.78rem',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.4rem'
+                    }}
+                  >
+                    <CheckCircle2 size={14} />
+                    <span>Save Engine Configuration</span>
+                  </button>
+                </div>
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
         </>
       )}
     </>

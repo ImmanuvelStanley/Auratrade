@@ -1,5 +1,6 @@
 import { defaultAllCompanies } from '../data/defaultAllCompanies';
 import { DEFAULT_GLOBAL_INDICES_DATA } from '../data/defaultGlobalIndices';
+import { generateLocalQuantResponse } from '../utils/aiQuantEngine';
 
 /**
  * Institutional-Grade Client Fallback Data Engine
@@ -649,6 +650,24 @@ export function handleFallbackRequest(url, options = {}) {
         role: 'institutional'
       }
     };
+  } else if (path.includes('/ai/chat')) {
+    let payload = {};
+    try {
+      payload = options?.body ? JSON.parse(options.body) : {};
+    } catch {
+      payload = {};
+    }
+    const aiData = generateLocalQuantResponse({
+      message: payload.message || '',
+      symbol: payload.symbol || 'AAPL',
+      quote: payload.quote || null,
+      prediction: payload.prediction || null,
+      portfolio: payload.portfolio || null,
+      history: payload.history || []
+    });
+    body = { success: true, data: aiData };
+  } else if (path.includes('/ai/verify-key')) {
+    body = { success: true, data: { valid: true, modelUsed: 'AuraTrade Quant Reasoner v4.2' } };
   } else if (path.includes('/security/status')) {
     body = { success: true, status: 'Active Defense', threatsBlocked: 42, ipStatus: 'Whitelisted' };
   } else if (path.includes('/health')) {

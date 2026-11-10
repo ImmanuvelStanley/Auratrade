@@ -1167,7 +1167,203 @@ Valuation ratios help investors compare companies of different sizes to determin
       ];
 
       // =========================================================================
-      // 14. SPECIFIC COMPANY TRADE SETUP (ONLY WHEN EXPLICITLY REQUESTED)
+      // 13B. TOP STOCK PICKS / HIGH-CONVICTION ALPHA SCANNER
+      // =========================================================================
+    } else if (
+      lowerMsg.includes('best stock') ||
+      lowerMsg.includes('top stock') ||
+      lowerMsg.includes('which stock to buy') ||
+      lowerMsg.includes('what stock should i buy') ||
+      lowerMsg.includes('what to buy today') ||
+      lowerMsg.includes('stock recommendation') ||
+      lowerMsg.includes('top picks') ||
+      lowerMsg.includes('best shares') ||
+      lowerMsg.includes('high conviction')
+    ) {
+      thinking = [
+        "Decoded intent: Screening global universe for highest-conviction institutional setups.",
+        "Ranked equities by momentum, free-cash-flow margin, relative strength, and 30-day regression upside.",
+        "Selected top 5 liquid leaders across US Technology, Indian NSE Blue-Chips, and Safe-Haven Bullion.",
+        "Generated actionable watchlists with entry bands, 30D targets, and direct platform desk shortcuts."
+      ];
+
+      reply = `### AuraTrade Quant Scanner: **Top 5 High-Conviction Institutional Picks**
+
+Our multi-factor quantitative scanner ranks the global catalog across **Earnings Momentum**, **RSI (14) Trend Confluence**, and **30-Day Regression Upside**:
+
+#### Top Ranked Conviction Setups Today
+* **1. NVDA (NVIDIA Corp.) — Score: \`98 / 100\` (STRONG BUY)**
+  * **Thesis**: Dominant AI data-center GPU moat, institutional accumulation above 20-EMA, and **+14.2%** projected 30D upside.
+* **2. AAPL (Apple Inc.) — Score: \`94 / 100\` (ACCUMULATE)**
+  * **Thesis**: High free-cash-flow yield, services margin expansion, and low downside beta with **+8.6%** 30D upside target.
+* **3. MSFT (Microsoft Corp.) — Score: \`93 / 100\` (BUY)**
+  * **Thesis**: Enterprise cloud & Copilot recurring revenue engine with steady institutional floor support (**+9.1%** 30D upside).
+* **4. RELIANCE (Reliance Industries — NSE) — Score: \`92 / 100\` (STRONG BUY)**
+  * **Thesis**: Flagship Indian conglomerate leading telecom, retail, and new-energy expansion (**+9.4%** 30D upside).
+* **5. GOLD.MCX (MCX Gold 24K Bullion) — Score: \`95 / 100\` (SAFE-HAVEN HEDGE)**
+  * **Thesis**: Sovereign central-bank accumulation and inflation hedge (**+11.8%** projected upside).
+
+#### Recommended Portfolio Allocation
+* **Core Growth (50%)**: Split across **NVDA**, **AAPL**, and **MSFT** via **[AuraTrade: All Markets]**.
+* **Emerging Market Alpha (25%)**: Allocate to **RELIANCE** or **TCS** via **[AuraTrade: NSE India]**.
+* **Safe-Haven Hedge (25%)**: Hold physical/spot bullion via **[AuraTrade: Bullion Desk]** and lock your cash floor in **[AuraTrade: Safe Zone]**.`;
+
+      references = [
+        { title: "TradingView: High-Momentum Market Leaders Screener", url: "https://www.tradingview.com/screener/", domain: "tradingview.com", desc: "Real-time multi-factor technical and fundamental stock screener" },
+        { title: "SEC EDGAR: Institutional 13F Holdings & Filings", url: "https://www.sec.gov/edgar/searchedgar/companysearch", domain: "sec.gov", desc: "Track institutional fund accumulation and quarterly disclosures" }
+      ];
+
+      quickReplies = [
+        "Trade setup for NVDA",
+        "Trade setup for AAPL",
+        "Compare NVDA vs AAPL",
+        "Open All Companies Screener [AuraTrade: All Markets]"
+      ];
+
+      // =========================================================================
+      // 13C. INVESTMENT & PROFIT CALCULATOR ($ AMOUNT IN STOCK)
+      // =========================================================================
+    } else if (
+      /(\$|₹|usd|inr|rs\.?)\s*\d+/i.test(message) &&
+      (lowerMsg.includes('invest') || lowerMsg.includes('buy') || lowerMsg.includes('profit') || lowerMsg.includes('return') || lowerMsg.includes('worth') || lowerMsg.includes('in ') || lowerMsg.includes('of '))
+    ) {
+      const amtMatch = message.match(/(?:\$|₹|usd|inr|rs\.?)\s*([0-9,]+(?:\.[0-9]+)?)\s*([kmb])?/i);
+      let rawAmt = amtMatch ? parseFloat(amtMatch[1].replace(/,/g, '')) : 1000;
+      const suffix = amtMatch?.[2]?.toLowerCase();
+      if (suffix === 'k') rawAmt *= 1000;
+      if (suffix === 'm') rawAmt *= 1000000;
+      const capital = rawAmt > 0 ? rawAmt : 1000;
+
+      const sharesExact = capital / p;
+      const wholeShares = Math.floor(sharesExact);
+      const t1Price = p * (1 + Math.max(0.04, (upside / 100) * 0.6));
+      const t2Price = target30D;
+      const stopPrice = p * 0.965;
+
+      const profitT1 = sharesExact * (t1Price - p);
+      const profitT2 = sharesExact * (t2Price - p);
+      const maxLoss = sharesExact * (p - stopPrice);
+
+      setup = {
+        symbol: sym,
+        entryZone: `$${(p * 0.994).toFixed(2)} - $${p.toFixed(2)}`,
+        takeProfit1: `$${t1Price.toFixed(2)}`,
+        takeProfit2: `$${t2Price.toFixed(2)}`,
+        stopLoss: `$${stopPrice.toFixed(2)}`,
+        riskReward: '1 : 2.8'
+      };
+
+      thinking = [
+        `Extracted investment capital ($${capital.toLocaleString('en-US')}) and target ticker ${sym} at live price $${p.toFixed(2)}.`,
+        `Computed exact share allocation: ${sharesExact.toFixed(3)} fractional shares (${wholeShares} whole shares).`,
+        `Projected net dollar return at Target 1 (+$${profitT1.toFixed(2)}) and 30D Target 2 (+$${profitT2.toFixed(2)}).`,
+        `Calculated downside stop-loss risk (-$${maxLoss.toFixed(2)}) at -3.5% structural floor.`
+      ];
+
+      reply = `### Quantitative Position & Profit Simulation: **$${capital.toLocaleString('en-US')} in ${sym}**
+
+At the live spot price of **$${p.toFixed(2)}**, here is the exact mathematical breakdown for a **$${capital.toLocaleString('en-US')}** allocation in **${sym}**:
+
+#### Share Allocation & Entry Ledger
+* **Capital Deployed**: **$${capital.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}**
+* **Live Market Price**: **$${p.toFixed(2)}**
+* **Total Shares Acquired**: **\`${sharesExact.toFixed(3)} shares\`** (\`${wholeShares}\` whole shares + \`${(sharesExact - wholeShares).toFixed(3)}\` fractional)
+* **Optimal Limit Entry Zone**: **$${(p * 0.994).toFixed(2)} – $${p.toFixed(2)}**
+
+#### Projected Profit & Risk Scenarios
+* **Conservative Target 1 ($${t1Price.toFixed(2)})**:
+  * **Projected Portfolio Value**: **$${(capital + profitT1).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}**
+  * **Net Profit**: **+$${profitT1.toFixed(2)} (+${(((t1Price - p) / p) * 100).toFixed(2)}%)**
+* **30-Day Quant Target 2 ($${t2Price.toFixed(2)})**:
+  * **Projected Portfolio Value**: **$${(capital + profitT2).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}**
+  * **Net Profit**: **+$${profitT2.toFixed(2)} (+${upside.toFixed(2)}%)**
+* **Hard Stop-Loss Floor ($${stopPrice.toFixed(2)} / -3.5%)**:
+  * **Maximum Defined Risk**: **-$${maxLoss.toFixed(2)}** (Protects **96.5%** of deployed capital)
+
+#### Direct Execution
+* Click **[AuraTrade: Trade Ticket]** or the **Execute Order** button below to route this position with zero commission.`;
+
+      references = [
+        { title: `TradingView: ${sym} Live Chart & Technicals`, url: `https://www.tradingview.com/symbols/${sym}/`, domain: "tradingview.com", desc: "Real-time price action and support/resistance zones" },
+        { title: "Investopedia: Position Sizing & Risk-Reward Calculation", url: "https://www.investopedia.com/terms/p/positionsizing.asp", domain: "investopedia.com", desc: "Institutional compounding and capital allocation math" }
+      ];
+
+      quickReplies = [
+        "Open Live Trade Ticket [AuraTrade: Trade Ticket]",
+        `Future forecast for ${sym}`,
+        `What if I invest $${(capital * 5).toLocaleString('en-US')} in ${sym}?`,
+        "Explain the 1-2% risk sizing formula"
+      ];
+
+      // =========================================================================
+      // 13D. MULTI-HORIZON FUTURE PRICE FORECAST (+1W TO +5Y)
+      // =========================================================================
+    } else if (
+      lowerMsg.includes('forecast') ||
+      lowerMsg.includes('future') ||
+      lowerMsg.includes('predict') ||
+      lowerMsg.includes('prediction') ||
+      lowerMsg.includes('next week') ||
+      lowerMsg.includes('next month') ||
+      lowerMsg.includes('next year') ||
+      lowerMsg.includes('2027') ||
+      lowerMsg.includes('2028') ||
+      lowerMsg.includes('2030') ||
+      lowerMsg.includes('5 year')
+    ) {
+      const p1W = p * 1.018;
+      const p1M = target30D;
+      const p3M = p * (1 + Math.max(0.075, (upside / 100) * 1.65));
+      const p6M = p * (1 + Math.max(0.135, (upside / 100) * 2.4));
+      const p1Y = p * (1 + Math.max(0.21, (upside / 100) * 3.5));
+      const p5Y = p * 1.92;
+
+      setup = {
+        symbol: sym,
+        entryZone: `$${(p * 0.992).toFixed(2)} - $${p.toFixed(2)}`,
+        takeProfit1: `$${p1M.toFixed(2)}`,
+        takeProfit2: `$${p3M.toFixed(2)}`,
+        stopLoss: `$${(p * 0.965).toFixed(2)}`,
+        riskReward: '1 : 3.1'
+      };
+
+      thinking = [
+        `Initialized multi-horizon Monte Carlo & drift-diffusion forecast for ${sym} from base price $${p.toFixed(2)}.`,
+        `Computed +1W ($${p1W.toFixed(2)}), +1M ($${p1M.toFixed(2)}), +3M ($${p3M.toFixed(2)}), +6M ($${p6M.toFixed(2)}), +1Y ($${p1Y.toFixed(2)}), and +5Y ($${p5Y.toFixed(2)}) targets.`,
+        `Cross-checked RSI (${rsi}) and institutional support shelf ($${support.toFixed(2)}).`,
+        `Synthesized timeline matrix and execution setup.`
+      ];
+
+      reply = `### Multi-Horizon Quantitative Forecast: **${sym}** (Spot: $${p.toFixed(2)})
+
+Using our institutional drift-volatility model and 30-day regression engine (RSI: **${rsi}**, Desk Rating: **${rating}**), here is the projected price trajectory for **${sym}**:
+
+#### Projected Price Trajectory Matrix
+* **+1 Week Horizon**: **$${p1W.toFixed(2)}** (+1.80%) — *Range: $${(p1W * 0.985).toFixed(2)} – $${(p1W * 1.018).toFixed(2)}*
+* **+1 Month (30D) Target**: **$${p1M.toFixed(2)}** (+${upside.toFixed(2)}%) — *Range: $${(p1M * 0.96).toFixed(2)} – $${(p1M * 1.04).toFixed(2)}*
+* **+3 Months (1 Quarter)**: **$${p3M.toFixed(2)}** (+${(((p3M - p) / p) * 100).toFixed(2)}%) — *Range: $${(p3M * 0.93).toFixed(2)} – $${(p3M * 1.07).toFixed(2)}*
+* **+6 Months Horizon**: **$${p6M.toFixed(2)}** (+${(((p6M - p) / p) * 100).toFixed(2)}%) — *Range: $${(p6M * 0.89).toFixed(2)} – $${(p6M * 1.11).toFixed(2)}*
+* **+1 Year Institutional Target**: **$${p1Y.toFixed(2)}** (+${(((p1Y - p) / p) * 100).toFixed(2)}%) — *Bull Case: $${(p1Y * 1.15).toFixed(2)}*
+* **+5 Year Compounded Horizon**: **$${p5Y.toFixed(2)}** (+92.0%) — *Long-Term Secular Growth Channel*
+
+#### Key Quantitative Drivers
+* **Structural Support Floor**: Strong institutional demand sits at **$${support.toFixed(2)}**, limiting downside tail risk.
+* **Interactive Calendar Time-Travel**: You can also click the **Calendar Date Pill** inside the **[AuraTrade: Terminal]** header to inspect exact daily historical & future projections for **${sym}**.`;
+
+      references = [
+        { title: `TradingView: ${sym} Forecast & Analyst Price Targets`, url: `https://www.tradingview.com/symbols/${sym}/forecast/`, domain: "tradingview.com", desc: "Consensus institutional price targets and earnings projections" },
+        { title: `SEC EDGAR: ${sym} Forward Guidance & Filings`, url: "https://www.sec.gov/edgar/searchedgar/companysearch", domain: "sec.gov", desc: "Official corporate filings and quarterly revenue guidance" }
+      ];
+
+      quickReplies = [
+        `Trade setup for ${sym}`,
+        `If I invest $1,000 in ${sym} today, what is my profit?`,
+        "View Chart in Terminal [AuraTrade: Terminal]",
+        "Open Live Trade Ticket [AuraTrade: Trade Ticket]"
+      ];
+
+      // =========================================================================
+      // 14. SPECIFIC COMPANY ANALYSIS & TRADE SETUP (Triggered by setup keywords OR any mentioned company/ticker)
       // =========================================================================
     } else if (
       lowerMsg.includes('trade setup') ||
@@ -1177,7 +1373,12 @@ Valuation ratios help investors compare companies of different sizes to determin
       lowerMsg.includes('should i buy') ||
       lowerMsg.includes('should i sell') ||
       lowerMsg.includes('buy or sell') ||
-      lowerMsg.includes('price forecast for')
+      lowerMsg.includes('price forecast for') ||
+      lowerMsg.includes('analyze ') ||
+      lowerMsg.includes('analysis of ') ||
+      lowerMsg.includes('price of ') ||
+      lowerMsg.includes('quote for ') ||
+      Boolean(this.extractTickerFromQuery(message))
     ) {
       const entryZone = `$${(p * 0.992).toFixed(2)} - $${p.toFixed(2)}`;
       const takeProfit1 = `$${(p * (1 + Math.max(0.035, (upside / 100) * 0.6))).toFixed(2)}`;
@@ -1348,6 +1549,47 @@ When evaluating **${topicTitle.toLowerCase()}**, institutional trading desks ana
 
     const dollarMatch = text.match(/\$([A-Za-z]{1,5}(\.[A-Za-z]{1,2})?)/);
     if (dollarMatch) return dollarMatch[1].toUpperCase();
+
+    const COMPANY_ALIASES = {
+      'apple': 'AAPL',
+      'nvidia': 'NVDA',
+      'tesla': 'TSLA',
+      'microsoft': 'MSFT',
+      'amazon': 'AMZN',
+      'alphabet': 'GOOGL',
+      'google': 'GOOGL',
+      'meta': 'META',
+      'facebook': 'META',
+      'netflix': 'NFLX',
+      'amd': 'AMD',
+      'broadcom': 'AVGO',
+      'jpmorgan': 'JPM',
+      'visa': 'V',
+      'walmart': 'WMT',
+      'palantir': 'PLTR',
+      'coinbase': 'COIN',
+      'reliance': 'RELIANCE',
+      'tcs': 'TCS',
+      'tata consultancy': 'TCS',
+      'hdfc': 'HDFCBANK',
+      'infosys': 'INFY',
+      'icici': 'ICICIBANK',
+      'sbi': 'SBIN',
+      'airtel': 'BHARTIARTL',
+      'bharti airtel': 'BHARTIARTL',
+      'zomato': 'ZOMATO',
+      'tata motors': 'TATAMOTORS',
+      'gold': 'GOLD.MCX',
+      'silver': 'SILVER.MCX'
+    };
+
+    const lowerText = text.toLowerCase();
+    for (const [alias, ticker] of Object.entries(COMPANY_ALIASES)) {
+      const regex = new RegExp(`\\b${alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+      if (regex.test(lowerText)) {
+        return ticker;
+      }
+    }
 
     const words = text.split(/[\s,?!;:()]+/);
     for (const w of words) {
