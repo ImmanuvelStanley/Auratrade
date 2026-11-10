@@ -47,12 +47,12 @@ const ensureQuotes = {
   'BTC/USD': { symbol: 'BTC/USD', name: 'Bitcoin', price: 64250.00, change: 1350.00, changePercent: 2.14, currency: 'USD', previousClose: 62900.00, dayHigh: 64900.00, dayLow: 62700.00, volume: 185000, lastTickDirection: 'up' },
   'USD/INR': { symbol: 'USD/INR', name: 'USD/INR Forex', price: 95.82, change: -0.13, changePercent: -0.14, currency: 'INR', previousClose: 95.95, dayHigh: 96.10, dayLow: 95.75, volume: 1500000, lastTickDirection: 'down' },
   'INDIA VIX': { symbol: 'INDIA VIX', name: 'India VIX', price: 11.77, change: 0.42, changePercent: 3.70, currency: '', previousClose: 11.35, dayHigh: 12.10, dayLow: 11.20, volume: 850000, lastTickDirection: 'up' },
-  'AAPL': { symbol: 'AAPL', name: 'Apple Inc.', price: 228.40, change: 1.85, changePercent: 0.82, currency: 'USD', previousClose: 226.55, dayHigh: 229.50, dayLow: 226.10, volume: 48200000, lastTickDirection: 'up' },
-  'NVDA': { symbol: 'NVDA', name: 'NVIDIA Corporation', price: 124.60, change: 3.40, changePercent: 2.81, currency: 'USD', previousClose: 121.20, dayHigh: 125.80, dayLow: 121.00, volume: 85400000, lastTickDirection: 'up' },
+  'AAPL': { symbol: 'AAPL', name: 'Apple Inc.', price: 335.92, change: -1.10, changePercent: -0.33, currency: 'USD', previousClose: 337.02, dayHigh: 339.40, dayLow: 334.80, volume: 48200000, lastTickDirection: 'down' },
+  'NVDA': { symbol: 'NVDA', name: 'NVIDIA Corporation', price: 224.58, change: -0.93, changePercent: -0.41, currency: 'USD', previousClose: 225.51, dayHigh: 227.80, dayLow: 223.10, volume: 85400000, lastTickDirection: 'down' },
   'TSLA': { symbol: 'TSLA', name: 'Tesla, Inc.', price: 242.15, change: -4.25, changePercent: -1.72, currency: 'USD', previousClose: 246.40, dayHigh: 248.00, dayLow: 240.50, volume: 62100000, lastTickDirection: 'down' },
-  'MSFT': { symbol: 'MSFT', name: 'Microsoft Corp.', price: 448.20, change: 2.10, changePercent: 0.47, currency: 'USD', previousClose: 446.10, dayHigh: 450.00, dayLow: 445.80, volume: 21500000, lastTickDirection: 'up' },
-  'AMZN': { symbol: 'AMZN', name: 'Amazon.com, Inc.', price: 186.90, change: 1.45, changePercent: 0.78, currency: 'USD', previousClose: 185.45, dayHigh: 188.10, dayLow: 184.90, volume: 38900000, lastTickDirection: 'up' },
-  'GOOGL': { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 172.50, change: 2.10, changePercent: 1.23, currency: 'USD', previousClose: 170.40, dayHigh: 173.80, dayLow: 169.90, volume: 22400000, lastTickDirection: 'up' },
+  'MSFT': { symbol: 'MSFT', name: 'Microsoft Corp.', price: 497.93, change: -2.66, changePercent: -0.53, currency: 'USD', previousClose: 500.59, dayHigh: 502.40, dayLow: 495.80, volume: 21500000, lastTickDirection: 'down' },
+  'AMZN': { symbol: 'AMZN', name: 'Amazon.com, Inc.', price: 249.38, change: 0.11, changePercent: 0.04, currency: 'USD', previousClose: 249.27, dayHigh: 251.80, dayLow: 247.90, volume: 38900000, lastTickDirection: 'up' },
+  'GOOGL': { symbol: 'GOOGL', name: 'Alphabet Inc.', price: 342.36, change: 4.53, changePercent: 1.34, currency: 'USD', previousClose: 337.83, dayHigh: 344.20, dayLow: 337.50, volume: 22400000, lastTickDirection: 'up' },
   'META': { symbol: 'META', name: 'Meta Platforms Inc.', price: 504.80, change: 8.60, changePercent: 1.73, currency: 'USD', previousClose: 496.20, dayHigh: 508.00, dayLow: 495.00, volume: 15300000, lastTickDirection: 'up' },
   'RELIANCE': { symbol: 'RELIANCE', name: 'Reliance Industries', price: 2985.40, change: 18.20, changePercent: 0.61, currency: 'INR', previousClose: 2967.20, dayHigh: 3010.00, dayLow: 2955.00, volume: 4500000, lastTickDirection: 'up' },
   'TCS': { symbol: 'TCS', name: 'Tata Consultancy Services', price: 4195.25, change: -24.50, changePercent: -0.58, currency: 'INR', previousClose: 4219.75, dayHigh: 4240.00, dayLow: 4180.00, volume: 2100000, lastTickDirection: 'down' },
@@ -62,7 +62,11 @@ const ensureQuotes = {
   'TATAMOTORS': { symbol: 'TATAMOTORS', name: 'Tata Motors Limited', price: 988.30, change: 11.20, changePercent: 1.15, currency: 'INR', previousClose: 977.10, dayHigh: 996.00, dayLow: 972.00, volume: 6200000, lastTickDirection: 'up' },
   'SBIN': { symbol: 'SBIN', name: 'State Bank of India', price: 826.80, change: -4.20, changePercent: -0.51, currency: 'INR', previousClose: 831.00, dayHigh: 836.00, dayLow: 822.00, volume: 8100000, lastTickDirection: 'down' }
 };
-Object.assign(liveQuotes, ensureQuotes);
+Object.keys(ensureQuotes).forEach((k) => {
+  if (!liveQuotes[k]) {
+    liveQuotes[k] = ensureQuotes[k];
+  }
+});
 
 export function getClientQuote(symbol) {
   if (!symbol) return null;
@@ -87,40 +91,144 @@ export function getAllClientQuotes() {
   return liveQuotes;
 }
 
-// Generate realistic candlestick history
-export function generateCandles(symbol, range = '1D') {
-  const q = getClientQuote(symbol);
-  const basePrice = q ? q.price : 150;
-  const count = range === '1D' ? 48 : range === '1W' ? 35 : range === '1M' ? 30 : range === '1Y' ? 52 : 60;
-  const intervalMinutes = range === '1D' ? 5 : range === '1W' ? 60 : range === '1M' ? 1440 : 10080;
-  
-  const candles = [];
-  let currentClose = basePrice * 0.985;
+// Generate realistic deterministic candlestick history across all timeframes (1D, 1W, 1M, 1Y, 5Y, 10Y)
+export function generateCandles(symbol, range = '1D', overridePrice = null) {
+  const sym = (symbol || 'AAPL').toUpperCase().trim();
+  const q = getClientQuote(sym);
+  const basePrice = overridePrice && overridePrice > 0 ? overridePrice : (q ? q.price : 150);
+
+  let points = 78;
+  let intervalMs = 5 * 60 * 1000;
+  let volatility = 0.0022;
+  let startFactor = 0.992;
+
+  switch (range) {
+    case '1D':
+      points = 78;
+      intervalMs = 5 * 60 * 1000;
+      volatility = 0.0022;
+      startFactor = 0.994;
+      break;
+    case '1W':
+      points = 84;
+      intervalMs = 90 * 60 * 1000;
+      volatility = 0.0042;
+      startFactor = 0.982;
+      break;
+    case '1M':
+      points = 45;
+      intervalMs = 24 * 60 * 60 * 1000;
+      volatility = 0.0085;
+      startFactor = 0.955;
+      break;
+    case '1Y':
+      points = 104;
+      intervalMs = 3.5 * 24 * 60 * 60 * 1000;
+      volatility = 0.015;
+      startFactor = 0.82;
+      break;
+    case '5Y':
+      points = 200;
+      intervalMs = 7 * 24 * 60 * 60 * 1000;
+      volatility = 0.021;
+      startFactor = 0.42;
+      break;
+    case '10Y':
+      points = 260;
+      intervalMs = 14 * 24 * 60 * 60 * 1000;
+      volatility = 0.025;
+      startFactor = 0.22;
+      break;
+    default:
+      points = 78;
+      intervalMs = 5 * 60 * 1000;
+      volatility = 0.0022;
+      startFactor = 0.994;
+  }
+
+  // Deterministic pseudo-random seed based on symbol + range
+  let seed = 2166136261;
+  const key = `${sym}_${range}`;
+  for (let k = 0; k < key.length; k++) {
+    seed ^= key.charCodeAt(k);
+    seed = Math.imul(seed, 16777619);
+  }
+  const nextRand = () => {
+    seed += 0x6D2B79F5;
+    let t = seed;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+
+  const rawCandles = [];
   const now = Date.now();
+  let walkingPrice = basePrice * startFactor;
 
-  for (let i = count; i >= 0; i--) {
-    const time = new Date(now - i * intervalMinutes * 60 * 1000).toISOString();
-    const drift = (Math.sin(i / 4) + (Math.random() - 0.49)) * (basePrice * 0.006);
-    const open = currentClose;
-    const close = Math.max(1, open + drift);
-    const high = Math.max(open, close) + Math.random() * (basePrice * 0.004);
-    const low = Math.min(open, close) - Math.random() * (basePrice * 0.004);
-    const volume = Math.floor(Math.random() * 50000) + 10000;
+  for (let i = points - 1; i >= 0; i--) {
+    const stepIndex = points - 1 - i;
+    const progress = stepIndex / Math.max(1, points - 1);
+    const timestamp = now - i * intervalMs;
+    const open = walkingPrice;
 
-    candles.push({
-      time,
-      open: parseFloat(open.toFixed(2)),
-      high: parseFloat(high.toFixed(2)),
-      low: parseFloat(low.toFixed(2)),
-      close: parseFloat(close.toFixed(2)),
+    let step = 0;
+    if (range === '5Y' || range === '10Y') {
+      const cycle = Math.sin(progress * Math.PI * (range === '10Y' ? 4.5 : 2.5)) * (open * 0.012);
+      const drift = (basePrice - walkingPrice) * (0.015 + 0.035 * progress);
+      const noise = (nextRand() - 0.485) * (open * volatility);
+      step = drift + cycle + noise;
+    } else {
+      const wave = Math.sin(stepIndex / 5.5) * (open * volatility * 0.35);
+      const drift = (basePrice - walkingPrice) * 0.03;
+      const noise = (nextRand() - 0.495) * (open * volatility);
+      step = drift + wave + noise;
+    }
+
+    const close = Math.max(0.5, open + step);
+    const wickSpan = open * volatility * 0.65;
+    const high = Math.max(open, close) + nextRand() * wickSpan;
+    const low = Math.min(open, close) - nextRand() * wickSpan;
+    const volume = Math.floor(135000 + nextRand() * 115000);
+
+    rawCandles.push({
+      time: Math.floor(timestamp / 1000),
+      timestamp,
+      open,
+      high,
+      low,
+      close,
       volume
     });
-    currentClose = close;
+
+    walkingPrice = close;
   }
-  // Ensure the latest candle matches current price
-  if (candles.length > 0) {
-    candles[candles.length - 1].close = basePrice;
+
+  // Smoothly scale so final close equals basePrice without a cliff on the last candle
+  const finalRawClose = rawCandles.length > 0 ? rawCandles[rawCandles.length - 1].close : basePrice;
+  const scale = finalRawClose > 0 ? basePrice / finalRawClose : 1;
+
+  const candles = rawCandles.map((bar, idx) => {
+    const weight = (range === '5Y' || range === '10Y') ? Math.pow(idx / Math.max(1, rawCandles.length - 1), 1.5) : 1;
+    const effScale = 1 + (scale - 1) * weight;
+    const open = parseFloat((bar.open * effScale).toFixed(2));
+    const close = idx === rawCandles.length - 1 ? parseFloat(basePrice.toFixed(2)) : parseFloat((bar.close * effScale).toFixed(2));
+    const high = parseFloat(Math.max(open, close, bar.high * effScale).toFixed(2));
+    const low = parseFloat(Math.min(open, close, bar.low * effScale).toFixed(2));
+    return {
+      ...bar,
+      open,
+      high,
+      low,
+      close
+    };
+  });
+
+  for (let i = 1; i < candles.length; i++) {
+    candles[i].open = candles[i - 1].close;
+    candles[i].high = Math.max(candles[i].high, candles[i].open, candles[i].close);
+    candles[i].low = Math.min(candles[i].low, candles[i].open, candles[i].close);
   }
+
   return candles;
 }
 

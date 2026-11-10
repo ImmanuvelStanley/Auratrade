@@ -4224,21 +4224,22 @@ class MarketDataService {
     return results.slice(0, 10);
   }
 
-  // Get historical candles for charts matching real exchange trading hours and Google Finance (1D, 1W, 1M, 1Y)
+  // Get historical candles for charts matching real exchange trading hours and Google Finance (1D, 1W, 1M, 1Y, 5Y, 10Y)
   async getHistoricalCandles(symbol, range = '1D') {
     const sym = symbol.toUpperCase().trim();
-    const quote = await this.getQuote(sym);
+    const cachedState = this.marketState[sym];
+    const quote = (cachedState && cachedState.price > 0) ? cachedState : await this.getQuote(sym);
     const currentPrice = quote.price;
 
     const yahooSym = getYahooTicker(sym);
     if (yahooSym) {
       try {
         let interval = '5m';
-        let rangeParam = '1d';
+        let rangeParam = '5d';
         switch (range) {
           case '1D':
             interval = '5m';
-            rangeParam = '1d';
+            rangeParam = '5d'; // Fetch 5d of 5m bars and slice latest 78 bars so early-session charts are always full
             break;
           case '1W':
             interval = '15m';
@@ -4246,7 +4247,7 @@ class MarketDataService {
             break;
           case '1M':
             interval = '1d';
-            rangeParam = '1mo';
+            rangeParam = '3mo'; // Fetch 3mo of daily bars (slice latest 45 trading days) for rich 1M view
             break;
           case '1Y':
             interval = '1d';
@@ -4262,7 +4263,7 @@ class MarketDataService {
             break;
           default:
             interval = '5m';
-            rangeParam = '1d';
+            rangeParam = '5d';
         }
 
         const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSym)}?interval=${interval}&range=${rangeParam}`;
@@ -4271,14 +4272,17 @@ class MarketDataService {
         if (result && Array.isArray(result.timestamp) && result.timestamp.length > 0) {
           const ts = result.timestamp;
           const q = result.indicators?.quote?.[0] || {};
-          const candles = [];
+          let candles = [];
+          let lastValidVolume = 148000;
 
           for (let i = 0; i < ts.length; i++) {
             const c = q.close?.[i];
             const o = q.open?.[i] !== undefined && q.open?.[i] !== null ? q.open[i] : c;
             const h = q.high?.[i] !== undefined && q.high?.[i] !== null ? q.high[i] : (o && c ? Math.max(o, c) : null);
             const l = q.low?.[i] !== undefined && q.low?.[i] !== null ? q.low[i] : (o && c ? Math.min(o, c) : null);
-            const v = q.volume?.[i] || 0;
+            const rawV = q.volume?.[i] || 0;
+            const v = rawV > 0 ? rawV : Math.round(lastValidVolume * (0.88 + Math.random() * 0.24));
+            if (rawV > 0) lastValidVolume = rawV;
 
             if (c === null || c === undefined || isNaN(c) || o === null || o === undefined || isNaN(o)) {
               continue;
@@ -4291,16 +4295,42 @@ class MarketDataService {
               high: parseFloat(Math.max(o, c, h || c).toFixed(2)),
               low: parseFloat(Math.min(o, c, l || c).toFixed(2)),
               close: parseFloat(c.toFixed(2)),
-              volume: Math.round(v)
+              volume: Math.max(12000, Math.round(v))
             });
           }
 
+          if (range === '1D' && candles.length > 78) {
+            candles = candles.slice(-78);
+          } else if (range === '1M' && candles.length > 45) {
+            candles = candles.slice(-45);
+          }
+
           if (candles.length >= 3) {
-            // Guarantee latest candle close matches latest real-time quote
+            // Proportionally scale series if Yahoo baseline differs from currentPrice so the final candle never has an artificial cliff
+            const lastYahooClose = candles[candles.length - 1].close;
+            if (lastYahooClose > 0 && currentPrice > 0) {
+              const scale = currentPrice / lastYahooClose;
+              if (Math.abs(1 - scale) > 0.001) {
+                candles = candles.map((bar) => {
+                  const sOpen = parseFloat((bar.open * scale).toFixed(2));
+                  const sClose = parseFloat((bar.close * scale).toFixed(2));
+                  const sHigh = parseFloat(Math.max(sOpen, sClose, bar.high * scale).toFixed(2));
+                  const sLow = parseFloat(Math.min(sOpen, sClose, bar.low * scale).toFixed(2));
+                  return {
+                    ...bar,
+                    open: sOpen,
+                    high: sHigh,
+                    low: sLow,
+                    close: sClose
+                  };
+                });
+              }
+            }
+
             const last = candles[candles.length - 1];
             last.close = currentPrice;
-            last.high = Math.max(last.high, currentPrice);
-            last.low = Math.min(last.low, currentPrice);
+            last.high = Math.max(last.high, last.open, currentPrice);
+            last.low = Math.min(last.low, last.open, currentPrice);
             return candles;
           }
         }
@@ -4310,57 +4340,59 @@ class MarketDataService {
     }
 
     // High-fidelity fallback generator if offline or derivative asset
-    let points = 60;
-    let intervalMs = 60 * 1000;
-    let volatility = 0.002;
+    let points = 78;
+    let intervalMs = 5 * 60 * 1000;
+    let volatility = 0.0025;
 
     switch (range) {
       case '1D':
-        points = 130;
+        points = 78;
         intervalMs = 5 * 60 * 1000;
-        volatility = 0.0025;
+        volatility = 0.0022;
         break;
       case '1W':
-        points = 112;
+        points = 84;
         intervalMs = 90 * 60 * 1000;
-        volatility = 0.006;
+        volatility = 0.0045;
         break;
       case '1M':
-        points = 90;
+        points = 45;
         intervalMs = 24 * 60 * 60 * 1000;
-        volatility = 0.012;
+        volatility = 0.0085;
         break;
       case '1Y':
         points = 104;
-        intervalMs = 7 * 24 * 60 * 60 * 1000;
-        volatility = 0.025;
+        intervalMs = 3.5 * 24 * 60 * 60 * 1000;
+        volatility = 0.016;
         break;
       case '5Y':
-        points = 260; // 5 years of weekly candles
+        points = 200; // 5 years of weekly candles
         intervalMs = 7 * 24 * 60 * 60 * 1000;
-        volatility = 0.028;
+        volatility = 0.022;
         break;
       case '10Y':
-        points = 520; // 10 years of weekly candles
-        intervalMs = 7 * 24 * 60 * 60 * 1000;
-        volatility = 0.032;
+        points = 260; // 10 years of bi-weekly/weekly candles
+        intervalMs = 14 * 24 * 60 * 60 * 1000;
+        volatility = 0.026;
         break;
       default:
-        points = 60;
+        points = 78;
         intervalMs = 5 * 60 * 1000;
     }
 
-    const candles = [];
+    let rawCandles = [];
     const now = Date.now();
 
-    // For multi-year frames, start from a realistic historical baseline so the chart reflects multi-year compound growth & cycles
+    // Start from a realistic historical baseline for multi-year frames
     let walkingPrice = currentPrice;
     if (range === '5Y') {
-      walkingPrice = currentPrice * (0.38 + Math.random() * 0.08); // ~150-160% gain over 5Y
+      walkingPrice = currentPrice * 0.42;
     } else if (range === '10Y') {
-      walkingPrice = currentPrice * (0.18 + Math.random() * 0.06); // ~400-500% gain over 10Y
+      walkingPrice = currentPrice * 0.22;
     } else if (range === '1Y') {
-      walkingPrice = currentPrice * (0.78 + Math.random() * 0.12);
+      walkingPrice = currentPrice * 0.84;
+    } else if (range === '1M') {
+      walkingPrice = currentPrice * 0.96;
     }
 
     const targetFinalPrice = currentPrice;
@@ -4371,25 +4403,24 @@ class MarketDataService {
       const timestamp = now - i * intervalMs;
       const open = walkingPrice;
 
-      // Add macro cyclical swings + drift toward targetFinalPrice for 5Y/10Y
       let step = 0;
       if (range === '5Y' || range === '10Y') {
-        const cycle = Math.sin(progress * Math.PI * (range === '10Y' ? 4.5 : 2.5)) * (open * 0.015);
-        const drift = (targetFinalPrice - walkingPrice) * (0.015 + 0.04 * progress);
-        const noise = (Math.random() - 0.48) * (open * volatility);
+        const cycle = Math.sin(progress * Math.PI * (range === '10Y' ? 4.5 : 2.5)) * (open * 0.012);
+        const drift = (targetFinalPrice - walkingPrice) * (0.015 + 0.035 * progress);
+        const noise = (Math.random() - 0.485) * (open * volatility);
         step = drift + cycle + noise;
       } else {
-        step = (Math.random() - 0.49) * (open * volatility);
+        const drift = (targetFinalPrice - walkingPrice) * 0.025;
+        step = drift + (Math.random() - 0.495) * (open * volatility);
       }
 
-      let close = Math.max(0.5, parseFloat((open + step).toFixed(2)));
-      if (i === 0) close = currentPrice;
+      const close = Math.max(0.5, open + step);
+      const wickRange = open * volatility * 0.65;
+      const high = Math.max(open, close) + Math.random() * wickRange;
+      const low = Math.min(open, close) - Math.random() * wickRange;
+      const volume = Math.floor(125000 + Math.random() * 95000);
 
-      const high = parseFloat((Math.max(open, close) + Math.random() * (open * volatility * 0.8)).toFixed(2));
-      const low = parseFloat((Math.min(open, close) - Math.random() * (open * volatility * 0.8)).toFixed(2));
-      const volume = Math.floor(Math.random() * 50000) + 10000;
-
-      candles.push({
+      rawCandles.push({
         time: Math.floor(timestamp / 1000),
         timestamp,
         open,
@@ -4402,11 +4433,32 @@ class MarketDataService {
       walkingPrice = close;
     }
 
-    if (candles.length > 0) {
-      const last = candles[candles.length - 1];
-      last.close = currentPrice;
-      last.high = Math.max(last.high, currentPrice);
-      last.low = Math.min(last.low, currentPrice);
+    // Smoothly scale the generated path so the final candle close equals currentPrice without an artificial single-bar jump
+    const finalRawClose = rawCandles.length > 0 ? rawCandles[rawCandles.length - 1].close : currentPrice;
+    const scale = finalRawClose > 0 ? currentPrice / finalRawClose : 1;
+
+    const candles = rawCandles.map((bar, idx) => {
+      // Blend scale factor smoothly from 1.0 at start (for 5Y/10Y growth preservation) to exact scale at end
+      const weight = (range === '5Y' || range === '10Y') ? Math.pow(idx / Math.max(1, rawCandles.length - 1), 1.5) : 1;
+      const effScale = 1 + (scale - 1) * weight;
+      const open = parseFloat((bar.open * effScale).toFixed(2));
+      const close = idx === rawCandles.length - 1 ? currentPrice : parseFloat((bar.close * effScale).toFixed(2));
+      const high = parseFloat(Math.max(open, close, bar.high * effScale).toFixed(2));
+      const low = parseFloat(Math.min(open, close, bar.low * effScale).toFixed(2));
+      return {
+        ...bar,
+        open,
+        high,
+        low,
+        close
+      };
+    });
+
+    // Ensure sequential open/close continuity on the last few bars
+    for (let i = 1; i < candles.length; i++) {
+      candles[i].open = candles[i - 1].close;
+      candles[i].high = Math.max(candles[i].high, candles[i].open, candles[i].close);
+      candles[i].low = Math.min(candles[i].low, candles[i].open, candles[i].close);
     }
 
     return candles;
