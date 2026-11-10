@@ -20,6 +20,12 @@ import {
 import { MultiYearPatternAnalysisCard } from './MultiYearPatternAnalysisCard';
 import { analyzeHistoricalPattern } from '../utils/historicalPatternEngine';
 import { generateCandles } from '../services/clientFallbackData';
+import {
+  toISODateString,
+  getDaysDifferenceFromToday,
+  computeDateMarketSnapshot,
+  generateCandlesForCalendarDate
+} from '../utils/marketCalendarEngine';
 
 // Global in-memory cache for historical candle data across symbols & timeframes
 const candleHistoryCache = new Map();
@@ -171,6 +177,45 @@ export const StockChart = React.memo(function StockChart({
   const [liveDataPos, setLiveDataPos] = useState(null);
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 0, height: 0 });
   const [loading, setLoading] = useState(false);
+  const [calendarDateState, setCalendarDateState] = useState(() => ({
+    mode: 'live',
+    dateStr: toISODateString(new Date()),
+    daysDiff: 0,
+    snapshot: null
+  }));
+  const chartDateInputRef = useRef(null);
+
+  // Synchronize chart with Past & Future Market Calendar selections
+  useEffect(() => {
+    const handleCalendarDateChange = (e) => {
+      const dateStr = e.detail?.dateStr || toISODateString(new Date());
+      const daysDiff = getDaysDifferenceFromToday(dateStr);
+      if (daysDiff === 0) {
+        setCalendarDateState({ mode: 'live', dateStr, daysDiff: 0, snapshot: null });
+        const cacheKey = `${symbol}_${range}`;
+        const cached = candleHistoryCache.get(cacheKey);
+        if (cached && cached.length > 0) {
+          setCandles(normalizeAndAnchorCandles(cached, liveQuoteRef.current?.price, range, symbol));
+        } else {
+          setCandles(generateCandles(symbol, range, liveQuoteRef.current?.price));
+        }
+        setPanOffset(0);
+      } else {
+        const snap = e.detail?.snapshot || computeDateMarketSnapshot(symbol, liveQuoteRef.current, dateStr);
+        setCalendarDateState({
+          mode: daysDiff < 0 ? 'past' : 'future',
+          dateStr,
+          daysDiff,
+          snapshot: snap
+        });
+        const calCandles = generateCandlesForCalendarDate(symbol, liveQuoteRef.current, dateStr, range);
+        setCandles(calCandles);
+        setPanOffset(0);
+      }
+    };
+    window.addEventListener('auratrade_calendar_date_changed', handleCalendarDateChange);
+    return () => window.removeEventListener('auratrade_calendar_date_changed', handleCalendarDateChange);
+  }, [symbol, range]);
 
   // Listen to workstation settings changes for defaultChartInterval
   useEffect(() => {
@@ -250,7 +295,7 @@ export const StockChart = React.memo(function StockChart({
 
   // Seamlessly append or update latest live quote into the chart without creating a cliff bar
   useEffect(() => {
-    if (!liveQuote || !liveQuote.price || candles.length === 0) return;
+    if (!liveQuote || !liveQuote.price || candles.length === 0 || calendarDateState.mode !== 'live') return;
     setCandles((prev) => {
       if (prev.length === 0) return prev;
       const last = prev[prev.length - 1];
@@ -1205,22 +1250,77 @@ export const StockChart = React.memo(function StockChart({
               ? (hoverData.isHistorical
                   ? (chartType === 'candle' ? 'HISTORICAL PATTERN' : 'HISTORICAL TICK')
                   : (chartType === 'candle' ? 'INSPECTED BAR' : 'INSPECTED TICK'))
+              : calendarDateState.mode === 'past'
+              ? `PAST DATE (${calendarDateState.daysDiff}D)`
+              : calendarDateState.mode === 'future'
+              ? `FUTURE PROJECTION (+${calendarDateState.daysDiff}D)`
               : (clampedPan > 0
                   ? `HISTORY (-${clampedPan} BARS)`
                   : (chartType === 'candle' ? 'LATEST CANDLE' : 'LIVE TICK'))}
           </span>
-          <span style={{ color: '#94a3b8', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+          <label
+            title="Click to pick a Past or Future Calendar Date"
+            style={{
+              color: calendarDateState.mode === 'future' ? '#38bdf8' : calendarDateState.mode === 'past' ? '#fbbf24' : '#94a3b8',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.25rem',
+              cursor: 'pointer',
+              padding: '0.1rem 0.35rem',
+              borderRadius: '4px',
+              background: calendarDateState.mode !== 'live' ? 'rgba(56, 189, 248, 0.1)' : 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(148, 163, 184, 0.18)',
+              position: 'relative'
+            }}
+            onClick={() => {
+              if (chartDateInputRef.current && chartDateInputRef.current.showPicker) {
+                try { chartDateInputRef.current.showPicker(); } catch (e) {}
+              }
+            }}
+          >
             <Clock size={11} />
-            {hoverData
-              ? hoverData.timeStr
-              : (visibleCandles.length > 0
-                  ? (range === '5Y' || range === '10Y'
-                      ? new Date(visibleCandles[visibleCandles.length - 1].timestamp || visibleCandles[visibleCandles.length - 1].time * 1000).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
-                      : (range === '1D'
-                          ? new Date(visibleCandles[visibleCandles.length - 1].timestamp || visibleCandles[visibleCandles.length - 1].time * 1000).toLocaleTimeString()
-                          : new Date(visibleCandles[visibleCandles.length - 1].timestamp || visibleCandles[visibleCandles.length - 1].time * 1000).toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' })))
-                  : '--:--:--')}
-          </span>
+            <span>
+              {hoverData
+                ? hoverData.timeStr
+                : (visibleCandles.length > 0
+                    ? (range === '5Y' || range === '10Y' || calendarDateState.mode !== 'live'
+                        ? new Date(visibleCandles[visibleCandles.length - 1].timestamp || visibleCandles[visibleCandles.length - 1].time * 1000).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+                        : (range === '1D'
+                            ? new Date(visibleCandles[visibleCandles.length - 1].timestamp || visibleCandles[visibleCandles.length - 1].time * 1000).toLocaleTimeString()
+                            : new Date(visibleCandles[visibleCandles.length - 1].timestamp || visibleCandles[visibleCandles.length - 1].time * 1000).toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' })))
+                    : '--:--:--')}
+            </span>
+            <span style={{ fontSize: '0.6rem', opacity: 0.7 }}>▾</span>
+            <input
+              ref={chartDateInputRef}
+              type="date"
+              min="2015-01-01"
+              max="2036-12-31"
+              value={calendarDateState.dateStr}
+              onChange={(e) => {
+                if (e.target.value) {
+                  const snap = computeDateMarketSnapshot(symbol, liveQuoteRef.current, e.target.value);
+                  window.dispatchEvent(
+                    new CustomEvent('auratrade_calendar_date_changed', {
+                      detail: {
+                        source: 'StockChart',
+                        symbol,
+                        dateStr: e.target.value,
+                        snapshot: snap
+                      }
+                    })
+                  );
+                }
+              }}
+              style={{
+                position: 'absolute',
+                opacity: 0,
+                width: '1px',
+                height: '1px',
+                pointerEvents: 'none'
+              }}
+            />
+          </label>
         </div>
 
         {/* Current Active Candle Details */}
