@@ -1011,18 +1011,6 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
               <div className="assistant-body-scroll">
                 {messages.length === 0 ? (
                   <div className="assistant-empty-state">
-                    <div className="assistant-empty-hero">
-                      <div className="assistant-empty-icon-wrapper">
-                        <Sparkles size={22} className="assistant-empty-sparkle" />
-                      </div>
-                      <div className="assistant-empty-hero-text">
-                        <h3 className="assistant-empty-title">AuraTrade Quantitative AI</h3>
-                        <p className="assistant-empty-desc">
-                          Ask about any company or ticker (e.g. <strong>Apple</strong>, <strong>NVDA</strong>, <strong>Reliance</strong>, <strong>Gold</strong>), compare stocks head-to-head, simulate dollar profits, or generate multi-horizon forecasts.
-                        </p>
-                      </div>
-                    </div>
-
                     <div className="assistant-starters-header">
                       <span className="assistant-starters-label">INSTITUTIONAL INTELLIGENCE MODULES</span>
                       <span className="assistant-starters-sub">Click any card to execute</span>
@@ -1530,7 +1518,7 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
                         style={{
                           fontSize: '0.72rem',
                           fontWeight: 700,
-                          color: '#94a3b8',
+                          color: 'var(--text-secondary)',
                           textTransform: 'uppercase',
                           letterSpacing: '0.04em'
                         }}
