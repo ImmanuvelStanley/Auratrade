@@ -227,7 +227,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
               <h1 className="font-mono live-quote-symbol-heading" style={{ fontSize: '1.85rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
                 {quote.symbol}
               </h1>
-              <span className="status-pill live-quote-sector-pill" style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.05)', flexShrink: 0 }}>
+              <span className="status-pill live-quote-sector-pill" style={{ fontSize: '0.75rem', background: 'var(--bg-input)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)', flexShrink: 0 }}>
                 {quote.sector || 'US Equity'}
               </span>
               {!isLiveMode && (
@@ -242,8 +242,8 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                     padding: '0.15rem 0.5rem',
                     borderRadius: '9999px',
                     background: isPastMode ? 'rgba(245, 158, 11, 0.16)' : 'rgba(6, 182, 212, 0.16)',
-                    color: isPastMode ? '#fbbf24' : '#38bdf8',
-                    border: `1px solid ${isPastMode ? 'rgba(245, 158, 11, 0.4)' : 'rgba(6, 182, 212, 0.4)'}`
+                    color: isPastMode ? 'var(--warning-amber)' : 'var(--accent-cyan)',
+                    border: `1px solid ${isPastMode ? 'rgba(245, 158, 11, 0.45)' : 'rgba(6, 182, 212, 0.45)'}`
                   }}
                 >
                   {isPastMode ? <History size={11} /> : <Sparkles size={11} />}
@@ -253,25 +253,26 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
             </div>
 
             <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.4rem 0.6rem', flexWrap: 'wrap', minWidth: 0 }}>
-              <span className="live-quote-name-text">{quote.name}</span>
+              <span className="live-quote-name-text" style={{ fontWeight: 600 }}>{quote.name}</span>
               <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>•</span>
 
               {/* Interactive Past & Future Calendar Trigger Pill */}
               <div
+                className="live-quote-calendar-trigger-pill"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   borderRadius: '6px',
                   background: isCalendarOpen
-                    ? 'rgba(56, 189, 248, 0.16)'
+                    ? 'rgba(6, 182, 212, 0.14)'
                     : !isLiveMode
                     ? (isPastMode ? 'rgba(245, 158, 11, 0.14)' : 'rgba(6, 182, 212, 0.14)')
-                    : 'rgba(255, 255, 255, 0.05)',
+                    : 'var(--bg-input)',
                   border: isCalendarOpen
-                    ? '1px solid rgba(56, 189, 248, 0.55)'
+                    ? '1px solid var(--accent-cyan)'
                     : !isLiveMode
-                    ? (isPastMode ? '1px solid rgba(245, 158, 11, 0.45)' : '1px solid rgba(6, 182, 212, 0.45)')
-                    : '1px solid rgba(148, 163, 184, 0.22)',
+                    ? (isPastMode ? '1px solid rgba(245, 158, 11, 0.5)' : '1px solid rgba(6, 182, 212, 0.5)')
+                    : '1px solid var(--border-subtle)',
                   padding: '1px',
                   transition: 'all 0.15s ease'
                 }}
@@ -283,7 +284,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                   style={{
                     background: 'transparent',
                     border: 'none',
-                    color: 'var(--text-muted)',
+                    color: 'var(--text-secondary)',
                     cursor: 'pointer',
                     padding: '0.18rem 0.28rem',
                     display: 'inline-flex',
@@ -301,7 +302,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                   style={{
                     background: 'transparent',
                     border: 'none',
-                    color: !isLiveMode ? (isPastMode ? '#fcd34d' : '#38bdf8') : 'var(--text-primary)',
+                    color: !isLiveMode ? (isPastMode ? 'var(--warning-amber)' : 'var(--accent-cyan)') : 'var(--text-primary)',
                     fontSize: '0.76rem',
                     fontWeight: 700,
                     fontFamily: 'var(--font-mono)',
@@ -325,7 +326,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                   style={{
                     background: 'transparent',
                     border: 'none',
-                    color: 'var(--text-muted)',
+                    color: 'var(--text-secondary)',
                     cursor: 'pointer',
                     padding: '0.18rem 0.28rem',
                     display: 'inline-flex',
@@ -390,24 +391,25 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
         {/* Inline Expandable Past & Future Market Calendar Panel (Zero Overlap & Zero Clipping) */}
         {isCalendarOpen && (
           <div
+            className="live-quote-calendar-panel"
             style={{
               width: '100%',
               boxSizing: 'border-box',
-              background: 'rgba(11, 18, 33, 0.92)',
-              border: '1px solid rgba(56, 189, 248, 0.35)',
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-focus)',
               borderRadius: '10px',
               padding: '0.85rem 1rem',
-              boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 8px 24px rgba(0, 0, 0, 0.35)',
+              boxShadow: 'var(--shadow-card)',
               display: 'flex',
               flexDirection: 'column',
               gap: '0.75rem'
             }}
           >
             {/* Panel Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', paddingBottom: '0.45rem', borderBottom: '1px solid rgba(148, 163, 184, 0.14)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', paddingBottom: '0.45rem', borderBottom: '1px solid var(--border-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                <Calendar size={14} style={{ color: '#38bdf8', flexShrink: 0 }} />
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: '#e2e8f0' }}>
+                <Calendar size={14} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
+                <span style={{ fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.05em', textTransform: 'uppercase', color: 'var(--text-primary)' }}>
                   Past & Future Market Time-Machine Calendar
                 </span>
               </div>
@@ -425,8 +427,8 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                       fontSize: '0.68rem',
                       fontWeight: 800,
                       fontFamily: 'var(--font-mono)',
-                      background: 'rgba(16, 185, 129, 0.18)',
-                      color: '#34d399',
+                      background: 'var(--bull-green-bg)',
+                      color: 'var(--bull-green)',
                       border: '1px solid rgba(16, 185, 129, 0.45)',
                       cursor: 'pointer'
                     }}
@@ -440,9 +442,9 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                   onClick={() => setIsCalendarOpen(false)}
                   title="Close Calendar"
                   style={{
-                    background: 'rgba(255, 255, 255, 0.06)',
-                    border: '1px solid rgba(148, 163, 184, 0.2)',
-                    color: '#94a3b8',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-subtle)',
+                    color: 'var(--text-secondary)',
                     borderRadius: '5px',
                     padding: '3px 5px',
                     cursor: 'pointer',
@@ -461,7 +463,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 {/* Past Presets Row */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                  <span style={{ fontSize: '0.65rem', color: '#fbbf24', fontWeight: 800, textTransform: 'uppercase', minWidth: '58px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  <span style={{ fontSize: '0.65rem', color: 'var(--warning-amber)', fontWeight: 800, textTransform: 'uppercase', minWidth: '58px', whiteSpace: 'nowrap', flexShrink: 0 }}>
                     ◀ Past
                   </span>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '4px', flex: 1 }}>
@@ -483,9 +485,9 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                           fontWeight: 700,
                           fontFamily: 'var(--font-mono)',
                           borderRadius: '5px',
-                          border: '1px solid rgba(245, 158, 11, 0.35)',
-                          background: 'rgba(245, 158, 11, 0.12)',
-                          color: '#fcd34d',
+                          border: '1px solid rgba(245, 158, 11, 0.4)',
+                          background: 'rgba(245, 158, 11, 0.14)',
+                          color: 'var(--warning-amber)',
                           cursor: 'pointer'
                         }}
                       >
@@ -497,7 +499,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
 
                 {/* Future Presets Row */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                  <span style={{ fontSize: '0.65rem', color: '#38bdf8', fontWeight: 800, textTransform: 'uppercase', minWidth: '58px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  <span style={{ fontSize: '0.65rem', color: 'var(--accent-cyan)', fontWeight: 800, textTransform: 'uppercase', minWidth: '58px', whiteSpace: 'nowrap', flexShrink: 0 }}>
                     Future ▶
                   </span>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '4px', flex: 1 }}>
@@ -519,9 +521,9 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                           fontWeight: 700,
                           fontFamily: 'var(--font-mono)',
                           borderRadius: '5px',
-                          border: '1px solid rgba(56, 189, 248, 0.35)',
-                          background: 'rgba(56, 189, 248, 0.12)',
-                          color: '#38bdf8',
+                          border: '1px solid rgba(6, 182, 212, 0.4)',
+                          background: 'rgba(6, 182, 212, 0.14)',
+                          color: 'var(--accent-cyan)',
                           cursor: 'pointer'
                         }}
                       >
@@ -543,10 +545,10 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                     }}
                     style={{
                       flex: 1,
-                      background: 'rgba(15, 23, 42, 0.95)',
-                      border: '1px solid rgba(148, 163, 184, 0.3)',
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border-subtle)',
                       borderRadius: '6px',
-                      color: '#f8fafc',
+                      color: 'var(--text-primary)',
                       padding: '0.32rem 0.5rem',
                       fontSize: '0.74rem',
                       fontFamily: 'var(--font-mono)'
@@ -564,8 +566,8 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                       fontSize: '0.72rem',
                       fontWeight: 800,
                       fontFamily: 'var(--font-mono)',
-                      background: isLiveMode ? 'rgba(16, 185, 129, 0.15)' : 'linear-gradient(135deg, #10b981, #059669)',
-                      color: isLiveMode ? '#34d399' : '#ffffff',
+                      background: isLiveMode ? 'var(--bull-green-bg)' : 'linear-gradient(135deg, #10b981, #059669)',
+                      color: isLiveMode ? 'var(--bull-green)' : '#ffffff',
                       border: '1px solid rgba(16, 185, 129, 0.45)',
                       cursor: 'pointer',
                       whiteSpace: 'nowrap'
@@ -581,8 +583,8 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                   style={{
                     padding: '0.45rem 0.65rem',
                     borderRadius: '6px',
-                    background: 'rgba(255, 255, 255, 0.03)',
-                    border: '1px solid rgba(148, 163, 184, 0.14)',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-subtle)',
                     fontSize: '0.72rem',
                     fontFamily: 'var(--font-mono)',
                     display: 'flex',
@@ -591,13 +593,13 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#94a3b8' }}>Selected Date:</span>
-                    <strong style={{ color: '#f8fafc' }}>{dateSnapshot.formattedDate}</strong>
+                    <span style={{ color: 'var(--text-secondary)' }}>Selected Date:</span>
+                    <strong style={{ color: 'var(--text-primary)' }}>{dateSnapshot.formattedDate}</strong>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#94a3b8' }}>{isLiveMode ? 'Market Status:' : 'vs Live ($' + quote.price.toFixed(2) + '):'}</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>{isLiveMode ? 'Market Status:' : 'vs Live ($' + quote.price.toFixed(2) + '):'}</span>
                     {isLiveMode ? (
-                      <strong style={{ color: '#34d399' }}>● Real-Time Live Tape</strong>
+                      <strong style={{ color: 'var(--bull-green)' }}>● Real-Time Live Tape</strong>
                     ) : (
                       <strong style={{ color: dateSnapshot.vsLiveChange >= 0 ? 'var(--bull-green)' : 'var(--bear-red)' }}>
                         {dateSnapshot.vsLiveChange >= 0 ? '+' : ''}${dateSnapshot.vsLiveChange.toFixed(2)} ({dateSnapshot.vsLivePercent >= 0 ? '+' : ''}{dateSnapshot.vsLivePercent.toFixed(2)}%)
@@ -610,13 +612,13 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
               {/* Right Column: Full Month & Year Calendar Grid */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                 {/* Month & Year Navigation Bar */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'rgba(255, 255, 255, 0.04)', padding: '0.25rem 0.45rem', borderRadius: '6px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', padding: '0.25rem 0.45rem', borderRadius: '6px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
                     <button
                       type="button"
                       onClick={() => setViewMonthDate(new Date(viewMonthDate.getFullYear() - 1, viewMonthDate.getMonth(), 1))}
                       title="Previous Year"
-                      style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '2px 5px', display: 'inline-flex' }}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '2px 5px', display: 'inline-flex' }}
                     >
                       <ChevronsLeft size={14} />
                     </button>
@@ -624,13 +626,13 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                       type="button"
                       onClick={() => setViewMonthDate(new Date(viewMonthDate.getFullYear(), viewMonthDate.getMonth() - 1, 1))}
                       title="Previous Month"
-                      style={{ background: 'transparent', border: 'none', color: '#e2e8f0', cursor: 'pointer', padding: '2px 5px', display: 'inline-flex' }}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '2px 5px', display: 'inline-flex' }}
                     >
                       <ChevronLeft size={14} />
                     </button>
                   </div>
 
-                  <span className="font-mono" style={{ fontSize: '0.78rem', fontWeight: 800, color: '#f8fafc' }}>
+                  <span className="font-mono" style={{ fontSize: '0.78rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                     {viewMonthDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                   </span>
 
@@ -639,7 +641,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                       type="button"
                       onClick={() => setViewMonthDate(new Date(viewMonthDate.getFullYear(), viewMonthDate.getMonth() + 1, 1))}
                       title="Next Month"
-                      style={{ background: 'transparent', border: 'none', color: '#e2e8f0', cursor: 'pointer', padding: '2px 5px', display: 'inline-flex' }}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', padding: '2px 5px', display: 'inline-flex' }}
                     >
                       <ChevronRight size={14} />
                     </button>
@@ -647,7 +649,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                       type="button"
                       onClick={() => setViewMonthDate(new Date(viewMonthDate.getFullYear() + 1, viewMonthDate.getMonth(), 1))}
                       title="Next Year"
-                      style={{ background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: '2px 5px', display: 'inline-flex' }}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '2px 5px', display: 'inline-flex' }}
                     >
                       <ChevronsRight size={14} />
                     </button>
@@ -657,7 +659,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                 {/* Weekday Headers */}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '2px', textAlign: 'center' }}>
                   {WEEKDAYS.map((w) => (
-                    <span key={w} style={{ fontSize: '0.64rem', fontWeight: 700, color: '#64748b' }}>
+                    <span key={w} style={{ fontSize: '0.64rem', fontWeight: 700, color: 'var(--text-muted)' }}>
                       {w}
                     </span>
                   ))}
@@ -670,21 +672,22 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                     const isToday = cell.iso === todayISO;
                     const isFutureCell = cell.iso > todayISO;
 
-                    let bg = 'rgba(255, 255, 255, 0.015)';
-                    let border = '1px solid transparent';
-                    let color = cell.inCurrentMonth ? '#cbd5e1' : '#475569';
+                    let bg = 'var(--bg-card)';
+                    let border = '1px solid var(--border-subtle)';
+                    let color = cell.inCurrentMonth ? 'var(--text-primary)' : 'var(--text-muted)';
 
                     if (isSelected) {
                       bg = isToday
                         ? 'linear-gradient(135deg, #10b981, #059669)'
                         : isFutureCell
-                        ? 'linear-gradient(135deg, #06b6d4, #6366f1)'
-                        : 'linear-gradient(135deg, #f59e0b, #d97706)';
+                        ? 'linear-gradient(135deg, #0284c7, #4f46e5)'
+                        : 'linear-gradient(135deg, #d97706, #b45309)';
                       color = '#ffffff';
+                      border = '1px solid transparent';
                     } else if (isToday) {
-                      bg = 'rgba(16, 185, 129, 0.16)';
-                      border = '1px solid rgba(16, 185, 129, 0.5)';
-                      color = '#34d399';
+                      bg = 'var(--bull-green-bg)';
+                      border = '1px solid var(--bull-green)';
+                      color = 'var(--bull-green)';
                     }
 
                     return (
@@ -696,11 +699,12 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                           padding: '0.26rem 0',
                           fontSize: '0.7rem',
                           fontFamily: 'var(--font-mono)',
-                          fontWeight: isSelected || isToday ? 800 : 500,
+                          fontWeight: isSelected || isToday ? 800 : 600,
                           borderRadius: '5px',
                           background: bg,
                           border,
                           color,
+                          opacity: !cell.inCurrentMonth && !isSelected ? 0.55 : 1,
                           cursor: 'pointer',
                           transition: 'all 0.12s ease'
                         }}
@@ -727,15 +731,15 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
               padding: '0.45rem 0.75rem',
               borderRadius: '8px',
               background: isPastMode
-                ? 'linear-gradient(90deg, rgba(245, 158, 11, 0.14) 0%, rgba(15, 23, 42, 0.6) 100%)'
-                : 'linear-gradient(90deg, rgba(6, 182, 212, 0.14) 0%, rgba(99, 102, 241, 0.14) 100%)',
-              border: `1px solid ${isPastMode ? 'rgba(245, 158, 11, 0.35)' : 'rgba(56, 189, 248, 0.38)'}`,
+                ? 'rgba(245, 158, 11, 0.12)'
+                : 'rgba(6, 182, 212, 0.12)',
+              border: `1px solid ${isPastMode ? 'rgba(245, 158, 11, 0.4)' : 'rgba(6, 182, 212, 0.4)'}`,
               fontSize: '0.75rem',
               fontFamily: 'var(--font-mono)'
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-              <span style={{ fontWeight: 800, color: isPastMode ? '#fbbf24' : '#38bdf8', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+              <span style={{ fontWeight: 800, color: isPastMode ? 'var(--warning-amber)' : 'var(--accent-cyan)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                 {isPastMode ? <History size={13} /> : <Sparkles size={13} />}
                 {isPastMode ? `PAST MARKET SNAPSHOT: ${dateSnapshot.formattedDate}` : `FUTURE AI MARKET PROJECTION: ${dateSnapshot.formattedDate}`}
               </span>
@@ -745,7 +749,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                   {dateSnapshot.vsLiveChange >= 0 ? '+' : ''}${dateSnapshot.vsLiveChange.toFixed(2)} ({dateSnapshot.vsLivePercent >= 0 ? '+' : ''}{dateSnapshot.vsLivePercent.toFixed(2)}%)
                 </strong>
               </span>
-              <span style={{ color: '#94a3b8', fontSize: '0.7rem' }}>
+              <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>
                 • {dateSnapshot.regime}
               </span>
             </div>
@@ -761,8 +765,8 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                 borderRadius: '5px',
                 fontSize: '0.68rem',
                 fontWeight: 800,
-                background: 'rgba(16, 185, 129, 0.18)',
-                color: '#34d399',
+                background: 'var(--bull-green-bg)',
+                color: 'var(--bull-green)',
                 border: '1px solid rgba(16, 185, 129, 0.45)',
                 cursor: 'pointer'
               }}
@@ -784,7 +788,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                 padding: '0.2rem 0.5rem',
                 borderRadius: 'var(--radius-md)',
                 transition: 'all 0.15s ease',
-                color: !isLiveMode ? (isPastMode ? '#fef3c7' : '#e0f2fe') : undefined
+                color: !isLiveMode ? (isPastMode ? 'var(--warning-amber)' : 'var(--accent-cyan)') : 'var(--text-primary)'
               }}
             >
               ${activePrice.toFixed(2)}

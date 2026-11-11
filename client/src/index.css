@@ -6,14 +6,14 @@
   --bg-main: #090d16;
   --bg-card: #111827;
   --bg-surface: #111827;
-  --bg-card-hover: rgba(30, 41, 59, 0.85);
-  --bg-glass: rgba(15, 23, 42, 0.65);
+  --bg-card-hover: rgba(30, 41, 59, 0.88);
+  --bg-glass: rgba(15, 23, 42, 0.72);
   --bg-input: #131d33;
   --bg-navbar: rgba(11, 19, 34, 0.98);
   --bg-ribbon: #0b1322;
   --profile-hero-bg: linear-gradient(
     135deg,
-    rgba(15, 23, 42, 0.95) 0%,
+    rgba(15, 23, 42, 0.96) 0%,
     rgba(10, 15, 29, 0.98) 100%
   );
   --profile-hero-glow: radial-gradient(
@@ -22,21 +22,21 @@
     rgba(99, 102, 241, 0.05) 50%,
     transparent 70%
   );
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-glass: rgba(255, 255, 255, 0.08);
-  --border-focus: rgba(99, 102, 241, 0.5);
+  --border-subtle: rgba(148, 163, 184, 0.14);
+  --border-glass: rgba(148, 163, 184, 0.16);
+  --border-focus: rgba(6, 182, 212, 0.55);
   --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
   --brand-trade-color: #cbd5e1;
   --accent-cyan: #06b6d4;
   --accent-indigo: #6366f1;
   --accent-purple: #8b5cf6;
   --bull-green: #10b981;
-  --bull-green-bg: rgba(16, 185, 129, 0.12);
+  --bull-green-bg: rgba(16, 185, 129, 0.14);
   --bull-green-pulse: rgba(16, 185, 129, 0.35);
   --bear-red: #f43f5e;
-  --bear-red-bg: rgba(244, 63, 94, 0.12);
+  --bear-red-bg: rgba(244, 63, 94, 0.14);
   --bear-red-pulse: rgba(244, 63, 94, 0.35);
   --warning-amber: #f59e0b;
   --status-active-color: #10b981;
@@ -52,7 +52,7 @@
     "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
-  --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.42);
   --shadow-glow-cyan: 0 0 25px rgba(6, 182, 212, 0.25);
   --shadow-glow-green: 0 0 20px rgba(16, 185, 129, 0.3);
   --radius-sm: 6px;
@@ -64,40 +64,51 @@
 }
 [data-theme="light"] {
   color-scheme: light;
-  --bg-primary: #f8fafc;
-  --bg-secondary: #f1f5f9;
-  --bg-main: #f8fafc;
+  --bg-primary: #eef2f6;
+  --bg-secondary: #e2e8f0;
+  --bg-main: #eef2f6;
   --bg-card: #ffffff;
   --bg-surface: #ffffff;
-  --bg-card-hover: #f8fafc;
-  --bg-glass: rgba(255, 255, 255, 0.9);
-  --bg-input: #f1f5f9;
-  --bg-navbar: rgba(255, 255, 255, 0.97);
+  --bg-card-hover: #f1f5f9;
+  --bg-glass: rgba(255, 255, 255, 0.96);
+  --bg-input: #f8fafc;
+  --bg-navbar: rgba(255, 255, 255, 0.98);
   --bg-ribbon: #ffffff;
-  --profile-hero-bg: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  --profile-hero-bg: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
   --profile-hero-glow: radial-gradient(
     circle,
-    rgba(6, 182, 212, 0.08) 0%,
-    rgba(99, 102, 241, 0.03) 50%,
+    rgba(2, 132, 199, 0.08) 0%,
+    rgba(79, 70, 229, 0.04) 50%,
     transparent 70%
   );
-  --border-subtle: rgba(0, 0, 0, 0.08);
-  --border-glass: rgba(0, 0, 0, 0.08);
-  --border-focus: rgba(6, 182, 212, 0.6);
+  --border-subtle: #cbd5e1;
+  --border-glass: #cbd5e1;
+  --border-focus: #0284c7;
   --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
-  --brand-trade-color: #334155;
+  --text-secondary: #1e293b;
+  --text-muted: #475569;
+  --brand-trade-color: #0f172a;
+  --accent-cyan: #0284c7;
+  --accent-indigo: #4f46e5;
+  --accent-purple: #7c3aed;
+  --bull-green: #059669;
+  --bull-green-bg: rgba(5, 150, 105, 0.14);
+  --bull-green-pulse: rgba(5, 150, 105, 0.28);
+  --bear-red: #dc2626;
+  --bear-red-bg: rgba(220, 38, 38, 0.12);
+  --bear-red-pulse: rgba(220, 38, 38, 0.28);
+  --warning-amber: #d97706;
   --shadow-card:
-    0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
-  --shadow-glow-cyan: 0 0 20px rgba(6, 182, 212, 0.12);
-  --shadow-glow-green: 0 0 16px rgba(16, 185, 129, 0.15);
+    0 4px 16px -2px rgba(15, 23, 42, 0.08),
+    0 2px 6px -1px rgba(15, 23, 42, 0.05);
+  --shadow-glow-cyan: 0 0 18px rgba(2, 132, 199, 0.16);
+  --shadow-glow-green: 0 0 16px rgba(5, 150, 105, 0.18);
   --status-active-color: #047857;
-  --status-active-bg: #ecfdf5;
-  --status-active-border: rgba(16, 185, 129, 0.45);
+  --status-active-bg: #d1fae5;
+  --status-active-border: #34d399;
   --status-triggered-color: #b91c1c;
-  --status-triggered-bg: #fef2f2;
-  --status-triggered-border: rgba(239, 68, 68, 0.45);
+  --status-triggered-bg: #fee2e2;
+  --status-triggered-border: #f87171;
 }
 * {
   box-sizing: border-box;
@@ -7141,3 +7152,564 @@ canvas {
     width: 100%;
   }
 }
+
+/* ==========================================================================
+   INSTITUTIONAL LIGHT & DARK THEME VISIBILITY & HIGH-CONTRAST SYSTEM
+   (TradingView / Koyfin WCAG AAA Standards)
+   ========================================================================== */
+
+/* 1. AI Strategy Desk v4.2 — Complete Light Theme Adaptation */
+[data-theme="light"] .assistant-panel {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow:
+    0 20px 50px rgba(15, 23, 42, 0.16),
+    0 4px 16px rgba(15, 23, 42, 0.08) !important;
+}
+[data-theme="light"] .assistant-header {
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+}
+[data-theme="light"] .assistant-logo-badge {
+  background: linear-gradient(
+    135deg,
+    rgba(2, 132, 199, 0.12),
+    rgba(79, 70, 229, 0.12)
+  ) !important;
+  border: 1px solid rgba(2, 132, 199, 0.35) !important;
+  color: #0284c7 !important;
+}
+[data-theme="light"] .assistant-status-dot {
+  border-color: #ffffff !important;
+}
+[data-theme="light"] .assistant-title {
+  color: #0f172a !important;
+}
+[data-theme="light"] .assistant-quant-badge {
+  background: #d1fae5 !important;
+  border-color: #34d399 !important;
+  color: #047857 !important;
+}
+[data-theme="light"] .assistant-subtitle-row {
+  color: #475569 !important;
+}
+[data-theme="light"] .assistant-icon-btn {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+}
+[data-theme="light"] .assistant-icon-btn:hover {
+  background: #f1f5f9 !important;
+  border-color: #0284c7 !important;
+  color: #0284c7 !important;
+}
+[data-theme="light"] .assistant-icon-btn.active {
+  background: rgba(2, 132, 199, 0.12) !important;
+  border-color: #0284c7 !important;
+  color: #0284c7 !important;
+}
+[data-theme="light"] .assistant-count-pill {
+  background: rgba(2, 132, 199, 0.15) !important;
+  color: #0369a1 !important;
+}
+[data-theme="light"] .assistant-telemetry-strip {
+  background: #f1f5f9 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+}
+[data-theme="light"] .assistant-telemetry-asset {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+}
+[data-theme="light"] .assistant-telemetry-symbol {
+  color: #0f172a !important;
+}
+[data-theme="light"] .assistant-telemetry-price {
+  color: #1e293b !important;
+}
+[data-theme="light"] .assistant-telemetry-chg.bull {
+  color: #047857 !important;
+  background: #d1fae5 !important;
+}
+[data-theme="light"] .assistant-telemetry-chg.bear {
+  color: #b91c1c !important;
+  background: #fee2e2 !important;
+}
+[data-theme="light"] .assistant-telemetry-act-btn {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0284c7 !important;
+}
+[data-theme="light"] .assistant-telemetry-act-btn:hover {
+  background: #e0f2fe !important;
+  border-color: #0284c7 !important;
+  color: #0369a1 !important;
+}
+[data-theme="light"] .assistant-messages {
+  background: #f8fafc !important;
+}
+[data-theme="light"] .assistant-welcome-icon {
+  background: linear-gradient(
+    135deg,
+    rgba(2, 132, 199, 0.12),
+    rgba(79, 70, 229, 0.12)
+  ) !important;
+  border-color: rgba(2, 132, 199, 0.35) !important;
+  color: #0284c7 !important;
+}
+[data-theme="light"] .assistant-welcome-title {
+  color: #0f172a !important;
+}
+[data-theme="light"] .assistant-welcome-subtitle {
+  color: #334155 !important;
+}
+[data-theme="light"] .assistant-starters-label {
+  color: #475569 !important;
+}
+[data-theme="light"] .assistant-starter-card {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04) !important;
+}
+[data-theme="light"] .assistant-starter-card:hover {
+  background: #f0f9ff !important;
+  border-color: #0284c7 !important;
+}
+[data-theme="light"] .assistant-starter-icon {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+[data-theme="light"] .assistant-starter-title {
+  color: #0f172a !important;
+}
+[data-theme="light"] .assistant-starter-desc {
+  color: #475569 !important;
+}
+[data-theme="light"] .assistant-avatar-bot {
+  background: #e0f2fe !important;
+  border-color: #7dd3fc !important;
+  color: #0284c7 !important;
+}
+[data-theme="light"] .assistant-bubble-bot {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05) !important;
+}
+[data-theme="light"] .assistant-msg-header {
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+[data-theme="light"] .assistant-msg-sender {
+  color: #0284c7 !important;
+}
+[data-theme="light"] .assistant-msg-time {
+  color: #475569 !important;
+}
+[data-theme="light"] .assistant-exec-badge.bullish {
+  background: #d1fae5 !important;
+  color: #047857 !important;
+  border-color: #34d399 !important;
+}
+[data-theme="light"] .assistant-exec-badge.bearish {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+  border-color: #f87171 !important;
+}
+[data-theme="light"] .assistant-exec-badge.neutral {
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+  border-color: #7dd3fc !important;
+}
+[data-theme="light"] .assistant-metric-pill {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+}
+[data-theme="light"] .assistant-metric-label {
+  color: #475569 !important;
+}
+[data-theme="light"] .assistant-metric-value {
+  color: #0f172a !important;
+}
+[data-theme="light"] .assistant-metric-value.tone-bull {
+  color: #047857 !important;
+}
+[data-theme="light"] .assistant-metric-value.tone-bear {
+  color: #b91c1c !important;
+}
+[data-theme="light"] .assistant-metric-value.tone-cyan {
+  color: #0284c7 !important;
+}
+[data-theme="light"] .assistant-metric-value.tone-amber {
+  color: #b45309 !important;
+}
+[data-theme="light"] .assistant-markdown {
+  color: #1e293b !important;
+}
+[data-theme="light"] .assistant-md-h2 {
+  color: #0f172a !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+[data-theme="light"] .assistant-md-h3 {
+  color: #0284c7 !important;
+}
+[data-theme="light"] .assistant-md-p,
+[data-theme="light"] .assistant-md-ul {
+  color: #1e293b !important;
+}
+[data-theme="light"] .assistant-md-li::marker {
+  color: #0284c7 !important;
+}
+[data-theme="light"] .assistant-md-code {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0369a1 !important;
+}
+[data-theme="light"] .assistant-md-table-wrap {
+  border-color: #cbd5e1 !important;
+  background: #ffffff !important;
+}
+[data-theme="light"] .assistant-md-table th {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  border-bottom-color: #cbd5e1 !important;
+}
+[data-theme="light"] .assistant-md-table td {
+  color: #1e293b !important;
+  border-bottom-color: #e2e8f0 !important;
+}
+[data-theme="light"] .assistant-md-table tr:nth-child(even) td {
+  background: #f8fafc !important;
+}
+[data-theme="light"] .assistant-actions-row,
+[data-theme="light"] .assistant-followups-row {
+  border-top-color: #e2e8f0 !important;
+}
+[data-theme="light"] .assistant-action-chip {
+  background: #e0f2fe !important;
+  border-color: #7dd3fc !important;
+  color: #0369a1 !important;
+}
+[data-theme="light"] .assistant-action-chip:hover {
+  background: #bae6fd !important;
+  color: #0c4a6e !important;
+}
+[data-theme="light"] .assistant-followup-chip {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #1e293b !important;
+}
+[data-theme="light"] .assistant-followup-chip:hover {
+  background: #e0f2fe !important;
+  border-color: #0284c7 !important;
+  color: #0369a1 !important;
+}
+[data-theme="light"] .assistant-quick-bar {
+  background: #f1f5f9 !important;
+  border-top: 1px solid #cbd5e1 !important;
+}
+[data-theme="light"] .assistant-quick-chip {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+}
+[data-theme="light"] .assistant-quick-chip:hover {
+  background: #e0f2fe !important;
+  border-color: #0284c7 !important;
+  color: #0284c7 !important;
+}
+[data-theme="light"] .assistant-input-form {
+  background: #ffffff !important;
+  border-top: 1px solid #cbd5e1 !important;
+}
+[data-theme="light"] .assistant-input-field {
+  background: #f8fafc !important;
+  border: 1px solid #94a3b8 !important;
+  color: #0f172a !important;
+}
+[data-theme="light"] .assistant-input-field::placeholder {
+  color: #64748b !important;
+}
+[data-theme="light"] .assistant-history-footer {
+  background: #f8fafc !important;
+  border-top: 1px solid #cbd5e1 !important;
+}
+[data-theme="light"] .assistant-config-modal {
+  background: rgba(255, 255, 255, 0.98) !important;
+  color: #0f172a !important;
+}
+[data-theme="light"] .assistant-config-header {
+  border-bottom-color: #cbd5e1 !important;
+}
+
+/* 2. Header, Brand Logo, Navigation & Buttons — Light Theme Visibility */
+[data-theme="light"] .navbar {
+  background: #ffffff !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05) !important;
+}
+[data-theme="light"] .market-ribbon {
+  background: #f8fafc !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+}
+[data-theme="light"] .ribbon-item {
+  border-right: 1px solid #cbd5e1 !important;
+}
+[data-theme="light"] .ribbon-symbol {
+  color: #0f172a !important;
+  font-weight: 700 !important;
+}
+[data-theme="light"] .ribbon-price {
+  color: #1e293b !important;
+  font-weight: 700 !important;
+}
+[data-theme="light"] .stealth-badge-pill {
+  background: #e0f2fe !important;
+  border-color: #7dd3fc !important;
+  color: #0369a1 !important;
+}
+[data-theme="light"] .nav-tab {
+  color: #334155 !important;
+  font-weight: 600 !important;
+}
+[data-theme="light"] .nav-tab:hover {
+  color: #0f172a !important;
+  background: #f1f5f9 !important;
+}
+[data-theme="light"] .nav-tab.active {
+  color: #0284c7 !important;
+  background: #e0f2fe !important;
+  border-color: #7dd3fc !important;
+  font-weight: 700 !important;
+}
+[data-theme="light"] .header-signout-btn {
+  background: #f1f5f9 !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+[data-theme="light"] .header-signout-btn:hover {
+  background: #fee2e2 !important;
+  border-color: #f87171 !important;
+  color: #b91c1c !important;
+}
+[data-theme="light"] .btn-bull {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+}
+[data-theme="light"] .btn-bear {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+}
+[data-theme="light"] .btn-outline,
+[data-theme="light"] .btn-icon {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+}
+[data-theme="light"] .btn-outline:hover,
+[data-theme="light"] .btn-icon:hover {
+  background: #f1f5f9 !important;
+  border-color: #0284c7 !important;
+  color: #0284c7 !important;
+}
+
+/* 3. Cards, Tables, Inputs & Badges — Light Theme Structural Contrast */
+[data-theme="light"] .card {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow:
+    0 4px 14px -2px rgba(15, 23, 42, 0.06),
+    0 2px 5px -1px rgba(15, 23, 42, 0.04) !important;
+}
+[data-theme="light"] .card-header {
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+[data-theme="light"] .card-title {
+  color: #0f172a !important;
+}
+[data-theme="light"] .input-field,
+[data-theme="light"] select,
+[data-theme="light"] input[type="text"],
+[data-theme="light"] input[type="number"],
+[data-theme="light"] input[type="email"],
+[data-theme="light"] input[type="password"],
+[data-theme="light"] input[type="date"] {
+  background: #f8fafc !important;
+  border: 1px solid #94a3b8 !important;
+  color: #0f172a !important;
+}
+[data-theme="light"] .input-field:focus,
+[data-theme="light"] select:focus,
+[data-theme="light"] input:focus {
+  background: #ffffff !important;
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15) !important;
+}
+[data-theme="light"] .badge-bull {
+  background: #d1fae5 !important;
+  color: #047857 !important;
+  border: 1px solid #34d399 !important;
+}
+[data-theme="light"] .badge-bear {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+  border: 1px solid #f87171 !important;
+}
+[data-theme="light"] .badge-cyan {
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+  border: 1px solid #7dd3fc !important;
+}
+[data-theme="light"] table th {
+  color: #334155 !important;
+  background: #f1f5f9 !important;
+  border-bottom: 1px solid #cbd5e1 !important;
+  font-weight: 700 !important;
+}
+[data-theme="light"] table td {
+  color: #0f172a !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+}
+[data-theme="light"] table tbody tr:hover {
+  background: #f1f5f9 !important;
+}
+
+/* 4. Bullion Desk, Profile Card, Chart & Modals — Light Theme Overrides */
+[data-theme="light"] .bullion-hero-banner {
+  background: linear-gradient(135deg, #fffbeb 0%, #f8fafc 60%, #f1f5f9 100%) !important;
+  border: 1px solid #fcd34d !important;
+}
+[data-theme="light"] .calculator-card-right {
+  background: linear-gradient(160deg, #ffffff 0%, #fffbeb 100%) !important;
+  border: 1px solid #f59e0b !important;
+}
+[data-theme="light"] .overview-stat-box,
+[data-theme="light"] .profile-meta-chip,
+[data-theme="light"] .profile-mandate-inline-bar {
+  background: #f8fafc !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+}
+[data-theme="light"] .kyc-doc-verified-box {
+  background: #ecfdf5 !important;
+  border: 1px solid #34d399 !important;
+}
+[data-theme="light"] .kyc-address-doc-box {
+  background: #f0f9ff !important;
+  border: 1px solid #7dd3fc !important;
+}
+[data-theme="light"] .chart-floating-x-badge {
+  background: #0f172a !important;
+  color: #ffffff !important;
+  border-color: #0284c7 !important;
+}
+[data-theme="light"] .chart-scrubber-slider {
+  background: #cbd5e1 !important;
+}
+[data-theme="light"] .modal-content {
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.2) !important;
+}
+
+/* 5. Universal Inline-Style Contrast Remapping for Light Theme
+   Ensures all inline dark backgrounds and pastel texts across all components
+   automatically adapt to crisp WCAG AA/AAA contrast in Light Theme */
+[data-theme="light"] [style*="background: rgba(255, 255, 255, 0.01)"],
+[data-theme="light"] [style*="background: rgba(255, 255, 255, 0.02)"],
+[data-theme="light"] [style*="background: rgba(255, 255, 255, 0.03)"],
+[data-theme="light"] [style*="background: rgba(255, 255, 255, 0.04)"],
+[data-theme="light"] [style*="background: rgba(255, 255, 255, 0.05)"],
+[data-theme="light"] [style*="background: rgba(255, 255, 255, 0.06)"],
+[data-theme="light"] [style*="background: rgba(255, 255, 255, 0.08)"] {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+}
+[data-theme="light"] [style*="background: rgba(15, 23, 42"],
+[data-theme="light"] [style*="background: rgba(11, 18, 33"],
+[data-theme="light"] [style*="background: rgba(11, 17, 32"],
+[data-theme="light"] [style*="background: rgba(9, 14, 27"],
+[data-theme="light"] [style*="background: rgba(2, 6, 23"],
+[data-theme="light"] [style*="background: rgb(15, 23, 42)"],
+[data-theme="light"] [style*="background: #0f172a"],
+[data-theme="light"] [style*="background: #111827"],
+[data-theme="light"] [style*="background: #1e293b"] {
+  background: #f1f5f9 !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+[data-theme="light"] [style*="linear-gradient"][style*="15, 23, 42"],
+[data-theme="light"] [style*="linear-gradient"][style*="11, 18, 33"],
+[data-theme="light"] [style*="linear-gradient"][style*="17, 24, 39"],
+[data-theme="light"] [style*="linear-gradient"][style*="30, 41, 59"] {
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%) !important;
+  border-color: #cbd5e1 !important;
+}
+
+/* Remap low-contrast light/pastel inline text colors to deep slate/semantic hues in Light Theme */
+[data-theme="light"] [style*="color: #f8fafc"],
+[data-theme="light"] [style*="color: rgb(248, 250, 252)"],
+[data-theme="light"] [style*="color: #f1f5f9"],
+[data-theme="light"] [style*="color: rgb(241, 245, 249)"],
+[data-theme="light"] [style*="color: #e2e8f0"],
+[data-theme="light"] [style*="color: rgb(226, 232, 240)"] {
+  color: #0f172a !important;
+}
+[data-theme="light"] [style*="color: #cbd5e1"],
+[data-theme="light"] [style*="color: rgb(203, 213, 225)"],
+[data-theme="light"] [style*="color: #94a3b8"],
+[data-theme="light"] [style*="color: rgb(148, 163, 184)"] {
+  color: #334155 !important;
+}
+[data-theme="light"] [style*="color: #64748b"],
+[data-theme="light"] [style*="color: rgb(100, 116, 139)"] {
+  color: #475569 !important;
+}
+[data-theme="light"] [style*="color: #38bdf8"],
+[data-theme="light"] [style*="color: rgb(56, 189, 248)"],
+[data-theme="light"] [style*="color: #7dd3fc"],
+[data-theme="light"] [style*="color: rgb(125, 211, 252)"],
+[data-theme="light"] [style*="color: #22d3ee"],
+[data-theme="light"] [style*="color: #67e8f9"] {
+  color: #0284c7 !important;
+}
+[data-theme="light"] [style*="color: #34d399"],
+[data-theme="light"] [style*="color: rgb(52, 211, 153)"],
+[data-theme="light"] [style*="color: #6ee7b7"],
+[data-theme="light"] [style*="color: #a7f3d0"],
+[data-theme="light"] [style*="color: #10b981"] {
+  color: #047857 !important;
+}
+[data-theme="light"] [style*="color: #fbbf24"],
+[data-theme="light"] [style*="color: rgb(251, 191, 36)"],
+[data-theme="light"] [style*="color: #fcd34d"],
+[data-theme="light"] [style*="color: rgb(252, 211, 77)"],
+[data-theme="light"] [style*="color: #fde68a"],
+[data-theme="light"] [style*="color: #fef3c7"],
+[data-theme="light"] [style*="color: #f59e0b"] {
+  color: #b45309 !important;
+}
+[data-theme="light"] [style*="color: #f87171"],
+[data-theme="light"] [style*="color: rgb(248, 113, 113)"],
+[data-theme="light"] [style*="color: #fda4af"],
+[data-theme="light"] [style*="color: #fb7185"],
+[data-theme="light"] [style*="color: #f43f5e"] {
+  color: #dc2626 !important;
+}
+[data-theme="light"] [style*="color: #a5b4fc"],
+[data-theme="light"] [style*="color: #818cf8"],
+[data-theme="light"] [style*="color: #c4b5fd"],
+[data-theme="light"] [style*="color: #a78bfa"],
+[data-theme="light"] [style*="color: #d8b4fe"] {
+  color: #4f46e5 !important;
+}
+/* Keep white text on solid accent buttons and avatars in Light Theme */
+[data-theme="light"] .btn-primary,
+[data-theme="light"] .btn-bull,
+[data-theme="light"] .btn-bear,
+[data-theme="light"] .profile-avatar-circle,
+[data-theme="light"] .assistant-bubble-user,
+[data-theme="light"] .assistant-send-btn,
+[data-theme="light"] .assistant-fab,
+[data-theme="light"] .chart-floating-x-badge {
+  color: #ffffff !important;
+}
+

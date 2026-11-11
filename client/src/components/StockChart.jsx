@@ -547,12 +547,12 @@ export const StockChart = React.memo(function StockChart({
     }
 
     // Draw Grid Lines & Price Axis
-    ctx.strokeStyle = theme === 'light' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.05)';
+    ctx.strokeStyle = theme === 'light' ? 'rgba(15, 23, 42, 0.09)' : 'rgba(255, 255, 255, 0.06)';
     ctx.lineWidth = 1;
     const gridSteps = 5;
 
-    ctx.font = '11px "IBM Plex Mono", monospace';
-    ctx.fillStyle = '#64748b';
+    ctx.font = '600 11px "IBM Plex Mono", monospace';
+    ctx.fillStyle = theme === 'light' ? '#334155' : '#94a3b8';
     ctx.textAlign = 'left';
 
     for (let i = 0; i <= gridSteps; i++) {
@@ -599,7 +599,7 @@ export const StockChart = React.memo(function StockChart({
 
       ctx.save();
       ctx.setLineDash([2, 4]);
-      ctx.strokeStyle = theme === 'light' ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.04)';
+      ctx.strokeStyle = theme === 'light' ? 'rgba(15, 23, 42, 0.07)' : 'rgba(255, 255, 255, 0.04)';
       ctx.beginPath();
       ctx.moveTo(x, padding.top);
       ctx.lineTo(x, padding.top + chartH);
@@ -608,8 +608,8 @@ export const StockChart = React.memo(function StockChart({
 
       if (lbl !== lastDrawnLabel) {
         lastDrawnLabel = lbl;
-        ctx.font = '10px "IBM Plex Mono", monospace';
-        ctx.fillStyle = '#64748b';
+        ctx.font = '600 10px "IBM Plex Mono", monospace';
+        ctx.fillStyle = theme === 'light' ? '#334155' : '#94a3b8';
         ctx.textAlign = 'center';
         const clampedLabelX = Math.max(padding.left + 22, Math.min(padding.left + chartW - 22, x));
         ctx.fillText(lbl, clampedLabelX, padding.top + chartH + 18);
@@ -1211,7 +1211,7 @@ export const StockChart = React.memo(function StockChart({
           overflowY: 'hidden',
           scrollbarWidth: 'none',
           WebkitOverflowScrolling: 'touch',
-          background: hoverData ? 'rgba(6, 182, 212, 0.05)' : 'rgba(255, 255, 255, 0.02)',
+          background: hoverData ? 'rgba(6, 182, 212, 0.08)' : 'var(--bg-secondary)',
           borderBottom: '1px solid var(--border-subtle)',
           fontSize: '0.72rem',
           fontFamily: 'var(--font-mono)',
@@ -1261,16 +1261,17 @@ export const StockChart = React.memo(function StockChart({
           <label
             title="Click to pick a Past or Future Calendar Date"
             style={{
-              color: calendarDateState.mode === 'future' ? '#38bdf8' : calendarDateState.mode === 'past' ? '#fbbf24' : '#94a3b8',
+              color: calendarDateState.mode === 'future' ? 'var(--accent-cyan)' : calendarDateState.mode === 'past' ? 'var(--warning-amber)' : 'var(--text-secondary)',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.25rem',
               cursor: 'pointer',
               padding: '0.1rem 0.35rem',
               borderRadius: '4px',
-              background: calendarDateState.mode !== 'live' ? 'rgba(56, 189, 248, 0.1)' : 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid rgba(148, 163, 184, 0.18)',
-              position: 'relative'
+              background: calendarDateState.mode !== 'live' ? 'rgba(6, 182, 212, 0.1)' : 'var(--bg-card)',
+              border: '1px solid var(--border-subtle)',
+              position: 'relative',
+              fontWeight: 600
             }}
             onClick={() => {
               if (chartDateInputRef.current && chartDateInputRef.current.showPicker) {
@@ -1364,12 +1365,12 @@ export const StockChart = React.memo(function StockChart({
                 </span>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#94a3b8', flexWrap: 'nowrap', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                <span><strong style={{ color: '#64748b' }}>O:</strong> ${c.open.toFixed(2)}</span>
-                <span><strong style={{ color: '#64748b' }}>H:</strong> <span style={{ color: '#10b981' }}>${c.high.toFixed(2)}</span></span>
-                <span><strong style={{ color: '#64748b' }}>L:</strong> <span style={{ color: '#f43f5e' }}>${c.low.toFixed(2)}</span></span>
-                <span><strong style={{ color: '#64748b' }}>C:</strong> <span style={{ color: '#38bdf8' }}>${c.close.toFixed(2)}</span></span>
-                <span><strong style={{ color: '#64748b' }}>Vol:</strong> {vol}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', flexWrap: 'nowrap', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                <span><strong style={{ color: 'var(--text-muted)' }}>O:</strong> ${c.open.toFixed(2)}</span>
+                <span><strong style={{ color: 'var(--text-muted)' }}>H:</strong> <span style={{ color: 'var(--bull-green)', fontWeight: 700 }}>${c.high.toFixed(2)}</span></span>
+                <span><strong style={{ color: 'var(--text-muted)' }}>L:</strong> <span style={{ color: 'var(--bear-red)', fontWeight: 700 }}>${c.low.toFixed(2)}</span></span>
+                <span><strong style={{ color: 'var(--text-muted)' }}>C:</strong> <span style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>${c.close.toFixed(2)}</span></span>
+                <span><strong style={{ color: 'var(--text-muted)' }}>Vol:</strong> {vol}</span>
                 {isInspectingHistory && latestCandle ? (
                   <span style={{ color: c.close >= latestCandle.close ? 'var(--bull-green)' : 'var(--bear-red)', fontWeight: 600 }}>
                     {c.close >= latestCandle.close ? '+' : ''}${(c.close - latestCandle.close).toFixed(2)} vs Live
@@ -1684,7 +1685,7 @@ export const StockChart = React.memo(function StockChart({
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0.4rem 0.75rem',
-          background: 'rgba(255, 255, 255, 0.02)',
+          background: 'var(--bg-secondary)',
           borderTop: '1px solid var(--border-subtle)',
           fontSize: '0.72rem',
           fontFamily: 'var(--font-mono)',
@@ -1737,14 +1738,14 @@ export const StockChart = React.memo(function StockChart({
             {range === '5Y' || range === '10Y' ? 'Newer 25' : 'Newer 10'} <ChevronRight size={13} />
           </button>
 
-          <span style={{ color: '#64748b', fontSize: '0.66rem', whiteSpace: 'nowrap' }}>
+          <span style={{ color: 'var(--text-secondary)', fontSize: '0.66rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
             {visibleCandles.length}/{candles.length} bars
           </span>
         </div>
 
         {/* Center: Interactive Range Slider Track */}
         <div className="chart-scrubber-slider-row" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flex: '1 1 110px', minWidth: '85px', maxWidth: '380px' }}>
-          <span style={{ fontSize: '0.64rem', color: '#64748b', whiteSpace: 'nowrap', flexShrink: 0 }}>
+          <span style={{ fontSize: '0.64rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap', flexShrink: 0 }}>
             ◀ Past
           </span>
           <input
@@ -1767,7 +1768,7 @@ export const StockChart = React.memo(function StockChart({
           <span
             style={{
               fontSize: '0.64rem',
-              color: clampedPan === 0 ? 'var(--bull-green)' : '#64748b',
+              color: clampedPan === 0 ? 'var(--bull-green)' : 'var(--text-secondary)',
               fontWeight: clampedPan === 0 ? 800 : 600,
               whiteSpace: 'nowrap',
               flexShrink: 0
@@ -1793,16 +1794,16 @@ export const StockChart = React.memo(function StockChart({
                 borderRadius: '4px',
                 fontSize: '0.68rem',
                 fontWeight: 800,
-                background: 'rgba(239, 68, 68, 0.15)',
+                background: 'var(--bear-red-bg)',
                 border: '1px solid rgba(239, 68, 68, 0.45)',
-                color: '#f87171',
+                color: 'var(--bear-red)',
                 cursor: 'pointer',
                 transition: 'all 0.15s ease',
                 whiteSpace: 'nowrap'
               }}
               title="Reset zoom and snap view back to real-time live trading candle"
             >
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 8px #ef4444' }} />
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--bear-red)', boxShadow: '0 0 8px var(--bear-red)' }} />
               SNAP TO LIVE {clampedPan > 0 ? `(-${clampedPan})` : `${zoomLevel.toFixed(1)}x`}
             </button>
           ) : (
@@ -1815,12 +1816,13 @@ export const StockChart = React.memo(function StockChart({
                 borderRadius: '4px',
                 fontSize: '0.68rem',
                 fontWeight: 700,
-                color: '#34d399',
-                background: 'rgba(16, 185, 129, 0.1)',
+                color: 'var(--bull-green)',
+                background: 'var(--bull-green-bg)',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
                 whiteSpace: 'nowrap'
               }}
             >
-              <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#10b981' }} />
+              <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: 'var(--bull-green)' }} />
               Live Edge
             </span>
           )}
@@ -1843,7 +1845,7 @@ export const StockChart = React.memo(function StockChart({
           className="chart-multiyear-teaser-strip"
           style={{
             padding: '0.45rem 0.75rem',
-            background: 'rgba(255, 255, 255, 0.02)',
+            background: 'var(--bg-secondary)',
             borderTop: '1px solid var(--border-subtle)',
             display: 'flex',
             alignItems: 'center',
