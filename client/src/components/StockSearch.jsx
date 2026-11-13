@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, ArrowRight, Loader2, X } from 'lucide-react';
+import { CountryFlag } from './CountryFlag';
 
 export function StockSearch({ onSelectSymbol }) {
   const [query, setQuery] = useState('');
@@ -181,6 +182,7 @@ export function StockSearch({ onSelectSymbol }) {
                 >
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <CountryFlag country={item.country} countryCode={item.countryCode} symbol={item.symbol} countryFlag={item.countryFlag} size="sm" />
                       <span
                         className="font-mono"
                         style={{

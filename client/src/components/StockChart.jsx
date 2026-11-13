@@ -18,6 +18,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { MultiYearPatternAnalysisCard } from './MultiYearPatternAnalysisCard';
+import { CountryFlag } from './CountryFlag';
 import { analyzeHistoricalPattern } from '../utils/historicalPatternEngine';
 import { generateCandles } from '../services/clientFallbackData';
 import {
@@ -1072,8 +1073,9 @@ export const StockChart = React.memo(function StockChart({
       {/* Chart Control Bar (Fixed Single Line on Desktop, Responsive Wrap on Mobile) */}
       <div className="glass-card-header chart-header-row" style={{ gap: '0.65rem', minWidth: 0, width: '100%', boxSizing: 'border-box' }}>
         <div className="chart-header-left" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flexWrap: 'wrap' }}>
-          <span className="glass-card-title font-mono chart-title-text" style={{ fontSize: '1.05rem', fontWeight: 800 }}>
-            {symbol} Interactive Chart
+          <span className="glass-card-title font-mono chart-title-text" style={{ fontSize: '1.05rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
+            <CountryFlag symbol={symbol} size="sm" />
+            <span>{symbol} Interactive Chart</span>
           </span>
           {clampedPan === 0 ? (
             <span

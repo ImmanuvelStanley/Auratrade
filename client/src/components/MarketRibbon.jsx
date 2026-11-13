@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { CountryFlag } from './CountryFlag';
 
 export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol }) {
   const [indices, setIndices] = useState([
@@ -132,11 +133,13 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
               border: '1px solid rgba(255, 255, 255, 0.1)',
               display: 'inline-flex',
               alignItems: 'center',
+              gap: '4px',
               lineHeight: 1.2
             }}
             title={idx.region ? `${idx.region} Market` : 'Market'}
           >
-            {idx.countryCode || (idx.region === 'India' ? 'IN' : idx.region === 'US' ? 'US' : idx.region?.slice(0, 2).toUpperCase() || '')}
+            <CountryFlag country={idx.region} countryCode={idx.countryCode} symbol={idx.symbol} countryFlag={idx.countryFlag} size="xs" />
+            <span>{idx.countryCode || (idx.region === 'India' ? 'IN' : idx.region === 'US' ? 'US' : idx.region?.slice(0, 2).toUpperCase() || '')}</span>
           </span>
         )}
         <span className="ribbon-sym">{idx.symbol}</span>

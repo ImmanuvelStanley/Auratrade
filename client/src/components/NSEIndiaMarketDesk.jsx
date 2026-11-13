@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 
 import { getNSEIndiaFallbackData } from '../services/clientFallbackData';
+import { CountryFlag } from './CountryFlag';
 
 // Module-level in-memory cache for instant zero-spinner tab switching
 let nseMemoryCache = null;
@@ -194,6 +195,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
           </div>
           <div style={{ minWidth: 0, flex: '1 1 auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+              <CountryFlag country="India" countryCode="IN" size="md" />
               <h2 style={{ fontSize: 'clamp(1.05rem, 3vw, 1.25rem)', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
                 National Stock Exchange of India <span style={{ color: '#f59e0b' }}>(NSE)</span>
               </h2>
@@ -325,7 +327,10 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                     <span style={{ fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.04em' }}>
                       {idx.category || 'Index'}
                     </span>
-                    <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>{idx.name}</h3>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '2px' }}>
+                      <CountryFlag country="India" countryCode="IN" size="xs" />
+                      <h3 style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{idx.name}</h3>
+                    </div>
                   </div>
                   <span
                     className={`status-pill ${isBull ? 'bg-bull' : 'bg-bear'}`}
@@ -643,7 +648,10 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                         <div>
-                          <strong style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>{stk.symbol}</strong>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <CountryFlag country="India" countryCode="IN" size="xs" />
+                            <strong style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>{stk.symbol}</strong>
+                          </div>
                           <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', maxWidth: '140px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                             {stk.name}
                           </div>
@@ -946,9 +954,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                   <tr key={stock.symbol} className={rowFlash} style={{ transition: 'background-color 0.4s ease' }}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 800, fontSize: '0.62rem', padding: '1px 4px', borderRadius: '3px', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
-                          IN
-                        </span>
+                        <CountryFlag country="India" countryCode="IN" size="xs" showCode={true} />
                         <div>
                           <span style={{ fontWeight: 700, color: 'var(--text-primary)', display: 'block' }}>{stock.symbol}</span>
                           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{stock.name}</span>

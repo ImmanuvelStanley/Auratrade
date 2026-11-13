@@ -13,6 +13,7 @@ import {
   Bookmark
 } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
+import { CountryFlag } from './CountryFlag';
 
 // Cache market companies in module memory so subsequent modal opens are instantaneous (0ms)
 let cachedMarketCompanies = null;
@@ -458,8 +459,8 @@ export function WatchlistCompanyChooserModal({
                     {/* Top Row: Country Flag, Market Exchange & Ticker */}
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.45rem', gap: '0.4rem', minWidth: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, overflow: 'hidden' }}>
-                          <span style={{ fontSize: '1.05rem', flexShrink: 0 }}>{c.countryFlag || 'INTL'}</span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0, overflow: 'hidden' }}>
+                          <CountryFlag country={c.country} countryCode={c.countryCode} symbol={c.symbol} countryFlag={c.countryFlag} size="md" />
                           <span
                             style={{
                               fontSize: '0.66rem',

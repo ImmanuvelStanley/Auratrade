@@ -81,7 +81,7 @@ const STOCK_CATALOG = {
     aliases: ['Google', 'Alphabet', 'GOOGL', 'GOOG', 'Goole', 'Google Search', 'YouTube'],
     region: 'north_america',
     country: 'United States',
-    countryFlag: 'US',
+    countryFlag: '🇺🇸',
     exchange: 'Nasdaq',
     currency: 'USD',
     sector: 'Technology',
@@ -3386,8 +3386,8 @@ const STOCK_CATALOG = {
     rank: 58,
     name: 'SPDR S&P 500 ETF Trust',
     region: 'etf',
-    country: 'Global / US',
-    countryFlag: '🌐',
+    country: 'United States',
+    countryFlag: '🇺🇸',
     exchange: 'NYSE Arca',
     currency: 'USD',
     sector: 'Index ETF',
@@ -3409,8 +3409,8 @@ const STOCK_CATALOG = {
     rank: 59,
     name: 'Invesco QQQ Trust (Nasdaq 100)',
     region: 'etf',
-    country: 'Global / US',
-    countryFlag: '🌐',
+    country: 'United States',
+    countryFlag: '🇺🇸',
     exchange: 'Nasdaq',
     currency: 'USD',
     sector: 'Index ETF',
@@ -3501,8 +3501,8 @@ const STOCK_CATALOG = {
     rank: 63,
     name: 'iShares MSCI Emerging Markets ETF',
     region: 'etf',
-    country: 'Global Emerging',
-    countryFlag: '🌐',
+    country: 'United States',
+    countryFlag: '🇺🇸',
     exchange: 'NYSE Arca',
     currency: 'USD',
     sector: 'Index ETF',
@@ -3524,8 +3524,8 @@ const STOCK_CATALOG = {
     rank: 64,
     name: 'SPDR Gold Shares',
     region: 'etf',
-    country: 'Global Reserve',
-    countryFlag: '🟡',
+    country: 'United States',
+    countryFlag: '🇺🇸',
     exchange: 'NYSE Arca',
     currency: 'USD',
     sector: 'Commodity',
@@ -3547,8 +3547,8 @@ const STOCK_CATALOG = {
     rank: 65,
     name: 'SPDR Dow Jones Industrial ETF',
     region: 'etf',
-    country: 'Global / US',
-    countryFlag: '🌐',
+    country: 'United States',
+    countryFlag: '🇺🇸',
     exchange: 'NYSE Arca',
     currency: 'USD',
     sector: 'Index ETF',
@@ -5678,12 +5678,39 @@ class MarketDataService {
       const changePercent = prevClose > 0 ? parseFloat(((change / prevClose) * 100).toFixed(2)) : 0;
       const forecastTarget = parseFloat((price * (1 + (info.forecastGainPercent / 100))).toFixed(2));
 
+      const cName = info.country || 'Global';
+      const cLower = cName.toLowerCase();
+      let isoCode = 'US';
+      if (sym.endsWith('.NS') || sym.endsWith('.BO') || sym.endsWith('.MCX') || cLower.includes('india')) isoCode = 'IN';
+      else if (cLower.includes('japan') || sym.endsWith('.T')) isoCode = 'JP';
+      else if (cLower.includes('united kingdom') || cLower.includes('uk')) isoCode = 'GB';
+      else if (cLower.includes('germany')) isoCode = 'DE';
+      else if (cLower.includes('france')) isoCode = 'FR';
+      else if (cLower.includes('china')) isoCode = 'CN';
+      else if (cLower.includes('hong kong')) isoCode = 'HK';
+      else if (cLower.includes('taiwan')) isoCode = 'TW';
+      else if (cLower.includes('south korea') || cLower.includes('korea')) isoCode = 'KR';
+      else if (cLower.includes('netherlands')) isoCode = 'NL';
+      else if (cLower.includes('switzerland')) isoCode = 'CH';
+      else if (cLower.includes('saudi')) isoCode = 'SA';
+      else if (cLower.includes('brazil')) isoCode = 'BR';
+      else if (cLower.includes('australia')) isoCode = 'AU';
+      else if (cLower.includes('canada')) isoCode = 'CA';
+      else if (cLower.includes('sweden')) isoCode = 'SE';
+      else if (cLower.includes('denmark')) isoCode = 'DK';
+      else if (cLower.includes('italy')) isoCode = 'IT';
+      else if (cLower.includes('europe')) isoCode = 'EU';
+      else if (cLower.includes('latin america') || sym === 'MELI') isoCode = 'UY';
+      else if (cLower.includes('united states') || cLower.includes('usa') || cLower.includes('global / us')) isoCode = 'US';
+      else if (cLower.includes('global')) isoCode = 'GL';
+
       companies.push({
         symbol: sym,
         name: info.name,
         aliases: info.aliases || [],
         region: info.region || 'north_america',
-        country: info.country || 'Global',
+        country: cName,
+        countryCode: isoCode,
         countryFlag: info.countryFlag || '🌐',
         exchange: info.exchange || 'NYSE',
         currency: info.currency || 'USD',

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import { CountryFlag } from './CountryFlag';
 import {
   Globe,
   TrendingUp,
@@ -402,25 +403,7 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
                   <tr key={symKey} className={rowFlash} style={{ transition: 'background-color 0.4s ease' }}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                        <span
-                          style={{
-                            width: '28px',
-                            height: '24px',
-                            borderRadius: '4px',
-                            background: 'var(--bg-input)',
-                            border: '1px solid var(--border-subtle)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontFamily: 'var(--font-mono)',
-                            fontWeight: 800,
-                            fontSize: stock.countryFlag && stock.countryFlag.length <= 2 ? '0.95rem' : '0.65rem',
-                            color: 'var(--accent-cyan)',
-                            letterSpacing: '0.04em'
-                          }}
-                        >
-                          {stock.countryFlag || (stock.country ? String(stock.country).substring(0, 2).toUpperCase() : 'GL')}
-                        </span>
+                        <CountryFlag country={stock.country} countryCode={stock.countryCode} symbol={stock.symbol || symKey} countryFlag={stock.countryFlag} size="md" />
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
                             <span style={{ fontWeight: 800, color: 'var(--text-primary)', display: 'inline-block', fontSize: '0.92rem' }}>
@@ -637,25 +620,7 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
                   <tr key={symKey} className={rowFlash} style={{ transition: 'background-color 0.4s ease' }}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                        <span
-                          style={{
-                            width: '28px',
-                            height: '24px',
-                            borderRadius: '4px',
-                            background: 'var(--bg-input)',
-                            border: '1px solid var(--border-subtle)',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontFamily: 'var(--font-mono)',
-                            fontWeight: 800,
-                            fontSize: idx.countryFlag ? '0.95rem' : '0.65rem',
-                            color: 'var(--accent-cyan)',
-                            letterSpacing: '0.04em'
-                          }}
-                        >
-                          {idx.countryFlag || (idx.country ? String(idx.country).substring(0, 2).toUpperCase() : 'GL')}
-                        </span>
+                        <CountryFlag country={idx.country} countryCode={idx.countryCode} symbol={idx.symbol || symKey} countryFlag={idx.countryFlag} size="md" />
                         <div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
                             <span style={{ fontWeight: 800, color: 'var(--text-primary)', display: 'inline-block', fontSize: '0.95rem' }}>

@@ -17,6 +17,7 @@ import {
   X
 } from 'lucide-react';
 import { useSocketQuote } from '../context/SocketContext';
+import { CountryFlag } from './CountryFlag';
 import {
   toISODateString,
   formatCalendarDate,
@@ -227,6 +228,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
               <h1 className="font-mono live-quote-symbol-heading" style={{ fontSize: '1.85rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
                 {quote.symbol}
               </h1>
+              <CountryFlag country={quote.country} countryCode={quote.countryCode} symbol={quote.symbol} countryFlag={quote.countryFlag} size="md" showName={true} />
               <span className="status-pill live-quote-sector-pill" style={{ fontSize: '0.75rem', background: 'var(--bg-input)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)', flexShrink: 0 }}>
                 {quote.sector || 'US Equity'}
               </span>

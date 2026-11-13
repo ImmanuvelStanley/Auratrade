@@ -28,6 +28,7 @@ import { downloadOrderPdf } from '../utils/statementPdfGenerator';
 import { soundFx } from '../utils/audio';
 import { BrandLogo } from './BrandLogo';
 import { DepositCashModal } from './DepositCashModal';
+import { CountryFlag } from './CountryFlag';
 
 // Institutional quick-select chips for market titans and commodities
 const TOP_TECH_TITANS = [
@@ -369,8 +370,9 @@ export function TradeModal({
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.85rem' }}>
                 <div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Security Instrument</div>
-                  <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
-                    {executedTrade.symbol} <span style={{ fontSize: '0.72rem', fontWeight: 500, color: 'var(--text-secondary)' }}>({executedTrade.name || 'Equity'})</span>
+                  <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <CountryFlag symbol={executedTrade.symbol} size="xs" />
+                    <span>{executedTrade.symbol}</span> <span style={{ fontSize: '0.72rem', fontWeight: 500, color: 'var(--text-secondary)' }}>({executedTrade.name || 'Equity'})</span>
                   </div>
                 </div>
 
@@ -574,8 +576,8 @@ export function TradeModal({
                 <span style={{ fontSize: '0.76rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em', fontFamily: 'var(--font-brand)' }}>
                   SELECT COMPANY / ASSET TO TRADE:
                 </span>
-                <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)' }}>
-                  Active: <strong style={{ color: 'var(--text-primary)', fontWeight: 800 }}>{symbol}</strong>
+                <span style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                  Active: <CountryFlag symbol={symbol} size="xs" /><strong style={{ color: 'var(--text-primary)', fontWeight: 800 }}>{symbol}</strong>
                 </span>
               </div>
 
@@ -649,6 +651,7 @@ export function TradeModal({
                     >
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                          <CountryFlag country={item.country} symbol={item.symbol} size="xs" />
                           <strong style={{ color: 'var(--text-primary)', fontSize: '0.88rem' }}>{item.symbol}</strong>
                           <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>({item.sector || 'Market'})</span>
                         </div>

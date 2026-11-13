@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 import { defaultAllCompanies } from '../data/defaultAllCompanies';
+import { CountryFlag } from './CountryFlag';
 
 // Helper to map country or asset to institutional ISO country/market code
 const getCountryCode = (country, symbol) => {
@@ -110,9 +111,7 @@ function ComparisonModal({ isOpen, onClose, symbols, allCompanies, onSelectSymbo
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', paddingBottom: '0.65rem', borderBottom: '1px solid var(--border-subtle)' }}>
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.2rem' }}>
-                      <span style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)', padding: '0.1rem 0.4rem', background: 'rgba(255,255,255,0.06)', borderRadius: '4px', color: 'var(--accent-cyan)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                        {getCountryCode(c.country, c.symbol)}
-                      </span>
+                      <CountryFlag country={c.country} countryCode={c.countryCode} symbol={c.symbol} size="sm" showCode={true} />
                       <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{c.exchange}</span>
                     </div>
                     <div style={{ fontSize: '1.25rem', fontWeight: 800, fontFamily: 'var(--font-brand)' }}>
@@ -625,15 +624,11 @@ const MarketTableRow = React.memo(
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontFamily: 'var(--font-mono)',
-                fontWeight: 800,
-                fontSize: '0.75rem',
-                color: 'var(--accent-cyan)',
-                letterSpacing: '0.04em',
                 flexShrink: 0
               }}
+              title={`${c.country || 'Global'} (${c.countryCode || getCountryCode(c.country, c.symbol)})`}
             >
-              {getCountryCode(c.country, c.symbol)}
+              <CountryFlag country={c.country} countryCode={c.countryCode} symbol={c.symbol} size="md" />
             </div>
             <div>
               <div
@@ -695,7 +690,8 @@ const MarketTableRow = React.memo(
         {columnView === 'standard' && (
           <td>
             <div>
-              <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <div style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <CountryFlag country={c.country} countryCode={c.countryCode} symbol={c.symbol} size="xs" />
                 <span>{c.country}</span>
               </div>
               <div style={{ fontSize: '0.7rem', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)' }}>
@@ -1020,9 +1016,7 @@ const MarketInvestorCard = React.memo(
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
                 <div>
                   <div style={{ fontWeight: 800, fontSize: '1.1rem', fontFamily: 'var(--font-brand)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                    <span style={{ fontSize: '0.7rem', fontFamily: 'var(--font-mono)', padding: '0.12rem 0.35rem', borderRadius: '4px', background: 'rgba(255,255,255,0.06)', color: 'var(--accent-cyan)', border: '1px solid rgba(255,255,255,0.1)' }}>
-                      {getCountryCode(c.country, c.symbol)}
-                    </span>
+                    <CountryFlag country={c.country} countryCode={c.countryCode} symbol={c.symbol} size="sm" showCode={true} />
                     <span>{c.symbol}</span>
                     {c.tier && (
                       <span

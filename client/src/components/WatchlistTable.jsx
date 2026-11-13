@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Trash2, Plus, ArrowUpRight, ArrowDownRight, Eye, Globe, Bell } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 import { WatchlistCompanyChooserModal } from './WatchlistCompanyChooserModal';
+import { CountryFlag } from './CountryFlag';
 
 const WatchlistRow = React.memo(function WatchlistRow({
   sym,
@@ -46,12 +47,15 @@ const WatchlistRow = React.memo(function WatchlistRow({
         transition: 'background 0.15s ease'
       }}
     >
-      {/* Symbol & Name */}
+      {/* Symbol & Name with National Flag */}
       <td style={{ padding: cellPadding, width: isDualMode ? '28%' : undefined }}>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
-          <span className="font-mono" style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: (compact || isDualMode) ? '0.82rem' : '0.9rem' }}>
-            {sym}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <CountryFlag country={quote?.country} countryCode={quote?.countryCode} symbol={sym} countryFlag={quote?.countryFlag} size="xs" />
+            <span className="font-mono" style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: (compact || isDualMode) ? '0.82rem' : '0.9rem' }}>
+              {sym}
+            </span>
+          </div>
           <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
             {quote?.name ? ((compact || isDualMode) && quote.name.length > 14 ? quote.name.slice(0, 14) + '...' : quote.name) : 'Equity'}
           </span>
