@@ -32,6 +32,7 @@ import { useSocket } from '../context/SocketContext';
 import { defaultAllCompanies } from '../data/defaultAllCompanies';
 import { CountryFlag } from './CountryFlag';
 import { getAllTimeReturnSummary, formatAllTimePercent } from '../utils/stockRecordEngine';
+import { floatingCardEvents } from '../utils/floatingCardEffect';
 
 // Helper to map country or asset to institutional ISO country/market code
 const getCountryCode = (country, symbol) => {
@@ -696,7 +697,8 @@ const MarketInvestorCard = React.memo(
 
     return (
       <div
-        className={`glass-card investor-card ${isCompared ? 'compared' : ''}`}
+        className={`glass-card investor-card stock-detail-float-card ${isCompared ? 'compared' : ''}`}
+        {...floatingCardEvents}
         style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
         onClick={() => onSelectSymbol(c.symbol)}
       >
@@ -1864,7 +1866,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
 
           {/* Overview Hero Stat Pills (Live Auto-Updating + All-Time Best Market Gainer Column) */}
           <div className="overview-stats-grid">
-            <div className="overview-stat-box">
+            <div className="overview-stat-box" {...floatingCardEvents}>
               <div className="overview-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' }}>
                 <span>Total Tracked Market Cap</span>
                 <span style={{ fontSize: '0.62rem', color: 'var(--bull-green)', display: 'inline-flex', alignItems: 'center', gap: '0.2rem', fontWeight: 700 }}>
@@ -1879,7 +1881,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
               </div>
             </div>
 
-            <div className="overview-stat-box">
+            <div className="overview-stat-box" {...floatingCardEvents}>
               <div className="overview-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' }}>
                 <span>Global Market Breadth</span>
                 <span className="tabular-nums" style={{ fontSize: '0.64rem', color: 'var(--text-muted)', fontWeight: 700 }}>
@@ -1896,6 +1898,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
 
             <div
               className="overview-stat-box"
+              {...floatingCardEvents}
               onClick={() => handleSelectSymbol(liveOverview?.topConviction?.symbol || 'NVDA')}
               style={{ cursor: 'pointer' }}
               title="Open Top AI Conviction Pick complete record"
@@ -1914,6 +1917,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
 
             <div
               className="overview-stat-box"
+              {...floatingCardEvents}
               onClick={() => handleSelectSymbol(liveOverview?.topGainer?.symbol || 'SONY')}
               style={{ cursor: 'pointer' }}
               title="Open Worldwide Live Top Gainer complete record"
@@ -1946,6 +1950,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
 
             <div
               className="overview-stat-box"
+              {...floatingCardEvents}
               onClick={() => handleSelectSymbol(liveOverview?.allTimeBestGainer?.symbol || 'MSFT')}
               style={{ cursor: 'pointer', borderColor: 'rgba(245, 158, 11, 0.25)' }}
               title="Open All-Time Best Market Gainer (Since Stock Market Start Till Now) complete record"

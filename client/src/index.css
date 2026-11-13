@@ -1657,6 +1657,8 @@ select option:checked {
   margin-top: 1rem;
 }
 .overview-stat-box {
+  position: relative;
+  overflow: hidden;
   background: #ffffff05;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-md);
@@ -1665,18 +1667,68 @@ select option:checked {
   flex-direction: column;
   justify-content: space-between;
   gap: 0.3rem;
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(0px) translateZ(0);
   transition:
-    transform 0.2s ease,
-    border-color 0.2s ease;
+    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.24s ease,
+    box-shadow 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform, box-shadow;
 }
 @media (min-width: 1120px) {
   .overview-stats-grid {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }
-.overview-stat-box:hover {
-  border-color: #06b6d459;
+.overview-stat-box::before,
+.stock-detail-float-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(
+    260px circle at var(--mx, 50%) var(--my, 50%),
+    rgba(6, 182, 212, 0.14),
+    rgba(16, 185, 129, 0.05) 45%,
+    transparent 75%
+  );
+  transition: opacity 0.24s ease;
+}
+.overview-stat-box:hover,
+.stock-detail-float-card:hover {
+  border-color: rgba(56, 189, 248, 0.45) !important;
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(-5px) scale(1.012);
+  box-shadow:
+    0 16px 32px -10px rgba(0, 0, 0, 0.6),
+    0 0 22px rgba(6, 182, 212, 0.16);
+  z-index: 2;
+}
+.overview-stat-box:hover::before,
+.stock-detail-float-card:hover::before {
+  opacity: 1;
+}
+.stock-detail-float-card {
+  position: relative;
+  overflow: hidden;
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(0px) translateZ(0);
+  transition:
+    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.24s ease,
+    box-shadow 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.24s ease;
+  will-change: transform, box-shadow;
+}
+.stock-detail-float-row {
+  transition:
+    transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.stock-detail-float-row:hover {
   transform: translateY(-2px);
+  background: rgba(6, 182, 212, 0.08) !important;
+  box-shadow: inset 3px 0 0 var(--accent-cyan), 0 8px 18px -6px rgba(0, 0, 0, 0.45);
 }
 .overview-stat-label {
   font-size: 0.72rem;

@@ -24,6 +24,7 @@ import {
 import { useSocketQuote } from '../context/SocketContext';
 import { CountryFlag } from './CountryFlag';
 import { getCompleteStockRecord, formatRecordPrice, formatScaledMarketCap } from '../utils/stockRecordEngine';
+import { floatingCardEvents } from '../utils/floatingCardEffect';
 
 export const StockDeepRecordSection = React.memo(function StockDeepRecordSection({
   symbol,
@@ -730,6 +731,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
         >
           {/* Card 1: Starting / IPO Price */}
           <div
+            className="stock-detail-float-card"
+            {...floatingCardEvents}
             style={{
               padding: '0.85rem 0.95rem',
               borderRadius: '10px',
@@ -754,6 +757,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
 
           {/* Card 2: Present Live Market Price */}
           <div
+            className="stock-detail-float-card"
+            {...floatingCardEvents}
             style={{
               padding: '0.85rem 0.95rem',
               borderRadius: '10px',
@@ -778,6 +783,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
 
           {/* Card 3: All-Time Return & Multiple */}
           <div
+            className="stock-detail-float-card"
+            {...floatingCardEvents}
             style={{
               padding: '0.85rem 0.95rem',
               borderRadius: '10px',
@@ -802,6 +809,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
 
           {/* Card 4: Compound Annual Growth (CAGR) */}
           <div
+            className="stock-detail-float-card"
+            {...floatingCardEvents}
             style={{
               padding: '0.85rem 0.95rem',
               borderRadius: '10px',
@@ -826,6 +835,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
 
           {/* Card 5: All-Time High & 52W Range */}
           <div
+            className="stock-detail-float-card"
+            {...floatingCardEvents}
             style={{
               padding: '0.85rem 0.95rem',
               borderRadius: '10px',
@@ -850,6 +861,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
 
           {/* Card 6: Intrinsic Fair Value & Verdict */}
           <div
+            className="stock-detail-float-card"
+            {...floatingCardEvents}
             style={{
               padding: '0.85rem 0.95rem',
               borderRadius: '10px',
@@ -1166,10 +1179,13 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                 ].map((h, i) => (
                   <div
                     key={i}
+                    className="stock-detail-float-card"
+                    {...floatingCardEvents}
                     style={{
                       padding: '0.45rem 0.55rem',
                       borderRadius: '6px',
                       background: 'rgba(255, 255, 255, 0.03)',
+                      border: '1px solid rgba(255, 255, 255, 0.05)',
                       textAlign: 'center'
                     }}
                   >
@@ -1219,6 +1235,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                   return (
                     <div
                       key={idx}
+                      className="stock-detail-float-card"
+                      {...floatingCardEvents}
                       style={{
                         padding: '0.65rem 0.85rem',
                         borderRadius: '8px',
@@ -1330,6 +1348,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
             >
               {/* Investment Input Card */}
               <div
+                className="stock-detail-float-card"
+                {...floatingCardEvents}
                 style={{
                   padding: '0.85rem 1rem',
                   borderRadius: '10px',
@@ -1391,6 +1411,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
 
               {/* Entry Price & Shares Accumulated */}
               <div
+                className="stock-detail-float-card"
+                {...floatingCardEvents}
                 style={{
                   padding: '0.85rem 1rem',
                   borderRadius: '10px',
@@ -1414,6 +1436,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
 
               {/* Total Value Today */}
               <div
+                className="stock-detail-float-card"
+                {...floatingCardEvents}
                 style={{
                   padding: '0.85rem 1rem',
                   borderRadius: '10px',
@@ -1437,6 +1461,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
 
               {/* Total Multiplier & Annualized Return */}
               <div
+                className="stock-detail-float-card"
+                {...floatingCardEvents}
                 style={{
                   padding: '0.85rem 1rem',
                   borderRadius: '10px',
@@ -1536,6 +1562,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
               {valuation.metrics.map((m, idx) => (
                 <div
                   key={idx}
+                  className="stock-detail-float-card"
+                  {...floatingCardEvents}
                   style={{
                     padding: '0.8rem 0.95rem',
                     borderRadius: '8px',
@@ -1543,7 +1571,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                     border: '1px solid rgba(255, 255, 255, 0.07)',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '0.3rem'
+                    gap: '0.3rem',
+                    cursor: 'default'
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' }}>
@@ -1623,6 +1652,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                     return (
                       <tr
                         key={idx}
+                        className="stock-detail-float-row"
                         style={{
                           borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
                           background: idx === 0 ? 'rgba(6, 182, 212, 0.06)' : 'transparent'

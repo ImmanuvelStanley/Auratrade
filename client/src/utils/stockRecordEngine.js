@@ -1169,7 +1169,11 @@ export function getCompleteStockRecord(rawSymbol, liveQuote = null) {
   const debtToEquity = parseFloat((0.18 + (seed % 65) * 0.01).toFixed(2));
   const dividendYieldStr = catalogItem?.dividendYield || `${(0.6 + (seed % 24) * 0.1).toFixed(2)}%`;
   const forecastGainPercent = Number(catalogItem?.forecastGainPercent || 8.4);
-  const forecastTarget30d = Number(catalogItem?.forecastPrice30d || parseFloat((currentPrice * (1 + forecastGainPercent / 100)).toFixed(2)));
+  const directForecast = CATALOG_MAP.has(symbol) ? Number(catalogItem?.forecastPrice30d) : 0;
+  const isForecastAligned = directForecast > 0 && currentPrice > 0 && directForecast / currentPrice > 0.65 && directForecast / currentPrice < 1.65;
+  const forecastTarget30d = isForecastAligned
+    ? directForecast
+    : parseFloat((currentPrice * (1 + forecastGainPercent / 100)).toFixed(2));
   const marketCapFormatted = catalogItem?.marketCapFormatted || (currency === 'INR' ? '₹14.8T' : '$420B');
 
   // Intrinsic Fair Value (Graham-DCF Blend anchored on earnings growth & 30d/1y fundamental trajectory)
