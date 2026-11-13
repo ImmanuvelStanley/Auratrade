@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   X,
   TrendingUp,
@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { useSocketQuote } from '../context/SocketContext';
 import { CountryFlag } from './CountryFlag';
-import { getCompleteStockRecord, formatRecordPrice } from '../utils/stockRecordEngine';
+import { getCompleteStockRecord, formatRecordPrice, formatScaledMarketCap } from '../utils/stockRecordEngine';
 
 export const StockDeepRecordSection = React.memo(function StockDeepRecordSection({
   symbol,
@@ -41,7 +41,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
   const [activeSubTab, setActiveSubTab] = useState('all'); // 'all' | 'trajectory' | 'valuation' | 'calculator' | 'history'
   const [investAmount, setInvestAmount] = useState(1000);
   const [selectedHorizon, setSelectedHorizon] = useState('ipo'); // 'ipo' | 'y10' | 'y5' | 'y1'
-  const [hoveredPointIdx, setHoveredPointIdx] = useState(null);
+  const [hoveredCursor, setHoveredCursor] = useState(null);
+  const chartSvgRef = useRef(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -118,10 +119,83 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
         ` L ${chartNodes[chartNodes.length - 1].x.toFixed(1)} ${(padTop + plotH).toFixed(1)} Z`
       : '';
 
-  const activeNode =
-    hoveredPointIdx !== null && chartNodes[hoveredPointIdx]
-      ? chartNodes[hoveredPointIdx]
-      : chartNodes[chartNodes.length - 1];
+  const defaultNode = chartNodes[chartNodes.length - 1];
+
+  const handleChartPointerMove = (clientX) => {
+    const svgEl = chartSvgRef.current;
+    if (!svgEl || chartNodes.length === 0) return;
+    const rect = svgEl.getBoundingClientRect();
+    if (!rect || rect.width <= 0) return;
+
+    const svgXRaw = ((clientX - rect.left) / rect.width) * chartWidth;
+    const svgX = Math.max(padLeft, Math.min(padLeft + plotW, svgXRaw));
+    const t = Math.max(0, Math.min(1, (svgX - padLeft) / Math.max(1, plotW)));
+    const floatIdx = t * (chartNodes.length - 1);
+    const i0 = Math.floor(floatIdx);
+    const i1 = Math.min(chartNodes.length - 1, i0 + 1);
+    const frac = floatIdx - i0;
+
+    const n0 = chartNodes[i0];
+    const n1 = chartNodes[i1];
+    if (!n0 || !n1) return;
+
+    const x = n0.x + (n1.x - n0.x) * frac;
+    const y = n0.y + (n1.y - n0.y) * frac;
+    const price = n0.price + (n1.price - n0.price) * frac;
+    const nearestIdx = frac < 0.5 ? i0 : i1;
+    const nearestNode = chartNodes[nearestIdx];
+
+    const exactYearVal = n0.year + (n1.year - n0.year) * frac;
+    const isNearMilestone = frac < 0.22 || frac > 0.78 || i0 === i1;
+    let periodLabel = nearestNode.label;
+    if (!isNearMilestone && n1.year > n0.year) {
+      const wholeYear = Math.floor(exactYearVal);
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthIdx = Math.min(11, Math.max(0, Math.floor((exactYearVal - wholeYear) * 12)));
+      periodLabel = `${monthNames[monthIdx]} ${wholeYear}`;
+    }
+
+    const gainFromStartPercent =
+      ((price - priceRecord.ipoPriceAdjusted) / Math.max(0.0001, priceRecord.ipoPriceAdjusted)) * 100;
+    const multipleFromStart = price / Math.max(0.0001, priceRecord.ipoPriceAdjusted);
+    const valueHeldOnCapital = (price / Math.max(0.0001, entryPrice)) * investAmount;
+    const marketCapAtPoint = formatScaledMarketCap(
+      identity.marketCapFormatted,
+      price / Math.max(0.0001, priceRecord.currentPrice)
+    );
+
+    setHoveredCursor({
+      x,
+      y,
+      xPct: (x / chartWidth) * 100,
+      yPct: (y / chartHeight) * 100,
+      price,
+      periodLabel,
+      tag: nearestNode.tag,
+      nearestIdx,
+      gainFromStartPercent,
+      multipleFromStart,
+      valueHeldOnCapital,
+      marketCapAtPoint
+    });
+  };
+
+  const activeDisplayPoint = hoveredCursor || (defaultNode
+    ? {
+        x: defaultNode.x,
+        y: defaultNode.y,
+        xPct: (defaultNode.x / chartWidth) * 100,
+        yPct: (defaultNode.y / chartHeight) * 100,
+        price: defaultNode.price,
+        periodLabel: defaultNode.label,
+        tag: defaultNode.tag,
+        nearestIdx: defaultNode.idx,
+        gainFromStartPercent: defaultNode.gainFromStartPercent,
+        multipleFromStart: defaultNode.price / Math.max(0.0001, priceRecord.ipoPriceAdjusted),
+        valueHeldOnCapital: (defaultNode.price / Math.max(0.0001, entryPrice)) * investAmount,
+        marketCapAtPoint: identity.marketCapFormatted
+      }
+    : null);
 
   return (
     <div
@@ -670,34 +744,61 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                     <span>All-Time Price Trajectory ({identity.ipoYear} Starting → 2026 Live)</span>
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
-                    Hover any historical point to inspect split-adjusted price & cumulative gain from inception
+                    Move cursor anywhere across the graph to inspect stock price, market cap &amp; holding value at any point
                   </div>
                 </div>
 
-                {activeNode && (
+                {activeDisplayPoint && (
                   <div
                     className="font-mono"
                     style={{
-                      padding: '0.35rem 0.7rem',
+                      padding: '0.38rem 0.75rem',
                       borderRadius: '8px',
-                      background: 'rgba(6, 182, 212, 0.12)',
-                      border: '1px solid rgba(6, 182, 212, 0.35)',
-                      fontSize: '0.75rem'
+                      background: hoveredCursor ? 'rgba(6, 182, 212, 0.18)' : 'rgba(6, 182, 212, 0.12)',
+                      border: hoveredCursor ? '1px solid rgba(56, 189, 248, 0.6)' : '1px solid rgba(6, 182, 212, 0.35)',
+                      fontSize: '0.75rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      flexWrap: 'wrap'
                     }}
                   >
-                    <span style={{ color: 'var(--text-secondary)' }}>{activeNode.label}: </span>
-                    <strong style={{ color: 'var(--text-primary)' }}>{formatRecordPrice(activeNode.price, curr)}</strong>
-                    <span style={{ color: 'var(--bull-green)', marginLeft: '0.45rem' }}>
-                      (+{Math.round(activeNode.gainFromStartPercent).toLocaleString()}%)
+                    <span style={{ color: 'var(--text-secondary)' }}>{activeDisplayPoint.periodLabel}:</span>
+                    <strong style={{ color: 'var(--text-primary)' }}>{formatRecordPrice(activeDisplayPoint.price, curr)}</strong>
+                    <span style={{ color: 'var(--bull-green)' }}>
+                      ({activeDisplayPoint.gainFromStartPercent >= 0 ? '+' : ''}
+                      {Math.round(activeDisplayPoint.gainFromStartPercent).toLocaleString()}%)
+                    </span>
+                    <span style={{ color: 'var(--text-muted)' }}>•</span>
+                    <span style={{ color: 'var(--accent-cyan)' }}>
+                      Cap: {activeDisplayPoint.marketCapAtPoint}
                     </span>
                   </div>
                 )}
               </div>
 
-              <div style={{ width: '100%', overflowX: 'auto' }}>
+              <div
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  cursor: 'crosshair',
+                  userSelect: 'none',
+                  touchAction: 'none'
+                }}
+                onMouseMove={(e) => handleChartPointerMove(e.clientX)}
+                onMouseLeave={() => setHoveredCursor(null)}
+                onTouchStart={(e) => {
+                  if (e.touches && e.touches[0]) handleChartPointerMove(e.touches[0].clientX);
+                }}
+                onTouchMove={(e) => {
+                  if (e.touches && e.touches[0]) handleChartPointerMove(e.touches[0].clientX);
+                }}
+                onTouchEnd={() => setHoveredCursor(null)}
+              >
                 <svg
+                  ref={chartSvgRef}
                   viewBox={`0 0 ${chartWidth} ${chartHeight}`}
-                  style={{ width: '100%', height: 'auto', minHeight: '210px', display: 'block' }}
+                  style={{ width: '100%', height: 'auto', minHeight: '220px', display: 'block', overflow: 'visible' }}
                 >
                   <defs>
                     <linearGradient id={`allTimeGrad-${identity.symbol}`} x1="0" y1="0" x2="0" y2="1">
@@ -750,29 +851,14 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
 
                   {/* Interactive Data Nodes */}
                   {chartNodes.map((n) => {
-                    const isHovered = activeNode?.idx === n.idx;
+                    const isNearest = activeDisplayPoint?.nearestIdx === n.idx;
                     return (
-                      <g
-                        key={n.idx}
-                        style={{ cursor: 'pointer' }}
-                        onMouseEnter={() => setHoveredPointIdx(n.idx)}
-                        onClick={() => setHoveredPointIdx(n.idx)}
-                      >
-                        {isHovered && (
-                          <line
-                            x1={n.x}
-                            y1={padTop}
-                            x2={n.x}
-                            y2={padTop + plotH}
-                            stroke="rgba(6, 182, 212, 0.5)"
-                            strokeDasharray="3 3"
-                          />
-                        )}
+                      <g key={n.idx}>
                         <circle
                           cx={n.x}
                           cy={n.y}
-                          r={isHovered ? 6 : 3.8}
-                          fill={isHovered ? '#06b6d4' : '#10b981'}
+                          r={isNearest ? 5 : 3.5}
+                          fill={isNearest ? '#06b6d4' : '#10b981'}
                           stroke="#0f172a"
                           strokeWidth="2"
                         />
@@ -780,9 +866,9 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                           x={n.x}
                           y={chartHeight - 10}
                           textAnchor="middle"
-                          fill={isHovered ? '#38bdf8' : 'rgba(148, 163, 184, 0.85)'}
-                          fontSize={isHovered ? '10.5' : '9.5'}
-                          fontWeight={isHovered ? '700' : '500'}
+                          fill={isNearest ? '#38bdf8' : 'rgba(148, 163, 184, 0.85)'}
+                          fontSize={isNearest ? '10.5' : '9.5'}
+                          fontWeight={isNearest ? '700' : '500'}
                           fontFamily="monospace"
                         >
                           {n.year}
@@ -790,7 +876,117 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                       </g>
                     );
                   })}
+
+                  {/* Continuous Smooth Cursor Crosshair & Highlight Beacon */}
+                  {hoveredCursor && (
+                    <g style={{ pointerEvents: 'none' }}>
+                      <line
+                        x1={hoveredCursor.x}
+                        y1={padTop}
+                        x2={hoveredCursor.x}
+                        y2={padTop + plotH}
+                        stroke="rgba(56, 189, 248, 0.7)"
+                        strokeWidth="1.2"
+                        strokeDasharray="3 3"
+                      />
+                      <line
+                        x1={padLeft}
+                        y1={hoveredCursor.y}
+                        x2={chartWidth - padRight}
+                        y2={hoveredCursor.y}
+                        stroke="rgba(56, 189, 248, 0.38)"
+                        strokeWidth="1"
+                        strokeDasharray="3 3"
+                      />
+                      <circle
+                        cx={hoveredCursor.x}
+                        cy={hoveredCursor.y}
+                        r="11"
+                        fill="rgba(56, 189, 248, 0.18)"
+                      />
+                      <circle
+                        cx={hoveredCursor.x}
+                        cy={hoveredCursor.y}
+                        r="5.5"
+                        fill="#38bdf8"
+                        stroke="#ffffff"
+                        strokeWidth="2"
+                      />
+                    </g>
+                  )}
                 </svg>
+
+                {/* Floating Cursor Tooltip Showing Value Held Right Under Mouse */}
+                {hoveredCursor && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: `${hoveredCursor.xPct}%`,
+                      top: `${Math.min(Math.max(hoveredCursor.yPct, 12), 76)}%`,
+                      transform:
+                        hoveredCursor.xPct > 58
+                          ? 'translate(calc(-100% - 14px), -50%)'
+                          : 'translate(14px, -50%)',
+                      pointerEvents: 'none',
+                      zIndex: 25,
+                      minWidth: '215px',
+                      padding: '0.6rem 0.78rem',
+                      borderRadius: '10px',
+                      background: 'rgba(9, 14, 28, 0.96)',
+                      border: '1px solid rgba(56, 189, 248, 0.55)',
+                      boxShadow: '0 12px 32px rgba(0, 0, 0, 0.65), 0 0 14px rgba(6, 182, 212, 0.22)',
+                      backdropFilter: 'blur(10px)'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', marginBottom: '0.28rem' }}>
+                      <span className="font-mono" style={{ fontSize: '0.76rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>
+                        {identity.symbol} • {hoveredCursor.periodLabel}
+                      </span>
+                      <span
+                        className="font-mono"
+                        style={{
+                          fontSize: '0.68rem',
+                          fontWeight: 800,
+                          color: hoveredCursor.gainFromStartPercent >= 0 ? 'var(--bull-green)' : 'var(--bear-red)'
+                        }}
+                      >
+                        {hoveredCursor.gainFromStartPercent >= 0 ? '+' : ''}
+                        {Math.round(hoveredCursor.gainFromStartPercent).toLocaleString()}%
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: '0.4rem' }}>
+                      {hoveredCursor.tag}
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.22rem', fontSize: '0.73rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Share Value:</span>
+                        <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>
+                          {formatRecordPrice(hoveredCursor.price, curr)}
+                        </strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Value Held ({curr}{investAmount.toLocaleString()}):</span>
+                        <strong className="font-mono" style={{ color: 'var(--bull-green)' }}>
+                          {formatRecordPrice(hoveredCursor.valueHeldOnCapital, curr)}
+                        </strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Est. Market Cap:</span>
+                        <strong className="font-mono" style={{ color: 'var(--accent-cyan)' }}>
+                          {hoveredCursor.marketCapAtPoint}
+                        </strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>Since Start ({identity.ipoYear}):</span>
+                        <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>
+                          {hoveredCursor.multipleFromStart.toFixed(1)}x
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Multi-Horizon Return Bar */}
@@ -1390,3 +1586,4 @@ export const StockDeepRecordModal = React.memo(function StockDeepRecordModal({
 });
 
 export default StockDeepRecordModal;
+

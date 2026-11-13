@@ -207,17 +207,17 @@ const CURATED_RECORDS = {
     ipoDate: 'Nov 29, 1977',
     ipoYear: 1977,
     ipoPriceNominal: 10.00,
-    ipoPriceAdjusted: 1.25,
-    stockSplits: 'Multiple 1:1 bonus issues (1983, 1997, 2009, 2017, 2024)',
+    ipoPriceAdjusted: 0.63,
+    stockSplits: 'Multiple 1:1 bonus issues (1983, 1997, 2009, 2017, Oct 2024)',
     headquarters: 'Mumbai, Maharashtra, India',
     founderOrOrigin: 'Founded by Dhirubhai Ambani; led by Mukesh Ambani',
     industry: 'Digital Services (Jio), Organized Retail, O2C & New Energy',
     businessSummary: 'India’s largest private-sector enterprise by market cap and revenue, operating Jio 5G telecom/digital services, Reliance Retail, Oil-to-Chemicals, and Green Energy gigafactories.',
-    earlyMilestone: { year: 2016, label: 'Jio 4G Digital Revolution', price: 540.20, note: 'Launched Reliance Jio, onboarding 450M+ subscribers and digitizing the Indian economy.' },
-    price2016: 540.20,
-    price2021: 2368.15,
-    price2023: 2584.95,
-    price2025: 2810.50
+    earlyMilestone: { year: 2008, label: 'Jamnagar Super-Refinery Scale', price: 182.40, note: 'Commissioned the world’s largest refining complex in Jamnagar before launching Jio 4G/5G in 2016.' },
+    price2016: 270.10,
+    price2021: 1184.10,
+    price2023: 1292.48,
+    price2025: 1308.50
   },
   TCS: {
     foundedYear: 1968,
@@ -777,6 +777,23 @@ export function formatRecordPrice(val, currencySymbol = '$') {
   return `${currencySymbol}${num.toFixed(2)}`;
 }
 
+export function formatScaledMarketCap(baseFormatted = '$100B', ratio = 1) {
+  const raw = String(baseFormatted || '').trim();
+  const match = raw.match(/^([^0-9.-]*)([0-9]+(?:\.[0-9]+)?)\s*([TBMK]?)/i);
+  if (!match) return raw || 'N/A';
+  const prefix = match[1] || '$';
+  const num = parseFloat(match[2]);
+  const unit = (match[3] || '').toUpperCase();
+  if (!Number.isFinite(num)) return raw;
+  const mult = unit === 'T' ? 1e12 : unit === 'B' ? 1e9 : unit === 'M' ? 1e6 : unit === 'K' ? 1e3 : 1;
+  const scaled = Math.max(0, num * mult * Math.max(0.0001, ratio));
+  if (scaled >= 1e12) return `${prefix}${(scaled / 1e12).toFixed(2)}T`;
+  if (scaled >= 1e9) return `${prefix}${(scaled / 1e9).toFixed(1)}B`;
+  if (scaled >= 1e6) return `${prefix}${(scaled / 1e6).toFixed(1)}M`;
+  if (scaled >= 1e3) return `${prefix}${(scaled / 1e3).toFixed(1)}K`;
+  return `${prefix}${scaled.toFixed(0)}`;
+}
+
 /**
  * Generates the complete Inception-to-Present ("From Starting Till Now") historical record,
  * multi-era milestone timeline, annual return table, wealth calculator, and deep valuation
@@ -828,18 +845,32 @@ export function getCompleteStockRecord(rawSymbol, liveQuote = null) {
   const yearsSinceIpo = Math.max(1, currentYear - ipoYear);
 
   // Split-adjusted starting IPO price & intermediate era prices
+  // Automatically normalize curated records if live quote arrives in a different currency (e.g. USD ADR vs INR) or post-split ratio
+  let curatedScale = 1;
+  if (curated && curated.price2025 > 0 && currentPrice > 0) {
+    const ratioVs2025 = currentPrice / curated.price2025;
+    if (ratioVs2025 < 0.52 || ratioVs2025 > 1.75) {
+      curatedScale = currentPrice / (curated.price2025 * 1.07);
+    }
+  }
+  const scaleCurated = (v) => {
+    if (!Number.isFinite(v)) return v;
+    const scaled = v * curatedScale;
+    return parseFloat(scaled.toFixed(scaled < 1 ? 4 : 2));
+  };
+
   const syntheticCagr = 0.115 + ((seed % 95) / 1000); // 11.5% to 21.0% annual compounding
   const fallbackIpoAdjusted = Math.max(
     0.05,
     parseFloat((currentPrice / Math.pow(1 + syntheticCagr, Math.min(32, yearsSinceIpo))).toFixed(2))
   );
-  const ipoPriceAdjusted = Number(curated?.ipoPriceAdjusted || fallbackIpoAdjusted);
+  const ipoPriceAdjusted = curated?.ipoPriceAdjusted ? Math.max(0.01, scaleCurated(curated.ipoPriceAdjusted)) : fallbackIpoAdjusted;
   const ipoPriceNominal = Number(curated?.ipoPriceNominal || Math.max(10, parseFloat((ipoPriceAdjusted * (4 + (seed % 12))).toFixed(2))));
 
-  const price2016 = Number(curated?.price2016 || parseFloat((currentPrice * (0.22 + (seed % 18) * 0.01)).toFixed(2)));
-  const price2021 = Number(curated?.price2021 || parseFloat((currentPrice * (0.58 + (seed % 15) * 0.01)).toFixed(2)));
-  const price2023 = Number(curated?.price2023 || parseFloat((currentPrice * (0.74 + (seed % 12) * 0.01)).toFixed(2)));
-  const price2025 = Number(curated?.price2025 || parseFloat((currentPrice * (0.89 + (seed % 8) * 0.01)).toFixed(2)));
+  const price2016 = curated?.price2016 ? scaleCurated(curated.price2016) : parseFloat((currentPrice * (0.22 + (seed % 18) * 0.01)).toFixed(2));
+  const price2021 = curated?.price2021 ? scaleCurated(curated.price2021) : parseFloat((currentPrice * (0.58 + (seed % 15) * 0.01)).toFixed(2));
+  const price2023 = curated?.price2023 ? scaleCurated(curated.price2023) : parseFloat((currentPrice * (0.74 + (seed % 12) * 0.01)).toFixed(2));
+  const price2025 = curated?.price2025 ? scaleCurated(curated.price2025) : parseFloat((currentPrice * (0.89 + (seed % 8) * 0.01)).toFixed(2));
 
   // Compute All-Time Return, Multiple, CAGR & Horizon Returns
   const allTimeReturnPercent = ((currentPrice - ipoPriceAdjusted) / Math.max(0.0001, ipoPriceAdjusted)) * 100;
@@ -889,11 +920,11 @@ export function getCompleteStockRecord(rawSymbol, liveQuote = null) {
     `${name} (${symbol}) is a premier ${sector} leader headquartered in ${headquarters}, compounding shareholder capital across global institutional markets since its ${ipoYear} public debut on ${exchange}.`;
 
   // Early Milestone
-  const earlyYear = curated?.earlyMilestone?.year || Math.min(2012, Math.max(ipoYear + 3, Math.round((ipoYear + 2016) / 2)));
-  const earlyPrice = Number(
-    curated?.earlyMilestone?.price ||
-      parseFloat((ipoPriceAdjusted + (price2016 - ipoPriceAdjusted) * 0.35).toFixed(2))
-  );
+  const rawEarlyYear = curated?.earlyMilestone?.year || Math.min(2012, Math.max(ipoYear + 3, Math.round((ipoYear + 2016) / 2)));
+  const earlyYear = rawEarlyYear >= 2016 ? Math.max(ipoYear + 1, 2013) : rawEarlyYear;
+  const earlyPrice = curated?.earlyMilestone?.price
+    ? scaleCurated(curated.earlyMilestone.price)
+    : parseFloat((ipoPriceAdjusted + (price2016 - ipoPriceAdjusted) * 0.35).toFixed(2));
   const earlyLabel = curated?.earlyMilestone?.label || 'Global Scale & Institutional Expansion';
   const earlyNote =
     curated?.earlyMilestone?.note ||
@@ -981,7 +1012,7 @@ export function getCompleteStockRecord(rawSymbol, liveQuote = null) {
   const price2022 = parseFloat(((price2021 + price2023) * 0.46).toFixed(2));
   const price2024 = parseFloat(((price2023 + price2025) * 0.51).toFixed(2));
 
-  const allTimeSeries = [
+  const rawSeries = [
     { label: `${ipoYear} (Start)`, year: ipoYear, price: ipoPriceAdjusted, tag: 'IPO / Genesis Launch' },
     { label: `${earlyYear}`, year: earlyYear, price: earlyPrice, tag: earlyLabel },
     { label: '2016', year: 2016, price: price2016, tag: '10Y Historical Benchmark' },
@@ -995,10 +1026,21 @@ export function getCompleteStockRecord(rawSymbol, liveQuote = null) {
     { label: '2024', year: 2024, price: price2024, tag: 'Global Earnings Expansion' },
     { label: '2025', year: 2025, price: price2025, tag: '1Y Historical Benchmark' },
     { label: '2026 (Live)', year: 2026, price: currentPrice, tag: 'Current Live Market Price' }
-  ].map((pt) => ({
-    ...pt,
-    gainFromStartPercent: ((pt.price - ipoPriceAdjusted) / Math.max(0.0001, ipoPriceAdjusted)) * 100
-  }));
+  ];
+
+  // Deduplicate any overlapping years (e.g. if IPO/early milestone year equals 2016) and keep chronological order
+  const seenYears = new Set();
+  const allTimeSeries = rawSeries
+    .filter((pt) => {
+      if (pt.year < ipoYear || seenYears.has(pt.year)) return false;
+      seenYears.add(pt.year);
+      return true;
+    })
+    .sort((a, b) => a.year - b.year)
+    .map((pt) => ({
+      ...pt,
+      gainFromStartPercent: ((pt.price - ipoPriceAdjusted) / Math.max(0.0001, ipoPriceAdjusted)) * 100
+    }));
 
   // Build Year-by-Year Annual Record Table (Reverse Chronological: 2026 Live down to IPO Year)
   const rawAnnual = [

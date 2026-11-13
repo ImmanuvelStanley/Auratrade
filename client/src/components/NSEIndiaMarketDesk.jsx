@@ -24,6 +24,109 @@ import { CountryFlag } from './CountryFlag';
 // Module-level in-memory cache for instant zero-spinner tab switching
 let nseMemoryCache = null;
 
+function NSEInteractiveSparkline({ points, isBull, sym }) {
+  const [hoverInfo, setHoverInfo] = useState(null);
+
+  if (!points || !Array.isArray(points) || points.length < 2) return null;
+  const validPoints = points.map((p) => Number(p)).filter((p) => !isNaN(p));
+  if (validPoints.length < 2) return null;
+
+  const min = Math.min(...validPoints);
+  const max = Math.max(...validPoints);
+  const range = max - min || 1;
+  const width = 220;
+  const height = 36;
+  const pad = 4;
+  const h = height - pad * 2;
+  const coords = validPoints.map((p, i) => {
+    const x = pad + (i / (validPoints.length - 1)) * (width - pad * 2);
+    const y = pad + h - ((p - min) / range) * h;
+    return { x, y, val: p };
+  });
+  const pathD = `M ${coords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' L ')}`;
+  const areaD = `${pathD} L ${width - pad},${height} L ${pad},${height} Z`;
+  const lastCoord = coords[coords.length - 1];
+  const color = isBull ? '#10b981' : '#f43f5e';
+  const gradId = `nse-grad-${String(sym || 'idx').replace(/[^a-zA-Z0-9]/g, '')}`;
+
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (!rect || rect.width <= 0) return;
+    const t = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const floatIdx = t * (coords.length - 1);
+    const i0 = Math.floor(floatIdx);
+    const i1 = Math.min(coords.length - 1, i0 + 1);
+    const frac = floatIdx - i0;
+    const x = coords[i0].x + (coords[i1].x - coords[i0].x) * frac;
+    const y = coords[i0].y + (coords[i1].y - coords[i0].y) * frac;
+    const val = coords[i0].val + (coords[i1].val - coords[i0].val) * frac;
+    setHoverInfo({
+      x,
+      y,
+      xPct: (x / width) * 100,
+      val
+    });
+  };
+
+  return (
+    <div
+      style={{ position: 'relative', width: '100%', height: '36px', margin: '0.5rem 0', cursor: 'crosshair' }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => setHoverInfo(null)}
+    >
+      <svg width="100%" height="36" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ overflow: 'visible' }}>
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity="0.35" />
+            <stop offset="100%" stopColor={color} stopOpacity="0.0" />
+          </linearGradient>
+        </defs>
+        <path d={areaD} fill={`url(#${gradId})`} />
+        <path d={pathD} fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx={lastCoord.x} cy={lastCoord.y} r="3" fill={color} stroke="#ffffff" strokeWidth="1.2" />
+        {hoverInfo && (
+          <>
+            <line x1={hoverInfo.x} y1={0} x2={hoverInfo.x} y2={height} stroke="rgba(56, 189, 248, 0.7)" strokeWidth="1" strokeDasharray="2 2" />
+            <circle cx={hoverInfo.x} cy={hoverInfo.y} r="3.8" fill="#38bdf8" stroke="#ffffff" strokeWidth="1.4" />
+          </>
+        )}
+      </svg>
+      {hoverInfo && (
+        <div
+          className="font-mono"
+          style={{
+            position: 'absolute',
+            left: `${hoverInfo.xPct}%`,
+            bottom: '100%',
+            transform: hoverInfo.xPct > 70 ? 'translate(-90%, -4px)' : hoverInfo.xPct < 30 ? 'translate(-10%, -4px)' : 'translate(-50%, -4px)',
+            padding: '2px 6px',
+            borderRadius: '4px',
+            background: 'rgba(10, 15, 29, 0.95)',
+            border: '1px solid rgba(56, 189, 248, 0.55)',
+            color: '#f8fafc',
+            fontSize: '0.68rem',
+            fontWeight: 800,
+            whiteSpace: 'nowrap',
+            pointerEvents: 'none',
+            zIndex: 20
+          }}
+        >
+          {hoverInfo.val.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        </div>
+      )}
+      {!hoverInfo && (
+        <div
+          className={`nse-sparkline-beacon ${isBull ? 'bull' : 'bear'}`}
+          style={{
+            left: `${(lastCoord.x / width) * 100}%`,
+            top: `${(lastCoord.y / height) * 100}%`
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
 export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSelectSymbol, isActive = true }) {
   const [data, setData] = useState(() => nseMemoryCache || getNSEIndiaFallbackData());
   const [loading, setLoading] = useState(false);
@@ -108,55 +211,10 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
 
   const { status, marketBreadth, heroIndices, topGainers, topLosers, mostActiveValue, mostActiveVolume, sectoralIndices, currencyDesk } = data || {};
 
-  // Render SVG live wave sparkline with pulsing beacon tip
-  const renderSparkline = (points, isBull, sym) => {
-    if (!points || !Array.isArray(points) || points.length < 2) return null;
-    const validPoints = points.map(p => Number(p)).filter(p => !isNaN(p));
-    if (validPoints.length < 2) return null;
-    const min = Math.min(...validPoints);
-    const max = Math.max(...validPoints);
-    const range = max - min || 1;
-    const width = 220;
-    const height = 36;
-    const pad = 4;
-    const h = height - pad * 2;
-    const coords = validPoints.map((p, i) => {
-      const x = pad + (i / (validPoints.length - 1)) * (width - pad * 2);
-      const y = pad + h - ((p - min) / range) * h;
-      return `${(Number(x) || 0).toFixed(1)},${(Number(y) || 0).toFixed(1)}`;
-    });
-    const pathD = `M ${coords.join(' L ')}`;
-    const areaD = `${pathD} L ${width - pad},${height} L ${pad},${height} Z`;
-    const lastCoord = coords[coords.length - 1]?.split(',') || ['0', '0'];
-    const lastX = parseFloat(lastCoord[0]) || 0;
-    const lastY = parseFloat(lastCoord[1]) || 0;
-    const color = isBull ? '#10b981' : '#f43f5e';
-    const gradId = `nse-grad-${String(sym || 'idx').replace(/[^a-zA-Z0-9]/g, '')}`;
-
-    return (
-      <div style={{ position: 'relative', width: '100%', height: '36px', margin: '0.5rem 0' }}>
-        <svg width="100%" height="36" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ overflow: 'visible' }}>
-          <defs>
-            <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={color} stopOpacity="0.35" />
-              <stop offset="100%" stopColor={color} stopOpacity="0.0" />
-            </linearGradient>
-          </defs>
-          <path d={areaD} fill={`url(#${gradId})`} />
-          <path d={pathD} fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          <circle cx={lastX} cy={lastY} r="3" fill={color} stroke="#ffffff" strokeWidth="1.2" />
-        </svg>
-        {/* Animated Live Beacon at the tip */}
-        <div
-          className={`nse-sparkline-beacon ${isBull ? 'bull' : 'bear'}`}
-          style={{
-            left: `${(lastX / width) * 100}%`,
-            top: `${(lastY / height) * 100}%`
-          }}
-        />
-      </div>
-    );
-  };
+  // Render interactive hoverable SVG sparkline
+  const renderSparkline = (points, isBull, sym) => (
+    <NSEInteractiveSparkline points={points} isBull={isBull} sym={sym} />
+  );
 
   return (
     <div className="motion-entry perf-section" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', padding: 0, maxWidth: '100%' }}>
