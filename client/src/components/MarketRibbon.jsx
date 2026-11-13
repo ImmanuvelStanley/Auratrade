@@ -85,16 +85,13 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
 
   const handleItemClick = (idx) => {
     if (!onSelectSymbol) return;
-    if (idx.symbol === 'BTC/USD' || idx.symbol === 'USD/INR') return;
-    // Smart mapping for index or direct stock
-    const mapped = idx.symbol === 'NIFTY 50' ? 'RELIANCE' :
-                   idx.symbol === 'BANK NIFTY' ? 'HDFCBANK' :
-                   idx.symbol === 'SENSEX' ? 'TCS' :
-                   idx.symbol === 'S&P 500' ? 'SPY' :
-                   idx.symbol === 'NASDAQ' ? 'QQQ' :
-                   idx.symbol === 'DOW JONES' ? 'DIA' :
-                   idx.symbol;
-    onSelectSymbol(mapped);
+    const live = quotes[idx.symbol];
+    const enrichedItem = {
+      ...idx,
+      price: live ? live.price : idx.price,
+      changePercent: live ? live.changePercent : idx.changePercent
+    };
+    onSelectSymbol(idx.symbol, enrichedItem);
   };
 
   const renderItem = (idx, uniqueKey) => {
@@ -118,7 +115,8 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
         key={uniqueKey}
         className={`market-ribbon-item ${flashClass}`}
         onClick={() => handleItemClick(idx)}
-        title={`Click to analyze ${idx.name || idx.symbol} (${idx.region})`}
+        style={{ cursor: 'pointer' }}
+        title={`Click to view complete historical record (Starting → Now) & valuation for ${idx.name || idx.symbol} (${idx.region})`}
       >
         {(idx.countryCode || idx.region) && (
           <span

@@ -23,6 +23,7 @@ import { GlobalIndicesDesk } from './components/GlobalIndicesDesk';
 import { GoldSilverMarketDesk, GoldBarIcon } from './components/GoldSilverMarketDesk';
 import { SecurityModal } from './components/SecurityModal';
 import { WatchlistAlertsHub } from './components/WatchlistAlertsHub';
+import { StockDeepRecordModal, StockDeepRecordSection } from './components/StockDeepRecordModal';
 import { Footer } from './components/Footer';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { LayoutDashboard, Bookmark, BookmarkCheck, Bell, Briefcase, BrainCircuit, Globe, User, Flame, Landmark, Layers, Coins } from 'lucide-react';
@@ -118,6 +119,7 @@ export function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSecurityModalOpen, setIsSecurityModalOpen] = useState(false);
   const [tradeTargetSymbol, setTradeTargetSymbol] = useState('AAPL');
+  const [deepRecordModal, setDeepRecordModal] = useState({ isOpen: false, symbol: null, item: null });
   const [resetTokenData, setResetTokenData] = useState(null);
 
   // Detect password reset link from email (e.g. ?action=reset-password&token=...&email=...)
@@ -326,11 +328,12 @@ export function App() {
     } catch (e) {}
   }, [token, unsubscribe]);
 
-  const handleToggleWatchlist = useCallback(() => {
-    if (watchlistSymbols.includes(activeSymbol)) {
-      handleRemoveFromWatchlist(activeSymbol);
+  const handleToggleWatchlist = useCallback((sym) => {
+    const target = typeof sym === 'string' && sym ? sym : activeSymbol;
+    if (watchlistSymbols.includes(target)) {
+      handleRemoveFromWatchlist(target);
     } else {
-      handleAddToWatchlist(activeSymbol);
+      handleAddToWatchlist(target);
     }
   }, [activeSymbol, watchlistSymbols, handleRemoveFromWatchlist, handleAddToWatchlist]);
 
@@ -378,6 +381,32 @@ export function App() {
     setActiveTab('dashboard');
   }, []);
 
+  const handleOpenDeepRecord = useCallback((sym, item = null) => {
+    if (!sym) return;
+    const mappedChartSym =
+      sym === 'NIFTY 50' || sym === 'INDIA VIX' || sym === 'USD/INR' ? 'RELIANCE' :
+      sym === 'BANK NIFTY' ? 'HDFCBANK' :
+      sym === 'SENSEX' ? 'TCS' :
+      sym === 'NIFTY IT' ? 'INFY' :
+      sym === 'S&P 500' ? 'SPY' :
+      sym === 'NASDAQ' ? 'QQQ' :
+      sym === 'DOW JONES' ? 'DIA' :
+      sym === 'DAX 40' ? 'SAP' :
+      sym === 'FTSE 100' ? 'SHEL' :
+      sym === 'CAC 40' ? 'MC.PA' :
+      sym === 'NIKKEI 225' ? 'TM' :
+      sym === 'HANG SENG' ? 'BABA' :
+      sym === 'ASX 200' ? 'BHP' :
+      sym === 'BTC/USD' ? 'IBIT' :
+      sym;
+    setActiveSymbol(mappedChartSym);
+    setDeepRecordModal({ isOpen: true, symbol: sym, item });
+  }, []);
+
+  const handleCloseDeepRecord = useCallback(() => {
+    setDeepRecordModal((prev) => ({ ...prev, isOpen: false }));
+  }, []);
+
   const isInWatchlist = watchlistSymbols.includes(activeSymbol);
 
   return (
@@ -390,7 +419,7 @@ export function App() {
       />
 
       {/* Market Indices Ribbon (Ticker Tape) */}
-      <MarketRibbon onSelectSymbol={handleSelectSymbol} />
+      <MarketRibbon onSelectSymbol={handleOpenDeepRecord} />
 
       {/* Main Container */}
       <main className="main-content">
@@ -478,6 +507,7 @@ export function App() {
                     onToggleWatchlist={handleToggleWatchlist}
                     onOpenAlertModal={handleOpenAlertModal}
                     onOpenTradeModal={handleOpenTrade}
+                    onOpenDeepRecord={handleOpenDeepRecord}
                   />
 
                   <StockChart
@@ -521,6 +551,18 @@ export function App() {
                   onOpenAutoPredictor={handleOpenAutoPredictor}
                 />
               </div>
+
+              {/* Complete Inception-to-Present Stock Record & Valuation Intelligence Dossier */}
+              <div className="perf-section" style={{ padding: 0 }}>
+                <StockDeepRecordSection
+                  symbol={activeSymbol}
+                  isModal={false}
+                  isInWatchlist={isInWatchlist}
+                  onToggleWatchlist={() => handleToggleWatchlist(activeSymbol)}
+                  onOpenAlertModal={() => handleOpenAlertModal(activeSymbol)}
+                  onOpenTradeModal={() => handleOpenTrade(activeSymbol)}
+                />
+              </div>
             </div>
           )}
 
@@ -528,6 +570,7 @@ export function App() {
             <AllCompaniesMarket
               isActive={true}
               onSelectSymbol={handleSelectSymbolAndGoDashboard}
+              onOpenDeepRecord={handleOpenDeepRecord}
               onOpenTradeModal={handleOpenTrade}
               onOpenAlertModal={handleOpenAlertModal}
               watchlistSymbols={watchlistSymbols}
@@ -654,6 +697,29 @@ export function App() {
       <SecurityModal
         isOpen={isSecurityModalOpen}
         onClose={() => setIsSecurityModalOpen(false)}
+      />
+
+      {/* Complete Historical Stock Record & Valuation Modal (Triggered from Market Pulse & Anywhere) */}
+      <StockDeepRecordModal
+        isOpen={deepRecordModal.isOpen}
+        symbol={deepRecordModal.symbol}
+        initialItem={deepRecordModal.item}
+        isInWatchlist={watchlistSymbols.includes(deepRecordModal.symbol || activeSymbol)}
+        onToggleWatchlist={(sym) => handleToggleWatchlist(sym || activeSymbol)}
+        onOpenAlertModal={(sym) => {
+          handleCloseDeepRecord();
+          handleOpenAlertModal(sym || activeSymbol);
+        }}
+        onOpenTradeModal={(sym) => {
+          handleCloseDeepRecord();
+          handleOpenTrade(sym || activeSymbol);
+        }}
+        onOpenWorkstationChart={(sym) => {
+          handleCloseDeepRecord();
+          if (sym) setActiveSymbol(sym);
+          setActiveTab('dashboard');
+        }}
+        onClose={handleCloseDeepRecord}
       />
 
       {/* Floating AI Trading Advisor */}

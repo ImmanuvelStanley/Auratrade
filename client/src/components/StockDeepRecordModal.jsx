@@ -1,0 +1,1392 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import {
+  X,
+  TrendingUp,
+  TrendingDown,
+  Award,
+  Calendar,
+  Building2,
+  Calculator,
+  ShieldCheck,
+  Sparkles,
+  BookmarkPlus,
+  BookmarkCheck,
+  Bell,
+  ShoppingCart,
+  BarChart3,
+  Layers,
+  History,
+  CheckCircle2,
+  Info,
+  ArrowUpRight,
+  ArrowDownRight
+} from 'lucide-react';
+import { useSocketQuote } from '../context/SocketContext';
+import { CountryFlag } from './CountryFlag';
+import { getCompleteStockRecord, formatRecordPrice } from '../utils/stockRecordEngine';
+
+export const StockDeepRecordSection = React.memo(function StockDeepRecordSection({
+  symbol,
+  initialItem = null,
+  isModal = false,
+  isInWatchlist = false,
+  onToggleWatchlist,
+  onOpenAlertModal,
+  onOpenTradeModal,
+  onOpenWorkstationChart,
+  onClose
+}) {
+  const socketQuote = useSocketQuote(symbol);
+  const [fetchedQuote, setFetchedQuote] = useState(null);
+  const [activeSubTab, setActiveSubTab] = useState('all'); // 'all' | 'trajectory' | 'valuation' | 'calculator' | 'history'
+  const [investAmount, setInvestAmount] = useState(1000);
+  const [selectedHorizon, setSelectedHorizon] = useState('ipo'); // 'ipo' | 'y10' | 'y5' | 'y1'
+  const [hoveredPointIdx, setHoveredPointIdx] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (symbol) {
+      fetch(`/api/stocks/quote/${encodeURIComponent(symbol)}`)
+        .then((r) => r.json())
+        .then((json) => {
+          if (isMounted && json?.success && json?.data) {
+            setFetchedQuote(json.data);
+          }
+        })
+        .catch(() => {});
+    }
+    return () => {
+      isMounted = false;
+    };
+  }, [symbol]);
+
+  const mergedLiveQuote = useMemo(() => {
+    return {
+      ...(initialItem || {}),
+      ...(fetchedQuote || {}),
+      ...(socketQuote || {})
+    };
+  }, [initialItem, fetchedQuote, socketQuote]);
+
+  const record = useMemo(() => {
+    return getCompleteStockRecord(symbol, mergedLiveQuote);
+  }, [symbol, mergedLiveQuote]);
+
+  const { identity, priceRecord, wealthHorizons, milestones, allTimeSeries, annualHistory, valuation } = record;
+  const curr = identity.currencySymbol;
+  const isBull = priceRecord.changePercent >= 0;
+
+  // Wealth Calculator Computation
+  const activeHorizonObj = wealthHorizons[selectedHorizon] || wealthHorizons.ipo;
+  const entryPrice = Math.max(0.0001, activeHorizonObj.entryPrice);
+  const sharesAccumulated = investAmount / entryPrice;
+  const currentInvestmentValue = sharesAccumulated * priceRecord.currentPrice;
+  const netProfit = currentInvestmentValue - investAmount;
+  const calcReturnPercent = ((currentInvestmentValue - investAmount) / Math.max(1, investAmount)) * 100;
+  const calcMultiple = currentInvestmentValue / Math.max(1, investAmount);
+  const calcCagr =
+    activeHorizonObj.years > 0
+      ? (Math.pow(Math.max(1.0001, calcMultiple), 1 / activeHorizonObj.years) - 1) * 100
+      : calcReturnPercent;
+
+  // Interactive SVG All-Time Trajectory Geometry
+  const chartWidth = 860;
+  const chartHeight = 250;
+  const padLeft = 58;
+  const padRight = 28;
+  const padTop = 26;
+  const padBottom = 38;
+  const plotW = chartWidth - padLeft - padRight;
+  const plotH = chartHeight - padTop - padBottom;
+
+  const seriesPrices = allTimeSeries.map((p) => p.price);
+  const minSeriesPrice = Math.min(...seriesPrices) * 0.92;
+  const maxSeriesPrice = Math.max(...seriesPrices) * 1.05;
+  const priceSpan = Math.max(0.0001, maxSeriesPrice - minSeriesPrice);
+
+  const chartNodes = allTimeSeries.map((pt, idx) => {
+    const x = padLeft + (idx / Math.max(1, allTimeSeries.length - 1)) * plotW;
+    const y = padTop + plotH - ((pt.price - minSeriesPrice) / priceSpan) * plotH;
+    return { ...pt, x, y, idx };
+  });
+
+  const polylinePoints = chartNodes.map((n) => `${n.x.toFixed(1)},${n.y.toFixed(1)}`).join(' ');
+  const areaPath =
+    chartNodes.length > 1
+      ? `M ${chartNodes[0].x.toFixed(1)} ${(padTop + plotH).toFixed(1)} L ` +
+        chartNodes.map((n) => `${n.x.toFixed(1)} ${n.y.toFixed(1)}`).join(' L ') +
+        ` L ${chartNodes[chartNodes.length - 1].x.toFixed(1)} ${(padTop + plotH).toFixed(1)} Z`
+      : '';
+
+  const activeNode =
+    hoveredPointIdx !== null && chartNodes[hoveredPointIdx]
+      ? chartNodes[hoveredPointIdx]
+      : chartNodes[chartNodes.length - 1];
+
+  return (
+    <div
+      className="glass-card"
+      style={{
+        width: '100%',
+        maxWidth: '100%',
+        boxSizing: 'border-box',
+        border: isModal ? '1px solid rgba(6, 182, 212, 0.38)' : '1px solid var(--border-subtle)',
+        background: isModal ? 'rgba(10, 15, 29, 0.98)' : 'var(--bg-card)',
+        boxShadow: isModal ? '0 28px 75px rgba(0, 0, 0, 0.82)' : 'var(--shadow-card)',
+        overflow: 'hidden'
+      }}
+    >
+      {/* Top Executive Header Banner */}
+      <div
+        style={{
+          padding: '1.25rem 1.5rem',
+          background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(16, 185, 129, 0.06) 55%, rgba(15, 23, 42, 0.92) 100%)',
+          borderBottom: '1px solid var(--border-subtle)',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: '1rem'
+        }}
+      >
+        {/* Left: Asset Identity & Genesis Metadata */}
+        <div style={{ flex: '1 1 420px', minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+            <span
+              style={{
+                fontSize: '0.68rem',
+                fontWeight: 800,
+                letterSpacing: '0.07em',
+                textTransform: 'uppercase',
+                padding: '0.2rem 0.55rem',
+                borderRadius: '4px',
+                background: 'rgba(6, 182, 212, 0.18)',
+                color: 'var(--accent-cyan)',
+                border: '1px solid rgba(6, 182, 212, 0.35)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.3rem'
+              }}
+            >
+              <History size={12} /> COMPLETE RECORD • STARTING ({identity.ipoYear}) TILL NOW
+            </span>
+
+            <CountryFlag
+              country={identity.country}
+              countryCode={identity.countryCode}
+              symbol={identity.symbol}
+              countryFlag={identity.countryFlag}
+              size="sm"
+              showName={true}
+            />
+
+            <span
+              style={{
+                fontSize: '0.72rem',
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 700,
+                padding: '0.16rem 0.5rem',
+                borderRadius: '4px',
+                background: 'rgba(255, 255, 255, 0.06)',
+                color: 'var(--text-secondary)',
+                border: '1px solid var(--border-subtle)'
+              }}
+            >
+              {identity.exchange} • {identity.currency}
+            </span>
+
+            <span
+              style={{
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                padding: '0.16rem 0.5rem',
+                borderRadius: '4px',
+                background: 'rgba(16, 185, 129, 0.14)',
+                color: 'var(--bull-green)',
+                border: '1px solid rgba(16, 185, 129, 0.3)'
+              }}
+            >
+              {identity.sector}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.55rem' }}>
+            <h2
+              className="font-mono"
+              style={{
+                fontSize: '1.75rem',
+                fontWeight: 800,
+                color: 'var(--text-primary)',
+                margin: 0,
+                letterSpacing: '-0.02em'
+              }}
+            >
+              {identity.symbol}
+            </h2>
+            <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+              {identity.name}
+            </span>
+            <span
+              className="font-mono"
+              style={{
+                fontSize: '0.76rem',
+                fontWeight: 700,
+                color: 'var(--accent-cyan)',
+                background: 'rgba(6, 182, 212, 0.1)',
+                padding: '0.15rem 0.5rem',
+                borderRadius: '4px'
+              }}
+            >
+              Mkt Cap: {identity.marketCapFormatted}
+            </span>
+          </div>
+
+          <p
+            style={{
+              margin: '0.45rem 0 0',
+              fontSize: '0.84rem',
+              lineHeight: 1.5,
+              color: 'var(--text-secondary)',
+              maxWidth: '780px'
+            }}
+          >
+            {identity.businessSummary}
+          </p>
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem',
+              flexWrap: 'wrap',
+              marginTop: '0.55rem',
+              fontSize: '0.76rem',
+              color: 'var(--text-muted)'
+            }}
+          >
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+              <Building2 size={13} style={{ color: 'var(--accent-cyan)' }} />
+              <strong style={{ color: 'var(--text-secondary)' }}>Founded:</strong> {identity.foundedYear} ({identity.headquarters})
+            </span>
+            <span>•</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+              <Calendar size={13} style={{ color: 'var(--bull-green)' }} />
+              <strong style={{ color: 'var(--text-secondary)' }}>Public Debut / Base:</strong> {identity.ipoDate}
+            </span>
+            <span>•</span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+              <Award size={13} style={{ color: 'var(--warning-amber)' }} />
+              <strong style={{ color: 'var(--text-secondary)' }}>Origin:</strong> {identity.founderOrOrigin}
+            </span>
+          </div>
+        </div>
+
+        {/* Right: Live Price, All-Time Gain Badge & Action Buttons */}
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: '0.65rem',
+            flexShrink: 0
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                Live Market Price
+              </div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                <span className="font-mono" style={{ fontSize: '1.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  {formatRecordPrice(priceRecord.currentPrice, curr)}
+                </span>
+                <span
+                  className="font-mono"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '2px',
+                    fontSize: '0.84rem',
+                    fontWeight: 700,
+                    padding: '0.18rem 0.5rem',
+                    borderRadius: '6px',
+                    background: isBull ? 'rgba(16, 185, 129, 0.16)' : 'rgba(239, 68, 68, 0.16)',
+                    color: isBull ? 'var(--bull-green)' : 'var(--bear-red)'
+                  }}
+                >
+                  {isBull ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                  {isBull ? '+' : ''}
+                  {priceRecord.changePercent.toFixed(2)}%
+                </span>
+              </div>
+            </div>
+
+            {isModal && onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                title="Close Record Dossier (Esc)"
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  background: 'rgba(255, 255, 255, 0.06)',
+                  border: '1px solid var(--border-subtle)',
+                  color: 'var(--text-secondary)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer'
+                }}
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
+
+          {/* All-Time Return Highlight Pill */}
+          <div
+            className="font-mono"
+            style={{
+              padding: '0.32rem 0.7rem',
+              borderRadius: '6px',
+              background: 'rgba(16, 185, 129, 0.14)',
+              border: '1px solid rgba(16, 185, 129, 0.35)',
+              color: 'var(--bull-green)',
+              fontSize: '0.76rem',
+              fontWeight: 800,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem'
+            }}
+          >
+            <TrendingUp size={13} />
+            <span>
+              Since Starting ({identity.ipoYear}): +{Math.round(priceRecord.allTimeReturnPercent).toLocaleString()}% ({priceRecord.allTimeMultiple.toFixed(1)}x) • {priceRecord.cagrPercent.toFixed(1)}% CAGR
+            </span>
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+            {onOpenWorkstationChart && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{
+                  padding: '0.38rem 0.7rem',
+                  fontSize: '0.76rem',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  borderColor: 'rgba(6, 182, 212, 0.45)',
+                  color: 'var(--accent-cyan)'
+                }}
+                onClick={() => onOpenWorkstationChart(identity.chartSymbol || identity.symbol)}
+              >
+                <BarChart3 size={14} />
+                <span>Open Workstation Chart</span>
+              </button>
+            )}
+
+            {onToggleWatchlist && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{
+                  padding: '0.38rem 0.65rem',
+                  fontSize: '0.76rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem'
+                }}
+                onClick={() => onToggleWatchlist(identity.chartSymbol || identity.symbol)}
+              >
+                {isInWatchlist ? (
+                  <>
+                    <BookmarkCheck size={14} style={{ color: 'var(--accent-cyan)' }} />
+                    <span>Watching</span>
+                  </>
+                ) : (
+                  <>
+                    <BookmarkPlus size={14} />
+                    <span>Watchlist</span>
+                  </>
+                )}
+              </button>
+            )}
+
+            {onOpenAlertModal && (
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{
+                  padding: '0.38rem 0.65rem',
+                  fontSize: '0.76rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem'
+                }}
+                onClick={() => onOpenAlertModal(identity.chartSymbol || identity.symbol)}
+              >
+                <Bell size={14} style={{ color: 'var(--warning-amber)' }} />
+                <span>Set Alert</span>
+              </button>
+            )}
+
+            {onOpenTradeModal && (
+              <button
+                type="button"
+                className="btn btn-bull"
+                style={{
+                  padding: '0.38rem 0.75rem',
+                  fontSize: '0.76rem',
+                  fontWeight: 700,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem'
+                }}
+                onClick={() => onOpenTradeModal(identity.chartSymbol || identity.symbol)}
+              >
+                <ShoppingCart size={14} />
+                <span>Trade Asset</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Section Filter Navigation Bar */}
+      <div
+        style={{
+          padding: '0.65rem 1.5rem',
+          background: 'rgba(15, 23, 42, 0.75)',
+          borderBottom: '1px solid var(--border-subtle)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+          gap: '0.5rem'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+          {[
+            { id: 'all', label: 'Complete Record (All-in-One)', icon: Layers },
+            { id: 'trajectory', label: 'All-Time Trajectory & Eras', icon: TrendingUp },
+            { id: 'calculator', label: 'IPO Wealth Calculator', icon: Calculator },
+            { id: 'valuation', label: 'True Stock Value & Ratios', icon: ShieldCheck },
+            { id: 'history', label: 'Year-by-Year Record Table', icon: History }
+          ].map((tab) => {
+            const IconComp = tab.icon;
+            const active = activeSubTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveSubTab(tab.id)}
+                style={{
+                  padding: '0.36rem 0.75rem',
+                  borderRadius: '6px',
+                  fontSize: '0.75rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  background: active ? 'rgba(6, 182, 212, 0.18)' : 'rgba(255, 255, 255, 0.04)',
+                  color: active ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+                  border: active ? '1px solid rgba(6, 182, 212, 0.45)' : '1px solid transparent',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <IconComp size={13} />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+          {identity.stockSplits}
+        </div>
+      </div>
+
+      {/* Main Dossier Body */}
+      <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.35rem' }}>
+        {/* 6-Card Genesis-to-Present Key Metrics Strip (Always Visible) */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(195px, 1fr))',
+            gap: '0.85rem'
+          }}
+        >
+          {/* Card 1: Starting / IPO Price */}
+          <div
+            style={{
+              padding: '0.9rem 1rem',
+              borderRadius: '10px',
+              background: 'rgba(255, 255, 255, 0.025)',
+              border: '1px solid var(--border-subtle)'
+            }}
+          >
+            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Starting / IPO Price ({identity.ipoYear})
+            </div>
+            <div className="font-mono" style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
+              {formatRecordPrice(priceRecord.ipoPriceAdjusted, curr)}
+            </div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+              Nominal Issue: <span className="font-mono">{formatRecordPrice(priceRecord.ipoPriceNominal, curr)}</span>
+            </div>
+          </div>
+
+          {/* Card 2: Present Live Market Price */}
+          <div
+            style={{
+              padding: '0.9rem 1rem',
+              borderRadius: '10px',
+              background: 'rgba(255, 255, 255, 0.025)',
+              border: '1px solid var(--border-subtle)'
+            }}
+          >
+            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Present Day Price (Live)
+            </div>
+            <div className="font-mono" style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-cyan)', marginTop: '0.25rem' }}>
+              {formatRecordPrice(priceRecord.currentPrice, curr)}
+            </div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+              Day Range: <span className="font-mono">{formatRecordPrice(priceRecord.dayLow, curr)} – {formatRecordPrice(priceRecord.dayHigh, curr)}</span>
+            </div>
+          </div>
+
+          {/* Card 3: All-Time Return & Multiple */}
+          <div
+            style={{
+              padding: '0.9rem 1rem',
+              borderRadius: '10px',
+              background: 'rgba(16, 185, 129, 0.06)',
+              border: '1px solid rgba(16, 185, 129, 0.28)'
+            }}
+          >
+            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--bull-green)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Total Return (Start → Now)
+            </div>
+            <div className="font-mono" style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--bull-green)', marginTop: '0.25rem' }}>
+              +{Math.round(priceRecord.allTimeReturnPercent).toLocaleString()}%
+            </div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+              Wealth Multiplier: <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>{priceRecord.allTimeMultiple.toFixed(1)}x</strong>
+            </div>
+          </div>
+
+          {/* Card 4: Compound Annual Growth (CAGR) */}
+          <div
+            style={{
+              padding: '0.9rem 1rem',
+              borderRadius: '10px',
+              background: 'rgba(255, 255, 255, 0.025)',
+              border: '1px solid var(--border-subtle)'
+            }}
+          >
+            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Annualized CAGR ({identity.yearsSinceIpo} Yrs)
+            </div>
+            <div className="font-mono" style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--bull-green)', marginTop: '0.25rem' }}>
+              +{priceRecord.cagrPercent.toFixed(2)}% / yr
+            </div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+              10Y: <span className="font-mono" style={{ color: 'var(--bull-green)' }}>+{ priceRecord.return10YPercent.toFixed(0)}%</span> • 5Y: <span className="font-mono" style={{ color: 'var(--bull-green)' }}>+{priceRecord.return5YPercent.toFixed(0)}%</span>
+            </div>
+          </div>
+
+          {/* Card 5: All-Time High & 52W Range */}
+          <div
+            style={{
+              padding: '0.9rem 1rem',
+              borderRadius: '10px',
+              background: 'rgba(255, 255, 255, 0.025)',
+              border: '1px solid var(--border-subtle)'
+            }}
+          >
+            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              All-Time High & 52W Range
+            </div>
+            <div className="font-mono" style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
+              ATH: {formatRecordPrice(priceRecord.athPrice, curr)}
+            </div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+              52W: <span className="font-mono">{formatRecordPrice(priceRecord.low52, curr)} – {formatRecordPrice(priceRecord.high52, curr)}</span>
+            </div>
+          </div>
+
+          {/* Card 6: Intrinsic Fair Value & Verdict */}
+          <div
+            style={{
+              padding: '0.9rem 1rem',
+              borderRadius: '10px',
+              background: 'rgba(6, 182, 212, 0.07)',
+              border: '1px solid rgba(6, 182, 212, 0.3)'
+            }}
+          >
+            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Intrinsic Fair Value Estimate
+            </div>
+            <div className="font-mono" style={{ fontSize: '1.3rem', fontWeight: 800, color: valuation.verdictColor, marginTop: '0.25rem' }}>
+              {formatRecordPrice(valuation.intrinsicFairValue, curr)}
+            </div>
+            <div style={{ fontSize: '0.71rem', fontWeight: 700, color: valuation.verdictColor, marginTop: '0.2rem' }}>
+              {valuation.verdict} ({valuation.valuationGapPercent >= 0 ? `+${valuation.valuationGapPercent.toFixed(1)}% Upside` : `${valuation.valuationGapPercent.toFixed(1)}%`})
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION A: ALL-TIME TRAJECTORY CHART & ERA MILESTONES */}
+        {(activeSubTab === 'all' || activeSubTab === 'trajectory') && (
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
+              gap: '1.15rem'
+            }}
+          >
+            {/* Interactive All-Time Trajectory SVG Chart */}
+            <div
+              style={{
+                padding: '1.1rem 1.25rem',
+                borderRadius: '12px',
+                background: 'rgba(15, 23, 42, 0.65)',
+                border: '1px solid var(--border-subtle)',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                    <TrendingUp size={16} style={{ color: 'var(--bull-green)' }} />
+                    <span>All-Time Price Trajectory ({identity.ipoYear} Starting → 2026 Live)</span>
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                    Hover any historical point to inspect split-adjusted price & cumulative gain from inception
+                  </div>
+                </div>
+
+                {activeNode && (
+                  <div
+                    className="font-mono"
+                    style={{
+                      padding: '0.35rem 0.7rem',
+                      borderRadius: '8px',
+                      background: 'rgba(6, 182, 212, 0.12)',
+                      border: '1px solid rgba(6, 182, 212, 0.35)',
+                      fontSize: '0.75rem'
+                    }}
+                  >
+                    <span style={{ color: 'var(--text-secondary)' }}>{activeNode.label}: </span>
+                    <strong style={{ color: 'var(--text-primary)' }}>{formatRecordPrice(activeNode.price, curr)}</strong>
+                    <span style={{ color: 'var(--bull-green)', marginLeft: '0.45rem' }}>
+                      (+{Math.round(activeNode.gainFromStartPercent).toLocaleString()}%)
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div style={{ width: '100%', overflowX: 'auto' }}>
+                <svg
+                  viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+                  style={{ width: '100%', height: 'auto', minHeight: '210px', display: 'block' }}
+                >
+                  <defs>
+                    <linearGradient id={`allTimeGrad-${identity.symbol}`} x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#10b981" stopOpacity="0.38" />
+                      <stop offset="65%" stopColor="#06b6d4" stopOpacity="0.12" />
+                      <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Horizontal Reference Grid Lines */}
+                  {[0, 0.25, 0.5, 0.75, 1].map((ratio, idx) => {
+                    const y = padTop + plotH * ratio;
+                    const val = maxSeriesPrice - priceSpan * ratio;
+                    return (
+                      <g key={idx}>
+                        <line
+                          x1={padLeft}
+                          y1={y}
+                          x2={chartWidth - padRight}
+                          y2={y}
+                          stroke="rgba(255,255,255,0.06)"
+                          strokeDasharray="4 4"
+                        />
+                        <text
+                          x={padLeft - 8}
+                          y={y + 4}
+                          textAnchor="end"
+                          fill="rgba(148, 163, 184, 0.78)"
+                          fontSize="10"
+                          fontFamily="monospace"
+                        >
+                          {formatRecordPrice(val, curr)}
+                        </text>
+                      </g>
+                    );
+                  })}
+
+                  {/* Area Fill */}
+                  {areaPath && <path d={areaPath} fill={`url(#allTimeGrad-${identity.symbol})`} />}
+
+                  {/* Main Trajectory Line */}
+                  <polyline
+                    fill="none"
+                    stroke="#10b981"
+                    strokeWidth="2.75"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    points={polylinePoints}
+                  />
+
+                  {/* Interactive Data Nodes */}
+                  {chartNodes.map((n) => {
+                    const isHovered = activeNode?.idx === n.idx;
+                    return (
+                      <g
+                        key={n.idx}
+                        style={{ cursor: 'pointer' }}
+                        onMouseEnter={() => setHoveredPointIdx(n.idx)}
+                        onClick={() => setHoveredPointIdx(n.idx)}
+                      >
+                        {isHovered && (
+                          <line
+                            x1={n.x}
+                            y1={padTop}
+                            x2={n.x}
+                            y2={padTop + plotH}
+                            stroke="rgba(6, 182, 212, 0.5)"
+                            strokeDasharray="3 3"
+                          />
+                        )}
+                        <circle
+                          cx={n.x}
+                          cy={n.y}
+                          r={isHovered ? 6 : 3.8}
+                          fill={isHovered ? '#06b6d4' : '#10b981'}
+                          stroke="#0f172a"
+                          strokeWidth="2"
+                        />
+                        <text
+                          x={n.x}
+                          y={chartHeight - 10}
+                          textAnchor="middle"
+                          fill={isHovered ? '#38bdf8' : 'rgba(148, 163, 184, 0.85)'}
+                          fontSize={isHovered ? '10.5' : '9.5'}
+                          fontWeight={isHovered ? '700' : '500'}
+                          fontFamily="monospace"
+                        >
+                          {n.year}
+                        </text>
+                      </g>
+                    );
+                  })}
+                </svg>
+              </div>
+
+              {/* Multi-Horizon Return Bar */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(5, 1fr)',
+                  gap: '0.5rem',
+                  marginTop: '0.65rem',
+                  paddingTop: '0.65rem',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.06)'
+                }}
+              >
+                {[
+                  { label: `Since Start (${identity.ipoYear})`, pct: priceRecord.allTimeReturnPercent },
+                  { label: '10-Year Return', pct: priceRecord.return10YPercent },
+                  { label: '5-Year Return', pct: priceRecord.return5YPercent },
+                  { label: '3-Year Return', pct: priceRecord.return3YPercent },
+                  { label: '1-Year Return', pct: priceRecord.return1YPercent }
+                ].map((h, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      padding: '0.45rem 0.55rem',
+                      borderRadius: '6px',
+                      background: 'rgba(255, 255, 255, 0.03)',
+                      textAlign: 'center'
+                    }}
+                  >
+                    <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 600 }}>{h.label}</div>
+                    <div
+                      className="font-mono"
+                      style={{
+                        fontSize: '0.84rem',
+                        fontWeight: 800,
+                        color: h.pct >= 0 ? 'var(--bull-green)' : 'var(--bear-red)',
+                        marginTop: '0.15rem'
+                      }}
+                    >
+                      {h.pct >= 0 ? '+' : ''}
+                      {h.pct >= 1000 ? Math.round(h.pct).toLocaleString() : h.pct.toFixed(1)}%
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 7-Stage Historical Milestone Timeline ("From Starting Till Now") */}
+            <div
+              style={{
+                padding: '1.1rem 1.25rem',
+                borderRadius: '12px',
+                background: 'rgba(15, 23, 42, 0.65)',
+                border: '1px solid var(--border-subtle)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.65rem'
+              }}
+            >
+              <div>
+                <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  <Award size={16} style={{ color: 'var(--accent-cyan)' }} />
+                  <span>Complete Historical Milestones (From Starting Till Now)</span>
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                  Key inflection eras and compounding checkpoints from {identity.ipoYear} public debut to live market
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', maxHeight: '360px', overflowY: 'auto', paddingRight: '0.25rem' }}>
+                {milestones.map((m, idx) => {
+                  const isLatest = idx === milestones.length - 1;
+                  return (
+                    <div
+                      key={idx}
+                      style={{
+                        padding: '0.65rem 0.85rem',
+                        borderRadius: '8px',
+                        background: isLatest ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255, 255, 255, 0.025)',
+                        border: isLatest ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(255, 255, 255, 0.06)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.22rem'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                          <span
+                            className="font-mono"
+                            style={{
+                              fontSize: '0.64rem',
+                              fontWeight: 800,
+                              padding: '0.12rem 0.42rem',
+                              borderRadius: '4px',
+                              background: isLatest ? 'rgba(16, 185, 129, 0.2)' : 'rgba(6, 182, 212, 0.15)',
+                              color: isLatest ? 'var(--bull-green)' : 'var(--accent-cyan)'
+                            }}
+                          >
+                            {m.era}
+                          </span>
+                          <strong style={{ fontSize: '0.8rem', color: 'var(--text-primary)' }}>{m.title}</strong>
+                        </div>
+
+                        <div className="font-mono" style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.78rem' }}>
+                          <strong style={{ color: 'var(--text-primary)' }}>{formatRecordPrice(m.price, curr)}</strong>
+                          {idx > 0 && (
+                            <span style={{ color: 'var(--bull-green)', fontWeight: 700, fontSize: '0.72rem' }}>
+                              (+{Math.round(m.cumulativeReturnPercent).toLocaleString()}%)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                        {m.description}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SECTION B: INTERACTIVE "WHAT IF YOU INVESTED AT STARTING / IPO?" WEALTH CALCULATOR */}
+        {(activeSubTab === 'all' || activeSubTab === 'calculator') && (
+          <div
+            style={{
+              padding: '1.15rem 1.35rem',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(6, 182, 212, 0.07) 100%)',
+              border: '1px solid rgba(16, 185, 129, 0.28)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div>
+                <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  <Calculator size={16} style={{ color: 'var(--bull-green)' }} />
+                  <span>Interactive Historical Wealth Calculator — &ldquo;What If You Invested in {identity.symbol}?&rdquo;</span>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
+                  Select an initial investment amount and starting era to see exact split-adjusted shares and live wealth today
+                </div>
+              </div>
+
+              {/* Horizon Selector Buttons */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                {Object.values(wealthHorizons).map((h) => {
+                  const active = selectedHorizon === h.id;
+                  return (
+                    <button
+                      key={h.id}
+                      type="button"
+                      onClick={() => setSelectedHorizon(h.id)}
+                      style={{
+                        padding: '0.34rem 0.7rem',
+                        borderRadius: '6px',
+                        fontSize: '0.73rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        background: active ? 'var(--bull-green)' : 'rgba(15, 23, 42, 0.75)',
+                        color: active ? '#04130d' : 'var(--text-secondary)',
+                        border: active ? '1px solid var(--bull-green)' : '1px solid var(--border-subtle)'
+                      }}
+                    >
+                      {h.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Amount Presets & Results Grid */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+                gap: '0.85rem',
+                alignItems: 'stretch'
+              }}
+            >
+              {/* Investment Input Card */}
+              <div
+                style={{
+                  padding: '0.85rem 1rem',
+                  borderRadius: '10px',
+                  background: 'rgba(15, 23, 42, 0.8)',
+                  border: '1px solid var(--border-subtle)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '0.5rem'
+                }}
+              >
+                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  1. Initial Capital Invested ({curr})
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span className="font-mono" style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>{curr}</span>
+                  <input
+                    type="number"
+                    min="10"
+                    step="100"
+                    value={investAmount}
+                    onChange={(e) => setInvestAmount(Math.max(1, Number(e.target.value) || 0))}
+                    className="font-mono"
+                    style={{
+                      width: '100%',
+                      padding: '0.35rem 0.55rem',
+                      borderRadius: '6px',
+                      background: 'var(--bg-input)',
+                      border: '1px solid var(--border-subtle)',
+                      color: 'var(--text-primary)',
+                      fontSize: '1rem',
+                      fontWeight: 800
+                    }}
+                  />
+                </div>
+                <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                  {[100, 1000, 10000, 50000].map((amt) => (
+                    <button
+                      key={amt}
+                      type="button"
+                      onClick={() => setInvestAmount(amt)}
+                      className="font-mono"
+                      style={{
+                        padding: '0.18rem 0.45rem',
+                        borderRadius: '4px',
+                        fontSize: '0.68rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        background: investAmount === amt ? 'rgba(6, 182, 212, 0.22)' : 'rgba(255,255,255,0.05)',
+                        color: investAmount === amt ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+                        border: '1px solid rgba(255,255,255,0.1)'
+                      }}
+                    >
+                      {curr}{amt.toLocaleString()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Entry Price & Shares Accumulated */}
+              <div
+                style={{
+                  padding: '0.85rem 1rem',
+                  borderRadius: '10px',
+                  background: 'rgba(15, 23, 42, 0.8)',
+                  border: '1px solid var(--border-subtle)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center'
+                }}
+              >
+                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  2. Entry Price in {activeHorizonObj.startYear}
+                </div>
+                <div className="font-mono" style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
+                  {formatRecordPrice(entryPrice, curr)} <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>/ share</span>
+                </div>
+                <div style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', marginTop: '0.25rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
+                  = {sharesAccumulated.toLocaleString('en-US', { maximumFractionDigits: 2 })} Split-Adj. Shares
+                </div>
+              </div>
+
+              {/* Total Value Today */}
+              <div
+                style={{
+                  padding: '0.85rem 1rem',
+                  borderRadius: '10px',
+                  background: 'rgba(16, 185, 129, 0.14)',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center'
+                }}
+              >
+                <div style={{ fontSize: '0.7rem', fontWeight: 800, color: 'var(--bull-green)', textTransform: 'uppercase' }}>
+                  3. Portfolio Value Today (Live)
+                </div>
+                <div className="font-mono" style={{ fontSize: '1.45rem', fontWeight: 900, color: 'var(--bull-green)', marginTop: '0.2rem' }}>
+                  {formatRecordPrice(currentInvestmentValue, curr)}
+                </div>
+                <div style={{ fontSize: '0.73rem', color: 'var(--text-primary)', marginTop: '0.2rem', fontFamily: 'var(--font-mono)' }}>
+                  Net Profit: <strong>+{formatRecordPrice(netProfit, curr)}</strong>
+                </div>
+              </div>
+
+              {/* Total Multiplier & Annualized Return */}
+              <div
+                style={{
+                  padding: '0.85rem 1rem',
+                  borderRadius: '10px',
+                  background: 'rgba(15, 23, 42, 0.8)',
+                  border: '1px solid var(--border-subtle)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'center'
+                }}
+              >
+                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+                  4. Wealth Multiplier & CAGR
+                </div>
+                <div className="font-mono" style={{ fontSize: '1.28rem', fontWeight: 800, color: 'var(--accent-cyan)', marginTop: '0.25rem' }}>
+                  {calcMultiple.toFixed(2)}x <span style={{ fontSize: '0.82rem', color: 'var(--bull-green)' }}>(+{Math.round(calcReturnPercent).toLocaleString()}%)</span>
+                </div>
+                <div style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                  Compounded at <strong className="font-mono" style={{ color: 'var(--bull-green)' }}>{calcCagr.toFixed(2)}% / yr</strong> for {activeHorizonObj.years} yrs
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SECTION C: DEEP VALUATION & INTRINSIC WORTH SCORECARD (Easy to Understand) */}
+        {(activeSubTab === 'all' || activeSubTab === 'valuation') && (
+          <div
+            style={{
+              padding: '1.15rem 1.35rem',
+              borderRadius: '12px',
+              background: 'rgba(15, 23, 42, 0.65)',
+              border: '1px solid var(--border-subtle)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '1rem'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div>
+                <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  <ShieldCheck size={17} style={{ color: 'var(--accent-cyan)' }} />
+                  <span>Deep Stock Valuation, Intrinsic Worth & Plain-English Investor Guide</span>
+                </div>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                  Designed to make understanding {identity.name}&apos;s true fundamental value effortless for every investor
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span
+                  className="font-mono"
+                  style={{
+                    padding: '0.28rem 0.65rem',
+                    borderRadius: '6px',
+                    fontSize: '0.74rem',
+                    fontWeight: 800,
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    color: 'var(--bull-green)',
+                    border: '1px solid rgba(16, 185, 129, 0.35)'
+                  }}
+                >
+                  Fundamental Score: {valuation.valueScore}/100 ({identity.rating})
+                </span>
+              </div>
+            </div>
+
+            {/* Plain-English Valuation Summary Callout */}
+            <div
+              style={{
+                padding: '0.85rem 1rem',
+                borderRadius: '8px',
+                background: 'rgba(6, 182, 212, 0.08)',
+                borderLeft: '4px solid var(--accent-cyan)',
+                fontSize: '0.83rem',
+                lineHeight: 1.55,
+                color: 'var(--text-primary)',
+                display: 'flex',
+                alignItems: 'flex-start',
+                gap: '0.65rem'
+              }}
+            >
+              <Sparkles size={18} style={{ color: 'var(--accent-cyan)', flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <strong style={{ color: 'var(--accent-cyan)' }}>What Investors Should Know About {identity.symbol}&apos;s Value: </strong>
+                {valuation.plainEnglishSummary}
+              </div>
+            </div>
+
+            {/* 12 Valuation & Financial Health Cards with Plain-English Explanations */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(245px, 1fr))',
+                gap: '0.75rem'
+              }}
+            >
+              {valuation.metrics.map((m, idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    padding: '0.8rem 0.95rem',
+                    borderRadius: '8px',
+                    background: 'rgba(255, 255, 255, 0.025)',
+                    border: '1px solid rgba(255, 255, 255, 0.07)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.3rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' }}>
+                    <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-secondary)' }}>{m.label}</span>
+                    <span
+                      style={{
+                        fontSize: '0.64rem',
+                        fontWeight: 800,
+                        padding: '0.1rem 0.4rem',
+                        borderRadius: '4px',
+                        background: 'rgba(16, 185, 129, 0.14)',
+                        color: 'var(--bull-green)'
+                      }}
+                    >
+                      {m.status}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '0.5rem' }}>
+                    <span className="font-mono" style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      {m.value}
+                    </span>
+                    <span className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--accent-cyan)' }}>
+                      {m.benchmark}
+                    </span>
+                  </div>
+
+                  <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', lineHeight: 1.38 }}>
+                    {m.explanation}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* SECTION D: YEAR-BY-YEAR HISTORICAL RECORD TABLE (FROM STARTING / IPO TILL NOW) */}
+        {(activeSubTab === 'all' || activeSubTab === 'history') && (
+          <div
+            style={{
+              padding: '1.15rem 1.35rem',
+              borderRadius: '12px',
+              background: 'rgba(15, 23, 42, 0.65)',
+              border: '1px solid var(--border-subtle)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.85rem'
+            }}
+          >
+            <div>
+              <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <History size={16} style={{ color: 'var(--accent-cyan)' }} />
+                <span>Annual Historical Price & Return Ledger ({identity.ipoYear} Debut → 2026 Present)</span>
+              </div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                Split-adjusted annual Open, High, Low, Ending Close, Annual Return %, and Market Cycle Regime
+              </div>
+            </div>
+
+            <div style={{ width: '100%', overflowX: 'auto' }}>
+              <table className="market-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                <thead>
+                  <tr style={{ borderBottom: '1px solid var(--border-subtle)', textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.7rem', textTransform: 'uppercase' }}>
+                    <th style={{ padding: '0.6rem 0.75rem' }}>Year / Era</th>
+                    <th style={{ padding: '0.6rem 0.75rem', textAlign: 'right' }}>Year Open</th>
+                    <th style={{ padding: '0.6rem 0.75rem', textAlign: 'right' }}>Year High</th>
+                    <th style={{ padding: '0.6rem 0.75rem', textAlign: 'right' }}>Year Low</th>
+                    <th style={{ padding: '0.6rem 0.75rem', textAlign: 'right' }}>Year Close</th>
+                    <th style={{ padding: '0.6rem 0.75rem', textAlign: 'right' }}>Annual Return</th>
+                    <th style={{ padding: '0.6rem 0.75rem' }}>Market Cycle Regime</th>
+                    <th style={{ padding: '0.6rem 0.75rem' }}>Key Fundamental Milestone</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {annualHistory.map((row, idx) => {
+                    const pos = row.annualReturnPercent >= 0;
+                    return (
+                      <tr
+                        key={idx}
+                        style={{
+                          borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
+                          background: idx === 0 ? 'rgba(6, 182, 212, 0.06)' : 'transparent'
+                        }}
+                      >
+                        <td className="font-mono" style={{ padding: '0.6rem 0.75rem', fontWeight: 800, color: idx === 0 ? 'var(--accent-cyan)' : 'var(--text-primary)' }}>
+                          {row.year}
+                        </td>
+                        <td className="font-mono" style={{ padding: '0.6rem 0.75rem', textAlign: 'right', color: 'var(--text-secondary)' }}>
+                          {formatRecordPrice(row.open, curr)}
+                        </td>
+                        <td className="font-mono" style={{ padding: '0.6rem 0.75rem', textAlign: 'right', color: 'var(--text-secondary)' }}>
+                          {formatRecordPrice(row.high, curr)}
+                        </td>
+                        <td className="font-mono" style={{ padding: '0.6rem 0.75rem', textAlign: 'right', color: 'var(--text-muted)' }}>
+                          {formatRecordPrice(row.low, curr)}
+                        </td>
+                        <td className="font-mono" style={{ padding: '0.6rem 0.75rem', textAlign: 'right', fontWeight: 800, color: 'var(--text-primary)' }}>
+                          {formatRecordPrice(row.close, curr)}
+                        </td>
+                        <td className="font-mono" style={{ padding: '0.6rem 0.75rem', textAlign: 'right', fontWeight: 800, color: pos ? 'var(--bull-green)' : 'var(--bear-red)' }}>
+                          {pos ? '+' : ''}
+                          {row.annualReturnPercent.toFixed(2)}%
+                        </td>
+                        <td style={{ padding: '0.6rem 0.75rem' }}>
+                          <span
+                            style={{
+                              fontSize: '0.68rem',
+                              fontWeight: 700,
+                              padding: '0.14rem 0.45rem',
+                              borderRadius: '4px',
+                              background: pos ? 'rgba(16, 185, 129, 0.14)' : 'rgba(245, 158, 11, 0.14)',
+                              color: pos ? 'var(--bull-green)' : 'var(--warning-amber)'
+                            }}
+                          >
+                            {row.regime}
+                          </span>
+                        </td>
+                        <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                          {row.highlight}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
+export const StockDeepRecordModal = React.memo(function StockDeepRecordModal({
+  isOpen,
+  symbol,
+  initialItem = null,
+  isInWatchlist = false,
+  onToggleWatchlist,
+  onOpenAlertModal,
+  onOpenTradeModal,
+  onOpenWorkstationChart,
+  onClose
+}) {
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && onClose) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !symbol) return null;
+
+  return (
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 9999,
+        background: 'rgba(3, 7, 18, 0.84)',
+        backdropFilter: 'blur(10px)',
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'center',
+        padding: '2rem 1.25rem',
+        overflowY: 'auto'
+      }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          width: '100%',
+          maxWidth: '1260px',
+          margin: '0 auto 2rem'
+        }}
+      >
+        <StockDeepRecordSection
+          symbol={symbol}
+          initialItem={initialItem}
+          isModal={true}
+          isInWatchlist={isInWatchlist}
+          onToggleWatchlist={onToggleWatchlist}
+          onOpenAlertModal={onOpenAlertModal}
+          onOpenTradeModal={onOpenTradeModal}
+          onOpenWorkstationChart={onOpenWorkstationChart}
+          onClose={onClose}
+        />
+      </div>
+    </div>
+  );
+});
+
+export default StockDeepRecordModal;

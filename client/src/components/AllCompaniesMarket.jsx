@@ -241,6 +241,7 @@ const MarketTableRow = React.memo(
     isCompared,
     columnView,
     onSelectSymbol,
+    onOpenDeepRecord,
     onOpenTradeModal,
     onOpenAlertModal,
     onAddToWatchlist,
@@ -577,9 +578,19 @@ const MarketTableRow = React.memo(
           </>
         )}
 
-        {/* Row Actions: Chart, Trade, Alert, Bookmark */}
+        {/* Row Actions: Record, Chart, Trade, Alert, Bookmark */}
         <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+            {onOpenDeepRecord && (
+              <button
+                className="btn btn-secondary"
+                style={{ padding: '0.3rem 0.55rem', fontSize: '0.73rem', borderColor: 'rgba(6, 182, 212, 0.4)', color: 'var(--accent-cyan)' }}
+                title="View Complete Stock Record & Valuation from Starting (IPO) Till Now"
+                onClick={() => onOpenDeepRecord(c.symbol, c)}
+              >
+                Record
+              </button>
+            )}
             <button
               className="btn btn-secondary"
               style={{ padding: '0.3rem 0.55rem', fontSize: '0.75rem' }}
@@ -650,6 +661,7 @@ const MarketInvestorCard = React.memo(
     isInWatchlist,
     isCompared,
     onSelectSymbol,
+    onOpenDeepRecord,
     onOpenTradeModal,
     onOpenAlertModal,
     onAddToWatchlist,
@@ -853,8 +865,18 @@ const MarketInvestorCard = React.memo(
             </div>
           </div>
 
-          {/* Card Action Buttons: Chart, Trade, Alert, Bookmark */}
+          {/* Card Action Buttons: Record, Chart, Trade, Alert, Bookmark */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', paddingTop: '0.65rem', borderTop: '1px solid var(--border-subtle)' }} onClick={(e) => e.stopPropagation()}>
+            {onOpenDeepRecord && (
+              <button
+                className="btn btn-secondary"
+                style={{ flex: 1, padding: '0.45rem', fontSize: '0.76rem', justifyContent: 'center', borderColor: 'rgba(6, 182, 212, 0.4)', color: 'var(--accent-cyan)' }}
+                title="View Complete Stock Record & Valuation from Starting (IPO) Till Now"
+                onClick={() => onOpenDeepRecord(c.symbol, c)}
+              >
+                Full Record
+              </button>
+            )}
             <button
               className="btn btn-secondary"
               style={{ flex: 1, padding: '0.45rem', fontSize: '0.8rem', justifyContent: 'center' }}
@@ -1023,6 +1045,7 @@ let allMarketMemoryCache = defaultAllCompanies;
 // ============================================================================
 export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
   onSelectSymbol,
+  onOpenDeepRecord,
   onOpenTradeModal,
   onOpenAlertModal,
   watchlistSymbols,
@@ -2081,6 +2104,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
                     isCompared={isCompared}
                     columnView={columnView}
                     onSelectSymbol={handleSelectSymbol}
+                    onOpenDeepRecord={onOpenDeepRecord}
                     onOpenTradeModal={handleOpenTrade}
                     onOpenAlertModal={onOpenAlertModal}
                     onAddToWatchlist={handleAddToWatch}
@@ -2105,6 +2129,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
                 isInWatchlist={isInWatchlist}
                 isCompared={isCompared}
                 onSelectSymbol={handleSelectSymbol}
+                onOpenDeepRecord={onOpenDeepRecord}
                 onOpenTradeModal={handleOpenTrade}
                 onOpenAlertModal={onOpenAlertModal}
                 onAddToWatchlist={handleAddToWatch}
