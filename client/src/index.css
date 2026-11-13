@@ -5059,10 +5059,17 @@ select option:checked {
     align-items: center !important;
     width: 100% !important;
     min-width: 0 !important;
+    max-width: 100% !important;
     gap: 0.5rem !important;
+    box-sizing: border-box;
+  }
+  .market-filter-item--columns {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.38rem !important;
   }
   .market-filter-label {
-    min-width: 62px;
+    min-width: 58px;
     flex-shrink: 0;
     font-size: 0.76rem !important;
   }
@@ -5070,30 +5077,33 @@ select option:checked {
     flex: 1 1 0 !important;
     min-width: 0 !important;
     width: 100% !important;
+    max-width: 100% !important;
     font-size: 0.78rem !important;
   }
   .market-filter-item .column-view-segmented {
-    flex: 1 1 0 !important;
+    flex: 1 1 auto !important;
     min-width: 0 !important;
     width: 100% !important;
+    height: auto !important;
+    min-height: 34px;
     display: flex !important;
-    justify-content: space-between;
-    overflow: hidden;
+    flex-wrap: wrap !important;
+    gap: 0.25rem !important;
+    padding: 0.25rem !important;
     box-sizing: border-box;
   }
   .market-filter-item .column-view-btn {
     flex: 1 1 auto;
     min-width: 0;
-    font-size: 0.68rem !important;
-    padding: 0.32rem 0.28rem !important;
+    font-size: 0.72rem !important;
+    padding: 0.36rem 0.5rem !important;
     text-align: center;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .market-filter-sort-select {
     flex: 1 1 0 !important;
     min-width: 0 !important;
-    width: auto !important;
+    width: 100% !important;
     font-size: 0.76rem !important;
     padding: 0.38rem 1.65rem 0.38rem 0.55rem !important;
   }

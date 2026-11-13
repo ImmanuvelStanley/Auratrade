@@ -2007,16 +2007,19 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
       {/* Interactive Filter & Sorting Control Bar */}
       <div className="market-filter-bar glass-card" style={{ marginBottom: '1rem', padding: '0.85rem 1rem' }}>
         {/* Row 1: Global Region Filter Tabs + Instant Search */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '0.75rem',
-          flexWrap: 'wrap',
-          marginBottom: '0.75rem'
-        }}>
+        <div
+          className="market-filter-row-tiers"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem',
+            flexWrap: 'wrap',
+            marginBottom: '0.75rem'
+          }}
+        >
           {/* Region Tabs with National/Regional Flags */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap', minWidth: 0, flex: '1 1 auto' }}>
+          <div className="market-filter-pills-group" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap', minWidth: 0, flex: '1 1 auto' }}>
             {regions.map((reg) => {
               const isActive = selectedRegion === reg.id;
               return (
@@ -2050,7 +2053,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
           </div>
 
           {/* Search Input (Aligned with 34px height) */}
-          <div style={{ position: 'relative', minWidth: 'min(100%, 220px)', flex: '0 1 300px', height: '34px' }}>
+          <div className="market-filter-search-box" style={{ position: 'relative', minWidth: 'min(100%, 220px)', flex: '0 1 300px', height: '34px' }}>
             <Search size={14} style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input
               type="text"
@@ -2115,19 +2118,24 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
         </div>
 
         {/* Row 2: Precision Screener Controls (Cap Tiers, Sector, Columns, Sort, Reset) */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '0.75rem',
-          flexWrap: 'wrap',
-          paddingTop: '0.75rem',
-          borderTop: '1px solid var(--border-subtle)'
-        }}>
+        <div
+          className="market-filter-row-controls"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem',
+            flexWrap: 'wrap',
+            paddingTop: '0.75rem',
+            borderTop: '1px solid var(--border-subtle)',
+            width: '100%',
+            boxSizing: 'border-box'
+          }}
+        >
           {/* Left Group: Capitalization Tiers & Sector Filter */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+          <div className="market-filter-subrow" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap', minWidth: 0 }}>
             {/* Tier Buttons */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap' }}>
+            <div className="market-filter-pills-group" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap', minWidth: 0 }}>
               {tiers.map((t) => (
                 <button
                   key={t.id}
@@ -2148,10 +2156,10 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
             </div>
 
             {/* Sector Dropdown */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>Sector:</span>
+            <div className="market-filter-item" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
+              <span className="market-filter-label" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>Sector:</span>
               <select
-                className="custom-input"
+                className="custom-input market-filter-select"
                 style={{
                   height: '34px',
                   padding: '0.3rem 1.8rem 0.3rem 0.7rem',
@@ -2175,12 +2183,12 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
           </div>
 
           {/* Right Group: Table Columns View & Sort Controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+          <div className="market-filter-subrow" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap', minWidth: 0 }}>
             {/* Table View Column Selector */}
             {viewMode === 'table' && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-                <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>Columns:</span>
-                <div className="column-view-segmented" style={{ height: '34px', boxSizing: 'border-box' }}>
+              <div className="market-filter-item market-filter-item--columns" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, maxWidth: '100%' }}>
+                <span className="market-filter-label" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>Columns:</span>
+                <div className="column-view-segmented" style={{ minHeight: '34px', boxSizing: 'border-box', maxWidth: '100%' }}>
                   <button
                     type="button"
                     className={`column-view-btn ${columnView === 'standard' ? 'active' : ''}`}
@@ -2207,10 +2215,10 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
             )}
 
             {/* Sort Dropdown */}
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>Sort By:</span>
+            <div className="market-filter-item" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, maxWidth: '100%' }}>
+              <span className="market-filter-label" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>Sort By:</span>
               <select
-                className="custom-input"
+                className="custom-input market-filter-sort-select"
                 style={{
                   height: '34px',
                   padding: '0.3rem 1.8rem 0.3rem 0.7rem',
@@ -2236,7 +2244,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
 
               <button
                 type="button"
-                className="btn btn-secondary"
+                className="btn btn-secondary market-filter-sort-dir-btn"
                 style={{
                   height: '34px',
                   padding: '0 0.7rem',
