@@ -1647,17 +1647,17 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
             </div>
 
             <div style={{ width: '100%', overflowX: 'auto' }}>
-              <table className="market-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+              <table className="market-table" style={{ width: '100%', minWidth: '1060px', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border-subtle)', textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.7rem', textTransform: 'uppercase' }}>
-                    <th style={{ padding: '0.6rem 0.75rem' }}>Year / Era</th>
-                    <th style={{ padding: '0.6rem 0.75rem', textAlign: 'right' }}>Year Open</th>
-                    <th style={{ padding: '0.6rem 0.75rem', textAlign: 'right' }}>Year High</th>
-                    <th style={{ padding: '0.6rem 0.75rem', textAlign: 'right' }}>Year Low</th>
-                    <th style={{ padding: '0.6rem 0.75rem', textAlign: 'right' }}>Year Close</th>
-                    <th style={{ padding: '0.6rem 0.75rem', textAlign: 'right' }}>Annual Return</th>
-                    <th style={{ padding: '0.6rem 0.75rem' }}>Market Cycle Regime</th>
-                    <th style={{ padding: '0.6rem 0.75rem' }}>Key Fundamental Milestone</th>
+                  <tr style={{ borderBottom: '1px solid var(--border-subtle)', textAlign: 'left', color: 'var(--text-muted)', fontSize: '0.69rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    <th style={{ padding: '0.68rem 0.75rem', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>Year / Era</th>
+                    <th style={{ padding: '0.68rem 0.75rem', textAlign: 'right', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>Year Open</th>
+                    <th style={{ padding: '0.68rem 0.75rem', textAlign: 'right', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>Year High</th>
+                    <th style={{ padding: '0.68rem 0.75rem', textAlign: 'right', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>Year Low</th>
+                    <th style={{ padding: '0.68rem 0.75rem', textAlign: 'right', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>Year Close</th>
+                    <th style={{ padding: '0.68rem 0.75rem', textAlign: 'right', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>Annual Return</th>
+                    <th style={{ padding: '0.68rem 0.75rem', textAlign: 'center', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>Market Cycle Regime</th>
+                    <th style={{ padding: '0.68rem 0.75rem', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>Key Fundamental Milestone</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1672,40 +1672,47 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                           background: idx === 0 ? 'rgba(6, 182, 212, 0.06)' : 'transparent'
                         }}
                       >
-                        <td className="font-mono" style={{ padding: '0.6rem 0.75rem', fontWeight: 800, color: idx === 0 ? 'var(--accent-cyan)' : 'var(--text-primary)' }}>
+                        <td className="font-mono tabular-nums" style={{ padding: '0.65rem 0.75rem', fontWeight: 800, color: idx === 0 ? 'var(--accent-cyan)' : 'var(--text-primary)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                           {row.year}
                         </td>
-                        <td className="font-mono" style={{ padding: '0.6rem 0.75rem', textAlign: 'right', color: 'var(--text-secondary)' }}>
+                        <td className="font-mono tabular-nums" style={{ padding: '0.65rem 0.75rem', textAlign: 'right', color: 'var(--text-secondary)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                           {formatRecordPrice(row.open, curr)}
                         </td>
-                        <td className="font-mono" style={{ padding: '0.6rem 0.75rem', textAlign: 'right', color: 'var(--text-secondary)' }}>
+                        <td className="font-mono tabular-nums" style={{ padding: '0.65rem 0.75rem', textAlign: 'right', color: 'var(--text-secondary)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                           {formatRecordPrice(row.high, curr)}
                         </td>
-                        <td className="font-mono" style={{ padding: '0.6rem 0.75rem', textAlign: 'right', color: 'var(--text-muted)' }}>
+                        <td className="font-mono tabular-nums" style={{ padding: '0.65rem 0.75rem', textAlign: 'right', color: 'var(--text-muted)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                           {formatRecordPrice(row.low, curr)}
                         </td>
-                        <td className="font-mono" style={{ padding: '0.6rem 0.75rem', textAlign: 'right', fontWeight: 800, color: 'var(--text-primary)' }}>
+                        <td className="font-mono tabular-nums" style={{ padding: '0.65rem 0.75rem', textAlign: 'right', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                           {formatRecordPrice(row.close, curr)}
                         </td>
-                        <td className="font-mono" style={{ padding: '0.6rem 0.75rem', textAlign: 'right', fontWeight: 800, color: pos ? 'var(--bull-green)' : 'var(--bear-red)' }}>
+                        <td className="font-mono tabular-nums" style={{ padding: '0.65rem 0.75rem', textAlign: 'right', fontWeight: 800, color: pos ? 'var(--bull-green)' : 'var(--bear-red)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                           {pos ? '+' : ''}
                           {row.annualReturnPercent.toFixed(2)}%
                         </td>
-                        <td style={{ padding: '0.6rem 0.75rem' }}>
+                        <td style={{ padding: '0.65rem 0.75rem', textAlign: 'center', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                           <span
                             style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              minWidth: '148px',
+                              height: '24px',
+                              padding: '0 0.65rem',
                               fontSize: '0.68rem',
                               fontWeight: 700,
-                              padding: '0.14rem 0.45rem',
-                              borderRadius: '4px',
+                              whiteSpace: 'nowrap',
+                              borderRadius: '999px',
                               background: pos ? 'rgba(16, 185, 129, 0.14)' : 'rgba(245, 158, 11, 0.14)',
-                              color: pos ? 'var(--bull-green)' : 'var(--warning-amber)'
+                              color: pos ? 'var(--bull-green)' : 'var(--warning-amber)',
+                              border: pos ? '1px solid rgba(16, 185, 129, 0.22)' : '1px solid rgba(245, 158, 11, 0.25)'
                             }}
                           >
                             {row.regime}
                           </span>
                         </td>
-                        <td style={{ padding: '0.6rem 0.75rem', color: 'var(--text-secondary)', fontSize: '0.75rem' }}>
+                        <td style={{ padding: '0.65rem 0.75rem', color: 'var(--text-secondary)', fontSize: '0.75rem', lineHeight: 1.4, minWidth: '280px', verticalAlign: 'middle' }}>
                           {row.highlight}
                         </td>
                       </tr>
