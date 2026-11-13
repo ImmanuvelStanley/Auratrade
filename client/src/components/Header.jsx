@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
-import { TrendingUp, Activity, Bell, Volume2, VolumeX, User, LogOut, Sun, Moon } from 'lucide-react';
+import { Bell, User, LogOut, Sun, Moon } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { soundFx } from '../utils/audio';
 import { NotificationCenter } from './NotificationCenter';
 import { BrandLogo } from './BrandLogo';
 
@@ -11,15 +10,9 @@ export const Header = React.memo(function Header({ onOpenAuthModal, portfolioCas
   const { notifications } = useSocket();
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
-  const [soundOn, setSoundOn] = useState(true);
   const [showNotifications, setShowNotifications] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.read).length;
-
-  const handleToggleSound = () => {
-    const next = soundFx.toggleSound();
-    setSoundOn(next);
-  };
 
   return (
     <header className="navbar">
@@ -28,7 +21,7 @@ export const Header = React.memo(function Header({ onOpenAuthModal, portfolioCas
 
       {/* Navigation Actions */}
       <div className="nav-actions">
-        {/* Quick Utility Control Icons (Theme, Audio, Notifications) */}
+        {/* Quick Utility Control Icons (Theme, Notifications) */}
         <div className="header-controls-cluster">
           {/* Theme Toggle Button */}
           <button
@@ -38,15 +31,6 @@ export const Header = React.memo(function Header({ onOpenAuthModal, portfolioCas
             aria-label="Toggle Color Theme"
           >
             {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
-          </button>
-
-          {/* Audio Toggle */}
-          <button
-            className="btn-icon"
-            title={soundOn ? 'Mute Alert Chimes' : 'Enable Alert Chimes'}
-            onClick={handleToggleSound}
-          >
-            {soundOn ? <Volume2 size={17} /> : <VolumeX size={17} />}
           </button>
 
           {/* Notification Bell */}
