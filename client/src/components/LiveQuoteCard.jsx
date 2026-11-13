@@ -359,9 +359,8 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                 className="btn btn-secondary live-quote-action-btn"
                 onClick={() => onOpenDeepRecord(quote.symbol, quote)}
                 title="View Complete Stock Record & Valuation from Starting (IPO) Till Now"
-                style={{ borderColor: 'rgba(6, 182, 212, 0.45)', color: 'var(--accent-cyan)' }}
               >
-                <History size={14} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
+                <History size={14} style={{ flexShrink: 0 }} />
                 <span>Full Record (Start → Now)</span>
               </button>
             )}

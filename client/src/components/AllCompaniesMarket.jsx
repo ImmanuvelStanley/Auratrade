@@ -586,7 +586,7 @@ const MarketTableRow = React.memo(
             {onOpenDeepRecord && (
               <button
                 className="btn btn-secondary"
-                style={{ padding: '0.3rem 0.55rem', fontSize: '0.73rem', borderColor: 'rgba(6, 182, 212, 0.4)', color: 'var(--accent-cyan)' }}
+                style={{ padding: '0.3rem 0.55rem', fontSize: '0.73rem' }}
                 title="View Complete Stock Record & Valuation from Starting (IPO) Till Now"
                 onClick={() => onOpenDeepRecord(c.symbol, c)}
               >
@@ -971,8 +971,6 @@ const MarketInvestorCard = React.memo(
                   fontSize: '0.74rem',
                   fontWeight: 700,
                   justifyContent: 'center',
-                  borderColor: 'rgba(6, 182, 212, 0.4)',
-                  color: 'var(--accent-cyan)',
                   whiteSpace: 'nowrap'
                 }}
                 title="View Complete Stock Record & Valuation from Starting (IPO) Till Now"

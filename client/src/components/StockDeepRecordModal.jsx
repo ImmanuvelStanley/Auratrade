@@ -564,8 +564,6 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '0.35rem',
-                    borderColor: 'rgba(6, 182, 212, 0.45)',
-                    color: 'var(--accent-cyan)',
                     whiteSpace: 'nowrap'
                   }}
                   onClick={() => onOpenWorkstationChart(identity.chartSymbol || identity.symbol)}
