@@ -725,11 +725,10 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
               )}
 
               {/* Dynamic Subtitle */}
-              {mode !== 'forgot' && (
+              {mode === 'signin' && (
                 <div style={{ textAlign: 'center', marginTop: '-0.2rem', marginBottom: '0.1rem' }}>
                   <p style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', margin: 0 }}>
-                    {mode === 'signin' && 'Sign in to access your trading workstation & sandbox portfolio'}
-                    {mode === 'register' && 'Open a zero-commission institutional sandbox account'}
+                    Sign in to access your trading workstation & sandbox portfolio
                   </p>
                 </div>
               )}
