@@ -323,13 +323,14 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                 color: 'var(--accent-cyan)',
                 background: 'rgba(6, 182, 212, 0.1)',
                 border: '1px solid rgba(6, 182, 212, 0.28)',
-                padding: '0 0.65rem',
+                padding: '0 0.7rem',
                 borderRadius: '6px',
                 display: 'inline-flex',
-                alignItems: 'center'
+                alignItems: 'center',
+                whiteSpace: 'nowrap'
               }}
             >
-              Mkt Cap: {identity.marketCapFormatted}
+              Market Capitalization: {identity.marketCapFormatted}
             </span>
 
             {isModal && onClose && (
