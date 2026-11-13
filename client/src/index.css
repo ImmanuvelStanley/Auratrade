@@ -5117,6 +5117,10 @@ select option:checked {
     padding: 0.55rem !important;
   }
 
+  .record-header-banner {
+    padding: 0.95rem 0.85rem 1.05rem !important;
+  }
+
   .record-dossier-body {
     padding: 0.85rem !important;
     gap: 0.95rem !important;
@@ -5126,6 +5130,17 @@ select option:checked {
   .record-milestones-card {
     padding: 0.85rem !important;
   }
+}
+
+.record-close-btn {
+  transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+
+.record-close-btn:hover {
+  background: rgba(239, 68, 68, 0.25) !important;
+  border-color: rgba(239, 68, 68, 0.78) !important;
+  color: #fca5a5 !important;
+  transform: translateY(-1px);
 }
 
 .record-horizon-grid {

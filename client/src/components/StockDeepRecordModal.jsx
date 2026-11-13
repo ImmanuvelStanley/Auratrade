@@ -213,6 +213,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
     >
       {/* Top Executive Header Banner (Clean 2-Tier Architecture) */}
       <div
+        className="record-header-banner"
         style={{
           padding: '1.15rem 1.5rem 1.25rem',
           background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(16, 185, 129, 0.05) 50%, rgba(15, 23, 42, 0.94) 100%)',
@@ -222,108 +223,123 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
           gap: '1rem'
         }}
       >
-        {/* Tier 1: Aligned Metadata Utility Bar + Close Button */}
+        {/* Tier 1: Aligned Metadata Utility Bar + Pinned Red Close Button */}
         <div
+          className="record-header-top-bar"
           style={{
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             justifyContent: 'space-between',
-            flexWrap: 'wrap',
             gap: '0.65rem',
             paddingBottom: '0.75rem',
             borderBottom: '1px solid rgba(255, 255, 255, 0.06)'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <span
-              style={{
-                height: '26px',
-                fontSize: '0.68rem',
-                fontWeight: 800,
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                padding: '0 0.6rem',
-                borderRadius: '5px',
-                background: 'rgba(6, 182, 212, 0.16)',
-                color: 'var(--accent-cyan)',
-                border: '1px solid rgba(6, 182, 212, 0.35)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.35rem'
-              }}
-            >
-              <History size={12} />
-              <span>Complete Record • {identity.ipoYear} → 2026</span>
-            </span>
+          <div
+            className="record-header-pills-wrap"
+            style={{
+              flex: '1 1 auto',
+              minWidth: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '0.45rem'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.42rem', flexWrap: 'wrap', minWidth: 0 }}>
+              <span
+                style={{
+                  height: '28px',
+                  fontSize: '0.68rem',
+                  fontWeight: 800,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  padding: '0 0.62rem',
+                  borderRadius: '6px',
+                  background: 'rgba(6, 182, 212, 0.16)',
+                  color: 'var(--accent-cyan)',
+                  border: '1px solid rgba(6, 182, 212, 0.35)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <History size={12} />
+                <span>Complete Record • {identity.ipoYear} → 2026</span>
+              </span>
 
-            <span
-              style={{
-                height: '26px',
-                padding: '0 0.55rem',
-                borderRadius: '5px',
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                display: 'inline-flex',
-                alignItems: 'center'
-              }}
-            >
-              <CountryFlag
-                country={identity.country}
-                countryCode={identity.countryCode}
-                symbol={identity.symbol}
-                countryFlag={identity.countryFlag}
-                size="xs"
-                showName={true}
-              />
-            </span>
+              <span
+                style={{
+                  height: '28px',
+                  padding: '0 0.6rem',
+                  borderRadius: '6px',
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                <CountryFlag
+                  country={identity.country}
+                  countryCode={identity.countryCode}
+                  symbol={identity.symbol}
+                  countryFlag={identity.countryFlag}
+                  size="xs"
+                  showName={true}
+                />
+              </span>
 
-            <span
-              className="font-mono"
-              style={{
-                height: '26px',
-                fontSize: '0.71rem',
-                fontWeight: 700,
-                padding: '0 0.55rem',
-                borderRadius: '5px',
-                background: 'rgba(255, 255, 255, 0.05)',
-                color: 'var(--text-secondary)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                display: 'inline-flex',
-                alignItems: 'center'
-              }}
-            >
-              {identity.exchange} • {identity.currency}
-            </span>
+              <span
+                className="font-mono"
+                style={{
+                  height: '28px',
+                  fontSize: '0.71rem',
+                  fontWeight: 700,
+                  padding: '0 0.6rem',
+                  borderRadius: '6px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  color: 'var(--text-secondary)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {identity.exchange} • {identity.currency}
+              </span>
 
-            <span
-              style={{
-                height: '26px',
-                fontSize: '0.71rem',
-                fontWeight: 700,
-                padding: '0 0.55rem',
-                borderRadius: '5px',
-                background: 'rgba(16, 185, 129, 0.12)',
-                color: 'var(--bull-green)',
-                border: '1px solid rgba(16, 185, 129, 0.28)',
-                display: 'inline-flex',
-                alignItems: 'center'
-              }}
-            >
-              {identity.sector}
-            </span>
-          </div>
+              <span
+                style={{
+                  height: '28px',
+                  fontSize: '0.71rem',
+                  fontWeight: 700,
+                  padding: '0 0.6rem',
+                  borderRadius: '6px',
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  color: 'var(--bull-green)',
+                  border: '1px solid rgba(16, 185, 129, 0.28)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {identity.sector}
+              </span>
+            </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
             <span
               className="font-mono"
               style={{
                 height: '28px',
-                fontSize: '0.73rem',
+                fontSize: '0.72rem',
                 fontWeight: 700,
                 color: 'var(--accent-cyan)',
                 background: 'rgba(6, 182, 212, 0.1)',
                 border: '1px solid rgba(6, 182, 212, 0.28)',
-                padding: '0 0.7rem',
+                padding: '0 0.68rem',
                 borderRadius: '6px',
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -332,29 +348,32 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
             >
               Market Capitalization: {identity.marketCapFormatted}
             </span>
-
-            {isModal && onClose && (
-              <button
-                type="button"
-                onClick={onClose}
-                title="Close Record Dossier (Esc)"
-                style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '7px',
-                  background: 'rgba(255, 255, 255, 0.06)',
-                  border: '1px solid var(--border-subtle)',
-                  color: 'var(--text-secondary)',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer'
-                }}
-              >
-                <X size={17} />
-              </button>
-            )}
           </div>
+
+          {isModal && onClose && (
+            <button
+              type="button"
+              className="record-close-btn"
+              onClick={onClose}
+              title="Close Record Dossier (Esc)"
+              aria-label="Close Record Dossier"
+              style={{
+                flexShrink: 0,
+                width: '30px',
+                height: '30px',
+                borderRadius: '7px',
+                background: 'rgba(239, 68, 68, 0.14)',
+                border: '1px solid rgba(239, 68, 68, 0.45)',
+                color: '#f87171',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer'
+              }}
+            >
+              <X size={16} strokeWidth={2.4} />
+            </button>
+          )}
         </div>
 
         {/* Tier 2: Main 2-Column Split (Identity & Structured Genesis Grid | Live Quote & Action Deck) */}
