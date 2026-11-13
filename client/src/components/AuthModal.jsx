@@ -1015,7 +1015,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                       />
                     </div>
                     <p style={{ fontSize: '0.71rem', color: '#64748b', margin: '4px 0 0 2px' }}>
-                      A single-use 6-digit verification code will be dispatched to this email address.
+                      A single-use verification code will be dispatched to this email address.
                     </p>
                   </div>
 
@@ -1043,7 +1043,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                       </>
                     ) : (
                       <>
-                        <span>Send 6-Digit Reset Code</span>
+                        <span>Send Reset Code</span>
                         <ArrowRight size={14} />
                       </>
                     )}
