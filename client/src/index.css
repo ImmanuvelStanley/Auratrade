@@ -5112,7 +5112,34 @@ select option:checked {
     padding: 0.38rem 0.58rem !important;
     font-size: 0.74rem !important;
   }
+
+  .record-modal-overlay {
+    padding: 0.55rem !important;
+  }
+
+  .record-dossier-body {
+    padding: 0.85rem !important;
+    gap: 0.95rem !important;
+  }
+
+  .record-trajectory-card,
+  .record-milestones-card {
+    padding: 0.85rem !important;
+  }
 }
+
+.record-horizon-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .record-horizon-grid {
+    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+  }
+}
+
 @media (max-width: 390px) {
   .bullion-currency-pills-wrap {
     grid-template-columns: repeat(3, minmax(0, 1fr));

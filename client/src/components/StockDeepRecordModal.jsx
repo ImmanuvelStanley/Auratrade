@@ -415,7 +415,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 190px), 1fr))',
                 gap: '0.65rem'
               }}
             >
@@ -472,8 +472,9 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
           {/* Right Column: Clean Live Quote Box + Quick Action Deck */}
           <div
             style={{
-              flex: '0 1 390px',
-              minWidth: '300px',
+              flex: '1 1 320px',
+              minWidth: 'min(100%, 280px)',
+              maxWidth: '100%',
               padding: '0.9rem 1.05rem',
               borderRadius: '12px',
               background: 'rgba(9, 14, 28, 0.72)',
@@ -481,7 +482,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              gap: '0.75rem'
+              gap: '0.75rem',
+              boxSizing: 'border-box'
             }}
           >
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
@@ -718,12 +720,12 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
       </div>
 
       {/* Main Dossier Body */}
-      <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.35rem' }}>
+      <div className="record-dossier-body" style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.35rem', minWidth: 0, boxSizing: 'border-box' }}>
         {/* 6-Card Genesis-to-Present Key Metrics Strip (Uniform Single-Row Grid on Desktop) */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))',
             gap: '0.75rem',
             alignItems: 'stretch'
           }}
@@ -890,12 +892,14 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))',
-              gap: '1.15rem'
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))',
+              gap: '1.15rem',
+              minWidth: 0
             }}
           >
             {/* Interactive All-Time Trajectory SVG Chart */}
             <div
+              className="record-trajectory-card"
               style={{
                 padding: '1.1rem 1.25rem',
                 borderRadius: '12px',
@@ -903,13 +907,16 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                 border: '1px solid var(--border-subtle)',
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'space-between'
+                justifyContent: 'space-between',
+                minWidth: 0,
+                maxWidth: '100%',
+                boxSizing: 'border-box'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem', minWidth: 0 }}>
+                <div style={{ minWidth: 0, maxWidth: '100%' }}>
                   <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                    <TrendingUp size={16} style={{ color: 'var(--bull-green)' }} />
+                    <TrendingUp size={16} style={{ color: 'var(--bull-green)', flexShrink: 0 }} />
                     <span>All-Time Price Trajectory ({identity.ipoYear} Starting → 2026 Live)</span>
                   </div>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
@@ -921,25 +928,28 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                   <div
                     className="font-mono"
                     style={{
-                      padding: '0.38rem 0.75rem',
+                      padding: '0.4rem 0.72rem',
                       borderRadius: '8px',
                       background: hoveredCursor ? 'rgba(6, 182, 212, 0.18)' : 'rgba(6, 182, 212, 0.12)',
                       border: hoveredCursor ? '1px solid rgba(56, 189, 248, 0.6)' : '1px solid rgba(6, 182, 212, 0.35)',
-                      fontSize: '0.75rem',
-                      display: 'flex',
+                      fontSize: '0.74rem',
+                      display: 'inline-flex',
                       alignItems: 'center',
-                      gap: '0.45rem',
-                      flexWrap: 'wrap'
+                      gap: '0.35rem 0.55rem',
+                      flexWrap: 'wrap',
+                      maxWidth: '100%',
+                      boxSizing: 'border-box'
                     }}
                   >
-                    <span style={{ color: 'var(--text-secondary)' }}>{activeDisplayPoint.periodLabel}:</span>
-                    <strong style={{ color: 'var(--text-primary)' }}>{formatRecordPrice(activeDisplayPoint.price, curr)}</strong>
-                    <span style={{ color: 'var(--bull-green)' }}>
-                      ({activeDisplayPoint.gainFromStartPercent >= 0 ? '+' : ''}
-                      {Math.round(activeDisplayPoint.gainFromStartPercent).toLocaleString()}%)
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>{activeDisplayPoint.periodLabel}:</span>
+                      <strong style={{ color: 'var(--text-primary)' }}>{formatRecordPrice(activeDisplayPoint.price, curr)}</strong>
+                      <span style={{ color: 'var(--bull-green)' }}>
+                        ({activeDisplayPoint.gainFromStartPercent >= 0 ? '+' : ''}
+                        {Math.round(activeDisplayPoint.gainFromStartPercent).toLocaleString()}%)
+                      </span>
                     </span>
-                    <span style={{ color: 'var(--text-muted)' }}>•</span>
-                    <span style={{ color: 'var(--accent-cyan)' }}>
+                    <span style={{ color: 'var(--accent-cyan)', whiteSpace: 'nowrap' }}>
                       Cap: {activeDisplayPoint.marketCapAtPoint}
                     </span>
                   </div>
@@ -1160,10 +1170,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
 
               {/* Multi-Horizon Return Bar */}
               <div
+                className="record-horizon-grid"
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(5, 1fr)',
-                  gap: '0.5rem',
                   marginTop: '0.65rem',
                   paddingTop: '0.65rem',
                   borderTop: '1px solid rgba(255, 255, 255, 0.06)'
@@ -1181,11 +1189,15 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                     className="stock-detail-float-card"
                     {...floatingCardEvents}
                     style={{
-                      padding: '0.45rem 0.55rem',
+                      padding: '0.5rem 0.45rem',
                       borderRadius: '6px',
                       background: 'rgba(255, 255, 255, 0.03)',
                       border: '1px solid rgba(255, 255, 255, 0.05)',
-                      textAlign: 'center'
+                      textAlign: 'center',
+                      minWidth: 0,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between'
                     }}
                   >
                     <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 600 }}>{h.label}</div>
@@ -1208,6 +1220,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
 
             {/* 7-Stage Historical Milestone Timeline ("From Starting Till Now") */}
             <div
+              className="record-milestones-card"
               style={{
                 padding: '1.1rem 1.25rem',
                 borderRadius: '12px',
@@ -1215,7 +1228,10 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                 border: '1px solid var(--border-subtle)',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '0.65rem'
+                gap: '0.65rem',
+                minWidth: 0,
+                maxWidth: '100%',
+                boxSizing: 'border-box'
               }}
             >
               <div>
@@ -1354,7 +1370,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 210px), 1fr))',
                 gap: '0.85rem',
                 alignItems: 'stretch'
               }}
@@ -1568,7 +1584,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(245px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 230px), 1fr))',
                 gap: '0.75rem'
               }}
             >
@@ -1753,7 +1769,7 @@ export const StockDeepRecordModal = React.memo(function StockDeepRecordModal({
 
   return (
     <div
-      className="modal-overlay"
+      className="modal-overlay record-modal-overlay"
       onClick={onClose}
       style={{
         position: 'fixed',
