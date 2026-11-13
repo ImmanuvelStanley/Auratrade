@@ -684,128 +684,174 @@ const MarketInvestorCard = React.memo(
     const dayRangeDiff = dayHigh - dayLow || 1;
     const dayPosPercent = Math.min(100, Math.max(0, ((price - dayLow) / dayRangeDiff) * 100));
     const prevClose = Number(c.previousClose) || (price ? parseFloat((price - change).toFixed(2)) : 0);
+    const currSym = c.currency === 'INR' ? '₹' : c.currency === 'EUR' ? '€' : c.currency === 'GBP' ? '£' : c.currency === 'JPY' ? '¥' : '$';
+    const fmtNum = (val) => Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const fmtCompact = (val) => {
+      const n = Number(val);
+      if (!Number.isFinite(n)) return '0.00';
+      return Math.abs(n) >= 1000 ? Math.round(n).toLocaleString('en-US') : n.toFixed(2);
+    };
     const formatVolume = (v) => { if (v >= 1e9) return (v / 1e9).toFixed(1) + 'B'; if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M'; if (v >= 1e3) return (v / 1e3).toFixed(1) + 'K'; return String(v); };
 
     return (
-      <div className={`glass-card investor-card ${isCompared ? 'compared' : ''}`} onClick={() => onSelectSymbol(c.symbol)}>
-        <div className="glass-card-body" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
-          {/* Top Bar: Rank, Header & Compare Checkbox */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                <div>
-                  <div style={{ fontWeight: 800, fontSize: '1.1rem', fontFamily: 'var(--font-brand)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                    <CountryFlag country={c.country} countryCode={c.countryCode} symbol={c.symbol} size="sm" showCode={true} />
-                    <span>{c.symbol}</span>
-                    {c.tier && (
-                      <span
-                        style={{
-                          fontSize: '0.58rem',
-                          color: c.tier?.includes('Mega') ? '#38bdf8' : c.tier?.includes('Large') ? '#a78bfa' : 'var(--text-muted)',
-                          fontWeight: 600,
-                          padding: '0.06rem 0.25rem',
-                          background: c.tier?.includes('Mega') ? 'rgba(56, 189, 248, 0.1)' : c.tier?.includes('Large') ? 'rgba(167, 139, 250, 0.1)' : 'rgba(255,255,255,0.04)',
-                          borderRadius: '3px',
-                          border: `1px solid ${c.tier?.includes('Mega') ? 'rgba(56, 189, 248, 0.2)' : c.tier?.includes('Large') ? 'rgba(167, 139, 250, 0.2)' : 'rgba(255,255,255,0.08)'}`
-                        }}
-                      >
-                        {c.tier?.includes('Mega') ? 'MEGA' : c.tier?.includes('Large') ? 'LARGE' : c.tier?.includes('Growth') ? 'GROWTH' : c.tier?.includes('Index') ? 'INDEX' : ''}
-                      </span>
-                    )}
-                  </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '170px' }}>
-                    {c.name}
-                  </div>
-                </div>
+      <div
+        className={`glass-card investor-card ${isCompared ? 'compared' : ''}`}
+        style={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+        onClick={() => onSelectSymbol(c.symbol)}
+      >
+        <div
+          className="glass-card-body"
+          style={{
+            padding: '1.15rem',
+            display: 'flex',
+            flexDirection: 'column',
+            flex: 1,
+            height: '100%',
+            boxSizing: 'border-box',
+            gap: '0.75rem'
+          }}
+        >
+          {/* 1. Top Header Bar (Fixed Same Height Across All Cards) */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem', minHeight: '46px' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 800, fontSize: '1.04rem', fontFamily: 'var(--font-brand)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem', whiteSpace: 'nowrap', overflow: 'hidden' }}>
+                <CountryFlag country={c.country} countryCode={c.countryCode} symbol={c.symbol} size="sm" showCode={true} />
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.symbol}</span>
+                {c.tier && (
+                  <span
+                    style={{
+                      fontSize: '0.56rem',
+                      color: c.tier?.includes('Mega') ? '#38bdf8' : c.tier?.includes('Large') ? '#a78bfa' : 'var(--text-muted)',
+                      fontWeight: 700,
+                      padding: '0.06rem 0.25rem',
+                      background: c.tier?.includes('Mega') ? 'rgba(56, 189, 248, 0.1)' : c.tier?.includes('Large') ? 'rgba(167, 139, 250, 0.1)' : 'rgba(255,255,255,0.04)',
+                      borderRadius: '3px',
+                      border: `1px solid ${c.tier?.includes('Mega') ? 'rgba(56, 189, 248, 0.2)' : c.tier?.includes('Large') ? 'rgba(167, 139, 250, 0.2)' : 'rgba(255,255,255,0.08)'}`,
+                      flexShrink: 0
+                    }}
+                  >
+                    {c.tier?.includes('Mega') ? 'MEGA' : c.tier?.includes('Large') ? 'LARGE' : c.tier?.includes('Growth') ? 'GROWTH' : c.tier?.includes('Index') ? 'INDEX' : ''}
+                  </span>
+                )}
               </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.35rem' }} onClick={e => e.stopPropagation()}>
-                <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.7rem', color: 'var(--text-muted)', cursor: 'pointer' }}>
-                  <input
-                    type="checkbox"
-                    checked={isCompared}
-                    onChange={() => onToggleCompare(c.symbol)}
-                    style={{ cursor: 'pointer', accentColor: 'var(--accent-cyan)' }}
-                  />
-                  <span>Compare</span>
-                </label>
-                <span
-                  className="badge-pill"
-                  style={{
-                    background: c.rating === 'STRONG BUY' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(6, 182, 212, 0.15)',
-                    color: c.rating === 'STRONG BUY' ? 'var(--bull-green)' : 'var(--accent-cyan)',
-                    border: `1px solid ${c.rating === 'STRONG BUY' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(6, 182, 212, 0.3)'}`,
-                    fontSize: '0.68rem',
-                    fontWeight: 700
-                  }}
-                >
-                  {c.rating || 'BUY'}
-                </span>
+              <div
+                title={c.name}
+                style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '0.18rem', lineHeight: 1.3 }}
+              >
+                {c.name}
               </div>
             </div>
 
-            {/* Price and 24h Change */}
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
-              <div className="font-mono" style={{ fontSize: '1.45rem', fontWeight: 800 }}>
-                <span className={`tick-text ${c.lastTickDirection || 'neutral'}`}>
-                  ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-                <span style={{ fontSize: '0.68rem', color: '#10b981', marginLeft: '0.4rem', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
-                  <Zap size={9} fill="currentColor" /> LIVE
-                </span>
-              </div>
-              <div className={`quote-change-pill ${isPos ? 'bull' : 'bear'}`} style={{ fontSize: '0.8rem', padding: '0.2rem 0.55rem' }}>
-                {isPos ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                {isPos ? '+' : ''}
-                {changePercent.toFixed(2)}%
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '0.3rem', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+              <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.68rem', color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                <input
+                  type="checkbox"
+                  checked={isCompared}
+                  onChange={() => onToggleCompare(c.symbol)}
+                  style={{ cursor: 'pointer', accentColor: 'var(--accent-cyan)' }}
+                />
+                <span>Compare</span>
+              </label>
+              <span
+                className="badge-pill"
+                style={{
+                  background: c.rating === 'STRONG BUY' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(6, 182, 212, 0.15)',
+                  color: c.rating === 'STRONG BUY' ? 'var(--bull-green)' : 'var(--accent-cyan)',
+                  border: `1px solid ${c.rating === 'STRONG BUY' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(6, 182, 212, 0.3)'}`,
+                  fontSize: '0.64rem',
+                  fontWeight: 700,
+                  whiteSpace: 'nowrap',
+                  padding: '0.12rem 0.42rem'
+                }}
+              >
+                {c.rating || 'BUY'}
+              </span>
+            </div>
+          </div>
+
+          {/* 2. Price & 24h Change Row (Single Non-Wrapping Baseline Across Every Card) */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.45rem', minHeight: '34px', flexWrap: 'nowrap' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem', minWidth: 0, flexWrap: 'nowrap' }}>
+              <span
+                className={`font-mono tick-text ${c.lastTickDirection || 'neutral'}`}
+                style={{ fontSize: '1.26rem', fontWeight: 800, whiteSpace: 'nowrap' }}
+              >
+                {currSym}{fmtNum(price)}
+              </span>
+              <span style={{ fontSize: '0.62rem', color: '#10b981', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                <Zap size={9} fill="currentColor" /> LIVE
+              </span>
+            </div>
+            <div
+              className={`quote-change-pill ${isPos ? 'bull' : 'bear'}`}
+              style={{ fontSize: '0.76rem', padding: '0.18rem 0.5rem', whiteSpace: 'nowrap', flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}
+            >
+              {isPos ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+              <span>{isPos ? '+' : ''}{changePercent.toFixed(2)}%</span>
+            </div>
+          </div>
+
+          {/* 3. Institutional Key Metrics Grid (Exact Uniform 3x2 Height, Zero Line-Wrap Drift) */}
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+              gap: '0.55rem 0.45rem',
+              background: 'rgba(255, 255, 255, 0.025)',
+              padding: '0.65rem 0.72rem',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-subtle)',
+              minHeight: '94px',
+              alignContent: 'space-between'
+            }}
+          >
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Mkt Cap</div>
+              <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--accent-cyan)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {c.marketCapFormatted}
               </div>
             </div>
-
-            {/* Institutional Key Metrics Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem', background: 'rgba(255, 255, 255, 0.02)', padding: '0.65rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', marginBottom: '0.85rem' }}>
-              <div>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Market Cap</div>
-                <div className="font-mono" style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>
-                  {c.marketCapFormatted}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Volume</div>
-                <div className="font-mono" style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                  {formatVolume(volume)}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Prev Close</div>
-                <div className="font-mono" style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                  ${prevClose.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>P/E Ratio</div>
-                <div className="font-mono" style={{ fontSize: '0.85rem', fontWeight: 600 }}>
-                  {c.peRatio > 0 ? `${c.peRatio}x` : 'N/A'}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Dividend Yield</div>
-                <div className="font-mono" style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--bull-green)' }}>
-                  {c.dividendYield || '0.0%'}
-                </div>
-              </div>
-              <div>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Risk Profile</div>
-                <div style={{ fontSize: '0.78rem', fontWeight: 600, color: c.riskLevel?.includes('Low') ? 'var(--bull-green)' : 'var(--warning-amber)' }}>
-                  {c.riskLevel}
-                </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Volume</div>
+              <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                {formatVolume(volume)}
               </div>
             </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Prev Close</div>
+              <div className="font-mono" style={{ fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={`${currSym}${fmtNum(prevClose)}`}>
+                {currSym}{fmtNum(prevClose)}
+              </div>
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>P/E Ratio</div>
+              <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                {c.peRatio > 0 ? `${c.peRatio}x` : 'N/A'}
+              </div>
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Div Yield</div>
+              <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--bull-green)', whiteSpace: 'nowrap' }}>
+                {c.dividendYield || '0.0%'}
+              </div>
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Risk Profile</div>
+              <div
+                title={c.riskLevel}
+                style={{ fontSize: '0.76rem', fontWeight: 600, color: c.riskLevel?.includes('Low') ? 'var(--bull-green)' : 'var(--warning-amber)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
+              >
+                {c.riskLevel}
+              </div>
+            </div>
+          </div>
 
-            {/* Today's Day Range */}
-            <div style={{ marginBottom: '0.6rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
-                <span>Day Low: ${dayLow}</span>
-                <span>Day High: ${dayHigh}</span>
+          {/* 4. Day & 52-Week Range Bars (Identical Compact Spacing) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', minHeight: '56px', justifyContent: 'center' }}>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', color: 'var(--text-muted)', marginBottom: '0.2rem', whiteSpace: 'nowrap' }}>
+                <span>Day Low: <span className="font-mono">{currSym}{fmtCompact(dayLow)}</span></span>
+                <span>Day High: <span className="font-mono">{currSym}{fmtCompact(dayHigh)}</span></span>
               </div>
               <div style={{ width: '100%', height: '4px', background: 'var(--border-subtle)', borderRadius: '2px', position: 'relative' }}>
                 <div
@@ -822,11 +868,10 @@ const MarketInvestorCard = React.memo(
               </div>
             </div>
 
-            {/* 52-Week Range Progress */}
-            <div style={{ marginBottom: '0.85rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
-                <span>52W Low: ${low52}</span>
-                <span>52W High: ${high52}</span>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.67rem', color: 'var(--text-muted)', marginBottom: '0.2rem', whiteSpace: 'nowrap' }}>
+                <span>52W Low: <span className="font-mono">{currSym}{fmtCompact(low52)}</span></span>
+                <span>52W High: <span className="font-mono">{currSym}{fmtCompact(high52)}</span></span>
               </div>
               <div style={{ width: '100%', height: '4px', background: 'var(--border-subtle)', borderRadius: '2px', position: 'relative' }}>
                 <div
@@ -842,68 +887,144 @@ const MarketInvestorCard = React.memo(
                 />
               </div>
             </div>
+          </div>
 
-            {/* AI Expected 30-Day Growth Card */}
-            <div style={{ background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: 'var(--radius-md)', padding: '0.55rem 0.75rem', marginBottom: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <Sparkles size={14} style={{ color: 'var(--bull-green)' }} />
-                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--bull-green)' }}>30D AI Target:</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
-                <span className="font-mono" style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '0.88rem' }}>
-                  ${forecastTarget.toFixed(2)}
-                </span>
-                <span style={{ fontSize: '0.72rem', color: 'var(--bull-green)', fontWeight: 700 }}>
-                  +{forecastGain}%
-                </span>
-              </div>
+          {/* 5. AI Expected 30-Day Growth Card (Fixed Uniform 38px Height) */}
+          <div
+            style={{
+              height: '38px',
+              background: 'rgba(16, 185, 129, 0.08)',
+              border: '1px solid rgba(16, 185, 129, 0.25)',
+              borderRadius: 'var(--radius-md)',
+              padding: '0 0.72rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '0.4rem',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+              <Sparkles size={13} style={{ color: 'var(--bull-green)', flexShrink: 0 }} />
+              <span style={{ fontSize: '0.73rem', fontWeight: 700, color: 'var(--bull-green)' }}>30D AI Target:</span>
             </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.35rem' }}>
+              <span className="font-mono" style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '0.84rem' }}>
+                {currSym}{fmtNum(forecastTarget)}
+              </span>
+              <span style={{ fontSize: '0.7rem', color: 'var(--bull-green)', fontWeight: 700 }}>
+                +{forecastGain}%
+              </span>
+            </div>
+          </div>
 
-            {/* Key Investment Thesis */}
-            <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.45, marginBottom: '1rem', background: 'rgba(0,0,0,0.15)', padding: '0.5rem 0.65rem', borderRadius: 'var(--radius-sm)' }}>
+          {/* 6. Key Investment Thesis (Uniform 3-Line Box Across All Cards) */}
+          <div
+            title={c.investorAppeal}
+            style={{
+              height: '74px',
+              boxSizing: 'border-box',
+              fontSize: '0.75rem',
+              color: 'var(--text-secondary)',
+              lineHeight: 1.45,
+              background: 'rgba(0,0,0,0.16)',
+              padding: '0.52rem 0.68rem',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid rgba(255, 255, 255, 0.04)',
+              overflow: 'hidden'
+            }}
+          >
+            <div
+              style={{
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden'
+              }}
+            >
               <strong style={{ color: 'var(--text-primary)' }}>Investment Case:</strong> {c.investorAppeal}
             </div>
           </div>
 
-          {/* Card Action Buttons: Record, Chart, Trade, Alert, Bookmark */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', paddingTop: '0.65rem', borderTop: '1px solid var(--border-subtle)' }} onClick={(e) => e.stopPropagation()}>
+          {/* 7. Bottom Card Action Toolbar (Pinned Flush Bottom, Single Straight Row) */}
+          <div
+            style={{
+              marginTop: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.38rem',
+              paddingTop: '0.65rem',
+              borderTop: '1px solid var(--border-subtle)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
             {onOpenDeepRecord && (
               <button
                 className="btn btn-secondary"
-                style={{ flex: 1, padding: '0.45rem', fontSize: '0.76rem', justifyContent: 'center', borderColor: 'rgba(6, 182, 212, 0.4)', color: 'var(--accent-cyan)' }}
+                style={{
+                  flex: 1,
+                  height: '34px',
+                  padding: '0 0.4rem',
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  justifyContent: 'center',
+                  borderColor: 'rgba(6, 182, 212, 0.4)',
+                  color: 'var(--accent-cyan)',
+                  whiteSpace: 'nowrap'
+                }}
                 title="View Complete Stock Record & Valuation from Starting (IPO) Till Now"
                 onClick={() => onOpenDeepRecord(c.symbol, c)}
               >
-                Full Record
+                Record
               </button>
             )}
             <button
               className="btn btn-secondary"
-              style={{ flex: 1, padding: '0.45rem', fontSize: '0.8rem', justifyContent: 'center' }}
+              style={{
+                flex: 1,
+                height: '34px',
+                padding: '0 0.4rem',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                justifyContent: 'center',
+                whiteSpace: 'nowrap'
+              }}
+              title="Open Workstation Chart"
               onClick={() => onSelectSymbol(c.symbol)}
             >
-              Analyze Chart
+              Chart
             </button>
             <button
               className="btn btn-primary"
-              style={{ flex: 1, padding: '0.45rem', fontSize: '0.8rem', justifyContent: 'center', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none' }}
+              style={{
+                flex: 1,
+                height: '34px',
+                padding: '0 0.4rem',
+                fontSize: '0.74rem',
+                fontWeight: 700,
+                justifyContent: 'center',
+                background: 'linear-gradient(135deg, #10b981, #059669)',
+                border: 'none',
+                whiteSpace: 'nowrap'
+              }}
               onClick={() => onOpenTradeModal(c.symbol)}
             >
               Trade
             </button>
             <button
               className="btn-icon"
-              style={{ width: '34px', height: '34px', color: 'var(--text-muted)' }}
+              style={{ width: '34px', height: '34px', flexShrink: 0, color: 'var(--text-muted)' }}
               title="Set Price Alert"
               onClick={() => onOpenAlertModal && onOpenAlertModal(c.symbol)}
             >
-              <Bell size={15} />
+              <Bell size={14} />
             </button>
             <button
               className={`btn-icon ${isInWatchlist ? 'active' : ''}`}
               style={{
                 width: '34px',
                 height: '34px',
+                flexShrink: 0,
                 color: isInWatchlist ? 'var(--accent-cyan)' : 'var(--text-muted)'
               }}
               title={isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
@@ -915,7 +1036,7 @@ const MarketInvestorCard = React.memo(
                 }
               }}
             >
-              <Bookmark size={15} fill={isInWatchlist ? 'currentColor' : 'none'} />
+              <Bookmark size={14} fill={isInWatchlist ? 'currentColor' : 'none'} />
             </button>
           </div>
         </div>
