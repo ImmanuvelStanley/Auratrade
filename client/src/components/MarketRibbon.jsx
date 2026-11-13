@@ -38,8 +38,8 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
     { symbol: 'NIKKEI 225', name: 'Nikkei Tokyo', region: 'Asia', countryCode: 'JP', countryFlag: '🇯🇵', price: 65142.78, changePercent: -0.19, currency: 'JPY' },
     { symbol: 'HANG SENG', name: 'Hang Seng HK', region: 'Asia', countryCode: 'HK', countryFlag: '🇭🇰', price: 17450.60, changePercent: +0.35, currency: 'HKD' },
     { symbol: 'ASX 200', name: 'ASX Australia', region: 'Asia-Pacific', countryCode: 'AU', countryFlag: '🇦🇺', price: 8560.40, changePercent: -0.29, currency: 'AUD' },
-    { symbol: 'BTC/USD', name: 'Bitcoin', region: 'Crypto', countryCode: 'CRYPTO', countryFlag: '🌐', price: 64250.00, changePercent: +2.14, currency: 'USD' },
-    { symbol: 'USD/INR', name: 'USD/INR Forex', region: 'Forex', countryCode: 'FX', countryFlag: '💱', price: 95.82, changePercent: -0.14, currency: 'INR' }
+    { symbol: 'BTC/USD', name: 'Bitcoin', region: 'Crypto', countryCode: 'CRYPTO', countryFlag: 'CRYPTO', price: 64250.00, changePercent: +2.14, currency: 'USD' },
+    { symbol: 'USD/INR', name: 'USD/INR Forex', region: 'Forex', countryCode: 'FX', countryFlag: 'FX', price: 95.82, changePercent: -0.14, currency: 'INR' }
   ]);
   const { quotes } = useSocket();
   const prevPricesRef = useRef({});

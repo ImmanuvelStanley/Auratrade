@@ -566,7 +566,7 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
               style={{ fontSize: '0.8rem', padding: '0.4rem 0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
               onClick={() => handleRegionChange('commodities')}
             >
-              <span>🪙</span>
+              <span>Commodity</span>
               <span>Commodities & Metals</span>
             </button>
             <button

@@ -27,7 +27,7 @@ export function QuickTradeWidget({ symbol, portfolio, onOpenTradeModal, onTradeC
     const orderCost = sharesCount * price;
 
     if (orderCost > safeTradingPower) {
-      setQuickStatus(`⚠️ Safe Zone Alert: Order of $${orderCost.toFixed(2)} leaves $${(userCash - orderCost).toFixed(2)}, breaching your safe reserve ($${minBalance.toFixed(2)}).`);
+      setQuickStatus(`ALERT: Safe Zone Warning — Order of $${orderCost.toFixed(2)} leaves $${(userCash - orderCost).toFixed(2)}, breaching your safe reserve ($${minBalance.toFixed(2)}).`);
       setLoading(false);
       return;
     }

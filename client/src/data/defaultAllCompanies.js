@@ -768,7 +768,7 @@ export const defaultAllCompanies = {
       "aliases": [],
       "region": "etf",
       "country": "Global / US",
-      "countryFlag": "🌐",
+      "countryFlag": "INTL",
       "exchange": "NYSE Arca",
       "currency": "USD",
       "sector": "Index ETF",

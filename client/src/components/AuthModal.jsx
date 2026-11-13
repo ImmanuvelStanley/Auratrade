@@ -1101,7 +1101,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                 </div>
 
                 <span style={{ fontSize: '0.73rem', color: '#94a3b8', lineHeight: 1.4 }}>
-                  ✉️ Please check your email inbox (and spam or junk folder) for your 6-digit verification code.
+                  Please check your email inbox (and spam or junk folder) for your 6-digit verification code.
                 </span>
               </div>
 

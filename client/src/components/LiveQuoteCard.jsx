@@ -314,7 +314,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                     whiteSpace: 'nowrap'
                   }}
                 >
-                  <span role="img" aria-label="calendar">📅</span>
+                  
                   <span>{dateSnapshot.formattedDate}</span>
                   <span style={{ fontSize: '0.62rem', opacity: 0.8 }}>{isCalendarOpen ? '▴' : '▾'}</span>
                 </button>

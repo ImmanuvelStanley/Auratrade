@@ -564,7 +564,7 @@ export function TradeModal({
                   gap: '0.5rem'
                 }}
               >
-                <span>⚠️ {error}</span>
+                <span>{error}</span>
               </div>
             )}
 
@@ -1157,7 +1157,7 @@ export function TradeModal({
               {loading ? (
                 <span>Submitting to Direct DMA...</span>
               ) : (isSafeZoneBreach && !allowReserveBreach) ? (
-                <span>⚠️ Exceeds Safe Reserve ($${minBalance.toFixed(2)})</span>
+                <span>ALERT: Exceeds Safe Reserve ($${minBalance.toFixed(2)})</span>
               ) : (
                 <>
                   <span>

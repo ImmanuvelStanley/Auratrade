@@ -18,13 +18,13 @@ import { useSocket } from '../context/SocketContext';
 let cachedMarketCompanies = null;
 
 const MARKET_REGIONS = [
-  { id: 'all', label: 'All Markets', flag: '🌐', count: '160+' },
+  { id: 'all', label: 'All Markets', flag: 'ALL', count: '160+' },
   { id: 'north_america', label: 'North America', flag: '🇺🇸', count: '75' },
   { id: 'europe', label: 'Europe (UK / EU)', flag: '🇪🇺', count: '24' },
   { id: 'asiapac', label: 'Asia-Pacific', flag: '🇯🇵', count: '20' },
   { id: 'india_emerging', label: 'India Emerging', flag: '🇮🇳', count: '22' },
-  { id: 'latam_mideast', label: 'LatAm & MidEast', flag: '🌐', count: '8' },
-  { id: 'etf', label: 'ETFs & Digital', flag: '📊', count: '12' }
+  { id: 'latam_mideast', label: 'LatAm & MidEast', flag: 'INTL', count: '8' },
+  { id: 'etf', label: 'ETFs & Digital', flag: 'ETF', count: '12' }
 ];
 
 const SECTORS = [
@@ -459,7 +459,7 @@ export function WatchlistCompanyChooserModal({
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.45rem', gap: '0.4rem', minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, overflow: 'hidden' }}>
-                          <span style={{ fontSize: '1.05rem', flexShrink: 0 }}>{c.countryFlag || '🌐'}</span>
+                          <span style={{ fontSize: '1.05rem', flexShrink: 0 }}>{c.countryFlag || 'INTL'}</span>
                           <span
                             style={{
                               fontSize: '0.66rem',

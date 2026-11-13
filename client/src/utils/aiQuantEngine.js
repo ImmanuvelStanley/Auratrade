@@ -508,7 +508,7 @@ Starting from today's live market price of **${cs}${p.toFixed(2)}**, here is the
 * **+5 Years (${s5y.formattedDate})**: **\`${cs}${s5y.price.toFixed(2)}\`** (${s5y.vsLivePercent >= 0 ? '+' : ''}${s5y.vsLivePercent.toFixed(2)}%) • Long-Term Compounding Target
 
 #### How to Inspect Any Date on the Chart
-* Click the **📅 Date Calendar button** inside the **Live Quote Card** or **Interactive Chart** ([AuraTrade: Terminal]) to jump to any past or future calendar date and view the exact projected chart tape!`,
+* Click the **Date Calendar button** inside the **Live Quote Card** or **Interactive Chart** ([AuraTrade: Terminal]) to jump to any past or future calendar date and view the exact projected chart tape!`,
       tradeSetup: {
         symbol: sym,
         entryZone: `${cs}${(p * 0.992).toFixed(2)} - ${cs}${p.toFixed(2)}`,

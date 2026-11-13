@@ -5353,7 +5353,7 @@ export function UserProfile({
                 </div>
               </div>
               {changePwError && <p style={{ color: '#f87171', fontSize: '0.78rem', margin: 0 }}>{changePwError}</p>}
-              {changePwStatus === 'success' && <p style={{ color: '#34d399', fontSize: '0.78rem', margin: 0 }}>✅ Password updated successfully.</p>}
+              {changePwStatus === 'success' && <p style={{ color: '#34d399', fontSize: '0.78rem', margin: 0 }}>Password updated successfully.</p>}
               <button
                 type="button"
                 className="btn btn-primary"
