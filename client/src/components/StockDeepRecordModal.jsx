@@ -210,60 +210,85 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
         overflow: 'hidden'
       }}
     >
-      {/* Top Executive Header Banner */}
+      {/* Top Executive Header Banner (Clean 2-Tier Architecture) */}
       <div
         style={{
-          padding: '1.25rem 1.5rem',
-          background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(16, 185, 129, 0.06) 55%, rgba(15, 23, 42, 0.92) 100%)',
+          padding: '1.15rem 1.5rem 1.25rem',
+          background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(16, 185, 129, 0.05) 50%, rgba(15, 23, 42, 0.94) 100%)',
           borderBottom: '1px solid var(--border-subtle)',
           display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
+          flexDirection: 'column',
           gap: '1rem'
         }}
       >
-        {/* Left: Asset Identity & Genesis Metadata */}
-        <div style={{ flex: '1 1 420px', minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+        {/* Tier 1: Aligned Metadata Utility Bar + Close Button */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: '0.65rem',
+            paddingBottom: '0.75rem',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.06)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
             <span
               style={{
+                height: '26px',
                 fontSize: '0.68rem',
                 fontWeight: 800,
-                letterSpacing: '0.07em',
+                letterSpacing: '0.06em',
                 textTransform: 'uppercase',
-                padding: '0.2rem 0.55rem',
-                borderRadius: '4px',
-                background: 'rgba(6, 182, 212, 0.18)',
+                padding: '0 0.6rem',
+                borderRadius: '5px',
+                background: 'rgba(6, 182, 212, 0.16)',
                 color: 'var(--accent-cyan)',
                 border: '1px solid rgba(6, 182, 212, 0.35)',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.3rem'
+                gap: '0.35rem'
               }}
             >
-              <History size={12} /> COMPLETE RECORD • STARTING ({identity.ipoYear}) TILL NOW
+              <History size={12} />
+              <span>Complete Record • {identity.ipoYear} → 2026</span>
             </span>
-
-            <CountryFlag
-              country={identity.country}
-              countryCode={identity.countryCode}
-              symbol={identity.symbol}
-              countryFlag={identity.countryFlag}
-              size="sm"
-              showName={true}
-            />
 
             <span
               style={{
-                fontSize: '0.72rem',
-                fontFamily: 'var(--font-mono)',
+                height: '26px',
+                padding: '0 0.55rem',
+                borderRadius: '5px',
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                display: 'inline-flex',
+                alignItems: 'center'
+              }}
+            >
+              <CountryFlag
+                country={identity.country}
+                countryCode={identity.countryCode}
+                symbol={identity.symbol}
+                countryFlag={identity.countryFlag}
+                size="xs"
+                showName={true}
+              />
+            </span>
+
+            <span
+              className="font-mono"
+              style={{
+                height: '26px',
+                fontSize: '0.71rem',
                 fontWeight: 700,
-                padding: '0.16rem 0.5rem',
-                borderRadius: '4px',
-                background: 'rgba(255, 255, 255, 0.06)',
+                padding: '0 0.55rem',
+                borderRadius: '5px',
+                background: 'rgba(255, 255, 255, 0.05)',
                 color: 'var(--text-secondary)',
-                border: '1px solid var(--border-subtle)'
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                display: 'inline-flex',
+                alignItems: 'center'
               }}
             >
               {identity.exchange} • {identity.currency}
@@ -271,129 +296,40 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
 
             <span
               style={{
-                fontSize: '0.72rem',
+                height: '26px',
+                fontSize: '0.71rem',
                 fontWeight: 700,
-                padding: '0.16rem 0.5rem',
-                borderRadius: '4px',
-                background: 'rgba(16, 185, 129, 0.14)',
+                padding: '0 0.55rem',
+                borderRadius: '5px',
+                background: 'rgba(16, 185, 129, 0.12)',
                 color: 'var(--bull-green)',
-                border: '1px solid rgba(16, 185, 129, 0.3)'
+                border: '1px solid rgba(16, 185, 129, 0.28)',
+                display: 'inline-flex',
+                alignItems: 'center'
               }}
             >
               {identity.sector}
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.55rem' }}>
-            <h2
-              className="font-mono"
-              style={{
-                fontSize: '1.75rem',
-                fontWeight: 800,
-                color: 'var(--text-primary)',
-                margin: 0,
-                letterSpacing: '-0.02em'
-              }}
-            >
-              {identity.symbol}
-            </h2>
-            <span style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-              {identity.name}
-            </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
             <span
               className="font-mono"
               style={{
-                fontSize: '0.76rem',
+                height: '28px',
+                fontSize: '0.73rem',
                 fontWeight: 700,
                 color: 'var(--accent-cyan)',
                 background: 'rgba(6, 182, 212, 0.1)',
-                padding: '0.15rem 0.5rem',
-                borderRadius: '4px'
+                border: '1px solid rgba(6, 182, 212, 0.28)',
+                padding: '0 0.65rem',
+                borderRadius: '6px',
+                display: 'inline-flex',
+                alignItems: 'center'
               }}
             >
               Mkt Cap: {identity.marketCapFormatted}
             </span>
-          </div>
-
-          <p
-            style={{
-              margin: '0.45rem 0 0',
-              fontSize: '0.84rem',
-              lineHeight: 1.5,
-              color: 'var(--text-secondary)',
-              maxWidth: '780px'
-            }}
-          >
-            {identity.businessSummary}
-          </p>
-
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '1rem',
-              flexWrap: 'wrap',
-              marginTop: '0.55rem',
-              fontSize: '0.76rem',
-              color: 'var(--text-muted)'
-            }}
-          >
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-              <Building2 size={13} style={{ color: 'var(--accent-cyan)' }} />
-              <strong style={{ color: 'var(--text-secondary)' }}>Founded:</strong> {identity.foundedYear} ({identity.headquarters})
-            </span>
-            <span>•</span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-              <Calendar size={13} style={{ color: 'var(--bull-green)' }} />
-              <strong style={{ color: 'var(--text-secondary)' }}>Public Debut / Base:</strong> {identity.ipoDate}
-            </span>
-            <span>•</span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
-              <Award size={13} style={{ color: 'var(--warning-amber)' }} />
-              <strong style={{ color: 'var(--text-secondary)' }}>Origin:</strong> {identity.founderOrOrigin}
-            </span>
-          </div>
-        </div>
-
-        {/* Right: Live Price, All-Time Gain Badge & Action Buttons */}
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'flex-end',
-            gap: '0.65rem',
-            flexShrink: 0
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                Live Market Price
-              </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                <span className="font-mono" style={{ fontSize: '1.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  {formatRecordPrice(priceRecord.currentPrice, curr)}
-                </span>
-                <span
-                  className="font-mono"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '2px',
-                    fontSize: '0.84rem',
-                    fontWeight: 700,
-                    padding: '0.18rem 0.5rem',
-                    borderRadius: '6px',
-                    background: isBull ? 'rgba(16, 185, 129, 0.16)' : 'rgba(239, 68, 68, 0.16)',
-                    color: isBull ? 'var(--bull-green)' : 'var(--bear-red)'
-                  }}
-                >
-                  {isBull ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                  {isBull ? '+' : ''}
-                  {priceRecord.changePercent.toFixed(2)}%
-                </span>
-              </div>
-            </div>
 
             {isModal && onClose && (
               <button
@@ -401,9 +337,9 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                 onClick={onClose}
                 title="Close Record Dossier (Esc)"
                 style={{
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '8px',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '7px',
                   background: 'rgba(255, 255, 255, 0.06)',
                   border: '1px solid var(--border-subtle)',
                   color: 'var(--text-secondary)',
@@ -413,134 +349,319 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                   cursor: 'pointer'
                 }}
               >
-                <X size={18} />
-              </button>
-            )}
-          </div>
-
-          {/* All-Time Return Highlight Pill */}
-          <div
-            className="font-mono"
-            style={{
-              padding: '0.32rem 0.7rem',
-              borderRadius: '6px',
-              background: 'rgba(16, 185, 129, 0.14)',
-              border: '1px solid rgba(16, 185, 129, 0.35)',
-              color: 'var(--bull-green)',
-              fontSize: '0.76rem',
-              fontWeight: 800,
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.4rem'
-            }}
-          >
-            <TrendingUp size={13} />
-            <span>
-              Since Starting ({identity.ipoYear}): +{Math.round(priceRecord.allTimeReturnPercent).toLocaleString()}% ({priceRecord.allTimeMultiple.toFixed(1)}x) • {priceRecord.cagrPercent.toFixed(1)}% CAGR
-            </span>
-          </div>
-
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            {onOpenWorkstationChart && (
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{
-                  padding: '0.38rem 0.7rem',
-                  fontSize: '0.76rem',
-                  fontWeight: 700,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  borderColor: 'rgba(6, 182, 212, 0.45)',
-                  color: 'var(--accent-cyan)'
-                }}
-                onClick={() => onOpenWorkstationChart(identity.chartSymbol || identity.symbol)}
-              >
-                <BarChart3 size={14} />
-                <span>Open Workstation Chart</span>
-              </button>
-            )}
-
-            {onToggleWatchlist && (
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{
-                  padding: '0.38rem 0.65rem',
-                  fontSize: '0.76rem',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem'
-                }}
-                onClick={() => onToggleWatchlist(identity.chartSymbol || identity.symbol)}
-              >
-                {isInWatchlist ? (
-                  <>
-                    <BookmarkCheck size={14} style={{ color: 'var(--accent-cyan)' }} />
-                    <span>Watching</span>
-                  </>
-                ) : (
-                  <>
-                    <BookmarkPlus size={14} />
-                    <span>Watchlist</span>
-                  </>
-                )}
-              </button>
-            )}
-
-            {onOpenAlertModal && (
-              <button
-                type="button"
-                className="btn btn-secondary"
-                style={{
-                  padding: '0.38rem 0.65rem',
-                  fontSize: '0.76rem',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem'
-                }}
-                onClick={() => onOpenAlertModal(identity.chartSymbol || identity.symbol)}
-              >
-                <Bell size={14} style={{ color: 'var(--warning-amber)' }} />
-                <span>Set Alert</span>
-              </button>
-            )}
-
-            {onOpenTradeModal && (
-              <button
-                type="button"
-                className="btn btn-bull"
-                style={{
-                  padding: '0.38rem 0.75rem',
-                  fontSize: '0.76rem',
-                  fontWeight: 700,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem'
-                }}
-                onClick={() => onOpenTradeModal(identity.chartSymbol || identity.symbol)}
-              >
-                <ShoppingCart size={14} />
-                <span>Trade Asset</span>
+                <X size={17} />
               </button>
             )}
           </div>
         </div>
+
+        {/* Tier 2: Main 2-Column Split (Identity & Structured Genesis Grid | Live Quote & Action Deck) */}
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'stretch',
+            justifyContent: 'space-between',
+            gap: '1.25rem'
+          }}
+        >
+          {/* Left Column: Asset Title, Summary & Structured 3-Box Genesis Bar */}
+          <div
+            style={{
+              flex: '1 1 520px',
+              minWidth: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '0.85rem'
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <h2
+                  className="font-mono"
+                  style={{
+                    fontSize: '1.85rem',
+                    fontWeight: 800,
+                    color: 'var(--text-primary)',
+                    margin: 0,
+                    lineHeight: 1.1,
+                    letterSpacing: '-0.02em'
+                  }}
+                >
+                  {identity.symbol}
+                </h2>
+                <span style={{ fontSize: '1.12rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                  {identity.name}
+                </span>
+              </div>
+
+              <p
+                style={{
+                  margin: '0.45rem 0 0',
+                  fontSize: '0.84rem',
+                  lineHeight: 1.55,
+                  color: 'var(--text-secondary)',
+                  maxWidth: '780px'
+                }}
+              >
+                {identity.businessSummary}
+              </p>
+            </div>
+
+            {/* Structured 3-Column Genesis Grid (Zero Orphan Bullets, Perfect Alignment) */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+                gap: '0.65rem'
+              }}
+            >
+              <div
+                style={{
+                  padding: '0.55rem 0.75rem',
+                  borderRadius: '8px',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.07)'
+                }}
+              >
+                <div style={{ fontSize: '0.63rem', fontWeight: 800, color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <Building2 size={11} /> Founded &amp; Headquarters
+                </div>
+                <div style={{ fontSize: '0.77rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '0.2rem', lineHeight: 1.35 }}>
+                  {identity.foundedYear} • {identity.headquarters}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: '0.55rem 0.75rem',
+                  borderRadius: '8px',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.07)'
+                }}
+              >
+                <div style={{ fontSize: '0.63rem', fontWeight: 800, color: 'var(--bull-green)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <Calendar size={11} /> Public Debut / Base Date
+                </div>
+                <div style={{ fontSize: '0.77rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '0.2rem', lineHeight: 1.35 }}>
+                  {identity.ipoDate}
+                </div>
+              </div>
+
+              <div
+                style={{
+                  padding: '0.55rem 0.75rem',
+                  borderRadius: '8px',
+                  background: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid rgba(255, 255, 255, 0.07)'
+                }}
+              >
+                <div style={{ fontSize: '0.63rem', fontWeight: 800, color: 'var(--warning-amber)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                  <Award size={11} /> Founder / Origin
+                </div>
+                <div style={{ fontSize: '0.77rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: '0.2rem', lineHeight: 1.35 }}>
+                  {identity.founderOrOrigin}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: Clean Live Quote Box + Quick Action Deck */}
+          <div
+            style={{
+              flex: '0 1 390px',
+              minWidth: '300px',
+              padding: '0.9rem 1.05rem',
+              borderRadius: '12px',
+              background: 'rgba(9, 14, 28, 0.72)',
+              border: '1px solid rgba(255, 255, 255, 0.09)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '0.75rem'
+            }}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: '0.66rem', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                  Live Market Price
+                </span>
+                <span style={{ fontSize: '0.66rem', fontWeight: 700, color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)' }}>
+                  REAL-TIME FEED
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.65rem' }}>
+                <span className="font-mono" style={{ fontSize: '1.9rem', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>
+                  {formatRecordPrice(priceRecord.currentPrice, curr)}
+                </span>
+                <span
+                  className="font-mono"
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '3px',
+                    fontSize: '0.82rem',
+                    fontWeight: 800,
+                    padding: '0.24rem 0.55rem',
+                    borderRadius: '6px',
+                    background: isBull ? 'rgba(16, 185, 129, 0.16)' : 'rgba(239, 68, 68, 0.16)',
+                    color: isBull ? 'var(--bull-green)' : 'var(--bear-red)',
+                    border: isBull ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)'
+                  }}
+                >
+                  {isBull ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                  {isBull ? '+' : ''}
+                  {priceRecord.changePercent.toFixed(2)}%
+                </span>
+              </div>
+
+              {/* All-Time Return Highlight Bar */}
+              <div
+                className="font-mono"
+                style={{
+                  padding: '0.35rem 0.65rem',
+                  borderRadius: '6px',
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  color: 'var(--bull-green)',
+                  fontSize: '0.73rem',
+                  fontWeight: 800,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.4rem',
+                  textAlign: 'center'
+                }}
+              >
+                <TrendingUp size={13} style={{ flexShrink: 0 }} />
+                <span>
+                  Since {identity.ipoYear}: +{Math.round(priceRecord.allTimeReturnPercent).toLocaleString()}% ({priceRecord.allTimeMultiple.toFixed(1)}x) • {priceRecord.cagrPercent.toFixed(1)}% CAGR
+                </span>
+              </div>
+            </div>
+
+            {/* Uniform 2x2 or Inline Action Toolbar */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                gap: '0.45rem'
+              }}
+            >
+              {onOpenWorkstationChart && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{
+                    height: '34px',
+                    padding: '0 0.6rem',
+                    fontSize: '0.74rem',
+                    fontWeight: 700,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.35rem',
+                    borderColor: 'rgba(6, 182, 212, 0.45)',
+                    color: 'var(--accent-cyan)',
+                    whiteSpace: 'nowrap'
+                  }}
+                  onClick={() => onOpenWorkstationChart(identity.chartSymbol || identity.symbol)}
+                >
+                  <BarChart3 size={14} />
+                  <span>Open Chart</span>
+                </button>
+              )}
+
+              {onOpenTradeModal && (
+                <button
+                  type="button"
+                  className="btn btn-bull"
+                  style={{
+                    height: '34px',
+                    padding: '0 0.6rem',
+                    fontSize: '0.74rem',
+                    fontWeight: 800,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.35rem',
+                    whiteSpace: 'nowrap'
+                  }}
+                  onClick={() => onOpenTradeModal(identity.chartSymbol || identity.symbol)}
+                >
+                  <ShoppingCart size={14} />
+                  <span>Trade Asset</span>
+                </button>
+              )}
+
+              {onToggleWatchlist && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{
+                    height: '34px',
+                    padding: '0 0.6rem',
+                    fontSize: '0.74rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.35rem',
+                    whiteSpace: 'nowrap'
+                  }}
+                  onClick={() => onToggleWatchlist(identity.chartSymbol || identity.symbol)}
+                >
+                  {isInWatchlist ? (
+                    <>
+                      <BookmarkCheck size={14} style={{ color: 'var(--accent-cyan)' }} />
+                      <span>Watching</span>
+                    </>
+                  ) : (
+                    <>
+                      <BookmarkPlus size={14} />
+                      <span>Watchlist</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              {onOpenAlertModal && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{
+                    height: '34px',
+                    padding: '0 0.6rem',
+                    fontSize: '0.74rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.35rem',
+                    whiteSpace: 'nowrap'
+                  }}
+                  onClick={() => onOpenAlertModal(identity.chartSymbol || identity.symbol)}
+                >
+                  <Bell size={14} style={{ color: 'var(--warning-amber)' }} />
+                  <span>Set Alert</span>
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Section Filter Navigation Bar */}
+      {/* Section Filter Navigation Bar & Share Split Basis */}
       <div
         style={{
-          padding: '0.65rem 1.5rem',
-          background: 'rgba(15, 23, 42, 0.75)',
+          padding: '0.7rem 1.5rem',
+          background: 'rgba(15, 23, 42, 0.78)',
           borderBottom: '1px solid var(--border-subtle)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           flexWrap: 'wrap',
-          gap: '0.5rem'
+          gap: '0.65rem'
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
@@ -559,17 +680,18 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                 type="button"
                 onClick={() => setActiveSubTab(tab.id)}
                 style={{
-                  padding: '0.36rem 0.75rem',
+                  height: '32px',
+                  padding: '0 0.78rem',
                   borderRadius: '6px',
-                  fontSize: '0.75rem',
+                  fontSize: '0.74rem',
                   fontWeight: 700,
                   cursor: 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '0.35rem',
+                  gap: '0.38rem',
                   background: active ? 'rgba(6, 182, 212, 0.18)' : 'rgba(255, 255, 255, 0.04)',
                   color: active ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-                  border: active ? '1px solid rgba(6, 182, 212, 0.45)' : '1px solid transparent',
+                  border: active ? '1px solid rgba(6, 182, 212, 0.45)' : '1px solid rgba(255, 255, 255, 0.06)',
                   transition: 'all 0.15s ease'
                 }}
               >
@@ -580,37 +702,52 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
           })}
         </div>
 
-        <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-          {identity.stockSplits}
+        <div
+          style={{
+            fontSize: '0.71rem',
+            color: 'var(--text-muted)',
+            fontFamily: 'var(--font-mono)',
+            padding: '0.26rem 0.6rem',
+            borderRadius: '5px',
+            background: 'rgba(255, 255, 255, 0.03)',
+            border: '1px solid rgba(255, 255, 255, 0.06)'
+          }}
+        >
+          Basis: {identity.stockSplits}
         </div>
       </div>
 
       {/* Main Dossier Body */}
       <div style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.35rem' }}>
-        {/* 6-Card Genesis-to-Present Key Metrics Strip (Always Visible) */}
+        {/* 6-Card Genesis-to-Present Key Metrics Strip (Uniform Single-Row Grid on Desktop) */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(195px, 1fr))',
-            gap: '0.85rem'
+            gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))',
+            gap: '0.75rem',
+            alignItems: 'stretch'
           }}
         >
           {/* Card 1: Starting / IPO Price */}
           <div
             style={{
-              padding: '0.9rem 1rem',
+              padding: '0.85rem 0.95rem',
               borderRadius: '10px',
               background: 'rgba(255, 255, 255, 0.025)',
-              border: '1px solid var(--border-subtle)'
+              border: '1px solid var(--border-subtle)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '0.35rem'
             }}
           >
-            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Starting / IPO Price ({identity.ipoYear})
+            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Starting / IPO ({identity.ipoYear})
             </div>
-            <div className="font-mono" style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
+            <div className="font-mono" style={{ fontSize: '1.24rem', fontWeight: 800, color: 'var(--text-primary)' }}>
               {formatRecordPrice(priceRecord.ipoPriceAdjusted, curr)}
             </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
               Nominal Issue: <span className="font-mono">{formatRecordPrice(priceRecord.ipoPriceNominal, curr)}</span>
             </div>
           </div>
@@ -618,39 +755,47 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
           {/* Card 2: Present Live Market Price */}
           <div
             style={{
-              padding: '0.9rem 1rem',
+              padding: '0.85rem 0.95rem',
               borderRadius: '10px',
               background: 'rgba(255, 255, 255, 0.025)',
-              border: '1px solid var(--border-subtle)'
+              border: '1px solid var(--border-subtle)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '0.35rem'
             }}
           >
-            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Present Day Price (Live)
             </div>
-            <div className="font-mono" style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--accent-cyan)', marginTop: '0.25rem' }}>
+            <div className="font-mono" style={{ fontSize: '1.24rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>
               {formatRecordPrice(priceRecord.currentPrice, curr)}
             </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-              Day Range: <span className="font-mono">{formatRecordPrice(priceRecord.dayLow, curr)} – {formatRecordPrice(priceRecord.dayHigh, curr)}</span>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+              Day: <span className="font-mono">{formatRecordPrice(priceRecord.dayLow, curr)} – {formatRecordPrice(priceRecord.dayHigh, curr)}</span>
             </div>
           </div>
 
           {/* Card 3: All-Time Return & Multiple */}
           <div
             style={{
-              padding: '0.9rem 1rem',
+              padding: '0.85rem 0.95rem',
               borderRadius: '10px',
               background: 'rgba(16, 185, 129, 0.06)',
-              border: '1px solid rgba(16, 185, 129, 0.28)'
+              border: '1px solid rgba(16, 185, 129, 0.28)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '0.35rem'
             }}
           >
-            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--bull-green)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--bull-green)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Total Return (Start → Now)
             </div>
-            <div className="font-mono" style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--bull-green)', marginTop: '0.25rem' }}>
+            <div className="font-mono" style={{ fontSize: '1.24rem', fontWeight: 800, color: 'var(--bull-green)' }}>
               +{Math.round(priceRecord.allTimeReturnPercent).toLocaleString()}%
             </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
               Wealth Multiplier: <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>{priceRecord.allTimeMultiple.toFixed(1)}x</strong>
             </div>
           </div>
@@ -658,39 +803,47 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
           {/* Card 4: Compound Annual Growth (CAGR) */}
           <div
             style={{
-              padding: '0.9rem 1rem',
+              padding: '0.85rem 0.95rem',
               borderRadius: '10px',
               background: 'rgba(255, 255, 255, 0.025)',
-              border: '1px solid var(--border-subtle)'
+              border: '1px solid var(--border-subtle)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '0.35rem'
             }}
           >
-            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
               Annualized CAGR ({identity.yearsSinceIpo} Yrs)
             </div>
-            <div className="font-mono" style={{ fontSize: '1.3rem', fontWeight: 800, color: 'var(--bull-green)', marginTop: '0.25rem' }}>
+            <div className="font-mono" style={{ fontSize: '1.24rem', fontWeight: 800, color: 'var(--bull-green)' }}>
               +{priceRecord.cagrPercent.toFixed(2)}% / yr
             </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-              10Y: <span className="font-mono" style={{ color: 'var(--bull-green)' }}>+{ priceRecord.return10YPercent.toFixed(0)}%</span> • 5Y: <span className="font-mono" style={{ color: 'var(--bull-green)' }}>+{priceRecord.return5YPercent.toFixed(0)}%</span>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+              10Y: <span className="font-mono" style={{ color: priceRecord.return10YPercent >= 0 ? 'var(--bull-green)' : 'var(--bear-red)' }}>{priceRecord.return10YPercent >= 0 ? '+' : ''}{priceRecord.return10YPercent.toFixed(0)}%</span> • 5Y: <span className="font-mono" style={{ color: priceRecord.return5YPercent >= 0 ? 'var(--bull-green)' : 'var(--bear-red)' }}>{priceRecord.return5YPercent >= 0 ? '+' : ''}{priceRecord.return5YPercent.toFixed(0)}%</span>
             </div>
           </div>
 
           {/* Card 5: All-Time High & 52W Range */}
           <div
             style={{
-              padding: '0.9rem 1rem',
+              padding: '0.85rem 0.95rem',
               borderRadius: '10px',
               background: 'rgba(255, 255, 255, 0.025)',
-              border: '1px solid var(--border-subtle)'
+              border: '1px solid var(--border-subtle)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '0.35rem'
             }}
           >
-            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              All-Time High & 52W Range
+            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              All-Time High &amp; 52W Range
             </div>
-            <div className="font-mono" style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.25rem' }}>
-              ATH: {formatRecordPrice(priceRecord.athPrice, curr)}
+            <div className="font-mono" style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+              {formatRecordPrice(priceRecord.athPrice, curr)}
             </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
               52W: <span className="font-mono">{formatRecordPrice(priceRecord.low52, curr)} – {formatRecordPrice(priceRecord.high52, curr)}</span>
             </div>
           </div>
@@ -698,20 +851,24 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
           {/* Card 6: Intrinsic Fair Value & Verdict */}
           <div
             style={{
-              padding: '0.9rem 1rem',
+              padding: '0.85rem 0.95rem',
               borderRadius: '10px',
               background: 'rgba(6, 182, 212, 0.07)',
-              border: '1px solid rgba(6, 182, 212, 0.3)'
+              border: '1px solid rgba(6, 182, 212, 0.3)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '0.35rem'
             }}
           >
-            <div style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Intrinsic Fair Value Estimate
+            <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              Intrinsic Fair Value Est.
             </div>
-            <div className="font-mono" style={{ fontSize: '1.3rem', fontWeight: 800, color: valuation.verdictColor, marginTop: '0.25rem' }}>
+            <div className="font-mono" style={{ fontSize: '1.24rem', fontWeight: 800, color: valuation.verdictColor }}>
               {formatRecordPrice(valuation.intrinsicFairValue, curr)}
             </div>
-            <div style={{ fontSize: '0.71rem', fontWeight: 700, color: valuation.verdictColor, marginTop: '0.2rem' }}>
-              {valuation.verdict} ({valuation.valuationGapPercent >= 0 ? `+${valuation.valuationGapPercent.toFixed(1)}% Upside` : `${valuation.valuationGapPercent.toFixed(1)}%`})
+            <div style={{ fontSize: '0.69rem', fontWeight: 700, color: valuation.verdictColor }}>
+              {valuation.verdict} ({valuation.valuationGapPercent >= 0 ? `+${valuation.valuationGapPercent.toFixed(1)}%` : `${valuation.valuationGapPercent.toFixed(1)}%`})
             </div>
           </div>
         </div>
