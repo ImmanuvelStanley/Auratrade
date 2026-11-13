@@ -644,13 +644,14 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
               )}
 
               {/* Dynamic Subtitle */}
-              <div style={{ textAlign: 'center', marginTop: '-0.2rem', marginBottom: '0.1rem' }}>
-                <p style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', margin: 0 }}>
-                  {mode === 'signin' && 'Sign in to access your trading workstation & sandbox portfolio'}
-                  {mode === 'register' && 'Open a zero-commission institutional sandbox account'}
-                  {mode === 'forgot' && 'Enter your registered email to receive a secure 6-digit reset code'}
-                </p>
-              </div>
+              {mode !== 'forgot' && (
+                <div style={{ textAlign: 'center', marginTop: '-0.2rem', marginBottom: '0.1rem' }}>
+                  <p style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', margin: 0 }}>
+                    {mode === 'signin' && 'Sign in to access your trading workstation & sandbox portfolio'}
+                    {mode === 'register' && 'Open a zero-commission institutional sandbox account'}
+                  </p>
+                </div>
+              )}
 
               {/* Error Message Banner */}
               {error && (
