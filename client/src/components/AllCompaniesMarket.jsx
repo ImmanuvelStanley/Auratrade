@@ -31,6 +31,7 @@ import {
 import { useSocket } from '../context/SocketContext';
 import { defaultAllCompanies } from '../data/defaultAllCompanies';
 import { CountryFlag } from './CountryFlag';
+import { getAllTimeReturnSummary, formatAllTimePercent } from '../utils/stockRecordEngine';
 
 // Helper to map country or asset to institutional ISO country/market code
 const getCountryCode = (country, symbol) => {
@@ -1211,10 +1212,10 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
     setCurrentPage(1);
   }, []);
 
-  // Fetch all companies from backend
-  const fetchMarketData = async () => {
+  // Fetch all companies from backend (supports silent background sync for live market updates)
+  const fetchMarketData = useCallback(async (silent = false) => {
     try {
-      if (!allMarketMemoryCache) setLoading(true);
+      if (!silent && !allMarketMemoryCache) setLoading(true);
       const queryParams = new URLSearchParams({
         region: selectedRegion,
         tier: selectedTier,
@@ -1232,15 +1233,24 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
         }
       }
     } catch (err) {
-      console.error('Failed to fetch all market companies:', err);
+      if (!silent) console.error('Failed to fetch all market companies:', err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, [selectedRegion, selectedTier, selectedSector, sortBy, sortOrder, searchQuery]);
 
   useEffect(() => {
-    fetchMarketData();
+    fetchMarketData(false);
   }, [selectedRegion, selectedTier, selectedSector, sortBy, sortOrder]);
+
+  // Continuous background live market sync every 10s so all 166+ global assets stay updated
+  useEffect(() => {
+    if (!isActive) return;
+    const syncTimer = setInterval(() => {
+      fetchMarketData(true);
+    }, 10000);
+    return () => clearInterval(syncTimer);
+  }, [isActive, fetchMarketData]);
 
   // Reset pagination to page 1 on filter, preset, or search changes
   useEffect(() => {
@@ -1258,12 +1268,106 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
     if (hasLocalMatch) return; // Zero network traffic needed!
 
     const handler = setTimeout(() => {
-      fetchMarketData();
+      fetchMarketData(false);
     }, 400);
     return () => clearTimeout(handler);
   }, [searchQuery]);
 
   const overview = marketData?.overview;
+
+  // Compute live auto-updating KPI overview across the entire global market universe on every WebSocket tick
+  const liveOverview = useMemo(() => {
+    const basePool =
+      (allMarketMemoryCache?.companies?.length ? allMarketMemoryCache.companies : null) ||
+      (selectedRegion === 'all' && selectedTier === 'all' && selectedSector === 'all' && !searchQuery ? marketData?.companies : null) ||
+      defaultAllCompanies?.companies ||
+      [];
+
+    if (!basePool.length) return overview || null;
+
+    const seen = new Set();
+    let totalMarketCap = 0;
+    let bullishCount = 0;
+    let advancingCount = 0;
+    let decliningCount = 0;
+    let topGainer = null;
+    let topConviction = null;
+    let bestConvictionScore = -Infinity;
+    let allTimeBestGainer = null;
+
+    for (let i = 0; i < basePool.length; i++) {
+      const c = basePool[i];
+      const sym = (c?.symbol || '').toUpperCase().trim();
+      if (!sym || seen.has(sym)) continue;
+      seen.add(sym);
+
+      const live = quotes?.[sym];
+      const basePrice = Number(c.price) || 0;
+      const livePrice = live ? (Number(live.price) || basePrice) : basePrice;
+      const liveChangePercent = live && live.changePercent !== undefined
+        ? (Number(live.changePercent) || 0)
+        : (Number(c.changePercent) || 0);
+
+      // Scale market cap dynamically with real-time share price movement
+      const priceRatio = basePrice > 0 && livePrice > 0 ? livePrice / basePrice : 1;
+      const liveCap = (Number(c.marketCap) || 0) * priceRatio;
+      totalMarketCap += liveCap;
+
+      if (c.rating === 'STRONG BUY' || c.rating === 'BUY') bullishCount += 1;
+      if (liveChangePercent >= 0) advancingCount += 1;
+      else decliningCount += 1;
+
+      if (!topGainer || liveChangePercent > topGainer.changePercent) {
+        topGainer = {
+          symbol: sym,
+          name: c.name || sym,
+          changePercent: parseFloat(liveChangePercent.toFixed(2)),
+          price: livePrice,
+          currency: c.currency
+        };
+      }
+
+      const target30d = Number(c.forecastPrice30d) || (livePrice * (1 + (Number(c.forecastGainPercent) || 7.5) / 100));
+      const liveForecastGain = livePrice > 0 ? ((target30d - livePrice) / livePrice) * 100 : (Number(c.forecastGainPercent) || 0);
+      const convictionRank = (Number(c.ratingScore) || 0) * 100 + liveForecastGain;
+      if (convictionRank > bestConvictionScore) {
+        bestConvictionScore = convictionRank;
+        topConviction = {
+          symbol: sym,
+          name: c.name || sym,
+          ratingScore: c.ratingScore || 95,
+          forecastGain: parseFloat(Math.max(liveForecastGain, Number(c.forecastGainPercent) || 0).toFixed(1))
+        };
+      }
+
+      // Compute "All-Time Best Market Gainer Since Stock Market Start Till Now" for listed equities
+      if (c.sector !== 'Digital Asset') {
+        const summary = getAllTimeReturnSummary(sym, live ? { ...c, price: livePrice, changePercent: liveChangePercent } : c);
+        if (!allTimeBestGainer || summary.allTimeReturnPercent > allTimeBestGainer.allTimeReturnPercent) {
+          allTimeBestGainer = {
+            ...summary,
+            currency: c.currency || 'USD',
+            exchange: c.exchange || ''
+          };
+        }
+      }
+    }
+
+    const totalCount = seen.size || overview?.totalCount || 166;
+    const bullishRatio = totalCount > 0 ? Math.round((bullishCount / totalCount) * 100) : (overview?.bullishRatio || 95);
+
+    return {
+      totalMarketCap,
+      totalMarketCapFormatted: `$${(totalMarketCap / 1e12).toFixed(2)}T`,
+      totalCount,
+      bullishRatio,
+      advancingCount,
+      decliningCount,
+      topConviction: topConviction || overview?.topConviction,
+      topGainer: topGainer || overview?.topGainer,
+      allTimeBestGainer
+    };
+  }, [marketData, quotes, overview, selectedRegion, selectedTier, selectedSector, searchQuery]);
 
   // Client-side deduplication safeguard ensuring zero duplicate market rows can render
   const rawCompanies = useMemo(() => {
@@ -1758,45 +1862,119 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
             </div>
           </div>
 
-          {/* Overview Hero Stat Pills */}
+          {/* Overview Hero Stat Pills (Live Auto-Updating + All-Time Best Market Gainer Column) */}
           <div className="overview-stats-grid">
             <div className="overview-stat-box">
-              <div className="overview-stat-label">Total Tracked Market Cap</div>
-              <div className="overview-stat-val font-mono" style={{ color: 'var(--accent-cyan)' }}>
-                {overview?.totalMarketCapFormatted || '$47.75T'}
+              <div className="overview-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' }}>
+                <span>Total Tracked Market Cap</span>
+                <span style={{ fontSize: '0.62rem', color: 'var(--bull-green)', display: 'inline-flex', alignItems: 'center', gap: '0.2rem', fontWeight: 700 }}>
+                  <Zap size={9} /> LIVE
+                </span>
               </div>
-              <div className="overview-stat-sub">Across {overview?.totalCount || 147}+ Premier Global Assets</div>
+              <div className="overview-stat-val font-mono tabular-nums" style={{ color: 'var(--accent-cyan)' }}>
+                {liveOverview?.totalMarketCapFormatted || overview?.totalMarketCapFormatted || '$166.96T'}
+              </div>
+              <div className="overview-stat-sub" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                Across {liveOverview?.totalCount || overview?.totalCount || 166}+ Premier Global Assets
+              </div>
             </div>
 
             <div className="overview-stat-box">
-              <div className="overview-stat-label">Global Market Breadth</div>
-              <div className="overview-stat-val font-mono" style={{ color: 'var(--bull-green)' }}>
-                {overview?.bullishRatio || 95}%
+              <div className="overview-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' }}>
+                <span>Global Market Breadth</span>
+                <span className="tabular-nums" style={{ fontSize: '0.64rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                  {liveOverview?.advancingCount ?? 0}↑ / {liveOverview?.decliningCount ?? 0}↓
+                </span>
               </div>
-              <div className="overview-stat-sub">Consensus BUY / STRONG BUY</div>
+              <div className="overview-stat-val font-mono tabular-nums" style={{ color: 'var(--bull-green)' }}>
+                {liveOverview?.bullishRatio ?? overview?.bullishRatio ?? 99}%
+              </div>
+              <div className="overview-stat-sub" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                Consensus BUY / STRONG BUY
+              </div>
             </div>
 
-            <div className="overview-stat-box">
+            <div
+              className="overview-stat-box"
+              onClick={() => handleSelectSymbol(liveOverview?.topConviction?.symbol || 'NVDA')}
+              style={{ cursor: 'pointer' }}
+              title="Open Top AI Conviction Pick complete record"
+            >
               <div className="overview-stat-label">Top AI Conviction Pick</div>
-              <div className="overview-stat-val" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <span style={{ fontWeight: 800 }}>{overview?.topConviction?.symbol || 'NVDA'}</span>
-                <span className="badge-pill" style={{ background: 'var(--bull-green-bg)', color: 'var(--bull-green)', fontSize: '0.75rem' }}>
-                  +{overview?.topConviction?.forecastGain || 14.2}% 30D
+              <div className="overview-stat-val" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'nowrap', minWidth: 0 }}>
+                <span style={{ fontWeight: 800, whiteSpace: 'nowrap' }}>{liveOverview?.topConviction?.symbol || 'NVDA'}</span>
+                <span className="badge-pill tabular-nums" style={{ background: 'var(--bull-green-bg)', color: 'var(--bull-green)', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
+                  +{Number(liveOverview?.topConviction?.forecastGain ?? 14.2).toFixed(1)}% 30D
                 </span>
               </div>
-              <div className="overview-stat-sub">{overview?.topConviction?.name || 'NVIDIA Corporation'}</div>
+              <div className="overview-stat-sub" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {liveOverview?.topConviction?.name || 'NVIDIA Corporation'}
+              </div>
             </div>
 
-            <div className="overview-stat-box">
-              <div className="overview-stat-label">Worldwide Top Gainer</div>
-              <div className="overview-stat-val" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <span style={{ fontWeight: 800 }}>{overview?.topGainer?.symbol || 'META'}</span>
-                <span className="badge-pill" style={{ background: 'var(--bull-green-bg)', color: 'var(--bull-green)', fontSize: '0.75rem' }}>
-                  {(overview?.topGainer?.changePercent || 0) >= 0 ? '+' : ''}
-                  {overview?.topGainer?.changePercent || '+1.20'}%
+            <div
+              className="overview-stat-box"
+              onClick={() => handleSelectSymbol(liveOverview?.topGainer?.symbol || 'SONY')}
+              style={{ cursor: 'pointer' }}
+              title="Open Worldwide Live Top Gainer complete record"
+            >
+              <div className="overview-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' }}>
+                <span>Worldwide Top Gainer</span>
+                <span style={{ fontSize: '0.62rem', color: 'var(--bull-green)', display: 'inline-flex', alignItems: 'center', gap: '0.2rem', fontWeight: 700 }}>
+                  24H LIVE
                 </span>
               </div>
-              <div className="overview-stat-sub">{overview?.topGainer?.name || 'Meta Platforms Inc.'}</div>
+              <div className="overview-stat-val" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'nowrap', minWidth: 0 }}>
+                <span style={{ fontWeight: 800, whiteSpace: 'nowrap' }}>{liveOverview?.topGainer?.symbol || 'SONY'}</span>
+                <span
+                  className="badge-pill tabular-nums"
+                  style={{
+                    background: Number(liveOverview?.topGainer?.changePercent ?? 0) >= 0 ? 'var(--bull-green-bg)' : 'rgba(239, 68, 68, 0.14)',
+                    color: Number(liveOverview?.topGainer?.changePercent ?? 0) >= 0 ? 'var(--bull-green)' : 'var(--bear-red)',
+                    fontSize: '0.72rem',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {Number(liveOverview?.topGainer?.changePercent ?? 0) >= 0 ? '+' : ''}
+                  {Number(liveOverview?.topGainer?.changePercent ?? 0).toFixed(2)}%
+                </span>
+              </div>
+              <div className="overview-stat-sub" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {liveOverview?.topGainer?.name || 'Sony Group Corporation'}
+              </div>
+            </div>
+
+            <div
+              className="overview-stat-box"
+              onClick={() => handleSelectSymbol(liveOverview?.allTimeBestGainer?.symbol || 'MSFT')}
+              style={{ cursor: 'pointer', borderColor: 'rgba(245, 158, 11, 0.25)' }}
+              title="Open All-Time Best Market Gainer (Since Stock Market Start Till Now) complete record"
+            >
+              <div className="overview-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' }}>
+                <span>All-Time Best Gainer</span>
+                <span style={{ fontSize: '0.62rem', color: 'var(--warning-amber)', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                  SINCE {liveOverview?.allTimeBestGainer?.ipoYear || 1986}
+                </span>
+              </div>
+              <div className="overview-stat-val" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'nowrap', minWidth: 0 }}>
+                <span style={{ fontWeight: 800, whiteSpace: 'nowrap' }}>{liveOverview?.allTimeBestGainer?.symbol || 'MSFT'}</span>
+                <span
+                  className="badge-pill tabular-nums"
+                  style={{
+                    background: 'rgba(16, 185, 129, 0.14)',
+                    color: 'var(--bull-green)',
+                    fontSize: '0.7rem',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {formatAllTimePercent(liveOverview?.allTimeBestGainer?.allTimeReturnPercent || 708343)}
+                </span>
+              </div>
+              <div className="overview-stat-sub" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                {liveOverview?.allTimeBestGainer
+                  ? `${Math.round(liveOverview.allTimeBestGainer.allTimeMultiple).toLocaleString()}x Till Now • ${liveOverview.allTimeBestGainer.name}`
+                  : 'Since Market Start Till Now'}
+              </div>
             </div>
           </div>
         </div>

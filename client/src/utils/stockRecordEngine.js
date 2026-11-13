@@ -794,6 +794,111 @@ export function formatScaledMarketCap(baseFormatted = '$100B', ratio = 1) {
   return `${prefix}${scaled.toFixed(0)}`;
 }
 
+const CURATED_KEY_ALIASES = {
+  BTC: 'BTC/USD',
+  'BTC-USD': 'BTC/USD',
+  BRK_B: 'BRK.B',
+  'BRK-B': 'BRK.B',
+  BRKB: 'BRK.B',
+  '^GSPC': 'S&P 500',
+  SPX: 'S&P 500',
+  '^IXIC': 'NASDAQ',
+  '^DJI': 'DOW JONES',
+  DOW: 'DOW JONES',
+  '^NSEI': 'NIFTY 50',
+  '^NSEBANK': 'BANK NIFTY',
+  '^BSESN': 'SENSEX',
+  'BSE SENSEX': 'SENSEX'
+};
+
+function resolveCuratedRecord(symbol) {
+  const clean = String(symbol || '').trim().toUpperCase();
+  const mappedKey = CURATED_KEY_ALIASES[clean] || clean;
+  return CURATED_RECORDS[mappedKey] || CURATED_RECORDS[clean] || null;
+}
+
+/**
+ * Computes canonical split-adjusted inception price, return multiple, and all-time CAGR
+ * shared across both the full stock dossier and real-time market ranking KPIs.
+ */
+function computeInceptionMetrics(symbol, curated, catalogItem, seed, liveQuote) {
+  const currentPrice = Number(liveQuote?.price || catalogItem?.price || curated?.price2025 || 150.0);
+  const currentYear = 2026;
+  const foundedYear = curated?.foundedYear || (1960 + (seed % 46));
+  const ipoYear = curated?.ipoYear || Math.min(2015, Math.max(1980, foundedYear + 4 + (seed % 12)));
+  const yearsSinceIpo = Math.max(1, currentYear - ipoYear);
+
+  let curatedScale = 1;
+  if (curated && curated.price2025 > 0 && currentPrice > 0) {
+    const ratioVs2025 = currentPrice / curated.price2025;
+    if (ratioVs2025 < 0.52 || ratioVs2025 > 1.75) {
+      curatedScale = currentPrice / (curated.price2025 * 1.07);
+    }
+  }
+  const scaleCurated = (v) => {
+    if (!Number.isFinite(v)) return v;
+    const scaled = v * curatedScale;
+    return parseFloat(scaled.toFixed(scaled < 1 ? 4 : 2));
+  };
+
+  const syntheticCagr = 0.115 + ((seed % 95) / 1000);
+  const fallbackIpoAdjusted = Math.max(
+    0.05,
+    parseFloat((currentPrice / Math.pow(1 + syntheticCagr, Math.min(32, yearsSinceIpo))).toFixed(2))
+  );
+  const ipoPriceAdjusted = curated?.ipoPriceAdjusted ? Math.max(0.01, scaleCurated(curated.ipoPriceAdjusted)) : fallbackIpoAdjusted;
+  const allTimeReturnPercent = ((currentPrice - ipoPriceAdjusted) / Math.max(0.0001, ipoPriceAdjusted)) * 100;
+  const allTimeMultiple = currentPrice / Math.max(0.0001, ipoPriceAdjusted);
+  const cagrPercent = (Math.pow(Math.max(1.0001, allTimeMultiple), 1 / yearsSinceIpo) - 1) * 100;
+
+  return {
+    currentPrice,
+    currentYear,
+    foundedYear,
+    ipoYear,
+    yearsSinceIpo,
+    scaleCurated,
+    ipoPriceAdjusted,
+    allTimeReturnPercent,
+    allTimeMultiple,
+    cagrPercent
+  };
+}
+
+/**
+ * Lightweight all-time performance summary ("From Starting Year Till Now")
+ * designed for real-time WebSocket ranking across all global companies.
+ */
+export function getAllTimeReturnSummary(rawSymbol, liveQuote = null) {
+  const symbol = String(rawSymbol || 'AAPL').trim().toUpperCase();
+  const curated = resolveCuratedRecord(symbol);
+  const catalogItem = CATALOG_MAP.get(symbol) || (curated?.chartSymbol ? CATALOG_MAP.get(curated.chartSymbol) : null) || null;
+  const seed = hashSymbol(symbol);
+  const metrics = computeInceptionMetrics(symbol, curated, catalogItem, seed, liveQuote);
+
+  return {
+    symbol,
+    name: liveQuote?.name || catalogItem?.name || symbol,
+    ipoYear: metrics.ipoYear,
+    foundedYear: metrics.foundedYear,
+    yearsSinceIpo: metrics.yearsSinceIpo,
+    ipoPriceAdjusted: metrics.ipoPriceAdjusted,
+    currentPrice: metrics.currentPrice,
+    allTimeReturnPercent: metrics.allTimeReturnPercent,
+    allTimeMultiple: metrics.allTimeMultiple,
+    cagrPercent: metrics.cagrPercent
+  };
+}
+
+/** Formats huge lifetime gains cleanly (e.g. +565,375% or +1.24M%). */
+export function formatAllTimePercent(pct) {
+  const n = Number(pct) || 0;
+  const sign = n >= 0 ? '+' : '';
+  if (Math.abs(n) >= 1000000) return `${sign}${(n / 1000000).toFixed(2)}M%`;
+  if (Math.abs(n) >= 1000) return `${sign}${Math.round(n).toLocaleString()}%`;
+  return `${sign}${n.toFixed(1)}%`;
+}
+
 /**
  * Generates the complete Inception-to-Present ("From Starting Till Now") historical record,
  * multi-era milestone timeline, annual return table, wealth calculator, and deep valuation
@@ -801,7 +906,7 @@ export function formatScaledMarketCap(baseFormatted = '$100B', ratio = 1) {
  */
 export function getCompleteStockRecord(rawSymbol, liveQuote = null) {
   const symbol = String(rawSymbol || 'AAPL').trim().toUpperCase();
-  const curated = CURATED_RECORDS[symbol] || null;
+  const curated = resolveCuratedRecord(symbol);
   const catalogItem = CATALOG_MAP.get(symbol) || (curated?.chartSymbol ? CATALOG_MAP.get(curated.chartSymbol) : null) || null;
   const seed = hashSymbol(symbol);
 
@@ -825,8 +930,21 @@ export function getCompleteStockRecord(rawSymbol, liveQuote = null) {
   const sector = liveQuote?.sector || catalogItem?.sector || curated?.industry || 'Global Equity';
   const tier = catalogItem?.tier || 'Global Leader';
 
-  // Resolve current live price & intraday metrics
-  const currentPrice = Number(liveQuote?.price || catalogItem?.price || curated?.price2025 || 150.0);
+  // Resolve Genesis & split-adjusted historical metrics via shared computation helper
+  const {
+    currentPrice,
+    currentYear,
+    foundedYear,
+    ipoYear,
+    yearsSinceIpo,
+    scaleCurated,
+    ipoPriceAdjusted,
+    allTimeReturnPercent,
+    allTimeMultiple,
+    cagrPercent
+  } = computeInceptionMetrics(symbol, curated, catalogItem, seed, liveQuote);
+
+  // Resolve intraday metrics
   const changePercent = Number(liveQuote?.changePercent ?? catalogItem?.changePercent ?? 0.85);
   const change = Number(liveQuote?.change ?? (currentPrice * (changePercent / 100)));
   const previousClose = Number(liveQuote?.previousClose || (currentPrice - change));
@@ -836,46 +954,14 @@ export function getCompleteStockRecord(rawSymbol, liveQuote = null) {
   const low52 = Number(liveQuote?.low52 || catalogItem?.low52 || currentPrice * 0.78);
   const range52Percent = Math.min(100, Math.max(0, ((currentPrice - low52) / Math.max(0.01, high52 - low52)) * 100));
 
-  // Resolve Genesis & IPO Parameters
-  const currentYear = 2026;
-  const foundedYear = curated?.foundedYear || (1960 + (seed % 46));
-  const ipoYear = curated?.ipoYear || Math.min(2015, Math.max(1980, foundedYear + 4 + (seed % 12)));
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const ipoDate = curated?.ipoDate || `${months[seed % 12]} ${10 + (seed % 18)}, ${ipoYear}`;
-  const yearsSinceIpo = Math.max(1, currentYear - ipoYear);
-
-  // Split-adjusted starting IPO price & intermediate era prices
-  // Automatically normalize curated records if live quote arrives in a different currency (e.g. USD ADR vs INR) or post-split ratio
-  let curatedScale = 1;
-  if (curated && curated.price2025 > 0 && currentPrice > 0) {
-    const ratioVs2025 = currentPrice / curated.price2025;
-    if (ratioVs2025 < 0.52 || ratioVs2025 > 1.75) {
-      curatedScale = currentPrice / (curated.price2025 * 1.07);
-    }
-  }
-  const scaleCurated = (v) => {
-    if (!Number.isFinite(v)) return v;
-    const scaled = v * curatedScale;
-    return parseFloat(scaled.toFixed(scaled < 1 ? 4 : 2));
-  };
-
-  const syntheticCagr = 0.115 + ((seed % 95) / 1000); // 11.5% to 21.0% annual compounding
-  const fallbackIpoAdjusted = Math.max(
-    0.05,
-    parseFloat((currentPrice / Math.pow(1 + syntheticCagr, Math.min(32, yearsSinceIpo))).toFixed(2))
-  );
-  const ipoPriceAdjusted = curated?.ipoPriceAdjusted ? Math.max(0.01, scaleCurated(curated.ipoPriceAdjusted)) : fallbackIpoAdjusted;
   const ipoPriceNominal = Number(curated?.ipoPriceNominal || Math.max(10, parseFloat((ipoPriceAdjusted * (4 + (seed % 12))).toFixed(2))));
 
   const price2016 = curated?.price2016 ? scaleCurated(curated.price2016) : parseFloat((currentPrice * (0.22 + (seed % 18) * 0.01)).toFixed(2));
   const price2021 = curated?.price2021 ? scaleCurated(curated.price2021) : parseFloat((currentPrice * (0.58 + (seed % 15) * 0.01)).toFixed(2));
   const price2023 = curated?.price2023 ? scaleCurated(curated.price2023) : parseFloat((currentPrice * (0.74 + (seed % 12) * 0.01)).toFixed(2));
   const price2025 = curated?.price2025 ? scaleCurated(curated.price2025) : parseFloat((currentPrice * (0.89 + (seed % 8) * 0.01)).toFixed(2));
-
-  // Compute All-Time Return, Multiple, CAGR & Horizon Returns
-  const allTimeReturnPercent = ((currentPrice - ipoPriceAdjusted) / Math.max(0.0001, ipoPriceAdjusted)) * 100;
-  const allTimeMultiple = currentPrice / Math.max(0.0001, ipoPriceAdjusted);
-  const cagrPercent = (Math.pow(Math.max(1.0001, allTimeMultiple), 1 / yearsSinceIpo) - 1) * 100;
 
   const return10YPercent = ((currentPrice - price2016) / Math.max(0.01, price2016)) * 100;
   const return5YPercent = ((currentPrice - price2021) / Math.max(0.01, price2021)) * 100;
