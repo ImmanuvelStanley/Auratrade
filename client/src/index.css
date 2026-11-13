@@ -1710,7 +1710,6 @@ select option:checked {
 }
 .stock-detail-float-card {
   position: relative;
-  overflow: hidden;
   transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateY(0px) translateZ(0);
   transition:
     transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
@@ -1718,6 +1717,24 @@ select option:checked {
     box-shadow 0.24s cubic-bezier(0.22, 1, 0.36, 1),
     background 0.24s ease;
   will-change: transform, box-shadow;
+}
+.milestones-scroll-list {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(56, 189, 248, 0.4) rgba(255, 255, 255, 0.04);
+}
+.milestones-scroll-list::-webkit-scrollbar {
+  width: 6px;
+}
+.milestones-scroll-list::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 999px;
+}
+.milestones-scroll-list::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.38);
+  border-radius: 999px;
+}
+.milestones-scroll-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.65);
 }
 .stock-detail-float-row {
   transition:

@@ -1229,7 +1229,20 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                 </div>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem', maxHeight: '360px', overflowY: 'auto', paddingRight: '0.25rem' }}>
+              <div
+                className="milestones-scroll-list"
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.6rem',
+                  maxHeight: '380px',
+                  overflowY: 'auto',
+                  overflowX: 'hidden',
+                  overscrollBehavior: 'contain',
+                  WebkitOverflowScrolling: 'touch',
+                  padding: '0.25rem 0.45rem 0.25rem 0.1rem'
+                }}
+              >
                 {milestones.map((m, idx) => {
                   const isLatest = idx === milestones.length - 1;
                   return (
@@ -1238,13 +1251,14 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                       className="stock-detail-float-card"
                       {...floatingCardEvents}
                       style={{
-                        padding: '0.65rem 0.85rem',
+                        flexShrink: 0,
+                        padding: '0.7rem 0.9rem',
                         borderRadius: '8px',
                         background: isLatest ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255, 255, 255, 0.025)',
                         border: isLatest ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(255, 255, 255, 0.06)',
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '0.22rem'
+                        gap: '0.28rem'
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -1745,7 +1759,8 @@ export const StockDeepRecordModal = React.memo(function StockDeepRecordModal({
         alignItems: 'flex-start',
         justifyContent: 'center',
         padding: '2rem 1.25rem',
-        overflowY: 'auto'
+        overflowY: 'auto',
+        WebkitOverflowScrolling: 'touch'
       }}
     >
       <div
