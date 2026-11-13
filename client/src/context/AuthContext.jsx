@@ -147,12 +147,26 @@ export function AuthProvider({ children }) {
     return data.user;
   };
 
-  const register = async (email, password, name, initialBalance, phone) => {
+  const verifyEmailOnly = async ({ identifier, code, otpToken }) => {
+    const cleanId = identifier ? identifier.trim().toLowerCase() : '';
+    const res = await fetch('/api/auth/verify-email-only', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier: cleanId, code, otpToken })
+    });
+    const data = await res.json();
+    if (!data.success) {
+      throw new Error(data.error || 'Verification failed. Please check the code.');
+    }
+    return data;
+  };
+
+  const register = async (email, password, name, initialBalance, phone, emailVerifiedToken = '') => {
     const cleanEmail = email.trim().toLowerCase();
     const res = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: cleanEmail, password, name, initialBalance, phone })
+      body: JSON.stringify({ email: cleanEmail, password, name, initialBalance, phone, emailVerifiedToken })
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Registration failed');
@@ -280,6 +294,7 @@ export function AuthProvider({ children }) {
         loading,
         sendOtp,
         verifyOtp,
+        verifyEmailOnly,
         login,
         register,
         logout,

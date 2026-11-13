@@ -32,7 +32,7 @@ const COUNTRY_CODES = [
 ];
 
 export function AuthModal({ onClose, closable = true, initialResetData = null }) {
-  const { sendOtp, verifyOtp, login, register, forgotPassword, resetPassword, verifyResetToken } = useAuth();
+  const { sendOtp, verifyOtp, verifyEmailOnly, login, register, forgotPassword, resetPassword, verifyResetToken } = useAuth();
 
   // Mode: 'signin' | 'register' | 'forgot'
   const [mode, setMode] = useState('signin');
@@ -48,13 +48,19 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
   const [showSignInPassword, setShowSignInPassword] = useState(false);
   const [userNotFound, setUserNotFound] = useState(false);
 
-  // Register State
+  // Register State (Step 1: Name & Email OTP Verification -> Step 2: Password, Mobile & Final Account Creation)
+  const [registerStep, setRegisterStep] = useState(1);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [emailOtpSent, setEmailOtpSent] = useState(false);
+  const [isEmailVerified, setIsEmailVerified] = useState(false);
+  const [emailVerifiedToken, setEmailVerifiedToken] = useState('');
+  const [emailOtpDigits, setEmailOtpDigits] = useState(['', '', '', '', '', '']);
   const [registerPassword, setRegisterPassword] = useState('');
   const [showRegisterPassword, setShowRegisterPassword] = useState(false);
   const [phoneCountryCode, setPhoneCountryCode] = useState('+91');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const emailDigitRefs = useRef([]);
 
   // Forgot / Reset Password State
   const [forgotEmail, setForgotEmail] = useState('');
@@ -124,6 +130,10 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
   const handleSwitchMode = (newMode) => {
     setMode(newMode);
     setStep(1);
+    setRegisterStep(1);
+    setEmailOtpSent(false);
+    setIsEmailVerified(false);
+    setEmailOtpDigits(['', '', '', '', '', '']);
     setError('');
     setSuccessMsg('');
     setUserNotFound(false);
@@ -210,19 +220,91 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
     }
   };
 
-  // 3a. Direct Account Creation (Recommended: instant creation & auto-login)
-  const handleRegisterDirect = async (e) => {
+  // 3a. Register Step 1a: Send OTP to Email Address for Mandatory Verification
+  const handleSendRegisterEmailOtp = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     setError('');
     setSuccessMsg('');
 
     const targetEmail = email.trim();
     if (!name.trim()) {
-      setError('Please enter your full legal name.');
+      setError('Please enter your full name.');
       return;
     }
     if (!targetEmail || !targetEmail.includes('@') || !targetEmail.includes('.')) {
       setError('Please enter a valid email address.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const resp = await sendOtp({
+        identifier: targetEmail,
+        channel: 'email',
+        purpose: 'register',
+        name: name.trim(),
+        email: targetEmail
+      });
+
+      if (resp.otpToken) setOtpToken(resp.otpToken);
+      setOtpPurpose('register');
+      setMaskedDestination(resp.maskedDestination || targetEmail);
+      setDeliveryInfo(resp.deliveryStatus || {});
+      setCooldown(resp.resendCooldown || 30);
+      setEmailOtpDigits(['', '', '', '', '', '']);
+      setEmailOtpSent(true);
+      setTimeout(() => {
+        if (emailDigitRefs.current[0]) {
+          emailDigitRefs.current[0].focus();
+        }
+      }, 80);
+    } catch (err) {
+      setError(err.message || 'Failed to dispatch verification code. Please check your email.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 3b. Register Step 1b: Verify Email OTP Code -> Unlock Next Step
+  const handleVerifyRegisterEmailOtp = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+
+    const fullCode = emailOtpDigits.join('');
+    if (fullCode.length !== 6) {
+      setError('Please enter the 6-digit verification code sent to your email.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const resp = await verifyEmailOnly({
+        identifier: email.trim(),
+        code: fullCode,
+        otpToken
+      });
+
+      setIsEmailVerified(true);
+      setEmailVerifiedToken(resp.emailVerifiedToken || '');
+      setRegisterStep(2);
+      setSuccessMsg('Email verified successfully! Now set your password to create your account.');
+    } catch (err) {
+      setError(err.message || 'Verification failed. Please check the code and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 3c. Register Step 2: Final Account Creation (Only accessible after Email is verified)
+  const handleFinalCreateAccount = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+
+    if (!isEmailVerified) {
+      setError('Please verify your email address first before creating your account.');
+      setRegisterStep(1);
       return;
     }
     if (!registerPassword || registerPassword.length < 8) {
@@ -232,7 +314,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
 
     setLoading(true);
     try {
-      await register(targetEmail, registerPassword, name.trim(), 1000, getFullPhone());
+      await register(email.trim(), registerPassword, name.trim(), 1000, getFullPhone(), emailVerifiedToken);
       setSuccessMsg('Account created successfully! Loading your trading dashboard...');
       setTimeout(() => {
         if (onClose) onClose();
@@ -244,49 +326,45 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
     }
   };
 
-  // 3b. Register: Send OTP to verify and create account
-  const handleRegisterSendOtp = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    setError('');
-    setSuccessMsg('');
+  // Handle Inline Email OTP Digit Input
+  const handleEmailDigitChange = (index, value) => {
+    const numeric = value.replace(/\D/g, '');
+    const newDigits = [...emailOtpDigits];
 
-    const targetEmail = email.trim();
-    if (!name.trim()) {
-      setError('Please enter your full legal name.');
-      return;
-    }
-    if (!targetEmail || !targetEmail.includes('@') || !targetEmail.includes('.')) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-    if (!registerPassword || registerPassword.length < 8) {
-      setError('Please create a secure password with at least 8 characters.');
+    if (!numeric) {
+      newDigits[index] = '';
+      setEmailOtpDigits(newDigits);
       return;
     }
 
-    setLoading(true);
-    try {
-      const resp = await sendOtp({
-        identifier: targetEmail,
-        channel: 'email',
-        purpose: 'register',
-        name: name.trim(),
-        email: targetEmail,
-        phone: getFullPhone(),
-        password: registerPassword
-      });
+    if (numeric.length > 1) {
+      const pasted = numeric.slice(0, 6).split('');
+      for (let i = 0; i < 6; i++) {
+        newDigits[i] = pasted[i] || '';
+      }
+      setEmailOtpDigits(newDigits);
+      const nextIdx = Math.min(pasted.length, 5);
+      if (emailDigitRefs.current[nextIdx]) {
+        emailDigitRefs.current[nextIdx].focus();
+      }
+      return;
+    }
 
-      if (resp.otpToken) setOtpToken(resp.otpToken);
-      setOtpPurpose('register');
-      setMaskedDestination(resp.maskedDestination || targetEmail);
-      setDeliveryInfo(resp.deliveryStatus || {});
-      setCooldown(resp.resendCooldown || 30);
-      setOtpDigits(['', '', '', '', '', '']);
-      setStep(2);
-    } catch (err) {
-      setError(err.message || 'Failed to dispatch verification code. Please check your email.');
-    } finally {
-      setLoading(false);
+    newDigits[index] = numeric.slice(-1);
+    setEmailOtpDigits(newDigits);
+
+    if (index < 5 && numeric) {
+      if (emailDigitRefs.current[index + 1]) {
+        emailDigitRefs.current[index + 1].focus();
+      }
+    }
+  };
+
+  const handleEmailDigitKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !emailOtpDigits[index] && index > 0) {
+      if (emailDigitRefs.current[index - 1]) {
+        emailDigitRefs.current[index - 1].focus();
+      }
     }
   };
 
@@ -340,6 +418,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         setDeliveryInfo(resp.deliveryStatus || {});
         setCooldown(resp.resendCooldown || 30);
         setOtpDigits(['', '', '', '', '', '']);
+        setEmailOtpDigits(['', '', '', '', '', '']);
       } else if (otpPurpose === 'login') {
         const resp = await sendOtp({
           identifier: signInIdentifier.trim(),
@@ -352,6 +431,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         setDeliveryInfo(resp.deliveryStatus || {});
         setCooldown(resp.resendCooldown || 30);
         setOtpDigits(['', '', '', '', '', '']);
+        setEmailOtpDigits(['', '', '', '', '', '']);
       } else if (otpPurpose === 'reset') {
         const resp = await forgotPassword(forgotEmail.trim());
         if (resp.otpToken) setOtpToken(resp.otpToken);
@@ -359,6 +439,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         setDeliveryInfo(resp.deliveryStatus || {});
         setCooldown(resp.resendCooldown || 30);
         setOtpDigits(['', '', '', '', '', '']);
+        setEmailOtpDigits(['', '', '', '', '', '']);
       }
     } catch (err) {
       setError(err.message || 'Failed to resend code.');
@@ -776,6 +857,10 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                         type="button"
                         onClick={() => {
                           setMode('register');
+                          setRegisterStep(1);
+                          setEmailOtpSent(false);
+                          setIsEmailVerified(false);
+                          setEmailOtpDigits(['', '', '', '', '', '']);
                           setError('');
                           setUserNotFound(false);
                           if (signInIdentifier.includes('@')) {
@@ -836,162 +921,419 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                 </form>
               )}
 
-              {/* MODE 2: CREATE ACCOUNT FORM */}
+              {/* MODE 2: CREATE ACCOUNT FORM (Step 1: Mandatory Email Verification -> Step 2: Password & Create Account) */}
               {mode === 'register' && (
-                <form onSubmit={handleRegisterSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                  {/* Full Name */}
-                  <div className="input-group">
-                    <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Full Name</label>
-                    <div className="auth-input-wrapper">
-                      <User size={15} className="auth-input-icon" />
-                      <input
-                        type="text"
-                        required
-                        className="auth-input-field"
-                        placeholder="e.g. Alex Mercer"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        id="auth-name-input"
-                        autoFocus
-                      />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                  {/* 2-Step Registration Progress Indicator */}
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '0.5rem',
+                      padding: '0.3rem',
+                      background: 'var(--bg-input)',
+                      border: '1px solid var(--border-subtle)',
+                      borderRadius: '8px'
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.4rem',
+                        padding: '0.4rem 0.5rem',
+                        borderRadius: '6px',
+                        fontSize: '0.73rem',
+                        fontWeight: 700,
+                        background: registerStep === 1 ? 'rgba(6, 182, 212, 0.14)' : 'rgba(16, 185, 129, 0.12)',
+                        color: registerStep === 1 ? 'var(--accent-cyan)' : '#10b981',
+                        border: registerStep === 1 ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid rgba(16, 185, 129, 0.25)'
+                      }}
+                    >
+                      {isEmailVerified ? <CheckCircle2 size={13} /> : <span>1.</span>}
+                      <span>Verify Email</span>
+                    </div>
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.4rem',
+                        padding: '0.4rem 0.5rem',
+                        borderRadius: '6px',
+                        fontSize: '0.73rem',
+                        fontWeight: 700,
+                        background: registerStep === 2 ? 'rgba(6, 182, 212, 0.14)' : 'transparent',
+                        color: registerStep === 2 ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                        border: registerStep === 2 ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid transparent',
+                        opacity: isEmailVerified ? 1 : 0.6
+                      }}
+                    >
+                      <Lock size={12} />
+                      <span>2. Create Account</span>
                     </div>
                   </div>
 
-                  {/* Email Address */}
-                  <div className="input-group">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Email Address</label>
-                      <span style={{ fontSize: '0.68rem', color: '#06b6d4', fontWeight: 600 }}>Receives Verification OTP</span>
-                    </div>
-                    <div className="auth-input-wrapper">
-                      <Mail size={15} className="auth-input-icon" />
-                      <input
-                        type="email"
-                        required
-                        className="auth-input-field"
-                        placeholder="name@domain.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        id="auth-email-input"
-                      />
-                    </div>
-                  </div>
+                  {/* STEP 1: FULL NAME & MANDATORY EMAIL OTP VERIFICATION */}
+                  {registerStep === 1 && (
+                    <form
+                      onSubmit={emailOtpSent ? handleVerifyRegisterEmailOtp : handleSendRegisterEmailOtp}
+                      style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}
+                    >
+                      {/* Full Name */}
+                      <div className="input-group">
+                        <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Full Name</label>
+                        <div className="auth-input-wrapper">
+                          <User size={15} className="auth-input-icon" />
+                          <input
+                            type="text"
+                            required
+                            className="auth-input-field"
+                            placeholder="e.g. Alex Mercer"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            id="auth-name-input"
+                            autoFocus
+                          />
+                        </div>
+                      </div>
 
-                  {/* Account Password */}
-                  <div className="input-group">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Create Password</label>
-                      <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Min. 8 characters</span>
-                    </div>
-                    <div className="auth-input-wrapper">
-                      <Lock size={15} className="auth-input-icon" />
-                      <input
-                        type={showRegisterPassword ? 'text' : 'password'}
-                        required
-                        minLength={8}
-                        className="auth-input-field"
-                        placeholder="At least 8 characters"
-                        value={registerPassword}
-                        onChange={(e) => setRegisterPassword(e.target.value)}
-                        style={{ paddingRight: '2.5rem' }}
-                        id="auth-register-password-input"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                      {/* Email Address with Mandatory Verification */}
+                      <div className="input-group">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Email Address</label>
+                          <span style={{ fontSize: '0.68rem', color: emailOtpSent ? '#f59e0b' : '#06b6d4', fontWeight: 600 }}>
+                            {emailOtpSent ? 'OTP Dispatched — Verify Below' : 'Verification Required'}
+                          </span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.45rem' }}>
+                          <div className="auth-input-wrapper" style={{ flex: 1, minWidth: 0 }}>
+                            <Mail size={15} className="auth-input-icon" />
+                            <input
+                              type="email"
+                              required
+                              className="auth-input-field"
+                              placeholder="name@domain.com"
+                              value={email}
+                              onChange={(e) => {
+                                setEmail(e.target.value);
+                                if (emailOtpSent || isEmailVerified) {
+                                  setEmailOtpSent(false);
+                                  setIsEmailVerified(false);
+                                  setEmailOtpDigits(['', '', '', '', '', '']);
+                                  setError('');
+                                  setSuccessMsg('');
+                                }
+                              }}
+                              id="auth-email-input"
+                            />
+                          </div>
+                          {emailOtpSent && (
+                            <button
+                              type="button"
+                              onClick={handleSendRegisterEmailOtp}
+                              disabled={loading || cooldown > 0}
+                              style={{
+                                padding: '0 0.75rem',
+                                borderRadius: 'var(--radius-sm)',
+                                border: '1px solid var(--border-subtle)',
+                                background: 'var(--bg-input)',
+                                color: cooldown > 0 ? 'var(--text-muted)' : 'var(--accent-cyan)',
+                                fontSize: '0.74rem',
+                                fontWeight: 600,
+                                cursor: loading || cooldown > 0 ? 'not-allowed' : 'pointer',
+                                whiteSpace: 'nowrap'
+                              }}
+                            >
+                              {cooldown > 0 ? `${cooldown}s` : 'Resend'}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Inline Email OTP Verification Section */}
+                      {emailOtpSent ? (
+                        <div
+                          style={{
+                            padding: '0.85rem',
+                            background: 'var(--bg-card-hover)',
+                            border: '1px solid rgba(6, 182, 212, 0.3)',
+                            borderRadius: '10px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.75rem'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                              Enter code sent to <strong style={{ color: 'var(--text-primary)' }}>{maskedDestination || email}</strong>
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.4rem' }}>
+                            {emailOtpDigits.map((digit, idx) => (
+                              <input
+                                key={idx}
+                                ref={(el) => (emailDigitRefs.current[idx] = el)}
+                                type="text"
+                                inputMode="numeric"
+                                maxLength={6}
+                                value={digit}
+                                onChange={(e) => handleEmailDigitChange(idx, e.target.value)}
+                                onKeyDown={(e) => handleEmailDigitKeyDown(idx, e)}
+                                id={`reg-otp-box-${idx}`}
+                                style={{
+                                  width: '100%',
+                                  height: '44px',
+                                  textAlign: 'center',
+                                  fontSize: '1.15rem',
+                                  fontWeight: 700,
+                                  fontFamily: 'var(--font-mono)',
+                                  borderRadius: '8px',
+                                  border: digit ? '1.5px solid var(--accent-cyan)' : '1px solid var(--border-subtle)',
+                                  background: digit ? 'rgba(6, 182, 212, 0.08)' : 'var(--bg-input)',
+                                  color: 'var(--text-primary)',
+                                  outline: 'none',
+                                  transition: 'all 0.15s ease'
+                                }}
+                              />
+                            ))}
+                          </div>
+
+                          <button
+                            type="submit"
+                            className="btn btn-primary"
+                            disabled={loading || emailOtpDigits.join('').length !== 6}
+                            style={{
+                              width: '100%',
+                              padding: '0.7rem',
+                              fontSize: '0.84rem',
+                              fontWeight: 700,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              gap: '0.45rem'
+                            }}
+                            id="auth-verify-email-next-btn"
+                          >
+                            {loading ? (
+                              <>
+                                <RefreshCw size={14} className="spin" />
+                                <span>Verifying Email...</span>
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle2 size={15} />
+                                <span>Verify Email & Next Step</span>
+                                <ArrowRight size={14} />
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="submit"
+                          className="btn btn-primary"
+                          disabled={loading || !name.trim() || !email.trim()}
+                          style={{
+                            width: '100%',
+                            padding: '0.75rem',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            marginTop: '0.2rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.45rem'
+                          }}
+                          id="auth-send-email-otp-btn"
+                        >
+                          {loading ? (
+                            <>
+                              <RefreshCw size={14} className="spin" />
+                              <span>Sending Verification Code...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Mail size={15} />
+                              <span>Verify Email to Continue</span>
+                              <ArrowRight size={14} />
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </form>
+                  )}
+
+                  {/* STEP 2: PASSWORD, MOBILE & FINAL CREATE ACCOUNT (Unlocked ONLY after Email is Verified) */}
+                  {registerStep === 2 && isEmailVerified && (
+                    <form onSubmit={handleFinalCreateAccount} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                      {/* Verified Email Confirmation Pill */}
+                      <div
                         style={{
-                          position: 'absolute',
-                          right: '0.75rem',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'var(--text-muted)',
-                          cursor: 'pointer',
+                          padding: '0.65rem 0.85rem',
+                          background: 'rgba(16, 185, 129, 0.1)',
+                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                          borderRadius: '8px',
                           display: 'flex',
                           alignItems: 'center',
-                          padding: 0
+                          justifyContent: 'space-between',
+                          gap: '0.5rem'
                         }}
-                        title={showRegisterPassword ? 'Hide password' : 'Show password'}
                       >
-                        {showRegisterPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Mobile Number */}
-                  <div className="input-group">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Mobile Number</label>
-                      <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Optional contact</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: '0.4rem' }}>
-                      <select
-                        value={phoneCountryCode}
-                        onChange={(e) => setPhoneCountryCode(e.target.value)}
-                        style={{
-                          background: 'var(--bg-input)',
-                          border: '1px solid var(--border-subtle)',
-                          borderRadius: 'var(--radius-sm)',
-                          color: 'var(--text-primary)',
-                          padding: '0 0.5rem',
-                          fontSize: '0.78rem',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          outline: 'none',
-                          minWidth: '85px'
-                        }}
-                        id="auth-country-code-select"
-                      >
-                        {COUNTRY_CODES.map((c) => (
-                          <option key={c.code} value={c.code} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
-                            {c.code} ({c.country})
-                          </option>
-                        ))}
-                      </select>
-
-                      <div className="auth-input-wrapper" style={{ flex: 1, minWidth: 0 }}>
-                        <Phone size={15} className="auth-input-icon" />
-                        <input
-                          type="tel"
-                          className="auth-input-field"
-                          placeholder="Phone number"
-                          value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(e.target.value)}
-                          id="auth-phone-input"
-                        />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
+                          <CheckCircle2 size={15} color="#10b981" style={{ flexShrink: 0 }} />
+                          <div style={{ fontSize: '0.76rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <span style={{ color: '#10b981', fontWeight: 700 }}>Verified:</span> {email}
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setRegisterStep(1);
+                            setIsEmailVerified(false);
+                            setEmailOtpSent(false);
+                            setEmailOtpDigits(['', '', '', '', '', '']);
+                            setSuccessMsg('');
+                            setError('');
+                          }}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--accent-cyan)',
+                            fontSize: '0.72rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            padding: 0,
+                            flexShrink: 0
+                          }}
+                        >
+                          Change
+                        </button>
                       </div>
-                    </div>
-                  </div>
 
-                  {/* Primary: Send OTP to Email */}
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={loading}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      fontSize: '0.85rem',
-                      fontWeight: 700,
-                      marginTop: '0.2rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.45rem'
-                    }}
-                    id="auth-submit-register-btn"
-                  >
-                    {loading ? (
-                      <>
-                        <RefreshCw size={14} className="spin" />
-                        <span>Sending OTP to your Email...</span>
-                      </>
-                    ) : (
-                      <span>Create Account</span>
-                    )}
-                  </button>
-                </form>
+                      {/* Account Password */}
+                      <div className="input-group">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Create Password</label>
+                          <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Min. 8 characters</span>
+                        </div>
+                        <div className="auth-input-wrapper">
+                          <Lock size={15} className="auth-input-icon" />
+                          <input
+                            type={showRegisterPassword ? 'text' : 'password'}
+                            required
+                            minLength={8}
+                            className="auth-input-field"
+                            placeholder="At least 8 characters"
+                            value={registerPassword}
+                            onChange={(e) => setRegisterPassword(e.target.value)}
+                            style={{ paddingRight: '2.5rem' }}
+                            id="auth-register-password-input"
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                            style={{
+                              position: 'absolute',
+                              right: '0.75rem',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              background: 'transparent',
+                              border: 'none',
+                              color: 'var(--text-muted)',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              padding: 0
+                            }}
+                            title={showRegisterPassword ? 'Hide password' : 'Show password'}
+                          >
+                            {showRegisterPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Mobile Number */}
+                      <div className="input-group">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Mobile Number</label>
+                          <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Optional contact</span>
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.4rem' }}>
+                          <select
+                            value={phoneCountryCode}
+                            onChange={(e) => setPhoneCountryCode(e.target.value)}
+                            style={{
+                              background: 'var(--bg-input)',
+                              border: '1px solid var(--border-subtle)',
+                              borderRadius: 'var(--radius-sm)',
+                              color: 'var(--text-primary)',
+                              padding: '0 0.5rem',
+                              fontSize: '0.78rem',
+                              fontWeight: 600,
+                              cursor: 'pointer',
+                              outline: 'none',
+                              minWidth: '85px'
+                            }}
+                            id="auth-country-code-select"
+                          >
+                            {COUNTRY_CODES.map((c) => (
+                              <option key={c.code} value={c.code} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
+                                {c.code} ({c.country})
+                              </option>
+                            ))}
+                          </select>
+
+                          <div className="auth-input-wrapper" style={{ flex: 1, minWidth: 0 }}>
+                            <Phone size={15} className="auth-input-icon" />
+                            <input
+                              type="tel"
+                              className="auth-input-field"
+                              placeholder="Phone number"
+                              value={phoneNumber}
+                              onChange={(e) => setPhoneNumber(e.target.value)}
+                              id="auth-phone-input"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Final Submit: Create Account */}
+                      <button
+                        type="submit"
+                        className="btn btn-primary"
+                        disabled={loading || registerPassword.length < 8}
+                        style={{
+                          width: '100%',
+                          padding: '0.75rem',
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          marginTop: '0.2rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '0.45rem'
+                        }}
+                        id="auth-submit-register-btn"
+                      >
+                        {loading ? (
+                          <>
+                            <RefreshCw size={14} className="spin" />
+                            <span>Creating Your Account...</span>
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus size={15} />
+                            <span>Create Account</span>
+                          </>
+                        )}
+                      </button>
+                    </form>
+                  )}
+                </div>
               )}
 
               {/* MODE 3: FORGOT PASSWORD REQUEST FORM */}

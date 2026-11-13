@@ -158,10 +158,79 @@ router.post('/verify-otp', async (req, res) => {
   }
 });
 
-// Register New User (Email + Password Direct or fallback)
+// Verify Email OTP Code Only (Step 1 of Registration — verifies email ownership before advancing to next step)
+router.post('/verify-email-only', async (req, res) => {
+  try {
+    const { identifier, code, otpToken } = req.body;
+    if (!identifier || !code) {
+      return res.status(400).json({ success: false, error: 'Email address and verification code are required.' });
+    }
+
+    const cleanEmail = identifier.toString().trim().toLowerCase();
+    const cleanCode = code.toString().trim();
+
+    let isValid = false;
+    const record = store.otps.get(cleanEmail);
+    if (record) {
+      if (Date.now() > record.expiresAt) {
+        store.otps.delete(cleanEmail);
+        return res.status(400).json({ success: false, error: 'Verification code has expired. Please request a new code.' });
+      }
+      record.attempts = (record.attempts || 0) + 1;
+      if (record.attempts > 5) {
+        store.otps.delete(cleanEmail);
+        return res.status(400).json({ success: false, error: 'Too many incorrect attempts. Please request a new verification code.' });
+      }
+      if (record.code === cleanCode) {
+        isValid = true;
+        store.otps.delete(cleanEmail);
+      } else {
+        const remaining = 5 - record.attempts;
+        return res.status(400).json({
+          success: false,
+          error: `Incorrect verification code. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`
+        });
+      }
+    } else if (otpToken) {
+      try {
+        const decoded = jwt.verify(otpToken, config.jwtSecret);
+        if (
+          decoded.type === 'otp_session' &&
+          decoded.code === cleanCode &&
+          decoded.identifier.toLowerCase() === cleanEmail
+        ) {
+          isValid = true;
+        }
+      } catch (jwtErr) {
+        return res.status(400).json({ success: false, error: 'Verification code has expired. Please request a new code.' });
+      }
+    }
+
+    if (!isValid) {
+      return res.status(400).json({ success: false, error: 'Invalid or expired verification code. Please request a new code.' });
+    }
+
+    const emailVerifiedToken = jwt.sign(
+      { email: cleanEmail, verified: true, type: 'email_verified' },
+      config.jwtSecret,
+      { expiresIn: '30m' }
+    );
+
+    res.json({
+      success: true,
+      verified: true,
+      email: cleanEmail,
+      emailVerifiedToken
+    });
+  } catch (err) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// Register New User (Final step after Email OTP verification)
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, name, initialBalance, phone } = req.body;
+    const { email, password, name, initialBalance, phone, emailVerifiedToken } = req.body;
     if (!email || !password) {
       return res.status(400).json({ success: false, error: 'Email and password are required.' });
     }
@@ -169,7 +238,25 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Password must be at least 6 characters.' });
     }
 
-    const user = await store.createUser(email, password, name, initialBalance, phone);
+    let user = await store.findUserByEmail(email);
+    if (user && emailVerifiedToken) {
+      try {
+        const decoded = jwt.verify(emailVerifiedToken, config.jwtSecret);
+        if (decoded.type === 'email_verified' && decoded.email === email.trim().toLowerCase()) {
+          const salt = await bcrypt.genSalt(10);
+          user.passwordHash = await bcrypt.hash(password, salt);
+          if (name) user.name = name.trim();
+          if (phone) user.phone = phone.trim();
+          store.save(true);
+        } else {
+          return res.status(400).json({ success: false, error: 'User already exists with this email.' });
+        }
+      } catch (e) {
+        return res.status(400).json({ success: false, error: 'User already exists with this email.' });
+      }
+    } else {
+      user = await store.createUser(email, password, name, initialBalance, phone);
+    }
     const token = jwt.sign({
       userId: user.id,
       email: user.email,
