@@ -19,7 +19,6 @@ import {
   LayoutGrid,
   List,
   Globe,
-  PlusCircle,
   CheckCircle2,
   AlertCircle,
   RefreshCw,
@@ -230,335 +229,6 @@ function ComparisonModal({ isOpen, onClose, symbols, allCompanies, onSelectSymbo
               </div>
             );
           })}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ============================================================================
-// ON-DEMAND GLOBAL TICKER INGESTION MODAL
-// ============================================================================
-function IngestGlobalTickerModal({ isOpen, onClose, onIngestSuccess }) {
-  const [tickerInput, setTickerInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState(null);
-
-  if (!isOpen) return null;
-
-  const popularGlobal = [
-    { sym: 'SPOT', name: 'Spotify Tech', ex: 'NYSE' },
-    { sym: 'ARM', name: 'Arm Holdings', ex: 'Nasdaq' },
-    { sym: 'RACE', name: 'Ferrari N.V.', ex: 'NYSE' },
-    { sym: 'PLTR', name: 'Palantir Tech', ex: 'NYSE' },
-    { sym: 'UBER', name: 'Uber Tech', ex: 'NYSE' },
-    { sym: 'COIN', name: 'Coinbase Global', ex: 'Nasdaq' },
-    { sym: 'SHEL.L', name: 'Shell plc', ex: 'LSE' },
-    { sym: '7203.T', name: 'Toyota Motor', ex: 'Tokyo' },
-    { sym: 'BABA', name: 'Alibaba Group', ex: 'NYSE' }
-  ];
-
-  const handleIngest = async (symbolToIngest) => {
-    const sym = (symbolToIngest || tickerInput).trim().toUpperCase();
-    if (!sym) {
-      setError('Please provide a valid stock ticker symbol.');
-      return;
-    }
-    setLoading(true);
-    setError('');
-    setSuccess(null);
-
-    try {
-      const res = await fetch('/api/stocks/fetch-global', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbol: sym })
-      });
-      const json = await res.json();
-      if (json.success && json.data) {
-        setSuccess(json.data);
-        onIngestSuccess(json.data);
-      } else {
-        setError(json.error || 'Failed to ingest global ticker.');
-      }
-    } catch (err) {
-      setError(`Network error: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div
-        className="ingest-modal-card"
-        onClick={e => e.stopPropagation()}
-      >
-        {/* Modal Header */}
-        <div className="glass-card-header" style={{ padding: '1.1rem 1.45rem', background: 'var(--bg-input)', borderBottom: '1px solid var(--border-subtle)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <div style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '8px',
-              background: 'rgba(6, 182, 212, 0.12)',
-              border: '1px solid rgba(6, 182, 212, 0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'var(--accent-cyan)'
-            }}>
-              <Globe size={18} />
-            </div>
-            <div>
-              <h3 style={{ fontFamily: 'var(--font-brand)', fontSize: '1.15rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
-                Ingest Worldwide Asset
-              </h3>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                Universal live Yahoo Finance connection across global exchanges
-              </div>
-            </div>
-          </div>
-          <button className="btn-icon" onClick={onClose} title="Close" style={{ width: '32px', height: '32px' }}>
-            <X size={16} />
-          </button>
-        </div>
-
-        {/* Modal Body - Perfect Fit & Clean Hierarchy */}
-        <div className="ingest-modal-body">
-          {/* STEP 1: Main Search & Ingest Form */}
-          <form onSubmit={(e) => { e.preventDefault(); handleIngest(); }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.45rem' }}>
-              <label style={{ fontSize: '0.78rem', fontWeight: 700, color: '#f1f5f9', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                <Search size={13} style={{ color: 'var(--accent-cyan)' }} />
-                Enter Company Symbol / Ticker:
-              </label>
-              <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                Real-Time Feeds
-              </span>
-            </div>
-
-            {/* Integrated Search Input Container */}
-            <div style={{
-              display: 'flex',
-              gap: '0.45rem',
-              background: 'var(--bg-input)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)',
-              padding: '0.3rem',
-              boxSizing: 'border-box',
-              width: '100%'
-            }}>
-              <input
-                type="text"
-                className="font-mono"
-                placeholder="e.g. SPOT, ARM, RACE, SHEL.L, 7203.T"
-                value={tickerInput}
-                onChange={e => setTickerInput(e.target.value.toUpperCase())}
-                disabled={loading}
-                autoFocus
-                style={{
-                  flex: 1,
-                  minWidth: 0,
-                  background: 'transparent',
-                  border: 'none',
-                  outline: 'none',
-                  color: 'var(--text-primary)',
-                  padding: '0.45rem 0.65rem',
-                  fontSize: '0.9rem',
-                  fontWeight: 700,
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em'
-                }}
-              />
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={loading || !tickerInput.trim()}
-                style={{
-                  padding: '0.55rem 1rem',
-                  fontSize: '0.82rem',
-                  fontWeight: 700,
-                  flexShrink: 0,
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.45rem',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'linear-gradient(135deg, #06b6d4, #2563eb)',
-                  border: 'none',
-                  cursor: loading || !tickerInput.trim() ? 'not-allowed' : 'pointer'
-                }}
-              >
-                {loading ? (
-                  <>
-                    <div className="loading-spinner" style={{ width: '13px', height: '13px', borderWidth: '2px' }} />
-                    <span>Ingesting...</span>
-                  </>
-                ) : (
-                  <>
-                    <PlusCircle size={15} />
-                    <span>Ingest Live</span>
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Clickable Quick Format Chips */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-              <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginRight: '0.2rem' }}>Examples:</span>
-              {[
-                { label: 'US (SPOT)', hint: 'SPOT' },
-                { label: 'London (SHEL.L)', hint: 'SHEL.L' },
-                { label: 'Tokyo (7203.T)', hint: '7203.T' },
-                { label: 'Paris (MC.PA)', hint: 'MC.PA' },
-                { label: 'India (RELIANCE.NS)', hint: 'RELIANCE.NS' }
-              ].map(chip => (
-                <button
-                  key={chip.label}
-                  type="button"
-                  onClick={() => setTickerInput(chip.hint)}
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.04)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
-                    borderRadius: '4px',
-                    padding: '0.15rem 0.45rem',
-                    fontSize: '0.67rem',
-                    color: 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    fontFamily: 'var(--font-mono)',
-                    transition: 'all 0.15s ease'
-                  }}
-                  onMouseEnter={e => {
-                    e.currentTarget.style.color = 'var(--accent-cyan)';
-                    e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.35)';
-                    e.currentTarget.style.background = 'rgba(6, 182, 212, 0.08)';
-                  }}
-                  onMouseLeave={e => {
-                    e.currentTarget.style.color = 'var(--text-secondary)';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
-                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
-                  }}
-                >
-                  {chip.label}
-                </button>
-              ))}
-            </div>
-          </form>
-
-          {/* STEP 2: Live Feedback Alert Area */}
-          {error && (
-            <div style={{
-              padding: '0.65rem 0.85rem',
-              background: 'rgba(244,63,94,0.12)',
-              border: '1px solid rgba(244,63,94,0.3)',
-              borderRadius: 'var(--radius-md)',
-              color: '#fca5a5',
-              fontSize: '0.78rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem'
-            }}>
-              <AlertCircle size={15} style={{ flexShrink: 0 }} />
-              <div>{error}</div>
-            </div>
-          )}
-
-          {success && (
-            <div style={{
-              padding: '0.75rem 0.9rem',
-              background: 'rgba(16,185,129,0.12)',
-              border: '1px solid rgba(16,185,129,0.35)',
-              borderRadius: 'var(--radius-md)',
-              color: '#6ee7b7',
-              fontSize: '0.8rem'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontWeight: 700, marginBottom: '0.2rem' }}>
-                <CheckCircle2 size={15} style={{ color: '#10b981' }} />
-                <span>Successfully Ingested {success.symbol} ({success.name})</span>
-              </div>
-              <div style={{ fontSize: '0.73rem', color: '#a7f3d0' }}>
-                Price: ${success.price} • Market Cap: {success.marketCapFormatted} • Exchange: {success.exchange} ({success.currency})
-              </div>
-            </div>
-          )}
-
-          {/* STEP 3: Popular Worldwide Suggestions (1-Click Add) */}
-          <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.85rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-                Popular Worldwide Tickers (1-Click Add):
-              </span>
-              <span style={{ fontSize: '0.68rem', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                <Zap size={11} fill="currentColor" /> Click to ingest
-              </span>
-            </div>
-
-            {/* 3x3 Perfectly Fitted Suggestion Grid */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
-              gap: '0.55rem',
-              width: '100%',
-              boxSizing: 'border-box'
-            }}>
-              {popularGlobal.map(item => (
-                <button
-                  key={item.sym}
-                  type="button"
-                  className="ingest-card-item"
-                  onClick={() => {
-                    setTickerInput(item.sym);
-                    handleIngest(item.sym);
-                  }}
-                  disabled={loading}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: '0.15rem' }}>
-                    <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-                      {item.sym}
-                    </span>
-                    <span style={{
-                      fontSize: '0.63rem',
-                      color: 'var(--accent-cyan)',
-                      fontFamily: 'var(--font-mono)',
-                      padding: '0.08rem 0.35rem',
-                      background: 'rgba(6, 182, 212, 0.12)',
-                      borderRadius: '3px',
-                      border: '1px solid rgba(6, 182, 212, 0.22)'
-                    }}>
-                      {item.ex}
-                    </span>
-                  </div>
-                  <div style={{
-                    fontSize: '0.7rem',
-                    color: 'var(--text-secondary)',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    width: '100%',
-                    fontFamily: 'var(--font-sans)'
-                  }}>
-                    {item.name}
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* STEP 4: Institutional Reassurance Footer */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.4rem',
-            paddingTop: '0.4rem',
-            borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-            fontSize: '0.69rem',
-            color: 'var(--text-muted)'
-          }}>
-            <Zap size={11} style={{ color: '#10b981' }} />
-            <span>Real-time quotes update with live ticks and persist across your session.</span>
-          </div>
         </div>
       </div>
     </div>
@@ -1387,8 +1057,10 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
   const watchlistSet = useMemo(() => new Set(watchlistSymbols || []), [watchlistSymbols]);
   const compareSet = useMemo(() => new Set(selectedCompareSymbols || []), [selectedCompareSymbols]);
 
-  // Ingest Global Ticker Modal State
-  const [isIngestModalOpen, setIsIngestModalOpen] = useState(false);
+  // Seamless Automatic Global Ticker Ingestion State
+  const [isAutoIngesting, setIsAutoIngesting] = useState(false);
+  const [autoIngestFailedSymbol, setAutoIngestFailedSymbol] = useState(null);
+  const lastAutoIngestAttemptRef = useRef('');
 
   // High-performance pagination state
   const [pageSize, setPageSize] = useState(24); // 24, 48, or 'all'
@@ -1736,6 +1408,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
     });
 
     // Reset filters to ensure the newly ingested asset is immediately visible to user
+    lastAutoIngestAttemptRef.current = normalizedAsset.symbol;
     setActivePreset('all');
     setSelectedRegion('all');
     setSelectedTier('all');
@@ -1743,6 +1416,44 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
     setCurrentPage(1);
     setSearchQuery(normalizedAsset.symbol);
   }, []);
+
+  // Automatically ingest any uncataloged global ticker on-demand in the background when searched
+  useEffect(() => {
+    const q = searchQuery.trim().toUpperCase();
+    if (!q || q.length > 15 || filteredRawCompanies.length > 0 || !/^[A-Z0-9.\-]{1,15}$/.test(q)) {
+      setIsAutoIngesting(false);
+      return;
+    }
+
+    if (lastAutoIngestAttemptRef.current === q && autoIngestFailedSymbol === q) {
+      return;
+    }
+
+    setIsAutoIngesting(true);
+    const timer = setTimeout(async () => {
+      lastAutoIngestAttemptRef.current = q;
+      try {
+        const res = await fetch('/api/stocks/fetch-global', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ symbol: q })
+        });
+        const json = await res.json();
+        if (json.success && json.data) {
+          setAutoIngestFailedSymbol(null);
+          handleIngestSuccess(json.data);
+        } else {
+          setAutoIngestFailedSymbol(q);
+        }
+      } catch (err) {
+        setAutoIngestFailedSymbol(q);
+      } finally {
+        setIsAutoIngesting(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, filteredRawCompanies.length, handleIngestSuccess, autoIngestFailedSymbol]);
 
   // Export Screener Data (Sheet, Document, and CSV)
   const handleExportSheet = useCallback(() => {
@@ -2095,11 +1806,11 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
                   maxWidth: '780px'
                 }}
               >
-                Explore the premier companies of the world economy ordered by market capitalization, real-time valuation, and 30-day AI predictive upside. Ingest and trade any worldwide asset on-demand directly with live market feeds.
+                Explore the premier companies of the world economy ordered by market capitalization, real-time valuation, and 30-day AI predictive upside with automated real-time global exchange feeds.
               </p>
             </div>
 
-            {/* Right: Quick Action Toolbar (Ingest, Download Menu, View Mode Switcher) */}
+            {/* Right: Quick Action Toolbar (Download Menu, View Mode Switcher) */}
             <div
               className="screener-action-toolbar"
               style={{
@@ -2111,26 +1822,6 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
               }}
             >
               <div className="screener-primary-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                {/* Ingest Global Asset Trigger */}
-                <button
-                  className="btn btn-primary screener-ingest-btn"
-                  style={{
-                    fontSize: '0.82rem',
-                    padding: '0.48rem 0.95rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.45rem',
-                    background: 'linear-gradient(135deg, #06b6d4, #6366f1)',
-                    border: 'none',
-                    boxShadow: '0 4px 14px rgba(6, 182, 212, 0.3)',
-                    fontWeight: 600
-                  }}
-                  onClick={() => setIsIngestModalOpen(true)}
-                  title="Ingest any international company on demand from Yahoo Finance"
-                >
-                  <PlusCircle size={15} /> Ingest Global Asset
-                </button>
-
               {/* Screener Data Download Menu (Sheet, Document, CSV) */}
               <div ref={downloadMenuRef} style={{ position: 'relative', zIndex: 200 }}>
                 <button
@@ -2742,19 +2433,38 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
         </div>
       ) : displayedCompanies.length === 0 ? (
         <div className="glass-card" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-          <div style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
-            No companies found matching your filter criteria.
-          </div>
-          <p style={{ maxWidth: '500px', margin: '0 auto 1.25rem', fontSize: '0.85rem' }}>
-            Looking for a worldwide company or ETF not listed here (e.g. Spotify, Ferrari, Arm, Palantir)? You can ingest any publicly traded ticker on demand!
-          </p>
-          <button
-            className="btn btn-primary"
-            style={{ margin: '0 auto', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: 'linear-gradient(135deg, #06b6d4, #6366f1)', border: 'none' }}
-            onClick={() => setIsIngestModalOpen(true)}
-          >
-            <PlusCircle size={15} /> Ingest Global Ticker Live
-          </button>
+          {isAutoIngesting ? (
+            <div>
+              <div className="loading-spinner" style={{ margin: '0 auto 1rem' }} />
+              <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.45rem' }}>
+                Connecting to global exchanges for "{searchQuery.toUpperCase()}"...
+              </div>
+              <p style={{ maxWidth: '500px', margin: '0 auto', fontSize: '0.85rem' }}>
+                Automatically fetching live market quotes, institutional metrics, and streaming real-time price updates.
+              </p>
+            </div>
+          ) : (
+            <div>
+              <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+                No companies found matching your criteria.
+              </div>
+              <p style={{ maxWidth: '520px', margin: '0 auto 1.25rem', fontSize: '0.85rem' }}>
+                {searchQuery
+                  ? `No verified market listing found for "${searchQuery}". Enter any global ticker symbol (e.g. AAPL, NVDA, SPOT, ARM, RACE) to automatically stream live market data.`
+                  : 'Adjust your region, tier, or sector filters to view available global companies.'}
+              </p>
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ margin: '0 auto', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', padding: '0.45rem 1rem' }}
+                  onClick={() => setSearchQuery('')}
+                >
+                  <RotateCcw size={14} /> Clear Search
+                </button>
+              )}
+            </div>
+          )}
         </div>
       ) : viewMode === 'table' ? (
         /* ================= INSTITUTIONAL TABLE VIEW ================= */
@@ -2912,13 +2622,6 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
         onSelectSymbol={handleSelectSymbol}
         onOpenTradeModal={handleOpenTrade}
         onRemoveSymbol={handleToggleCompare}
-      />
-
-      {/* On-Demand Global Ticker Ingestion Modal */}
-      <IngestGlobalTickerModal
-        isOpen={isIngestModalOpen}
-        onClose={() => setIsIngestModalOpen(false)}
-        onIngestSuccess={handleIngestSuccess}
       />
     </div>
   );

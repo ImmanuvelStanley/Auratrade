@@ -4,11 +4,47 @@ const marketDataService = require('../services/marketDataService');
 const cacheService = require('../services/cacheService');
 const config = require('../config');
 
-// Search stocks by symbol or company name
-router.get('/search', (req, res) => {
-  const query = req.query.q || '';
-  const results = marketDataService.searchSymbols(query);
-  res.json({ success: true, data: results });
+// Search stocks by symbol or company name with automatic background global asset ingestion
+router.get('/search', async (req, res) => {
+  try {
+    const rawQuery = (req.query.q || '').trim();
+    if (!rawQuery) {
+      return res.json({ success: true, data: [] });
+    }
+
+    let results = marketDataService.searchSymbols(rawQuery);
+    const qUpper = rawQuery.toUpperCase();
+
+    // If no exact match in catalog and query looks like a valid global ticker symbol (e.g. ARM, RACE, SPOT, PLTR, 7203.T, SHEL.L)
+    const hasExactMatch = results.some(r => r.symbol === qUpper && r.sector !== 'Global Market');
+    if (!hasExactMatch && /^[A-Z0-9.\-]{1,12}$/i.test(rawQuery)) {
+      try {
+        const liveAsset = await marketDataService.fetchGlobalTickerOnDemand(qUpper);
+        if (liveAsset && liveAsset.symbol) {
+          results = [
+            {
+              symbol: liveAsset.symbol,
+              name: liveAsset.name,
+              sector: liveAsset.sector,
+              price: liveAsset.price,
+              country: liveAsset.country,
+              countryFlag: liveAsset.countryFlag,
+              change: liveAsset.change,
+              changePercent: liveAsset.changePercent,
+              currency: liveAsset.currency
+            },
+            ...results.filter(r => r.symbol !== liveAsset.symbol && r.sector !== 'Global Market')
+          ];
+        }
+      } catch (e) {
+        // Fallback gracefully to catalog search results if not found on global exchanges
+      }
+    }
+
+    res.json({ success: true, data: results.slice(0, 10) });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // Get single stock quote
@@ -16,6 +52,9 @@ router.get('/quote/:symbol', async (req, res) => {
   try {
     const symbol = req.params.symbol.toUpperCase().trim();
     const cacheKey = `price:${symbol}`;
+
+    // Register symbol in active_symbols so IngestionWorker continuously streams live updates
+    await cacheService.sadd('active_symbols', symbol);
 
     // Check hot cache
     const cached = await cacheService.get(cacheKey);

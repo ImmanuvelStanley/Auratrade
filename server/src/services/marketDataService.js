@@ -4196,6 +4196,8 @@ class MarketDataService {
           symbol: canonical,
           name: info.name,
           sector: info.sector,
+          country: info.country,
+          countryFlag: info.countryFlag,
           aliases: info.aliases || [],
           price: state ? state.price : info.basePrice
         });
@@ -5509,12 +5511,17 @@ class MarketDataService {
     // If already in catalog or alias, get latest quote and return without duplicating
     const existing = this.getCatalogInfo(sym);
     if (existing) {
-      const q = await this.getQuote(existing.symbol || sym);
+      const targetSym = existing.symbol || sym;
+      try {
+        const cacheService = require('./cacheService');
+        await cacheService.sadd('active_symbols', targetSym);
+      } catch (e) {}
+      const q = await this.getQuote(targetSym);
       const forecastGain = typeof existing.forecastGainPercent === 'number' ? existing.forecastGainPercent : 7.5;
       const forecastTarget = parseFloat((q.price * (1 + (forecastGain / 100))).toFixed(2));
       return {
         ...existing,
-        symbol: existing.symbol || sym,
+        symbol: targetSym,
         price: q.price,
         change: q.change,
         changePercent: q.changePercent,
@@ -5557,12 +5564,28 @@ class MarketDataService {
         region = 'europe'; country = 'France'; countryFlag = '🇫🇷';
       } else if (sym.endsWith('.DE') || exchange.includes('Frankfurt') || exchange.includes('XETRA')) {
         region = 'europe'; country = 'Germany'; countryFlag = '🇩🇪';
+      } else if (sym.endsWith('.SW') || exchange.includes('SIX') || exchange.includes('Swiss')) {
+        region = 'europe'; country = 'Switzerland'; countryFlag = '🇨🇭';
+      } else if (sym.endsWith('.AS') || exchange.includes('Amsterdam')) {
+        region = 'europe'; country = 'Netherlands'; countryFlag = '🇳🇱';
+      } else if (sym.endsWith('.MI') || exchange.includes('Milan')) {
+        region = 'europe'; country = 'Italy'; countryFlag = '🇮🇹';
+      } else if (sym.endsWith('.MC') || exchange.includes('Madrid')) {
+        region = 'europe'; country = 'Spain'; countryFlag = '🇪🇸';
       } else if (sym.endsWith('.T') || exchange.includes('Tokyo') || exchange.includes('JPX')) {
         region = 'asiapac'; country = 'Japan'; countryFlag = '🇯🇵';
       } else if (sym.endsWith('.NS') || sym.endsWith('.BO') || exchange.includes('NSE') || exchange.includes('BSE')) {
         region = 'india_emerging'; country = 'India'; countryFlag = '🇮🇳';
       } else if (sym.endsWith('.HK') || exchange.includes('HKEX')) {
         region = 'asiapac'; country = 'Hong Kong / China'; countryFlag = '🇨🇳';
+      } else if (sym.endsWith('.KS') || sym.endsWith('.KQ') || exchange.includes('Korea') || exchange.includes('KRX')) {
+        region = 'asiapac'; country = 'South Korea'; countryFlag = '🇰🇷';
+      } else if (sym.endsWith('.TW') || exchange.includes('Taiwan')) {
+        region = 'asiapac'; country = 'Taiwan'; countryFlag = '🇹🇼';
+      } else if (sym.endsWith('.AX') || exchange.includes('ASX') || exchange.includes('Sydney')) {
+        region = 'asiapac'; country = 'Australia'; countryFlag = '🇦🇺';
+      } else if (sym.endsWith('.TO') || sym.endsWith('.V') || exchange.includes('Toronto') || exchange.includes('TSX')) {
+        region = 'north_america'; country = 'Canada'; countryFlag = '🇨🇦';
       } else if (sym.endsWith('.SA') || exchange.includes('Sao Paulo') || exchange.includes('B3')) {
         region = 'latam_mideast'; country = 'Brazil'; countryFlag = '🇧🇷';
       } else if (sym.includes('BTC') || sym.includes('ETH') || sym.includes('USD')) {
@@ -5607,7 +5630,7 @@ class MarketDataService {
         investorAppeal: `Active publicly traded world instrument on ${exchange} (${currency}). Live real-time market data directly ingested from global financial markets.`
       };
 
-      // Register dynamically into live memory
+      // Register dynamically into live memory and background ingestion poller
       STOCK_CATALOG[sym] = newEntry;
       marketState.set(sym, {
         ...newEntry,
@@ -5622,6 +5645,11 @@ class MarketDataService {
         forecastPrice30d,
         updatedAt: new Date().toISOString()
       });
+
+      try {
+        const cacheService = require('./cacheService');
+        await cacheService.sadd('active_symbols', sym);
+      } catch (e) {}
 
       return {
         ...newEntry,
@@ -5746,7 +5774,7 @@ class MarketDataService {
       filtered = filtered.filter(c => c.region && c.region.toLowerCase() === reg);
     }
 
-    // Apply Filter: Search Query
+    // Apply Filter: Search Query (with automatic background global ingestion on miss)
     if (search && search.trim().length > 0) {
       const q = search.toUpperCase().trim();
       filtered = filtered.filter(c => {
@@ -5759,6 +5787,40 @@ class MarketDataService {
         const sectorMatch = c.sector && c.sector.toUpperCase().includes(q);
         return symMatch || nameMatch || aliasMatch || typoGoogle || typoMeta || countryMatch || sectorMatch;
       });
+
+      if (filtered.length === 0 && /^[A-Z0-9.\-]{1,12}$/i.test(q)) {
+        try {
+          const liveAsset = await this.fetchGlobalTickerOnDemand(q);
+          if (liveAsset && liveAsset.symbol) {
+            const cName = liveAsset.country || 'Global';
+            const cLower = cName.toLowerCase();
+            let isoCode = 'US';
+            if (liveAsset.symbol.endsWith('.NS') || liveAsset.symbol.endsWith('.BO') || cLower.includes('india')) isoCode = 'IN';
+            else if (cLower.includes('japan') || liveAsset.symbol.endsWith('.T')) isoCode = 'JP';
+            else if (cLower.includes('united kingdom') || cLower.includes('uk')) isoCode = 'GB';
+            else if (cLower.includes('germany')) isoCode = 'DE';
+            else if (cLower.includes('france')) isoCode = 'FR';
+            else if (cLower.includes('china')) isoCode = 'CN';
+            else if (cLower.includes('hong kong')) isoCode = 'HK';
+            else if (cLower.includes('taiwan')) isoCode = 'TW';
+            else if (cLower.includes('south korea')) isoCode = 'KR';
+            else if (cLower.includes('netherlands')) isoCode = 'NL';
+            else if (cLower.includes('switzerland')) isoCode = 'CH';
+            else if (cLower.includes('brazil')) isoCode = 'BR';
+            else if (cLower.includes('canada')) isoCode = 'CA';
+            else if (cLower.includes('australia')) isoCode = 'AU';
+
+            const formattedLive = {
+              ...liveAsset,
+              countryCode: isoCode,
+              countryFlag: liveAsset.countryFlag || '🌐',
+              lastTickDirection: liveAsset.lastTickDirection || 'neutral'
+            };
+            filtered = [formattedLive];
+            companies.unshift(formattedLive);
+          }
+        } catch (err) {}
+      }
     }
 
     // Apply Filter: Tier
