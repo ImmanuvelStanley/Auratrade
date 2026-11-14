@@ -1093,6 +1093,13 @@ body:before {
   color: var(--text-primary);
   border-color: #ffffff26;
 }
+.btn-icon:focus {
+  outline: none;
+}
+.btn-icon:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+}
 .input-group {
   display: flex;
   flex-direction: column;
@@ -8003,17 +8010,10 @@ canvas {
 }
 
 /* ============================================================================
-   Modern Institutional Topic Sidebar, Responsive Drawer & Fullscreen Shell
+   Modern Institutional Topic Sidebar, Responsive Drawer & Auth Shell
    ============================================================================ */
-.navbar-left-cluster {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  min-width: 0;
-  flex-shrink: 0;
-}
-
-.header-sidebar-toggle {
+.header-mobile-menu-btn {
+  display: none;
   flex-shrink: 0;
 }
 
@@ -8439,6 +8439,10 @@ canvas {
 
 /* Tablet & Mobile Slide-Over Drawer Layout */
 @media (max-width: 1024px) {
+  .header-mobile-menu-btn {
+    display: inline-flex;
+  }
+
   .topic-drawer-trigger {
     display: inline-flex;
   }

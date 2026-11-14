@@ -6,8 +6,7 @@ import { NotificationCenter } from './NotificationCenter';
 import { BrandLogo } from './BrandLogo';
 
 export const Header = React.memo(function Header({
-  onToggleSidebar,
-  isSidebarCollapsed
+  onToggleSidebar
 }) {
   const { notifications } = useSocket();
   const { theme, toggleTheme } = useTheme();
@@ -17,29 +16,16 @@ export const Header = React.memo(function Header({
 
   return (
     <header className="navbar">
-      <div className="navbar-left-cluster">
-        {onToggleSidebar && (
-          <button
-            type="button"
-            className="btn-icon header-sidebar-toggle"
-            onClick={onToggleSidebar}
-            title={isSidebarCollapsed ? 'Expand Sidebar Navigation' : 'Toggle Sidebar Navigation'}
-            aria-label="Toggle Navigation Sidebar"
-          >
-            <Menu size={17} />
-          </button>
-        )}
-
-        {/* Brand Modern Geometric Logo */}
-        <BrandLogo />
-      </div>
+      {/* Brand Modern Geometric Logo (Always cleanly anchored top-left) */}
+      <BrandLogo />
 
       {/* Navigation Actions */}
       <div className="nav-actions">
-        {/* Quick Utility Control Icons (Theme, Notifications) */}
+        {/* Quick Utility Control Icons (Theme, Notifications, Mobile Topics Drawer) */}
         <div className="header-controls-cluster">
           {/* Theme Toggle Button */}
           <button
+            type="button"
             className="btn-icon"
             title={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
             onClick={toggleTheme}
@@ -51,6 +37,7 @@ export const Header = React.memo(function Header({
           {/* Notification Bell */}
           <div style={{ position: 'relative' }} className="header-notification-container">
             <button
+              type="button"
               className="btn-icon"
               title="Triggered Alerts & Notifications"
               onClick={() => setShowNotifications(prev => !prev)}
@@ -79,6 +66,19 @@ export const Header = React.memo(function Header({
               </>
             )}
           </div>
+
+          {/* Mobile & Tablet Sidebar Drawer Button (Cleanly grouped on top-right controls) */}
+          {onToggleSidebar && (
+            <button
+              type="button"
+              className="btn-icon header-mobile-menu-btn"
+              onClick={onToggleSidebar}
+              title="Open Topics Menu"
+              aria-label="Open Topics Navigation Drawer"
+            >
+              <Menu size={17} />
+            </button>
+          )}
         </div>
       </div>
     </header>
