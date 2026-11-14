@@ -672,7 +672,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
         </div>
       </div>
 
-      {/* Section Filter Navigation Bar & Share Split Basis */}
+      {/* Section Filter Navigation Bar */}
       <div
         style={{
           padding: '0.7rem 1.5rem',
@@ -721,20 +721,6 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
               </button>
             );
           })}
-        </div>
-
-        <div
-          style={{
-            fontSize: '0.71rem',
-            color: 'var(--text-muted)',
-            fontFamily: 'var(--font-mono)',
-            padding: '0.26rem 0.6rem',
-            borderRadius: '5px',
-            background: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 255, 255, 0.06)'
-          }}
-        >
-          Basis: {identity.stockSplits}
         </div>
       </div>
 
