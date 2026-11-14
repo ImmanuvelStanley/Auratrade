@@ -20,13 +20,14 @@ import { DEFAULT_GLOBAL_INDICES_DATA } from '../data/defaultGlobalIndices';
 
 // Module-level in-memory cache for instant zero-spinner tab switching
 const globalIndicesCache = {
+  all: DEFAULT_GLOBAL_INDICES_DATA,
   major: DEFAULT_GLOBAL_INDICES_DATA
 };
 
 export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelectSymbol, isActive = true }) {
-  const [data, setData] = useState(() => globalIndicesCache['major'] || DEFAULT_GLOBAL_INDICES_DATA);
+  const [data, setData] = useState(() => globalIndicesCache['all'] || DEFAULT_GLOBAL_INDICES_DATA);
   const [loading, setLoading] = useState(false);
-  const [region, setRegion] = useState('major');
+  const [region, setRegion] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('default'); // 'default', 'gain_desc', 'loss_desc', 'name'
   const [activeMoversTab, setActiveMoversTab] = useState('gainers'); // 'gainers' | 'losers' | 'activeValue' | 'activeVolume'
@@ -513,6 +514,14 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
           <div className="global-regional-strip mobile-touch-strip" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', background: 'var(--bg-input)', border: '1px solid var(--border-subtle)', padding: '0.25rem', borderRadius: 'var(--radius-md)' }}>
             <button
               type="button"
+              className={`btn ${region === 'all' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ fontSize: '0.8rem', padding: '0.4rem 0.85rem' }}
+              onClick={() => handleRegionChange('all')}
+            >
+              All Global Indices
+            </button>
+            <button
+              type="button"
               className={`btn ${region === 'major' ? 'btn-primary' : 'btn-secondary'}`}
               style={{ fontSize: '0.8rem', padding: '0.4rem 0.85rem' }}
               onClick={() => handleRegionChange('major')}
@@ -549,16 +558,7 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
               style={{ fontSize: '0.8rem', padding: '0.4rem 0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
               onClick={() => handleRegionChange('commodities')}
             >
-              <span>Commodity</span>
               <span>Commodities & Metals</span>
-            </button>
-            <button
-              type="button"
-              className={`btn ${region === 'all' ? 'btn-primary' : 'btn-secondary'}`}
-              style={{ fontSize: '0.8rem', padding: '0.4rem 0.85rem' }}
-              onClick={() => handleRegionChange('all')}
-            >
-              All Global Indices
             </button>
           </div>
 
