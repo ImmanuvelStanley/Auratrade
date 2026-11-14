@@ -28,7 +28,7 @@
   --text-primary: #f8fafc;
   --text-secondary: #cbd5e1;
   --text-muted: #94a3b8;
-  --brand-trade-color: #cbd5e1;
+  --brand-trade-color: #e2e8f0;
   --accent-cyan: #06b6d4;
   --accent-indigo: #6366f1;
   --accent-purple: #8b5cf6;
@@ -2133,9 +2133,9 @@ select option:checked {
 }
 .stealth-emblem-box {
   position: relative;
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
+  width: 46px;
+  height: 46px;
+  border-radius: 11px;
   background: linear-gradient(145deg, #111a2e, #080d19);
   border: 1px solid rgba(255, 255, 255, 0.14);
   box-shadow:
@@ -3172,7 +3172,7 @@ select option:checked {
     overflow-x: hidden !important;
   }
   .navbar {
-    padding: 0.45rem clamp(0.55rem, 2vw, 1.25rem) !important;
+    padding: 0.55rem clamp(0.65rem, 2.5vw, 1.25rem) !important;
     gap: clamp(0.75rem, 2.5vw, 1.5rem) !important;
     position: sticky !important;
     top: 0 !important;
@@ -3186,22 +3186,24 @@ select option:checked {
   }
   .brand-logo-wrapper,
   .stealth-logo-wrapper {
-    gap: 0.45rem !important;
+    gap: 0.65rem !important;
     flex-shrink: 0 !important;
     white-space: nowrap !important;
   }
   .stealth-emblem-box {
-    width: 30px !important;
-    height: 30px !important;
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 10px !important;
     flex-shrink: 0 !important;
   }
   .stealth-emblem-box svg {
-    width: 22px !important;
-    height: 22px !important;
+    width: 30px !important;
+    height: 30px !important;
   }
   .brand-word-aura,
   .brand-word-trade {
-    font-size: 1.15rem !important;
+    font-size: clamp(1.34rem, 4.4vw, 1.56rem) !important;
+    line-height: 1.05 !important;
   }
   .nav-actions {
     display: flex !important;
@@ -3630,7 +3632,7 @@ select option:checked {
     gap: 0.85rem !important;
   }
   .navbar {
-    padding: 0.4rem clamp(0.45rem, 2vw, 0.75rem) !important;
+    padding: 0.52rem clamp(0.6rem, 2.5vw, 0.9rem) !important;
     gap: clamp(0.55rem, 2vw, 1rem) !important;
     flex-wrap: nowrap !important;
     justify-content: space-between !important;
@@ -3642,15 +3644,17 @@ select option:checked {
   }
   .brand-word-aura,
   .brand-word-trade {
-    font-size: 1.02rem !important;
+    font-size: clamp(1.3rem, 4.8vw, 1.5rem) !important;
+    line-height: 1.05 !important;
   }
   .stealth-emblem-box {
-    width: 28px !important;
-    height: 28px !important;
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 10px !important;
   }
   .stealth-emblem-box svg {
-    width: 20px !important;
-    height: 20px !important;
+    width: 28px !important;
+    height: 28px !important;
   }
   .nav-actions {
     margin-left: auto !important;
@@ -3805,21 +3809,23 @@ select option:checked {
     padding: 0.5rem 0.35rem 3.5rem !important;
   }
   .navbar {
-    padding: 0.35rem 0.4rem !important;
-    gap: 0.45rem !important;
+    padding: 0.48rem 0.55rem !important;
+    gap: 0.5rem !important;
     justify-content: space-between !important;
   }
   .stealth-emblem-box {
-    width: 26px !important;
-    height: 26px !important;
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 9px !important;
   }
   .stealth-emblem-box svg {
-    width: 18px !important;
-    height: 18px !important;
+    width: 27px !important;
+    height: 27px !important;
   }
   .brand-word-aura,
   .brand-word-trade {
-    font-size: 0.95rem !important;
+    font-size: 1.22rem !important;
+    line-height: 1.05 !important;
   }
   .btn-icon,
   .header-controls-cluster .btn-icon {
@@ -8047,7 +8053,7 @@ canvas {
   border-right: 1px solid var(--border-subtle);
   position: fixed;
   left: 0;
-  top: 60px;
+  top: 68px;
   bottom: 0;
   height: auto;
   display: flex;
@@ -8065,7 +8071,7 @@ canvas {
 
 @media (min-width: 1025px) {
   .navbar {
-    height: 60px;
+    height: 68px;
     padding-top: 0;
     padding-bottom: 0;
   }

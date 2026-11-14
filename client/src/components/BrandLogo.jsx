@@ -10,10 +10,10 @@ export function BrandLogo({
   const isLarge = size === 'large' || size === 'portal';
   const isVertical = layout === 'vertical';
 
-  const emblemSize = isLarge ? 48 : 38;
-  const svgSize = isLarge ? 30 : 26;
-  const wordmarkSize = isLarge ? '1.42rem' : '1.25rem';
-  const subtextSize = isLarge ? '0.62rem' : '0.55rem';
+  const emblemSize = isLarge ? 56 : 46;
+  const svgSize = isLarge ? 38 : 32;
+  const wordmarkSize = isLarge ? '1.85rem' : '1.58rem';
+  const subtextSize = isLarge ? '0.72rem' : '0.66rem';
 
   return (
     <div
@@ -23,7 +23,7 @@ export function BrandLogo({
         flexDirection: isVertical ? 'column' : 'row',
         alignItems: 'center',
         justifyContent: isVertical ? 'center' : 'flex-start',
-        gap: isVertical ? '0.55rem' : '0.65rem',
+        gap: isVertical ? '0.65rem' : '0.8rem',
         textAlign: isVertical ? 'center' : 'left',
         cursor: 'default',
         flexShrink: 0
@@ -35,7 +35,7 @@ export function BrandLogo({
         style={{
           width: `${emblemSize}px`,
           height: `${emblemSize}px`,
-          borderRadius: isLarge ? '12px' : '10px',
+          borderRadius: isLarge ? '14px' : '11px',
           boxShadow: isLarge
             ? '0 8px 24px -2px rgba(16, 185, 129, 0.35), 0 0 16px rgba(6, 182, 212, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
             : undefined,
@@ -45,7 +45,8 @@ export function BrandLogo({
         <svg
           width={svgSize}
           height={svgSize}
-          viewBox="0 0 26 26"
+          viewBox="4.5 3.6 17 18.8"
+          shapeRendering="geometricPrecision"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -96,14 +97,15 @@ export function BrandLogo({
           gap: '0.1rem'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', justifyContent: isVertical ? 'center' : 'flex-start' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', justifyContent: isVertical ? 'center' : 'flex-start', lineHeight: 1.05 }}>
           <span
             className="brand-word-aura"
             style={{
               fontFamily: "var(--font-brand)",
               fontWeight: 800,
               fontSize: wordmarkSize,
-              letterSpacing: '-0.03em',
+              letterSpacing: '-0.02em',
+              lineHeight: 1.05,
               color: 'var(--text-primary)'
             }}
           >
@@ -113,10 +115,11 @@ export function BrandLogo({
             className="brand-word-trade"
             style={{
               fontFamily: "var(--font-brand)",
-              fontWeight: 600,
+              fontWeight: 700,
               fontSize: wordmarkSize,
-              letterSpacing: '-0.03em',
-              color: 'var(--brand-trade-color, #475569)'
+              letterSpacing: '-0.02em',
+              lineHeight: 1.05,
+              color: 'var(--brand-trade-color, #e2e8f0)'
             }}
           >
             TRADE
@@ -128,8 +131,9 @@ export function BrandLogo({
           className="brand-subtext"
           style={{
             fontSize: subtextSize,
-            color: '#64748b',
-            letterSpacing: '0.16em',
+            color: '#94a3b8',
+            letterSpacing: '0.14em',
+            lineHeight: 1.15,
             textTransform: 'uppercase',
             fontWeight: 700,
             fontFamily: "var(--font-label)"
