@@ -4115,19 +4115,24 @@ select option:checked {
 .column-view-segmented {
   display: inline-flex;
   align-items: center;
+  gap: 0.2rem;
   background: var(--bg-input);
-  padding: 0.2rem;
-  border-radius: var(--radius-md);
+  padding: 3px;
+  border-radius: 8px;
   border: 1px solid var(--border-subtle);
 }
 .column-view-btn {
-  padding: 0.3rem 0.65rem;
+  height: 26px;
+  padding: 0 0.68rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: none;
   background: transparent;
   color: var(--text-muted);
   font-size: 0.78rem;
   font-weight: 600;
-  border-radius: var(--radius-sm);
+  border-radius: 6px;
   cursor: pointer;
   white-space: nowrap !important;
   transition: all var(--transition-fast);

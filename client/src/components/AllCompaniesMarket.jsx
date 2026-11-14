@@ -1958,7 +1958,16 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
       </div>
 
       {/* Interactive Filter & Sorting Control Bar */}
-      <div className="market-filter-bar glass-card" style={{ marginBottom: '1rem', padding: '0.85rem 1rem' }}>
+      <div
+        className="market-filter-bar glass-card"
+        style={{
+          marginBottom: '1rem',
+          padding: '0.85rem 1rem',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.68rem'
+        }}
+      >
         {/* Row 1: Global Region Filter Tabs + Instant Search */}
         <div
           className="market-filter-row-tiers"
@@ -1968,11 +1977,12 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
             justifyContent: 'space-between',
             gap: '0.75rem',
             flexWrap: 'wrap',
-            marginBottom: '0.75rem'
+            width: '100%',
+            boxSizing: 'border-box'
           }}
         >
           {/* Region Tabs with National/Regional Flags */}
-          <div className="market-filter-pills-group" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap', minWidth: 0, flex: '1 1 auto' }}>
+          <div className="market-filter-pills-group" style={{ display: 'flex', alignItems: 'center', gap: '0.38rem', flexWrap: 'wrap', minWidth: 0, flex: '1 1 auto' }}>
             {regions.map((reg) => {
               const isActive = selectedRegion === reg.id;
               return (
@@ -1982,7 +1992,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
                   className={`tier-filter-btn ${isActive ? 'active' : ''}`}
                   style={{
                     fontSize: '0.78rem',
-                    padding: '0.38rem 0.75rem',
+                    padding: '0 0.75rem',
                     height: '34px',
                     display: 'inline-flex',
                     alignItems: 'center',
@@ -2006,7 +2016,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
           </div>
 
           {/* Search Input (Aligned with 34px height) */}
-          <div className="market-filter-search-box" style={{ position: 'relative', minWidth: 'min(100%, 220px)', flex: '0 1 300px', height: '34px' }}>
+          <div className="market-filter-search-box" style={{ position: 'relative', minWidth: 'min(100%, 220px)', flex: '0 1 290px', height: '34px' }}>
             <Search size={14} style={{ position: 'absolute', left: '11px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
             <input
               type="text"
@@ -2070,7 +2080,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
           </div>
         </div>
 
-        {/* Row 2: Precision Screener Controls (Cap Tiers, Sector, Columns, Sort, Reset) */}
+        {/* Row 2: Market Cap Tiers (Left) + Table Columns View (Right) */}
         <div
           className="market-filter-row-controls"
           style={{
@@ -2079,106 +2089,128 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
             justifyContent: 'space-between',
             gap: '0.75rem',
             flexWrap: 'wrap',
-            paddingTop: '0.75rem',
+            paddingTop: '0.68rem',
             borderTop: '1px solid var(--border-subtle)',
             width: '100%',
             boxSizing: 'border-box'
           }}
         >
-          {/* Left Group: Capitalization Tiers & Sector Filter */}
-          <div className="market-filter-subrow" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap', minWidth: 0 }}>
-            {/* Tier Buttons */}
-            <div className="market-filter-pills-group" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', flexWrap: 'wrap', minWidth: 0 }}>
-              {tiers.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  className={`tier-filter-btn ${selectedTier === t.id ? 'active' : ''}`}
-                  style={{
-                    fontSize: '0.76rem',
-                    padding: '0.3rem 0.65rem',
-                    height: '34px',
-                    borderRadius: '8px',
-                    boxSizing: 'border-box'
-                  }}
-                  onClick={() => setSelectedTier(t.id)}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Sector Dropdown */}
-            <div className="market-filter-item" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
-              <span className="market-filter-label" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>Sector:</span>
-              <select
-                className="custom-input market-filter-select"
+          {/* Tier Buttons */}
+          <div className="market-filter-pills-group" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.38rem', flexWrap: 'wrap', minWidth: 0 }}>
+            {tiers.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className={`tier-filter-btn ${selectedTier === t.id ? 'active' : ''}`}
                 style={{
+                  fontSize: '0.76rem',
+                  padding: '0 0.72rem',
                   height: '34px',
-                  padding: '0.3rem 1.8rem 0.3rem 0.7rem',
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  width: 'auto',
-                  minWidth: '150px',
+                  display: 'inline-flex',
+                  alignItems: 'center',
                   borderRadius: '8px',
                   boxSizing: 'border-box'
                 }}
-                value={selectedSector}
-                onChange={(e) => setSelectedSector(e.target.value)}
+                onClick={() => setSelectedTier(t.id)}
               >
-                {sectors.map((sec) => (
-                  <option key={sec} value={sec === 'All Sectors' ? 'all' : sec}>
-                    {sec}
-                  </option>
-                ))}
-              </select>
-            </div>
+                {t.label}
+              </button>
+            ))}
           </div>
 
-          {/* Right Group: Table Columns View & Sort Controls */}
-          <div className="market-filter-subrow" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap', minWidth: 0 }}>
-            {/* Table View Column Selector */}
-            {viewMode === 'table' && (
-              <div className="market-filter-item market-filter-item--columns" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, maxWidth: '100%' }}>
-                <span className="market-filter-label" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>Columns:</span>
-                <div className="column-view-segmented" style={{ minHeight: '34px', boxSizing: 'border-box', maxWidth: '100%' }}>
-                  <button
-                    type="button"
-                    className={`column-view-btn ${columnView === 'standard' ? 'active' : ''}`}
-                    onClick={() => setColumnView('standard')}
-                  >
-                    Standard
-                  </button>
-                  <button
-                    type="button"
-                    className={`column-view-btn ${columnView === 'valuation' ? 'active' : ''}`}
-                    onClick={() => setColumnView('valuation')}
-                  >
-                    Valuation & Income
-                  </button>
-                  <button
-                    type="button"
-                    className={`column-view-btn ${columnView === 'ai_quant' ? 'active' : ''}`}
-                    onClick={() => setColumnView('ai_quant')}
-                  >
-                    AI Forecast & Risk
-                  </button>
-                </div>
+          {/* Table View Column Selector */}
+          {viewMode === 'table' && (
+            <div className="market-filter-item market-filter-item--columns" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', minWidth: 0, maxWidth: '100%' }}>
+              <span className="market-filter-label" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>Columns:</span>
+              <div
+                className="column-view-segmented"
+                style={{
+                  height: '34px',
+                  borderRadius: '8px',
+                  boxSizing: 'border-box',
+                  maxWidth: '100%'
+                }}
+              >
+                <button
+                  type="button"
+                  className={`column-view-btn ${columnView === 'standard' ? 'active' : ''}`}
+                  onClick={() => setColumnView('standard')}
+                >
+                  Standard
+                </button>
+                <button
+                  type="button"
+                  className={`column-view-btn ${columnView === 'valuation' ? 'active' : ''}`}
+                  onClick={() => setColumnView('valuation')}
+                >
+                  Valuation & Income
+                </button>
+                <button
+                  type="button"
+                  className={`column-view-btn ${columnView === 'ai_quant' ? 'active' : ''}`}
+                  onClick={() => setColumnView('ai_quant')}
+                >
+                  AI Forecast & Risk
+                </button>
               </div>
-            )}
+            </div>
+          )}
+        </div>
 
-            {/* Sort Dropdown */}
-            <div className="market-filter-item" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, maxWidth: '100%' }}>
+        {/* Row 3: Sector Filter (Left) + Sort Controls & Reset (Right) */}
+        <div
+          className="market-filter-row-controls"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '0.75rem',
+            flexWrap: 'wrap',
+            paddingTop: '0.68rem',
+            borderTop: '1px solid var(--border-subtle)',
+            width: '100%',
+            boxSizing: 'border-box'
+          }}
+        >
+          {/* Left: Sector Dropdown */}
+          <div className="market-filter-item" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
+            <span className="market-filter-label" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>Sector:</span>
+            <select
+              className="custom-input market-filter-select"
+              style={{
+                height: '34px',
+                padding: '0 1.9rem 0 0.72rem',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                width: 'auto',
+                minWidth: '175px',
+                borderRadius: '8px',
+                boxSizing: 'border-box'
+              }}
+              value={selectedSector}
+              onChange={(e) => setSelectedSector(e.target.value)}
+            >
+              {sectors.map((sec) => (
+                <option key={sec} value={sec === 'All Sectors' ? 'all' : sec}>
+                  {sec}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Right: Sort Dropdown, Order Toggle & Quick Reset */}
+          <div className="market-filter-subrow" style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap', minWidth: 0 }}>
+            <div className="market-filter-item" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', minWidth: 0, maxWidth: '100%' }}>
               <span className="market-filter-label" style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>Sort By:</span>
               <select
                 className="custom-input market-filter-sort-select"
                 style={{
                   height: '34px',
-                  padding: '0.3rem 1.8rem 0.3rem 0.7rem',
+                  padding: '0 1.9rem 0 0.72rem',
                   fontSize: '0.78rem',
                   fontWeight: 600,
                   width: 'auto',
-                  minWidth: '160px',
+                  minWidth: '165px',
                   borderRadius: '8px',
                   boxSizing: 'border-box'
                 }}
@@ -2200,7 +2232,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
                 className="btn btn-secondary market-filter-sort-dir-btn"
                 style={{
                   height: '34px',
-                  padding: '0 0.7rem',
+                  padding: '0 0.75rem',
                   fontSize: '0.78rem',
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -2231,7 +2263,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
                 }}
                 style={{
                   height: '34px',
-                  padding: '0 0.65rem',
+                  padding: '0 0.72rem',
                   fontSize: '0.76rem',
                   color: 'var(--text-muted)',
                   background: 'transparent',
@@ -2241,7 +2273,8 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.3rem',
-                  transition: 'all 0.15s ease'
+                  transition: 'all 0.15s ease',
+                  boxSizing: 'border-box'
                 }}
                 title="Reset all filters to default"
               >
