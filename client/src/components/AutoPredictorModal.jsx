@@ -160,17 +160,17 @@ export const AutoPredictorModal = ({
 
   return (
     <div
+      className="modal-overlay"
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 1200,
-        backgroundColor: 'rgba(6, 10, 20, 0.84)',
+        zIndex: 99999,
+        backgroundColor: 'rgba(6, 10, 20, 0.86)',
         backdropFilter: 'blur(10px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '16px',
-        overflowY: 'auto'
+        padding: '16px'
       }}
       onClick={onClose}
     >
@@ -179,8 +179,12 @@ export const AutoPredictorModal = ({
         style={{
           width: '100%',
           maxWidth: '1040px',
-          maxHeight: '92vh',
-          overflowY: 'auto',
+          maxHeight: 'calc(100dvh - 32px)',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          position: 'relative',
+          zIndex: 100000,
           background: 'linear-gradient(180deg, #0d1527 0%, #090f1d 100%)',
           border: '1px solid rgba(56, 189, 248, 0.28)',
           borderRadius: '16px',
@@ -195,13 +199,10 @@ export const AutoPredictorModal = ({
             justifyContent: 'space-between',
             alignItems: 'center',
             gap: '12px',
-            padding: '18px 22px',
+            padding: '16px 22px',
             borderBottom: '1px solid var(--border-subtle)',
             background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, rgba(56, 189, 248, 0.08) 50%, rgba(99, 102, 241, 0.08) 100%)',
-            position: 'sticky',
-            top: 0,
-            zIndex: 10,
-            backdropFilter: 'blur(10px)'
+            flexShrink: 0
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -267,8 +268,8 @@ export const AutoPredictorModal = ({
           </button>
         </div>
 
-        {/* Body */}
-        <div style={{ padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* Scrollable Body */}
+        <div style={{ padding: '18px 22px', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, minHeight: 0, overflowY: 'auto' }}>
           {/* Interactive Expectation Controls */}
           <div
             style={{
