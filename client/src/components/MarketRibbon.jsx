@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { useSocket } from '../context/SocketContext';
+import { useLiveTickerActions } from '../context/SocketContext';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { CountryFlag } from './CountryFlag';
 import { defaultAllCompanies } from '../data/defaultAllCompanies';
@@ -76,48 +76,165 @@ function getCurrencyPrefix(currency, symbol) {
   }
 }
 
-export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol }) {
-  const [indices, setIndices] = useState(() => buildMergedRibbonItems(CORE_BENCHMARKS));
-  const { quotes } = useSocket();
-  const prevPricesRef = useRef({});
-  const flashTimersRef = useRef({});
-  const [flashingSymbols, setFlashingSymbols] = useState({});
-  const [tickDirections, setTickDirections] = useState({});
+function formatPriceText(currSymbol, val) {
+  if (val === undefined || val === null || Number.isNaN(Number(val))) return `${currSymbol}--`;
+  return `${currSymbol}${Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
 
-  const triggerSymbolFlashes = useCallback((items) => {
-    const newFlashes = {};
-    const newDirections = {};
+function formatPercentText(val) {
+  const num = val !== undefined && val !== null && !Number.isNaN(Number(val)) ? Number(val) : 0;
+  return `${num >= 0 ? '+' : ''}${num.toFixed(2)}%`;
+}
 
-    items.forEach(({ symbol, price }) => {
-      if (!symbol || price === undefined || price === null) return;
-      const sym = String(symbol).trim().toUpperCase();
-      const old = prevPricesRef.current[sym];
-      if (old !== undefined && old !== price) {
-        const dir = price > old ? 'up' : 'down';
-        newFlashes[sym] = dir === 'up' ? 'tick-flash-up' : 'tick-flash-down';
-        newDirections[sym] = dir;
+// Isolated zero-rerender ribbon ticker cell updated directly in DOM per symbol tick
+const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }) {
+  const { getQuote, subscribeQuote } = useLiveTickerActions();
+  const initialQuote = getQuote(item.symbol);
+  const initialPrice = initialQuote?.price ?? item.price;
+  const initialPct = initialQuote?.changePercent ?? item.changePercent ?? 0;
+  const initialBull = initialPct >= 0;
+  const currSymbol = getCurrencyPrefix(item.currency, item.symbol);
 
-        if (flashTimersRef.current[sym]) {
-          clearTimeout(flashTimersRef.current[sym]);
-        }
-        flashTimersRef.current[sym] = setTimeout(() => {
-          setFlashingSymbols((prev) => {
-            if (!prev[sym]) return prev;
-            const next = { ...prev };
-            delete next[sym];
-            return next;
-          });
-          delete flashTimersRef.current[sym];
-        }, 920);
+  const itemRef = useRef(null);
+  const priceRef = useRef(null);
+  const badgeRef = useRef(null);
+  const changeWrapRef = useRef(null);
+  const changeTextRef = useRef(null);
+  const upIconRef = useRef(null);
+  const downIconRef = useRef(null);
+
+  const prevPriceRef = useRef(initialPrice);
+  const flashTimerRef = useRef(null);
+  const rafRef = useRef(null);
+
+  useEffect(() => {
+    const sym = item.symbol;
+    const unsubscribe = subscribeQuote(sym, (tick) => {
+      if (!tick || tick.price === undefined || tick.price === null) return;
+      const newPrice = Number(tick.price);
+      if (Number.isNaN(newPrice)) return;
+
+      if (priceRef.current) {
+        priceRef.current.textContent = formatPriceText(currSymbol, newPrice);
       }
-      prevPricesRef.current[sym] = price;
+
+      if (tick.changePercent !== undefined && tick.changePercent !== null) {
+        const pct = Number(tick.changePercent);
+        const isBull = pct >= 0;
+        if (changeTextRef.current) {
+          changeTextRef.current.textContent = formatPercentText(pct);
+        }
+        if (changeWrapRef.current) {
+          changeWrapRef.current.classList.toggle('text-bull', isBull);
+          changeWrapRef.current.classList.toggle('text-bear', !isBull);
+        }
+        if (upIconRef.current) upIconRef.current.style.display = isBull ? 'inline-flex' : 'none';
+        if (downIconRef.current) downIconRef.current.style.display = isBull ? 'none' : 'inline-flex';
+      }
+
+      const prevPrice = prevPriceRef.current;
+      if (prevPrice !== undefined && prevPrice !== null && newPrice !== prevPrice) {
+        const dir = newPrice > prevPrice ? 'up' : 'down';
+
+        if (badgeRef.current) {
+          badgeRef.current.textContent = dir === 'up' ? '▲' : '▼';
+          badgeRef.current.className = `ribbon-tick-badge ${dir}`;
+        }
+
+        if (itemRef.current) {
+          itemRef.current.classList.remove('tick-flash-up', 'tick-flash-down');
+          if (rafRef.current) cancelAnimationFrame(rafRef.current);
+          rafRef.current = requestAnimationFrame(() => {
+            if (!itemRef.current) return;
+            itemRef.current.classList.add(dir === 'up' ? 'tick-flash-up' : 'tick-flash-down');
+            if (priceRef.current) {
+              priceRef.current.classList.remove('up', 'down');
+              priceRef.current.classList.add('tick-text', dir);
+            }
+          });
+
+          if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+          flashTimerRef.current = setTimeout(() => {
+            if (itemRef.current) {
+              itemRef.current.classList.remove('tick-flash-up', 'tick-flash-down');
+            }
+            if (priceRef.current) {
+              priceRef.current.classList.remove('tick-text', 'up', 'down');
+            }
+            flashTimerRef.current = null;
+          }, 820);
+        }
+      }
+
+      prevPriceRef.current = newPrice;
     });
 
-    if (Object.keys(newFlashes).length > 0) {
-      setFlashingSymbols((prev) => ({ ...prev, ...newFlashes }));
-      setTickDirections((prev) => ({ ...prev, ...newDirections }));
-    }
-  }, []);
+    return () => {
+      unsubscribe();
+      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [item.symbol, currSymbol, subscribeQuote]);
+
+  const badgeCode = item.countryCode && item.countryCode !== 'GL'
+    ? item.countryCode
+    : (item.region === 'India' ? 'IN' : item.region === 'US' ? 'US' : item.region?.slice(0, 2).toUpperCase() || 'GL');
+
+  return (
+    <div
+      ref={itemRef}
+      className="market-ribbon-item"
+      onClick={() => onSelect(item)}
+      style={{ cursor: 'pointer' }}
+      title={`Click to view complete historical record (Starting → Now) & valuation for ${item.name || item.symbol} (${item.region})`}
+    >
+      {(item.countryCode || item.region) && (
+        <span
+          style={{
+            fontSize: '0.65rem',
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 800,
+            padding: '1px 5px',
+            borderRadius: '3px',
+            background: 'rgba(255, 255, 255, 0.08)',
+            color: 'var(--text-secondary)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            lineHeight: 1.2
+          }}
+          title={item.region ? `${item.region} Market` : 'Market'}
+        >
+          <CountryFlag country={item.region} countryCode={item.countryCode} symbol={item.symbol} countryFlag={item.countryFlag} size="xs" />
+          <span>{badgeCode}</span>
+        </span>
+      )}
+      <span className="ribbon-sym">{item.symbol}</span>
+
+      {/* Fixed-slot directional tick indicator (prevents horizontal reflow jitter) */}
+      <span ref={badgeRef} className="ribbon-tick-badge neutral" aria-hidden="true" />
+
+      <span ref={priceRef} className="ribbon-price font-mono">
+        {formatPriceText(currSymbol, initialPrice)}
+      </span>
+
+      <span ref={changeWrapRef} className={`ribbon-change font-mono ${initialBull ? 'text-bull' : 'text-bear'}`}>
+        <span ref={upIconRef} style={{ display: initialBull ? 'inline-flex' : 'none' }}>
+          <ArrowUpRight size={12} />
+        </span>
+        <span ref={downIconRef} style={{ display: initialBull ? 'none' : 'inline-flex' }}>
+          <ArrowDownRight size={12} />
+        </span>
+        <span ref={changeTextRef}>{formatPercentText(initialPct)}</span>
+      </span>
+    </div>
+  );
+});
+
+export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol }) {
+  const [indices, setIndices] = useState(() => buildMergedRibbonItems(CORE_BENCHMARKS));
+  const { getQuote, publishTicks } = useLiveTickerActions();
 
   useEffect(() => {
     let isMounted = true;
@@ -144,8 +261,17 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
         }
 
         if (isMounted && combinedIncoming.length > 0) {
-          triggerSymbolFlashes(combinedIncoming);
-          setIndices((prev) => buildMergedRibbonItems(prev, combinedIncoming));
+          // Push price updates directly to item subscribers without disrupting marquee track geometry
+          publishTicks(combinedIncoming);
+
+          // Append only genuinely new symbols so marquee CSS transform never restarts during normal price ticks
+          setIndices((prev) => {
+            const known = new Set(prev.map((x) => x.symbol));
+            const hasNewSymbol = combinedIncoming.some(
+              (c) => c?.symbol && !known.has(String(c.symbol).trim().toUpperCase())
+            );
+            return hasNewSymbol ? buildMergedRibbonItems(prev, combinedIncoming) : prev;
+          });
         }
       } catch (e) {}
     }
@@ -155,93 +281,21 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
     return () => {
       isMounted = false;
       clearInterval(interval);
-      Object.values(flashTimersRef.current).forEach(clearTimeout);
     };
-  }, [triggerSymbolFlashes]);
+  }, [publishTicks]);
 
-  // Apply real-time WebSocket / micro-tick quote animations uniformly across every company in the ribbon
-  useEffect(() => {
-    if (!quotes || Object.keys(quotes).length === 0) return;
-    const updates = [];
-    for (const [sym, q] of Object.entries(quotes)) {
-      if (q && q.price !== undefined) {
-        updates.push({ symbol: sym, price: q.price });
-      }
-    }
-    if (updates.length > 0) {
-      triggerSymbolFlashes(updates);
-    }
-  }, [quotes, triggerSymbolFlashes]);
-
-  const handleItemClick = (idx) => {
+  const handleItemClick = useCallback((idx) => {
     if (!onSelectSymbol) return;
-    const live = quotes[idx.symbol];
+    const live = getQuote(idx.symbol);
     const enrichedItem = {
       ...idx,
       price: live ? live.price : idx.price,
       changePercent: live ? live.changePercent : idx.changePercent
     };
     onSelectSymbol(idx.symbol, enrichedItem);
-  };
+  }, [onSelectSymbol, getQuote]);
 
-  const renderItem = (idx, uniqueKey) => {
-    const live = quotes[idx.symbol];
-    const price = live ? live.price : idx.price;
-    const changePercent = live ? live.changePercent : idx.changePercent;
-    const isBull = (changePercent ?? 0) >= 0;
-    const flashClass = flashingSymbols[idx.symbol] || '';
-    const dir = tickDirections[idx.symbol] || (live?.lastTickDirection === 'up' || live?.lastTickDirection === 'down' ? live.lastTickDirection : null);
-    const currSymbol = getCurrencyPrefix(idx.currency, idx.symbol);
-
-    return (
-      <div
-        key={uniqueKey}
-        className={`market-ribbon-item ${flashClass}`}
-        onClick={() => handleItemClick(idx)}
-        style={{ cursor: 'pointer' }}
-        title={`Click to view complete historical record (Starting → Now) & valuation for ${idx.name || idx.symbol} (${idx.region})`}
-      >
-        {(idx.countryCode || idx.region) && (
-          <span
-            style={{
-              fontSize: '0.65rem',
-              fontFamily: 'var(--font-mono)',
-              fontWeight: 800,
-              padding: '1px 5px',
-              borderRadius: '3px',
-              background: 'rgba(255, 255, 255, 0.08)',
-              color: 'var(--text-secondary)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '4px',
-              lineHeight: 1.2
-            }}
-            title={idx.region ? `${idx.region} Market` : 'Market'}
-          >
-            <CountryFlag country={idx.region} countryCode={idx.countryCode} symbol={idx.symbol} countryFlag={idx.countryFlag} size="xs" />
-            <span>{idx.countryCode && idx.countryCode !== 'GL' ? idx.countryCode : (idx.region === 'India' ? 'IN' : idx.region === 'US' ? 'US' : idx.region?.slice(0, 2).toUpperCase() || 'GL')}</span>
-          </span>
-        )}
-        <span className="ribbon-sym">{idx.symbol}</span>
-
-        {/* Dynamic directional tick indicator badge */}
-        {dir === 'up' && <span className="ribbon-tick-badge up">▲</span>}
-        {dir === 'down' && <span className="ribbon-tick-badge down">▼</span>}
-
-        <span className={`ribbon-price font-mono ${flashClass === 'tick-flash-up' ? 'tick-text up' : flashClass === 'tick-flash-down' ? 'tick-text down' : ''}`}>
-          {currSymbol}{price !== undefined && price !== null ? Number(price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}
-        </span>
-
-        <span className={`ribbon-change font-mono ${isBull ? 'text-bull' : 'text-bear'}`}>
-          {isBull ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-          {(changePercent ?? 0) >= 0 ? '+' : ''}{changePercent !== undefined && changePercent !== null ? Number(changePercent).toFixed(2) : '0.00'}%
-        </span>
-      </div>
-    );
-  };
-
-  // Keep linear scroll velocity smooth regardless of total company count
+  // Steady linear scroll duration (~2.1s per ticker) for consistent frame pacing
   const trackDurationSec = Math.max(65, Math.round(indices.length * 2.1));
 
   return (
@@ -262,9 +316,13 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
       <div className="ticker-track-container">
         <div className="ticker-track" style={{ animationDuration: `${trackDurationSec}s` }}>
           {/* Primary Track */}
-          {indices.map((idx, i) => renderItem(idx, `orig-${idx.symbol}-${i}`))}
+          {indices.map((idx, i) => (
+            <RibbonTickerItem key={`orig-${idx.symbol}-${i}`} item={idx} onSelect={handleItemClick} />
+          ))}
           {/* Duplicate Seamless Loop Track */}
-          {indices.map((idx, i) => renderItem(idx, `dup-${idx.symbol}-${i}`))}
+          {indices.map((idx, i) => (
+            <RibbonTickerItem key={`dup-${idx.symbol}-${i}`} item={idx} onSelect={handleItemClick} />
+          ))}
         </div>
       </div>
     </div>

@@ -574,27 +574,26 @@ body:before {
   position: relative;
   min-height: 36px;
   align-items: center;
-  contain: layout paint;
 }
 .ticker-track {
   display: flex;
   align-items: center;
-  gap: 1.15rem;
+  gap: 1.05rem;
+  width: max-content;
   white-space: nowrap;
   animation: tickerTapeScroll 65s linear infinite;
-  transform: translateZ(0);
+  transform: translate3d(0, 0, 0);
   will-change: transform;
   backface-visibility: hidden;
-  perspective: 1000px;
 }
 .ticker-track-container:hover .ticker-track {
   animation-play-state: paused;
 }
 @keyframes tickerTapeScroll {
   0% {
-    transform: translateZ(0);
+    transform: translate3d(0, 0, 0);
   }
-  to {
+  100% {
     transform: translate3d(-50%, 0, 0);
   }
 }
@@ -615,7 +614,8 @@ body:before {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   color: var(--text-primary);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+  contain: layout style;
   flex-shrink: 0;
   -webkit-user-select: none;
   user-select: none;
@@ -627,39 +627,33 @@ body:before {
   box-shadow: 0 4px 12px #06b6d440;
 }
 .market-ribbon-item.tick-flash-up {
-  background: rgba(16, 185, 129, 0.24) !important;
+  background-color: rgba(16, 185, 129, 0.24) !important;
   border-color: rgba(16, 185, 129, 0.85) !important;
-  box-shadow: 0 0 14px rgba(16, 185, 129, 0.48) !important;
   animation: ribbonFlashUp 0.9s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .market-ribbon-item.tick-flash-down {
-  background: rgba(244, 63, 94, 0.24) !important;
+  background-color: rgba(244, 63, 94, 0.24) !important;
   border-color: rgba(244, 63, 94, 0.85) !important;
-  box-shadow: 0 0 14px rgba(244, 63, 94, 0.48) !important;
   animation: ribbonFlashDown 0.9s cubic-bezier(0.16, 1, 0.3, 1);
 }
 @keyframes ribbonFlashUp {
   0% {
-    background: rgba(16, 185, 129, 0.38);
-    box-shadow: 0 0 18px rgba(16, 185, 129, 0.65);
-    transform: translateY(-1px) scale(1.02);
+    background-color: rgba(16, 185, 129, 0.38);
+    border-color: rgba(16, 185, 129, 0.95);
   }
   100% {
-    background: rgba(16, 185, 129, 0.2);
-    box-shadow: 0 0 10px rgba(16, 185, 129, 0.32);
-    transform: translateY(0) scale(1);
+    background-color: rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.65);
   }
 }
 @keyframes ribbonFlashDown {
   0% {
-    background: rgba(244, 63, 94, 0.38);
-    box-shadow: 0 0 18px rgba(244, 63, 94, 0.65);
-    transform: translateY(1px) scale(1.02);
+    background-color: rgba(244, 63, 94, 0.38);
+    border-color: rgba(244, 63, 94, 0.95);
   }
   100% {
-    background: rgba(244, 63, 94, 0.2);
-    box-shadow: 0 0 10px rgba(244, 63, 94, 0.32);
-    transform: translateY(0) scale(1);
+    background-color: rgba(244, 63, 94, 0.2);
+    border-color: rgba(244, 63, 94, 0.65);
   }
 }
 .ribbon-sym {
@@ -671,6 +665,7 @@ body:before {
   color: var(--text-primary);
   font-weight: 700;
   font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
 }
 .ribbon-change {
   font-weight: 700;
@@ -678,21 +673,30 @@ body:before {
   display: inline-flex;
   align-items: center;
   gap: 0.15rem;
+  font-variant-numeric: tabular-nums;
 }
 .ribbon-tick-badge {
   font-size: 0.65rem;
   font-weight: 800;
-  padding: 1px 3px;
+  width: 14px;
+  height: 14px;
   border-radius: 2px;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   line-height: 1;
 }
+.ribbon-tick-badge.neutral {
+  opacity: 0;
+}
 .ribbon-tick-badge.up {
+  opacity: 1;
   color: var(--bull-green);
   background: #10b98133;
 }
 .ribbon-tick-badge.down {
+  opacity: 1;
   color: var(--bear-red);
   background: #f43f5e33;
 }

@@ -5,6 +5,7 @@ import { soundFx } from '../utils/audio';
 import { getAllClientQuotes, getClientQuote } from '../services/clientFallbackData';
 
 const SocketContext = createContext(null);
+const SocketActionsContext = createContext(null);
 
 export function SocketProvider({ children }) {
   const { token, user } = useAuth();
@@ -151,6 +152,31 @@ export function SocketProvider({ children }) {
     checkAlertTriggers(quote);
   }, [checkAlertTriggers]);
 
+  // Dispatch external REST market snapshot ticks to symbol listeners without triggering global React re-renders
+  const publishTicks = useCallback((items = []) => {
+    if (!Array.isArray(items) || items.length === 0) return;
+    items.forEach((raw) => {
+      if (!raw || !raw.symbol || raw.price === undefined) return;
+      const sym = String(raw.symbol).toUpperCase().trim();
+      const existing = quotesRef.current[sym] || {};
+      const mergedQuote = {
+        ...existing,
+        ...raw,
+        symbol: sym,
+        price: Number(raw.price),
+        changePercent: raw.changePercent !== undefined ? Number(raw.changePercent) : (existing.changePercent ?? 0),
+        timestamp: Date.now()
+      };
+      quotesRef.current[sym] = mergedQuote;
+      const listeners = listenersRef.current.get(sym);
+      if (listeners) {
+        listeners.forEach((cb) => {
+          try { cb(mergedQuote); } catch (_) {}
+        });
+      }
+    });
+  }, []);
+
   // Dual-Engine Real-Time Ingestion (WebSocket with Seamless Serverless Fallback)
   useEffect(() => {
     // In production on Vercel, unless an explicit VITE_SOCKET_URL is set, run in optimized Serverless Streaming mode
@@ -284,8 +310,8 @@ export function SocketProvider({ children }) {
 
       if (candidatePool.length === 0) return;
 
-      // Update a rolling slice (~18 assets per 450ms tick) + active focus subscriptions so every company pulses live
-      const sliceCount = Math.min(18, candidatePool.length);
+      // Update a rolling slice (~14 assets per 700ms tick) + active focus subscriptions smoothly
+      const sliceCount = Math.min(14, candidatePool.length);
       const batchSet = new Set();
       for (let i = 0; i < sliceCount; i++) {
         batchSet.add(candidatePool[(microTickCursor + i) % candidatePool.length]);
@@ -329,7 +355,7 @@ export function SocketProvider({ children }) {
       if (Object.keys(updatedTicks).length > 0) {
         setQuotes(prev => ({ ...prev, ...updatedTicks }));
       }
-    }, 450);
+    }, 700);
 
     return () => {
       clearInterval(liveTicksInterval);
@@ -472,6 +498,26 @@ export function SocketProvider({ children }) {
     }
   }, [token]);
 
+  const actionsValue = useMemo(() => ({
+    getQuote,
+    subscribeQuote,
+    subscribe,
+    unsubscribe,
+    subscribeBatch,
+    clearNotifications,
+    dismissNotification,
+    publishTicks
+  }), [
+    getQuote,
+    subscribeQuote,
+    subscribe,
+    unsubscribe,
+    subscribeBatch,
+    clearNotifications,
+    dismissNotification,
+    publishTicks
+  ]);
+
   const contextValue = useMemo(() => ({
     socket: socketRef.current,
     connectionStatus,
@@ -485,7 +531,8 @@ export function SocketProvider({ children }) {
     unsubscribe,
     subscribeBatch,
     clearNotifications,
-    dismissNotification
+    dismissNotification,
+    publishTicks
   }), [
     connectionStatus,
     latencyMs,
@@ -497,13 +544,16 @@ export function SocketProvider({ children }) {
     unsubscribe,
     subscribeBatch,
     clearNotifications,
-    dismissNotification
+    dismissNotification,
+    publishTicks
   ]);
 
   return (
-    <SocketContext.Provider value={contextValue}>
-      {children}
-    </SocketContext.Provider>
+    <SocketActionsContext.Provider value={actionsValue}>
+      <SocketContext.Provider value={contextValue}>
+        {children}
+      </SocketContext.Provider>
+    </SocketActionsContext.Provider>
   );
 }
 
@@ -513,19 +563,25 @@ export function useSocket() {
   return ctx;
 }
 
-// Ultra high-performance hook that triggers updates when this specific symbol changes
+// Stable zero-rerender context hook for components that subscribe to specific symbols via subscribeQuote
+export function useLiveTickerActions() {
+  const ctx = useContext(SocketActionsContext);
+  if (!ctx) throw new Error('useLiveTickerActions must be used within a SocketProvider');
+  return ctx;
+}
+
+// Ultra high-performance hook that triggers updates ONLY when this specific symbol changes
 export function useSocketQuote(symbol) {
-  const ctx = useContext(SocketContext);
-  const getQuote = ctx?.getQuote;
-  const subscribeQuote = ctx?.subscribeQuote;
-  const quotes = ctx?.quotes;
+  const actions = useContext(SocketActionsContext);
+  const getQuote = actions?.getQuote;
+  const subscribeQuote = actions?.subscribeQuote;
 
   const sym = symbol ? symbol.toUpperCase().trim() : '';
-  const [quote, setQuote] = useState(() => (getQuote ? getQuote(sym) : quotes?.[sym]) || null);
+  const [quote, setQuote] = useState(() => (getQuote ? getQuote(sym) : null));
 
   useEffect(() => {
     if (!sym) return;
-    const initial = getQuote ? getQuote(sym) : quotes?.[sym];
+    const initial = getQuote ? getQuote(sym) : null;
     if (initial) setQuote(initial);
 
     if (subscribeQuote) {
@@ -534,13 +590,6 @@ export function useSocketQuote(symbol) {
       });
     }
   }, [sym, subscribeQuote, getQuote]);
-
-  useEffect(() => {
-    if (!sym) return;
-    if (quotes?.[sym]) {
-      setQuote(quotes[sym]);
-    }
-  }, [sym, quotes]);
 
   return quote;
 }
