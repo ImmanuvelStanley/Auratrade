@@ -1767,35 +1767,32 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
     <div className="all-markets-container motion-entry stagger-2">
       {/* Page Header & Executive Market Banner */}
       {/* overflow:visible + contain:none override to allow the Download dropdown to extend outside this card */}
-      <div className="glass-card" style={{ marginBottom: '1.25rem', background: 'var(--profile-hero-bg)', overflow: 'visible', contain: 'none' }}>
-        <div className="glass-card-body" style={{ padding: '1.75rem', overflow: 'visible' }}>
-          {/* Executive Header Row: Hero Title & Badges on Left, Action Toolbar on Right */}
+      <div className="glass-card" style={{ marginBottom: '0.85rem', background: 'var(--profile-hero-bg)', overflow: 'visible', contain: 'none' }}>
+        <div className="glass-card-body" style={{ padding: '0.95rem 1.2rem', overflow: 'visible' }}>
+          {/* Executive Header Row */}
           <div
             className="screener-header-row"
             style={{
               display: 'flex',
-              alignItems: 'flex-start',
+              alignItems: 'center',
               justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '1.25rem',
-              paddingBottom: '1.25rem',
-              marginBottom: '1.25rem',
+              gap: '0.75rem',
+              paddingBottom: '0.75rem',
+              marginBottom: '0.75rem',
               borderBottom: '1px solid rgba(255, 255, 255, 0.07)'
             }}
           >
-            {/* Left: Branding, Eyebrow Badges, Title & Subtitle */}
-            <div className="screener-title-block" style={{ flex: '1 1 560px', minWidth: 0 }}>
-
+            <div className="screener-title-block" style={{ flex: '1 1 auto', minWidth: 0 }}>
               <h1
                 className="screener-main-title"
                 style={{
                   fontFamily: 'var(--font-brand)',
-                  fontSize: '1.65rem',
+                  fontSize: '1.48rem',
                   fontWeight: 800,
                   letterSpacing: '-0.02em',
-                  margin: '0 0 0.4rem 0',
+                  margin: '0 0 0.22rem 0',
                   color: 'var(--text-primary)',
-                  lineHeight: 1.25
+                  lineHeight: 1.2
                 }}
               >
                 Worldwide Global Market Hierarchy & Real-Time Screener
@@ -1804,10 +1801,9 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
                 className="screener-main-subtitle"
                 style={{
                   color: 'var(--text-secondary)',
-                  fontSize: '0.88rem',
+                  fontSize: '0.84rem',
                   margin: 0,
-                  lineHeight: 1.5,
-                  maxWidth: '780px'
+                  lineHeight: 1.4
                 }}
               >
                 Explore the premier companies of the world economy ordered by market capitalization, real-time valuation, and 30-day AI predictive upside with automated real-time global exchange feeds.
@@ -1816,33 +1812,33 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
           </div>
 
           {/* Overview Hero Stat Pills (Live Auto-Updating + All-Time Best Market Gainer Column) */}
-          <div className="overview-stats-grid">
+          <div className="overview-stats-grid" style={{ marginTop: 0 }}>
             <div className="overview-stat-box" {...floatingCardEvents}>
-              <div className="overview-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' }}>
-                <span>Total Tracked Market Cap</span>
-                <span style={{ fontSize: '0.62rem', color: 'var(--bull-green)', display: 'inline-flex', alignItems: 'center', gap: '0.2rem', fontWeight: 700 }}>
+              <div className="overview-stat-label">
+                <span className="overview-stat-label-text">Total Market Cap</span>
+                <span className="overview-stat-label-badge" style={{ color: 'var(--bull-green)' }}>
                   <Zap size={9} /> LIVE
                 </span>
               </div>
               <div className="overview-stat-val font-mono tabular-nums" style={{ color: 'var(--accent-cyan)' }}>
                 {liveOverview?.totalMarketCapFormatted || overview?.totalMarketCapFormatted || '$166.96T'}
               </div>
-              <div className="overview-stat-sub" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div className="overview-stat-sub">
                 Across {liveOverview?.totalCount || overview?.totalCount || 166}+ Premier Global Assets
               </div>
             </div>
 
             <div className="overview-stat-box" {...floatingCardEvents}>
-              <div className="overview-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' }}>
-                <span>Global Market Breadth</span>
-                <span className="tabular-nums" style={{ fontSize: '0.64rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+              <div className="overview-stat-label">
+                <span className="overview-stat-label-text">Market Breadth</span>
+                <span className="overview-stat-label-badge tabular-nums" style={{ color: 'var(--text-muted)' }}>
                   {liveOverview?.advancingCount ?? 0}↑ / {liveOverview?.decliningCount ?? 0}↓
                 </span>
               </div>
               <div className="overview-stat-val font-mono tabular-nums" style={{ color: 'var(--bull-green)' }}>
                 {liveOverview?.bullishRatio ?? overview?.bullishRatio ?? 99}%
               </div>
-              <div className="overview-stat-sub" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div className="overview-stat-sub">
                 Consensus BUY / STRONG BUY
               </div>
             </div>
@@ -1854,14 +1850,19 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
               style={{ cursor: 'pointer' }}
               title="Open Top AI Conviction Pick complete record"
             >
-              <div className="overview-stat-label">Top AI Conviction Pick</div>
-              <div className="overview-stat-val" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'nowrap', minWidth: 0 }}>
+              <div className="overview-stat-label">
+                <span className="overview-stat-label-text">AI Conviction Pick</span>
+                <span className="overview-stat-label-badge" style={{ color: 'var(--accent-cyan)' }}>
+                  30D MODEL
+                </span>
+              </div>
+              <div className="overview-stat-val">
                 <span style={{ fontWeight: 800, whiteSpace: 'nowrap' }}>{liveOverview?.topConviction?.symbol || 'NVDA'}</span>
-                <span className="badge-pill tabular-nums" style={{ background: 'var(--bull-green-bg)', color: 'var(--bull-green)', fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
+                <span className="badge-pill tabular-nums" style={{ background: 'var(--bull-green-bg)', color: 'var(--bull-green)', fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
                   +{Number(liveOverview?.topConviction?.forecastGain ?? 14.2).toFixed(1)}% 30D
                 </span>
               </div>
-              <div className="overview-stat-sub" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div className="overview-stat-sub">
                 {liveOverview?.topConviction?.name || 'NVIDIA Corporation'}
               </div>
             </div>
@@ -1873,20 +1874,20 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
               style={{ cursor: 'pointer' }}
               title="Open Worldwide Live Top Gainer complete record"
             >
-              <div className="overview-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' }}>
-                <span>Worldwide Top Gainer</span>
-                <span style={{ fontSize: '0.62rem', color: 'var(--bull-green)', display: 'inline-flex', alignItems: 'center', gap: '0.2rem', fontWeight: 700 }}>
-                  24H LIVE
+              <div className="overview-stat-label">
+                <span className="overview-stat-label-text">24H Top Gainer</span>
+                <span className="overview-stat-label-badge" style={{ color: 'var(--bull-green)' }}>
+                  LIVE
                 </span>
               </div>
-              <div className="overview-stat-val" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'nowrap', minWidth: 0 }}>
+              <div className="overview-stat-val">
                 <span style={{ fontWeight: 800, whiteSpace: 'nowrap' }}>{liveOverview?.topGainer?.symbol || 'SONY'}</span>
                 <span
                   className="badge-pill tabular-nums"
                   style={{
                     background: Number(liveOverview?.topGainer?.changePercent ?? 0) >= 0 ? 'var(--bull-green-bg)' : 'rgba(239, 68, 68, 0.14)',
                     color: Number(liveOverview?.topGainer?.changePercent ?? 0) >= 0 ? 'var(--bull-green)' : 'var(--bear-red)',
-                    fontSize: '0.72rem',
+                    fontSize: '0.7rem',
                     whiteSpace: 'nowrap'
                   }}
                 >
@@ -1894,7 +1895,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
                   {Number(liveOverview?.topGainer?.changePercent ?? 0).toFixed(2)}%
                 </span>
               </div>
-              <div className="overview-stat-sub" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div className="overview-stat-sub">
                 {liveOverview?.topGainer?.name || 'Sony Group Corporation'}
               </div>
             </div>
@@ -1906,27 +1907,27 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
               style={{ cursor: 'pointer', borderColor: 'rgba(245, 158, 11, 0.25)' }}
               title="Open All-Time Best Market Gainer (Since Stock Market Start Till Now) complete record"
             >
-              <div className="overview-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' }}>
-                <span>All-Time Best Gainer</span>
-                <span style={{ fontSize: '0.62rem', color: 'var(--warning-amber)', fontWeight: 700, whiteSpace: 'nowrap' }}>
+              <div className="overview-stat-label">
+                <span className="overview-stat-label-text">All-Time Gainer</span>
+                <span className="overview-stat-label-badge" style={{ color: 'var(--warning-amber)' }}>
                   SINCE {liveOverview?.allTimeBestGainer?.ipoYear || 1986}
                 </span>
               </div>
-              <div className="overview-stat-val" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'nowrap', minWidth: 0 }}>
+              <div className="overview-stat-val">
                 <span style={{ fontWeight: 800, whiteSpace: 'nowrap' }}>{liveOverview?.allTimeBestGainer?.symbol || 'MSFT'}</span>
                 <span
                   className="badge-pill tabular-nums"
                   style={{
                     background: 'rgba(16, 185, 129, 0.14)',
                     color: 'var(--bull-green)',
-                    fontSize: '0.7rem',
+                    fontSize: '0.68rem',
                     whiteSpace: 'nowrap'
                   }}
                 >
                   {formatAllTimePercent(liveOverview?.allTimeBestGainer?.allTimeReturnPercent || 708343)}
                 </span>
               </div>
-              <div className="overview-stat-sub" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div className="overview-stat-sub">
                 {liveOverview?.allTimeBestGainer
                   ? `${Math.round(liveOverview.allTimeBestGainer.allTimeMultiple).toLocaleString()}x Till Now • ${liveOverview.allTimeBestGainer.name}`
                   : 'Since Market Start Till Now'}
