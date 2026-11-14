@@ -4,14 +4,11 @@ import {
   X,
   RefreshCw,
   Activity,
-  Settings,
   Cpu,
   CheckCircle2,
   AlertCircle,
   ExternalLink,
   ArrowUpRight,
-  Maximize2,
-  Minimize2,
   Globe,
   TrendingUp,
   ShieldCheck,
@@ -789,30 +786,6 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
                   {chatHistory.length > 0 && (
                     <span className="assistant-hdr-badge">{chatHistory.length}</span>
                   )}
-                </button>
-
-                <button
-                  type="button"
-                  className={`assistant-hdr-btn-icon ${isExpanded ? 'expanded' : ''}`}
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  title={isExpanded ? 'Restore Compact Size' : 'Expand to Full Workstation View'}
-                >
-                  {isExpanded ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-                </button>
-
-                <button
-                  type="button"
-                  className="assistant-hdr-btn-icon"
-                  onClick={() => {
-                    setTempKey(geminiKey);
-                    setTempModel(selectedModel);
-                    setTestStatus(null);
-                    setTestMessage('');
-                    setIsConfigOpen(true);
-                  }}
-                  title="Configure AI Model & Engine"
-                >
-                  <Settings size={13} />
                 </button>
 
                 <button

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { Bell, Sun, Moon, Menu } from 'lucide-react';
+import { Bell, Menu } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
-import { useTheme } from '../context/ThemeContext';
 import { NotificationCenter } from './NotificationCenter';
 import { BrandLogo } from './BrandLogo';
 
@@ -9,7 +8,6 @@ export const Header = React.memo(function Header({
   onToggleSidebar
 }) {
   const { notifications } = useSocket();
-  const { theme, toggleTheme } = useTheme();
   const [showNotifications, setShowNotifications] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.read).length;
@@ -21,19 +19,8 @@ export const Header = React.memo(function Header({
 
       {/* Navigation Actions */}
       <div className="nav-actions">
-        {/* Quick Utility Control Icons (Theme, Notifications, Mobile Topics Drawer) */}
+        {/* Quick Utility Control Icons (Notifications, Mobile Topics Drawer) */}
         <div className="header-controls-cluster">
-          {/* Theme Toggle Button */}
-          <button
-            type="button"
-            className="btn-icon"
-            title={theme === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme'}
-            onClick={toggleTheme}
-            aria-label="Toggle Color Theme"
-          >
-            {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
-          </button>
-
           {/* Notification Bell */}
           <div style={{ position: 'relative' }} className="header-notification-container">
             <button
