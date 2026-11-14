@@ -273,28 +273,38 @@ export function SocketProvider({ children }) {
     pollLiveTicks();
     const liveTicksInterval = setInterval(pollLiveTicks, 1800);
 
-    // Continuous Sub-Second Micro-Tick Animator (Client-side 450ms frequency for 60fps TradingView experience)
+    // Continuous Sub-Second Micro-Tick Animator (rotates cleanly across all workstation companies + indices)
+    let microTickCursor = 0;
     const microTickInterval = setInterval(() => {
-      // Select 3 random symbols from active subscriptions or default market leaders
-      const candidateList = activeSubscriptionsRef.current.size > 0
-        ? Array.from(activeSubscriptionsRef.current)
-        : ['AAPL', 'NVDA', 'MSFT', 'GOLD', 'SILVER', 'NIFTY 50', 'S&P 500', 'NASDAQ', 'RELIANCE', 'TSLA'];
+      const allKnownSymbols = Object.keys(quotesRef.current || {});
+      const subSymbols = Array.from(activeSubscriptionsRef.current || []);
+      const candidatePool = allKnownSymbols.length > 0
+        ? allKnownSymbols
+        : (subSymbols.length > 0 ? subSymbols : ['AAPL', 'NVDA', 'MSFT', 'GOLD', 'SILVER', 'NIFTY 50', 'S&P 500', 'NASDAQ', 'RELIANCE', 'TSLA']);
 
-      if (candidateList.length === 0) return;
+      if (candidatePool.length === 0) return;
 
-      const sampleCount = Math.min(3, candidateList.length);
-      const shuffled = [...candidateList].sort(() => 0.5 - Math.random()).slice(0, sampleCount);
+      // Update a rolling slice (~18 assets per 450ms tick) + active focus subscriptions so every company pulses live
+      const sliceCount = Math.min(18, candidatePool.length);
+      const batchSet = new Set();
+      for (let i = 0; i < sliceCount; i++) {
+        batchSet.add(candidatePool[(microTickCursor + i) % candidatePool.length]);
+      }
+      microTickCursor = (microTickCursor + sliceCount) % candidatePool.length;
+      subSymbols.slice(0, 6).forEach((s) => batchSet.add(s));
+
       const updatedTicks = {};
 
-      shuffled.forEach(sym => {
+      batchSet.forEach(sym => {
         const current = quotesRef.current[sym];
         if (!current || !current.price) return;
 
-        const jitter = (Math.random() - 0.495) * 0.0003;
+        const jitter = (Math.random() - 0.495) * 0.00035;
         let newPrice = parseFloat((current.price * (1 + jitter)).toFixed(2));
         if (newPrice === current.price) {
           newPrice = +(newPrice + (Math.random() > 0.5 ? 0.01 : -0.01)).toFixed(2);
         }
+        newPrice = Math.max(0.01, newPrice);
 
         const prevClose = current.previousClose || current.price;
         const change = parseFloat((newPrice - prevClose).toFixed(2));

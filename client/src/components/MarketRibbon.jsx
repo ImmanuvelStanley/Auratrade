@@ -1,87 +1,177 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useSocket } from '../context/SocketContext';
 import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { CountryFlag } from './CountryFlag';
+import { defaultAllCompanies } from '../data/defaultAllCompanies';
+
+const CORE_BENCHMARKS = [
+  { symbol: 'NIFTY 50', name: 'Nifty 50', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 23044.60, changePercent: -1.72, currency: 'INR' },
+  { symbol: 'S&P 500', name: 'S&P 500', region: 'US', countryCode: 'US', countryFlag: '🇺🇸', price: 7636.12, changePercent: -0.58, currency: 'USD' },
+  { symbol: 'BANK NIFTY', name: 'Bank Nifty', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 56295.55, changePercent: -0.41, currency: 'INR' },
+  { symbol: 'NASDAQ', name: 'Nasdaq 100', region: 'US', countryCode: 'US', countryFlag: '🇺🇸', price: 26241.12, changePercent: -0.32, currency: 'USD' },
+  { symbol: 'SENSEX', name: 'BSE Sensex', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 73563.27, changePercent: -1.69, currency: 'INR' },
+  { symbol: 'DOW JONES', name: 'Dow Jones 30', region: 'US', countryCode: 'US', countryFlag: '🇺🇸', price: 52786.07, changePercent: -1.18, currency: 'USD' },
+  { symbol: 'DAX 40', name: 'DAX Germany', region: 'Europe', countryCode: 'DE', countryFlag: '🇩🇪', price: 25792.00, changePercent: -0.32, currency: 'EUR' },
+  { symbol: 'FTSE 100', name: 'FTSE London', region: 'Europe', countryCode: 'GB', countryFlag: '🇬🇧', price: 10763.88, changePercent: -0.44, currency: 'GBP' },
+  { symbol: 'NIFTY IT', name: 'Nifty IT', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 41852.70, changePercent: -0.84, currency: 'INR' },
+  { symbol: 'CAC 40', name: 'CAC Paris', region: 'Europe', countryCode: 'FR', countryFlag: '🇫🇷', price: 8240.50, changePercent: -0.54, currency: 'EUR' },
+  { symbol: 'NIKKEI 225', name: 'Nikkei Tokyo', region: 'Asia', countryCode: 'JP', countryFlag: '🇯🇵', price: 65142.78, changePercent: -0.19, currency: 'JPY' },
+  { symbol: 'HANG SENG', name: 'Hang Seng HK', region: 'Asia', countryCode: 'HK', countryFlag: '🇭🇰', price: 17450.60, changePercent: +0.35, currency: 'HKD' },
+  { symbol: 'ASX 200', name: 'ASX Australia', region: 'Asia-Pacific', countryCode: 'AU', countryFlag: '🇦🇺', price: 8560.40, changePercent: -0.29, currency: 'AUD' },
+  { symbol: 'INDIA VIX', name: 'India VIX', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 11.77, changePercent: +3.70, currency: '' },
+  { symbol: 'GOLD', name: 'Gold (XAU/USD)', region: 'Commodity', countryCode: 'METAL', countryFlag: 'XAU', price: 4314.50, changePercent: +0.38, currency: 'USD' },
+  { symbol: 'SILVER', name: 'Silver (XAG/USD)', region: 'Commodity', countryCode: 'METAL', countryFlag: 'XAG', price: 64.26, changePercent: +0.41, currency: 'USD' },
+  { symbol: 'GOLD.MCX', name: 'MCX Gold 10g', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 148390.00, changePercent: +0.38, currency: 'INR' },
+  { symbol: 'SILVER.MCX', name: 'MCX Silver 1kg', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 237890.00, changePercent: +0.41, currency: 'INR' },
+  { symbol: 'BTC/USD', name: 'Bitcoin', region: 'Crypto', countryCode: 'CRYPTO', countryFlag: 'CRYPTO', price: 64250.00, changePercent: +2.14, currency: 'USD' },
+  { symbol: 'USD/INR', name: 'USD/INR Forex', region: 'Forex', countryCode: 'FX', countryFlag: 'FX', price: 95.82, changePercent: -0.14, currency: 'INR' }
+];
+
+function buildMergedRibbonItems(baseList, incomingList = []) {
+  const map = new Map();
+
+  const upsert = (item) => {
+    if (!item || !item.symbol) return;
+    const sym = String(item.symbol).trim().toUpperCase();
+    const existing = map.get(sym);
+    map.set(sym, {
+      symbol: sym,
+      name: item.name || existing?.name || sym,
+      region: item.country || item.region || existing?.region || 'Global',
+      countryCode: item.countryCode || existing?.countryCode || '',
+      countryFlag: item.countryFlag || existing?.countryFlag || '',
+      price: item.price !== undefined ? item.price : existing?.price,
+      changePercent: item.changePercent !== undefined ? item.changePercent : (existing?.changePercent ?? 0),
+      currency: item.currency !== undefined ? item.currency : (existing?.currency ?? 'USD'),
+      type: item.type || existing?.type || 'stock'
+    });
+  };
+
+  (baseList || []).forEach(upsert);
+  (defaultAllCompanies?.companies || []).forEach(upsert);
+  (incomingList || []).forEach(upsert);
+
+  return Array.from(map.values());
+}
+
+function getCurrencyPrefix(currency, symbol) {
+  if (symbol === 'INDIA VIX') return '';
+  switch (currency) {
+    case 'INR': return '₹';
+    case 'EUR': return '€';
+    case 'GBP': return '£';
+    case 'JPY':
+    case 'CNY': return '¥';
+    case 'HKD': return 'HK$';
+    case 'AUD': return 'A$';
+    case 'CAD': return 'CA$';
+    case 'CHF': return 'CHF ';
+    case 'SAR': return 'SAR ';
+    case 'BRL': return 'R$';
+    case 'SEK':
+    case 'DKK': return 'kr';
+    case 'KRW': return '₩';
+    case 'TWD': return 'NT$';
+    default: return '$';
+  }
+}
 
 export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol }) {
-  const [indices, setIndices] = useState([
-    // Interleaved Indian (NSE) and Global World Market leaders for immediate dual visibility
-    { symbol: 'NIFTY 50', name: 'Nifty 50', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 23044.60, changePercent: -1.72, currency: 'INR' },
-    { symbol: 'S&P 500', name: 'S&P 500', region: 'US', countryCode: 'US', countryFlag: '🇺🇸', price: 7636.12, changePercent: -0.58, currency: 'USD' },
-    { symbol: 'BANK NIFTY', name: 'Bank Nifty', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 56295.55, changePercent: -0.41, currency: 'INR' },
-    { symbol: 'NASDAQ', name: 'Nasdaq 100', region: 'US', countryCode: 'US', countryFlag: '🇺🇸', price: 26241.12, changePercent: -0.32, currency: 'USD' },
-    { symbol: 'SENSEX', name: 'BSE Sensex', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 73563.27, changePercent: -1.69, currency: 'INR' },
-    { symbol: 'DOW JONES', name: 'Dow Jones 30', region: 'US', countryCode: 'US', countryFlag: '🇺🇸', price: 52786.07, changePercent: -1.18, currency: 'USD' },
-    { symbol: 'RELIANCE', name: 'Reliance Ind.', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 2985.40, changePercent: +0.61, currency: 'INR' },
-    { symbol: 'NVDA', name: 'NVIDIA', region: 'US', countryCode: 'US', countryFlag: '🇺🇸', price: 224.58, changePercent: -0.41, currency: 'USD' },
-    { symbol: 'TCS', name: 'Tata Consultancy', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 4195.25, changePercent: -0.58, currency: 'INR' },
-    { symbol: 'AAPL', name: 'Apple', region: 'US', countryCode: 'US', countryFlag: '🇺🇸', price: 335.92, changePercent: -0.33, currency: 'USD' },
-    { symbol: 'HDFCBANK', name: 'HDFC Bank', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 1682.40, changePercent: +0.53, currency: 'INR' },
-    { symbol: 'MSFT', name: 'Microsoft', region: 'US', countryCode: 'US', countryFlag: '🇺🇸', price: 497.93, changePercent: -0.53, currency: 'USD' },
-    { symbol: 'INFY', name: 'Infosys', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 1874.15, changePercent: -0.65, currency: 'INR' },
-    { symbol: 'AMZN', name: 'Amazon', region: 'US', countryCode: 'US', countryFlag: '🇺🇸', price: 249.38, changePercent: +0.04, currency: 'USD' },
-    { symbol: 'ICICIBANK', name: 'ICICI Bank', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 1248.60, changePercent: +0.49, currency: 'INR' },
-    { symbol: 'GOOGL', name: 'Alphabet', region: 'US', countryCode: 'US', countryFlag: '🇺🇸', price: 342.36, changePercent: +1.34, currency: 'USD' },
-    { symbol: 'BHARTIARTL', name: 'Bharti Airtel', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 1564.00, changePercent: +0.94, currency: 'INR' },
-    { symbol: 'TSLA', name: 'Tesla', region: 'US', countryCode: 'US', countryFlag: '🇺🇸', price: 377.94, changePercent: -0.57, currency: 'USD' },
-    { symbol: 'SBIN', name: 'State Bank of India', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 826.80, changePercent: -0.51, currency: 'INR' },
-    { symbol: 'META', name: 'Meta', region: 'US', countryCode: 'US', countryFlag: '🇺🇸', price: 777.59, changePercent: +4.50, currency: 'USD' },
-    { symbol: 'TATAMOTORS', name: 'Tata Motors', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 988.30, changePercent: +1.15, currency: 'INR' },
-    { symbol: 'DAX 40', name: 'DAX Germany', region: 'Europe', countryCode: 'DE', countryFlag: '🇩🇪', price: 25792.00, changePercent: -0.32, currency: 'EUR' },
-    { symbol: 'GOLD', name: 'Gold (XAU/USD)', region: 'Commodity', countryCode: 'METAL', countryFlag: 'XAU', price: 4314.50, changePercent: +0.38, currency: 'USD' },
-    { symbol: 'SILVER', name: 'Silver (XAG/USD)', region: 'Commodity', countryCode: 'METAL', countryFlag: 'XAG', price: 64.26, changePercent: +0.41, currency: 'USD' },
-    { symbol: 'GOLD.MCX', name: 'MCX Gold 10g', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 148390.00, changePercent: +0.38, currency: 'INR' },
-    { symbol: 'SILVER.MCX', name: 'MCX Silver 1kg', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 237890.00, changePercent: +0.41, currency: 'INR' },
-    { symbol: 'INDIA VIX', name: 'India VIX', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 11.77, changePercent: +3.70, currency: '' },
-    { symbol: 'FTSE 100', name: 'FTSE London', region: 'Europe', countryCode: 'GB', countryFlag: '🇬🇧', price: 10763.88, changePercent: -0.44, currency: 'GBP' },
-    { symbol: 'NIFTY IT', name: 'Nifty IT', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 41852.70, changePercent: -0.84, currency: 'INR' },
-    { symbol: 'CAC 40', name: 'CAC Paris', region: 'Europe', countryCode: 'FR', countryFlag: '🇫🇷', price: 8240.50, changePercent: -0.54, currency: 'EUR' },
-    { symbol: 'NIKKEI 225', name: 'Nikkei Tokyo', region: 'Asia', countryCode: 'JP', countryFlag: '🇯🇵', price: 65142.78, changePercent: -0.19, currency: 'JPY' },
-    { symbol: 'HANG SENG', name: 'Hang Seng HK', region: 'Asia', countryCode: 'HK', countryFlag: '🇭🇰', price: 17450.60, changePercent: +0.35, currency: 'HKD' },
-    { symbol: 'ASX 200', name: 'ASX Australia', region: 'Asia-Pacific', countryCode: 'AU', countryFlag: '🇦🇺', price: 8560.40, changePercent: -0.29, currency: 'AUD' },
-    { symbol: 'BTC/USD', name: 'Bitcoin', region: 'Crypto', countryCode: 'CRYPTO', countryFlag: 'CRYPTO', price: 64250.00, changePercent: +2.14, currency: 'USD' },
-    { symbol: 'USD/INR', name: 'USD/INR Forex', region: 'Forex', countryCode: 'FX', countryFlag: 'FX', price: 95.82, changePercent: -0.14, currency: 'INR' }
-  ]);
+  const [indices, setIndices] = useState(() => buildMergedRibbonItems(CORE_BENCHMARKS));
   const { quotes } = useSocket();
   const prevPricesRef = useRef({});
+  const flashTimersRef = useRef({});
   const [flashingSymbols, setFlashingSymbols] = useState({});
   const [tickDirections, setTickDirections] = useState({});
 
-  useEffect(() => {
-    async function fetchIndices() {
-      try {
-        const res = await fetch('/api/stocks/indices');
-        const json = await res.json();
-        if (json.success && json.data) {
-          // Detect tick changes and flash
-          const newFlashes = {};
-          const newDirections = {};
-          json.data.forEach(item => {
-            const old = prevPricesRef.current[item.symbol];
-            if (old !== undefined && old !== item.price) {
-              const dir = item.price > old ? 'up' : 'down';
-              newFlashes[item.symbol] = dir === 'up' ? 'tick-flash-up' : 'tick-flash-down';
-              newDirections[item.symbol] = dir;
-            }
-            prevPricesRef.current[item.symbol] = item.price;
+  const triggerSymbolFlashes = useCallback((items) => {
+    const newFlashes = {};
+    const newDirections = {};
+
+    items.forEach(({ symbol, price }) => {
+      if (!symbol || price === undefined || price === null) return;
+      const sym = String(symbol).trim().toUpperCase();
+      const old = prevPricesRef.current[sym];
+      if (old !== undefined && old !== price) {
+        const dir = price > old ? 'up' : 'down';
+        newFlashes[sym] = dir === 'up' ? 'tick-flash-up' : 'tick-flash-down';
+        newDirections[sym] = dir;
+
+        if (flashTimersRef.current[sym]) {
+          clearTimeout(flashTimersRef.current[sym]);
+        }
+        flashTimersRef.current[sym] = setTimeout(() => {
+          setFlashingSymbols((prev) => {
+            if (!prev[sym]) return prev;
+            const next = { ...prev };
+            delete next[sym];
+            return next;
           });
+          delete flashTimersRef.current[sym];
+        }, 920);
+      }
+      prevPricesRef.current[sym] = price;
+    });
 
-          if (Object.keys(newFlashes).length > 0) {
-            setFlashingSymbols(prev => ({ ...prev, ...newFlashes }));
-            setTickDirections(prev => ({ ...prev, ...newDirections }));
-            setTimeout(() => {
-              setFlashingSymbols({});
-            }, 1100);
+    if (Object.keys(newFlashes).length > 0) {
+      setFlashingSymbols((prev) => ({ ...prev, ...newFlashes }));
+      setTickDirections((prev) => ({ ...prev, ...newDirections }));
+    }
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchRibbonFeeds() {
+      try {
+        const [indicesRes, marketsRes] = await Promise.allSettled([
+          fetch('/api/stocks/indices'),
+          fetch('/api/stocks/all-markets?tier=all&sortBy=marketCap&order=desc')
+        ]);
+
+        const combinedIncoming = [];
+        if (indicesRes.status === 'fulfilled' && indicesRes.value.ok) {
+          const json = await indicesRes.value.json();
+          if (json.success && Array.isArray(json.data)) {
+            combinedIncoming.push(...json.data);
           }
+        }
+        if (marketsRes.status === 'fulfilled' && marketsRes.value.ok) {
+          const json = await marketsRes.value.json();
+          if (json.success && Array.isArray(json.data?.companies)) {
+            combinedIncoming.push(...json.data.companies);
+          }
+        }
 
-          setIndices(json.data);
+        if (isMounted && combinedIncoming.length > 0) {
+          triggerSymbolFlashes(combinedIncoming);
+          setIndices((prev) => buildMergedRibbonItems(prev, combinedIncoming));
         }
       } catch (e) {}
     }
-    fetchIndices();
-    const interval = setInterval(fetchIndices, 25000);
-    return () => clearInterval(interval);
-  }, []);
+
+    fetchRibbonFeeds();
+    const interval = setInterval(fetchRibbonFeeds, 20000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+      Object.values(flashTimersRef.current).forEach(clearTimeout);
+    };
+  }, [triggerSymbolFlashes]);
+
+  // Apply real-time WebSocket / micro-tick quote animations uniformly across every company in the ribbon
+  useEffect(() => {
+    if (!quotes || Object.keys(quotes).length === 0) return;
+    const updates = [];
+    for (const [sym, q] of Object.entries(quotes)) {
+      if (q && q.price !== undefined) {
+        updates.push({ symbol: sym, price: q.price });
+      }
+    }
+    if (updates.length > 0) {
+      triggerSymbolFlashes(updates);
+    }
+  }, [quotes, triggerSymbolFlashes]);
 
   const handleItemClick = (idx) => {
     if (!onSelectSymbol) return;
@@ -98,17 +188,10 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
     const live = quotes[idx.symbol];
     const price = live ? live.price : idx.price;
     const changePercent = live ? live.changePercent : idx.changePercent;
-    const isBull = changePercent >= 0;
+    const isBull = (changePercent ?? 0) >= 0;
     const flashClass = flashingSymbols[idx.symbol] || '';
-    const dir = tickDirections[idx.symbol];
-
-    const currSymbol = idx.currency === 'INR' ? '₹' :
-                       idx.currency === 'EUR' ? '€' :
-                       idx.currency === 'GBP' ? '£' :
-                       idx.currency === 'JPY' ? '¥' :
-                       idx.currency === 'HKD' ? 'HK$' :
-                       idx.currency === 'AUD' ? 'A$' :
-                       idx.symbol === 'INDIA VIX' ? '' : '$';
+    const dir = tickDirections[idx.symbol] || (live?.lastTickDirection === 'up' || live?.lastTickDirection === 'down' ? live.lastTickDirection : null);
+    const currSymbol = getCurrencyPrefix(idx.currency, idx.symbol);
 
     return (
       <div
@@ -137,26 +220,29 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
             title={idx.region ? `${idx.region} Market` : 'Market'}
           >
             <CountryFlag country={idx.region} countryCode={idx.countryCode} symbol={idx.symbol} countryFlag={idx.countryFlag} size="xs" />
-            <span>{idx.countryCode || (idx.region === 'India' ? 'IN' : idx.region === 'US' ? 'US' : idx.region?.slice(0, 2).toUpperCase() || '')}</span>
+            <span>{idx.countryCode && idx.countryCode !== 'GL' ? idx.countryCode : (idx.region === 'India' ? 'IN' : idx.region === 'US' ? 'US' : idx.region?.slice(0, 2).toUpperCase() || 'GL')}</span>
           </span>
         )}
         <span className="ribbon-sym">{idx.symbol}</span>
-        
+
         {/* Dynamic directional tick indicator badge */}
         {dir === 'up' && <span className="ribbon-tick-badge up">▲</span>}
         {dir === 'down' && <span className="ribbon-tick-badge down">▼</span>}
 
-        <span className="ribbon-price font-mono">
-          {currSymbol}{price ? price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}
+        <span className={`ribbon-price font-mono ${flashClass === 'tick-flash-up' ? 'tick-text up' : flashClass === 'tick-flash-down' ? 'tick-text down' : ''}`}>
+          {currSymbol}{price !== undefined && price !== null ? Number(price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}
         </span>
-        
+
         <span className={`ribbon-change font-mono ${isBull ? 'text-bull' : 'text-bear'}`}>
           {isBull ? <ArrowUpRight size={12} /> : <ArrowDownRight size={12} />}
-          {changePercent >= 0 ? '+' : ''}{changePercent ? changePercent.toFixed(2) : '0.00'}%
+          {(changePercent ?? 0) >= 0 ? '+' : ''}{changePercent !== undefined && changePercent !== null ? Number(changePercent).toFixed(2) : '0.00'}%
         </span>
       </div>
     );
   };
+
+  // Keep linear scroll velocity smooth regardless of total company count
+  const trackDurationSec = Math.max(65, Math.round(indices.length * 2.1));
 
   return (
     <div className="market-ribbon-wrapper">
@@ -174,7 +260,7 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
 
       {/* Infinite Continuous Moving Marquee Track */}
       <div className="ticker-track-container">
-        <div className="ticker-track">
+        <div className="ticker-track" style={{ animationDuration: `${trackDurationSec}s` }}>
           {/* Primary Track */}
           {indices.map((idx, i) => renderItem(idx, `orig-${idx.symbol}-${i}`))}
           {/* Duplicate Seamless Loop Track */}
