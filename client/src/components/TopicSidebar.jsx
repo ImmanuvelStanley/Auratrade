@@ -8,8 +8,6 @@ import {
   Briefcase,
   User,
   LogOut,
-  PanelLeftClose,
-  PanelLeftOpen,
   X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -93,8 +91,6 @@ export function isTopicActive(activeTab, topicId) {
 export function TopicSidebar({
   activeTab,
   onSelectTopic,
-  isCollapsed,
-  onToggleCollapse,
   isMobileOpen,
   onCloseMobile,
   onOpenAuthModal,
@@ -130,7 +126,7 @@ export function TopicSidebar({
   };
 
   return (
-    <>
+    <div className="desk-sidebar-slot">
       {isMobileOpen && (
         <div
           className="sidebar-backdrop"
@@ -140,7 +136,7 @@ export function TopicSidebar({
       )}
 
       <aside
-        className={`desk-sidebar ${isCollapsed ? 'collapsed' : ''} ${isMobileOpen ? 'mobile-open' : ''}`}
+        className={`desk-sidebar ${isMobileOpen ? 'mobile-open' : ''}`}
         aria-label="Market Navigation Sidebar"
       >
         {/* Mobile & Drawer Header */}
@@ -175,7 +171,7 @@ export function TopicSidebar({
           </div>
         </div>
 
-        {/* Bottom Account & Sidebar Collapse Actions */}
+        {/* Bottom Account Auth Controls */}
         <div className="sidebar-footer-actions">
           {user ? (
             <div className="sidebar-auth-group">
@@ -188,8 +184,10 @@ export function TopicSidebar({
                 }}
                 title={`Logged in as ${user.name || user.email}`}
               >
-                <span className="sidebar-profile-avatar">
-                  {user.name ? user.name[0].toUpperCase() : 'U'}
+                <span className="sidebar-utility-icon sidebar-profile-avatar-wrap">
+                  <span className="sidebar-profile-avatar">
+                    {user.name ? user.name[0].toUpperCase() : 'U'}
+                  </span>
                 </span>
                 <span className="sidebar-utility-label sidebar-profile-name">
                   {user.name || user.email.split('@')[0]}
@@ -229,22 +227,8 @@ export function TopicSidebar({
               <span className="sidebar-utility-label">Sign In</span>
             </button>
           )}
-
-          <button
-            type="button"
-            className="sidebar-utility-btn sidebar-collapse-btn"
-            onClick={onToggleCollapse}
-            title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-          >
-            <span className="sidebar-utility-icon">
-              {isCollapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
-            </span>
-            <span className="sidebar-utility-label">
-              {isCollapsed ? 'Expand' : 'Collapse Sidebar'}
-            </span>
-          </button>
         </div>
       </aside>
-    </>
+    </div>
   );
 }

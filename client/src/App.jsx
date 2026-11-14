@@ -26,8 +26,7 @@ import { WatchlistAlertsHub } from './components/WatchlistAlertsHub';
 import { StockDeepRecordModal, StockDeepRecordSection } from './components/StockDeepRecordModal';
 import { Footer } from './components/Footer';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { TopicSidebar, WORKSPACE_TOPICS, isTopicActive } from './components/TopicSidebar';
-import { Menu } from 'lucide-react';
+import { TopicSidebar } from './components/TopicSidebar';
 
 export function App() {
   const { user, token } = useAuth();
@@ -35,13 +34,6 @@ export function App() {
 
 
   const [activeTab, setActiveTab] = useState('all-markets'); // 'all-markets' | 'dashboard' | 'gold-silver' | 'watchlist' | 'alerts' | 'portfolio' | 'profile' | 'nse-india' | 'global-indices'
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem('auratrade_sidebar_collapsed') === 'true';
-    } catch (e) {
-      return false;
-    }
-  });
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   // When switching tabs, immediately realign scroll to top without delay
@@ -61,23 +53,9 @@ export function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isMobileSidebarOpen]);
 
-  const handleToggleCollapseSidebar = useCallback(() => {
-    setIsSidebarCollapsed((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem('auratrade_sidebar_collapsed', String(next));
-      } catch (e) {}
-      return next;
-    });
+  const handleToggleMobileSidebar = useCallback(() => {
+    setIsMobileSidebarOpen((prev) => !prev);
   }, []);
-
-  const handleToggleSidebarFromHeader = useCallback(() => {
-    if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
-      setIsMobileSidebarOpen((prev) => !prev);
-    } else {
-      handleToggleCollapseSidebar();
-    }
-  }, [handleToggleCollapseSidebar]);
 
   const handleSelectSidebarTopic = useCallback((topicId, requiresAuth) => {
     if (requiresAuth && !token) {
@@ -457,27 +435,20 @@ export function App() {
   }, []);
 
   const isInWatchlist = watchlistSymbols.includes(activeSymbol);
-  const currentTopic = WORKSPACE_TOPICS.find((t) => isTopicActive(activeTab, t.id)) || WORKSPACE_TOPICS[0];
-  const CurrentTopicIcon = currentTopic.icon;
 
   return (
     <div className="app-container">
       {/* Top Navigation */}
-      <Header
-        onToggleSidebar={handleToggleSidebarFromHeader}
-        isSidebarCollapsed={isSidebarCollapsed}
-      />
+      <Header onToggleSidebar={handleToggleMobileSidebar} />
 
       {/* Market Indices Ribbon (Ticker Tape) */}
       <MarketRibbon onSelectSymbol={handleOpenDeepRecord} />
 
-      {/* Institutional Shell Body: Persistent Modern Sidebar + Full-Width Workspace */}
+      {/* Institutional Shell Body: Auto-Expanding Hover Sidebar + Full-Width Workspace */}
       <div className="desk-shell-layout">
         <TopicSidebar
           activeTab={activeTab}
           onSelectTopic={handleSelectSidebarTopic}
-          isCollapsed={isSidebarCollapsed}
-          onToggleCollapse={handleToggleCollapseSidebar}
           isMobileOpen={isMobileSidebarOpen}
           onCloseMobile={() => setIsMobileSidebarOpen(false)}
           onOpenAuthModal={handleOpenAuthModal}
@@ -487,29 +458,6 @@ export function App() {
 
         {/* Main Container */}
         <main className="main-content">
-          {/* Compact Active Topic Strip (Drawer Trigger on Mobile/Tablet + Active Topic) */}
-          <div className="topic-workspace-bar">
-            <div className="topic-workspace-left">
-              <button
-                type="button"
-                className="topic-drawer-trigger"
-                onClick={() => setIsMobileSidebarOpen(true)}
-                aria-label="Open Topics Sidebar"
-                title="Switch Market Desk or Topic"
-              >
-                <Menu size={15} />
-                <span>Topics</span>
-              </button>
-
-              <div className="topic-active-heading">
-                <span className="topic-active-icon-box">
-                  <CurrentTopicIcon size={16} />
-                </span>
-                <span className="topic-active-title">{currentTopic.label}</span>
-              </div>
-            </div>
-          </div>
-
           {/* Conditional Tab Rendering - Protected with Tab-Level Error Boundary */}
           <ErrorBoundary key={activeTab}>
           {activeTab === 'dashboard' && (
