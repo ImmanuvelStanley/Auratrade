@@ -226,7 +226,7 @@ const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }
   );
 });
 
-const RIBBON_SCROLL_SPEED_PX_PER_SEC = 68;
+const RIBBON_SCROLL_SPEED_PX_PER_SEC = 96;
 
 export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol }) {
   const [indices, setIndices] = useState(() => buildMergedRibbonItems(CORE_BENCHMARKS));
