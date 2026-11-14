@@ -320,20 +320,21 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           <span
             className="status-pill"
+            title="Live Auto-Sync Timestamp"
             style={{
               background: 'rgba(16, 185, 129, 0.12)',
               borderColor: 'rgba(16, 185, 129, 0.35)',
               color: 'var(--bull-green)',
               fontSize: '0.74rem',
               fontWeight: 700,
-              padding: '0.4rem 0.85rem',
+              padding: '0.4rem 0.75rem',
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.45rem'
             }}
           >
             <span className="status-dot online" />
-            <span className="font-mono">AUTO-SYNC LIVE • {lastSyncedAt}</span>
+            <span className="font-mono" data-testid="global-sync-time">{lastSyncedAt}</span>
           </span>
           <a
             href="https://in.investing.com/indices/major-indices"
