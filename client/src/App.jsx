@@ -27,7 +27,7 @@ import { StockDeepRecordModal, StockDeepRecordSection } from './components/Stock
 import { Footer } from './components/Footer';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { TopicSidebar, WORKSPACE_TOPICS, isTopicActive } from './components/TopicSidebar';
-import { Maximize2, Minimize2, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 
 export function App() {
   const { user, token } = useAuth();
@@ -43,41 +43,23 @@ export function App() {
     }
   });
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [isTopicFullscreen, setIsTopicFullscreen] = useState(false);
 
   // When switching tabs, immediately realign scroll to top without delay
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [activeTab]);
 
-  // Sync browser native fullscreen and Escape key exit cleanly
+  // Close mobile sidebar drawer on Escape
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      if (!document.fullscreenElement) {
-        setIsTopicFullscreen(false);
-      }
-    };
+    if (!isMobileSidebarOpen) return;
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        if (isMobileSidebarOpen) {
-          setIsMobileSidebarOpen(false);
-          return;
-        }
-        if (isTopicFullscreen && !document.querySelector('.modal-overlay')) {
-          setIsTopicFullscreen(false);
-          if (document.fullscreenElement) {
-            document.exitFullscreen?.().catch(() => {});
-          }
-        }
+        setIsMobileSidebarOpen(false);
       }
     };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
     window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isMobileSidebarOpen, isTopicFullscreen]);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileSidebarOpen]);
 
   const handleToggleCollapseSidebar = useCallback(() => {
     setIsSidebarCollapsed((prev) => {
@@ -90,26 +72,12 @@ export function App() {
   }, []);
 
   const handleToggleSidebarFromHeader = useCallback(() => {
-    if (typeof window !== 'undefined' && (window.innerWidth <= 1024 || isTopicFullscreen)) {
+    if (typeof window !== 'undefined' && window.innerWidth <= 1024) {
       setIsMobileSidebarOpen((prev) => !prev);
     } else {
       handleToggleCollapseSidebar();
     }
-  }, [handleToggleCollapseSidebar, isTopicFullscreen]);
-
-  const handleToggleFullscreen = useCallback(() => {
-    setIsTopicFullscreen((prev) => {
-      const next = !prev;
-      try {
-        if (next) {
-          document.documentElement.requestFullscreen?.().catch(() => {});
-        } else if (document.fullscreenElement) {
-          document.exitFullscreen?.().catch(() => {});
-        }
-      } catch (e) {}
-      return next;
-    });
-  }, []);
+  }, [handleToggleCollapseSidebar]);
 
   const handleSelectSidebarTopic = useCallback((topicId, requiresAuth) => {
     if (requiresAuth && !token) {
@@ -493,20 +461,15 @@ export function App() {
   const CurrentTopicIcon = currentTopic.icon;
 
   return (
-    <div className={`app-container ${isTopicFullscreen ? 'topic-fullscreen' : ''}`}>
+    <div className="app-container">
       {/* Top Navigation */}
-      {!isTopicFullscreen && (
-        <Header
-          onOpenAuthModal={handleOpenAuthModal}
-          onOpenProfile={handleOpenProfile}
-          portfolioCash={portfolio?.cashBalance}
-          onToggleSidebar={handleToggleSidebarFromHeader}
-          isSidebarCollapsed={isSidebarCollapsed}
-        />
-      )}
+      <Header
+        onToggleSidebar={handleToggleSidebarFromHeader}
+        isSidebarCollapsed={isSidebarCollapsed}
+      />
 
       {/* Market Indices Ribbon (Ticker Tape) */}
-      {!isTopicFullscreen && <MarketRibbon onSelectSymbol={handleOpenDeepRecord} />}
+      <MarketRibbon onSelectSymbol={handleOpenDeepRecord} />
 
       {/* Institutional Shell Body: Persistent Modern Sidebar + Full-Width Workspace */}
       <div className="desk-shell-layout">
@@ -517,14 +480,14 @@ export function App() {
           onToggleCollapse={handleToggleCollapseSidebar}
           isMobileOpen={isMobileSidebarOpen}
           onCloseMobile={() => setIsMobileSidebarOpen(false)}
-          isFullscreen={isTopicFullscreen}
-          onToggleFullscreen={handleToggleFullscreen}
+          onOpenAuthModal={handleOpenAuthModal}
+          onOpenProfile={handleOpenProfile}
           watchlistCount={watchlistSymbols.length}
         />
 
         {/* Main Container */}
         <main className="main-content">
-          {/* Compact Active Topic Strip (Drawer Trigger on Mobile/Fullscreen + Active Topic + Fullscreen Button) */}
+          {/* Compact Active Topic Strip (Drawer Trigger on Mobile/Tablet + Active Topic) */}
           <div className="topic-workspace-bar">
             <div className="topic-workspace-left">
               <button
@@ -545,19 +508,6 @@ export function App() {
                 <span className="topic-active-title">{currentTopic.label}</span>
               </div>
             </div>
-
-            <button
-              type="button"
-              className={`topic-fullscreen-btn ${isTopicFullscreen ? 'is-fullscreen' : ''}`}
-              onClick={handleToggleFullscreen}
-              title={isTopicFullscreen ? 'Exit Full Screen Mode (Esc)' : 'Open Current Topic in Full Screen'}
-              aria-label={isTopicFullscreen ? 'Exit Full Screen Mode' : 'Open Current Topic in Full Screen'}
-            >
-              {isTopicFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
-              <span className="topic-fullscreen-label">
-                {isTopicFullscreen ? 'Exit Full Screen' : 'Full Screen'}
-              </span>
-            </button>
           </div>
 
           {/* Conditional Tab Rendering - Protected with Tab-Level Error Boundary */}
@@ -715,22 +665,20 @@ export function App() {
       </div>
 
       {/* Global Institutional Footer & Copyright */}
-      {!isTopicFullscreen && (
-        <Footer
-          onNavigateTab={(tab) => {
-            setActiveTab(tab);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          onOpenAutoPredictor={handleOpenAutoPredictor}
-          onOpenTradeModal={() => {
-            setTradeTargetSymbol(activeSymbol || 'AAPL');
-            setIsTradeModalOpen(true);
-          }}
-          onOpenAlertModal={() => {
-            handleOpenAlertModal(activeSymbol || 'AAPL');
-          }}
-        />
-      )}
+      <Footer
+        onNavigateTab={(tab) => {
+          setActiveTab(tab);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onOpenAutoPredictor={handleOpenAutoPredictor}
+        onOpenTradeModal={() => {
+          setTradeTargetSymbol(activeSymbol || 'AAPL');
+          setIsTradeModalOpen(true);
+        }}
+        onOpenAlertModal={() => {
+          handleOpenAlertModal(activeSymbol || 'AAPL');
+        }}
+      />
 
       {/* Modals */}
       {isAlertModalOpen && (

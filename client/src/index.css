@@ -8216,8 +8216,83 @@ canvas {
   margin-top: 0.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.32rem;
+  gap: 0.42rem;
   flex-shrink: 0;
+}
+
+.sidebar-auth-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sidebar-profile-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.62rem;
+  padding: 0.46rem 0.62rem;
+  border-radius: 9px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.16s ease, border-color 0.16s ease;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-align: left;
+}
+
+.sidebar-profile-trigger:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(6, 182, 212, 0.45);
+}
+
+.sidebar-profile-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #06b6d4, #6366f1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.sidebar-profile-name {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sidebar-signin-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 36px;
+  padding: 0 0.75rem;
+  border-radius: 9px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  box-sizing: border-box;
+}
+
+.sidebar-signout-btn {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+  color: #f87171 !important;
+}
+
+.sidebar-signout-btn:hover {
+  background: rgba(239, 68, 68, 0.2) !important;
+  border-color: rgba(239, 68, 68, 0.65) !important;
+  color: #fca5a5 !important;
 }
 
 .sidebar-utility-btn {
@@ -8245,12 +8320,6 @@ canvas {
   color: var(--text-primary);
 }
 
-.sidebar-utility-btn.active {
-  background: rgba(239, 68, 68, 0.14);
-  border-color: rgba(239, 68, 68, 0.45);
-  color: #f87171;
-}
-
 .sidebar-utility-icon {
   width: 24px;
   height: 24px;
@@ -8276,14 +8345,16 @@ canvas {
   }
 
   .desk-sidebar.collapsed .sidebar-topic-btn,
-  .desk-sidebar.collapsed .sidebar-utility-btn {
+  .desk-sidebar.collapsed .sidebar-utility-btn,
+  .desk-sidebar.collapsed .sidebar-profile-trigger,
+  .desk-sidebar.collapsed .sidebar-signin-btn {
     justify-content: center;
     padding: 0.5rem;
     gap: 0;
   }
 }
 
-/* Top Workspace Strip inside Main Stage (Topic Indicator + Mobile Drawer + Full Screen) */
+/* Top Workspace Strip inside Main Stage (Mobile Drawer Trigger + Active Topic) */
 .topic-workspace-bar {
   display: flex;
   align-items: center;
@@ -8357,87 +8428,6 @@ canvas {
   text-overflow: ellipsis;
 }
 
-.topic-fullscreen-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  height: 32px;
-  padding: 0 0.82rem;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  color: var(--text-primary);
-  font-size: 0.76rem;
-  font-weight: 700;
-  cursor: pointer;
-  flex-shrink: 0;
-  white-space: nowrap;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-
-.topic-fullscreen-btn:hover {
-  background: rgba(255, 255, 255, 0.11);
-  border-color: rgba(255, 255, 255, 0.32);
-}
-
-.topic-fullscreen-btn.is-fullscreen {
-  background: rgba(239, 68, 68, 0.14);
-  border-color: rgba(239, 68, 68, 0.5);
-  color: #f87171;
-}
-
-.topic-fullscreen-btn.is-fullscreen:hover {
-  background: rgba(239, 68, 68, 0.24);
-  border-color: rgba(239, 68, 68, 0.78);
-  color: #fca5a5;
-}
-
-/* Dedicated Topic Full Screen Mode */
-.app-container.topic-fullscreen {
-  min-height: 100dvh;
-}
-
-.app-container.topic-fullscreen .topic-drawer-trigger {
-  display: inline-flex;
-}
-
-.app-container.topic-fullscreen .main-content {
-  width: 100%;
-  max-width: 100%;
-  min-height: 100dvh;
-  padding: clamp(0.7rem, 1.4vw, 1.15rem) clamp(0.65rem, 1.8vw, 1.65rem) 2.5rem;
-}
-
-.app-container.topic-fullscreen .topic-workspace-bar {
-  position: sticky;
-  top: 0.5rem;
-  z-index: 1600;
-  backdrop-filter: blur(12px);
-}
-
-.app-container.topic-fullscreen .desk-sidebar {
-  position: fixed;
-  inset: 0 auto 0 0;
-  width: min(286px, 84vw) !important;
-  flex: none !important;
-  height: 100dvh;
-  z-index: 3500;
-  transform: translateX(-106%);
-  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.app-container.topic-fullscreen .desk-sidebar.mobile-open {
-  transform: translateX(0);
-}
-
-.app-container.topic-fullscreen .sidebar-drawer-header {
-  display: flex;
-}
-
-.app-container.topic-fullscreen .sidebar-collapse-btn {
-  display: none;
-}
-
 /* Slide-over Backdrop */
 .sidebar-backdrop {
   position: fixed;
@@ -8495,11 +8485,6 @@ canvas {
   .topic-active-title {
     font-size: 0.84rem;
   }
-
-  .topic-fullscreen-btn {
-    padding: 0 0.62rem;
-    font-size: 0.72rem;
-  }
 }
 
 @media (max-width: 420px) {
@@ -8510,10 +8495,6 @@ canvas {
   .topic-drawer-trigger {
     padding: 0 0.55rem;
     font-size: 0.73rem;
-  }
-
-  .topic-fullscreen-btn {
-    padding: 0 0.55rem;
   }
 }
 
@@ -8559,6 +8540,23 @@ canvas {
   border-top-color: #e2e8f0;
 }
 
+[data-theme="light"] .sidebar-profile-trigger {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+[data-theme="light"] .sidebar-profile-trigger:hover {
+  background: #f1f5f9;
+  border-color: #0284c7;
+}
+
+[data-theme="light"] .sidebar-signout-btn {
+  background: rgba(220, 38, 38, 0.08) !important;
+  border-color: rgba(220, 38, 38, 0.35) !important;
+  color: #dc2626 !important;
+}
+
 [data-theme="light"] .sidebar-utility-btn {
   background: #f8fafc;
   border-color: #cbd5e1;
@@ -8576,23 +8574,15 @@ canvas {
   border-color: #cbd5e1;
 }
 
-[data-theme="light"] .topic-drawer-trigger,
-[data-theme="light"] .topic-fullscreen-btn {
+[data-theme="light"] .topic-drawer-trigger {
   background: #f8fafc;
   border-color: #cbd5e1;
   color: #0f172a;
 }
 
-[data-theme="light"] .topic-drawer-trigger:hover,
-[data-theme="light"] .topic-fullscreen-btn:hover {
+[data-theme="light"] .topic-drawer-trigger:hover {
   background: #f1f5f9;
   border-color: #94a3b8;
-}
-
-[data-theme="light"] .topic-fullscreen-btn.is-fullscreen {
-  background: rgba(220, 38, 38, 0.1);
-  border-color: rgba(220, 38, 38, 0.45);
-  color: #dc2626 !important;
 }
 
 

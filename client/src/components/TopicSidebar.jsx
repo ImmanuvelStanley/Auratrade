@@ -7,12 +7,12 @@ import {
   BookmarkCheck,
   Briefcase,
   User,
+  LogOut,
   PanelLeftClose,
   PanelLeftOpen,
-  Maximize2,
-  Minimize2,
   X
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import { GoldBarIcon } from './GoldSilverMarketDesk';
 import { BrandLogo } from './BrandLogo';
 
@@ -97,10 +97,11 @@ export function TopicSidebar({
   onToggleCollapse,
   isMobileOpen,
   onCloseMobile,
-  isFullscreen,
-  onToggleFullscreen,
+  onOpenAuthModal,
+  onOpenProfile,
   watchlistCount = 0
 }) {
+  const { user, logout } = useAuth();
   const marketTopics = WORKSPACE_TOPICS.filter((t) => t.group === 'markets');
   const accountTopics = WORKSPACE_TOPICS.filter((t) => t.group === 'account');
 
@@ -174,24 +175,60 @@ export function TopicSidebar({
           </div>
         </div>
 
-        {/* Bottom Utility Actions */}
+        {/* Bottom Account & Sidebar Collapse Actions */}
         <div className="sidebar-footer-actions">
-          <button
-            type="button"
-            className={`sidebar-utility-btn ${isFullscreen ? 'active' : ''}`}
-            onClick={() => {
-              onCloseMobile();
-              onToggleFullscreen();
-            }}
-            title={isFullscreen ? 'Exit Full Screen Mode (Esc)' : 'View Selected Topic in Full Screen'}
-          >
-            <span className="sidebar-utility-icon">
-              {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
-            </span>
-            <span className="sidebar-utility-label">
-              {isFullscreen ? 'Exit Full Screen' : 'Full Screen View'}
-            </span>
-          </button>
+          {user ? (
+            <div className="sidebar-auth-group">
+              <button
+                type="button"
+                className="sidebar-profile-trigger"
+                onClick={() => {
+                  onCloseMobile();
+                  if (onOpenProfile) onOpenProfile();
+                }}
+                title={`Logged in as ${user.name || user.email}`}
+              >
+                <span className="sidebar-profile-avatar">
+                  {user.name ? user.name[0].toUpperCase() : 'U'}
+                </span>
+                <span className="sidebar-utility-label sidebar-profile-name">
+                  {user.name || user.email.split('@')[0]}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="sidebar-utility-btn sidebar-signout-btn"
+                onClick={() => {
+                  onCloseMobile();
+                  logout();
+                }}
+                title="Sign out from workstation"
+                aria-label="Sign out"
+              >
+                <span className="sidebar-utility-icon">
+                  <LogOut size={15} />
+                </span>
+                <span className="sidebar-utility-label">Sign Out</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="btn btn-primary sidebar-signin-btn"
+              onClick={() => {
+                onCloseMobile();
+                if (onOpenAuthModal) onOpenAuthModal();
+              }}
+              title="Sign in to workstation"
+              aria-label="Sign in"
+            >
+              <span className="sidebar-utility-icon">
+                <User size={15} />
+              </span>
+              <span className="sidebar-utility-label">Sign In</span>
+            </button>
+          )}
 
           <button
             type="button"
