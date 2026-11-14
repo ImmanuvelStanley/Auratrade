@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
-import { Bell, User, LogOut, Sun, Moon } from 'lucide-react';
+import { Bell, User, LogOut, Sun, Moon, Menu } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { NotificationCenter } from './NotificationCenter';
 import { BrandLogo } from './BrandLogo';
 
-export const Header = React.memo(function Header({ onOpenAuthModal, portfolioCash, onOpenProfile }) {
+export const Header = React.memo(function Header({
+  onOpenAuthModal,
+  portfolioCash,
+  onOpenProfile,
+  onToggleSidebar,
+  isSidebarCollapsed
+}) {
   const { notifications } = useSocket();
   const { user, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
@@ -16,8 +22,22 @@ export const Header = React.memo(function Header({ onOpenAuthModal, portfolioCas
 
   return (
     <header className="navbar">
-      {/* Brand Modern Geometric Logo */}
-      <BrandLogo />
+      <div className="navbar-left-cluster">
+        {onToggleSidebar && (
+          <button
+            type="button"
+            className="btn-icon header-sidebar-toggle"
+            onClick={onToggleSidebar}
+            title={isSidebarCollapsed ? 'Toggle Sidebar Navigation' : 'Toggle Sidebar Navigation'}
+            aria-label="Toggle Navigation Sidebar"
+          >
+            <Menu size={17} />
+          </button>
+        )}
+
+        {/* Brand Modern Geometric Logo */}
+        <BrandLogo />
+      </div>
 
       {/* Navigation Actions */}
       <div className="nav-actions">

@@ -20,13 +20,14 @@ import { UserProfile } from './components/UserProfile';
 import { AutoPredictorModal } from './components/AutoPredictorModal';
 import { NSEIndiaMarketDesk } from './components/NSEIndiaMarketDesk';
 import { GlobalIndicesDesk } from './components/GlobalIndicesDesk';
-import { GoldSilverMarketDesk, GoldBarIcon } from './components/GoldSilverMarketDesk';
+import { GoldSilverMarketDesk } from './components/GoldSilverMarketDesk';
 import { SecurityModal } from './components/SecurityModal';
 import { WatchlistAlertsHub } from './components/WatchlistAlertsHub';
 import { StockDeepRecordModal, StockDeepRecordSection } from './components/StockDeepRecordModal';
 import { Footer } from './components/Footer';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { LayoutDashboard, Bookmark, BookmarkCheck, Bell, Briefcase, BrainCircuit, Globe, User, Flame, Landmark, Layers, Coins } from 'lucide-react';
+import { TopicSidebar, WORKSPACE_TOPICS, isTopicActive } from './components/TopicSidebar';
+import { Maximize2, Minimize2, Menu } from 'lucide-react';
 
 export function App() {
   const { user, token } = useAuth();
@@ -34,11 +35,91 @@ export function App() {
 
 
   const [activeTab, setActiveTab] = useState('all-markets'); // 'all-markets' | 'dashboard' | 'gold-silver' | 'watchlist' | 'alerts' | 'portfolio' | 'profile' | 'nse-india' | 'global-indices'
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('auratrade_sidebar_collapsed') === 'true';
+    } catch (e) {
+      return false;
+    }
+  });
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isTopicFullscreen, setIsTopicFullscreen] = useState(false);
 
   // When switching tabs, immediately realign scroll to top without delay
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, [activeTab]);
+
+  // Sync browser native fullscreen and Escape key exit cleanly
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        setIsTopicFullscreen(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        if (isMobileSidebarOpen) {
+          setIsMobileSidebarOpen(false);
+          return;
+        }
+        if (isTopicFullscreen && !document.querySelector('.modal-overlay')) {
+          setIsTopicFullscreen(false);
+          if (document.fullscreenElement) {
+            document.exitFullscreen?.().catch(() => {});
+          }
+        }
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMobileSidebarOpen, isTopicFullscreen]);
+
+  const handleToggleCollapseSidebar = useCallback(() => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('auratrade_sidebar_collapsed', String(next));
+      } catch (e) {}
+      return next;
+    });
+  }, []);
+
+  const handleToggleSidebarFromHeader = useCallback(() => {
+    if (typeof window !== 'undefined' && (window.innerWidth <= 1024 || isTopicFullscreen)) {
+      setIsMobileSidebarOpen((prev) => !prev);
+    } else {
+      handleToggleCollapseSidebar();
+    }
+  }, [handleToggleCollapseSidebar, isTopicFullscreen]);
+
+  const handleToggleFullscreen = useCallback(() => {
+    setIsTopicFullscreen((prev) => {
+      const next = !prev;
+      try {
+        if (next) {
+          document.documentElement.requestFullscreen?.().catch(() => {});
+        } else if (document.fullscreenElement) {
+          document.exitFullscreen?.().catch(() => {});
+        }
+      } catch (e) {}
+      return next;
+    });
+  }, []);
+
+  const handleSelectSidebarTopic = useCallback((topicId, requiresAuth) => {
+    if (requiresAuth && !token) {
+      setIsMobileSidebarOpen(false);
+      setIsAuthModalOpen(true);
+      return;
+    }
+    setActiveTab(topicId);
+    setIsMobileSidebarOpen(false);
+  }, [token]);
   const [activeSymbol, setActiveSymbol] = useState('AAPL');
   const [watchlistSymbols, setWatchlistSymbols] = useState(['AAPL', 'NVDA', 'TSLA', 'MSFT', 'AMZN']);
   const [alerts, setAlerts] = useState([]);
@@ -408,86 +489,79 @@ export function App() {
   }, []);
 
   const isInWatchlist = watchlistSymbols.includes(activeSymbol);
+  const currentTopic = WORKSPACE_TOPICS.find((t) => isTopicActive(activeTab, t.id)) || WORKSPACE_TOPICS[0];
+  const CurrentTopicIcon = currentTopic.icon;
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${isTopicFullscreen ? 'topic-fullscreen' : ''}`}>
       {/* Top Navigation */}
-      <Header
-        onOpenAuthModal={handleOpenAuthModal}
-        onOpenProfile={handleOpenProfile}
-        portfolioCash={portfolio?.cashBalance}
-      />
+      {!isTopicFullscreen && (
+        <Header
+          onOpenAuthModal={handleOpenAuthModal}
+          onOpenProfile={handleOpenProfile}
+          portfolioCash={portfolio?.cashBalance}
+          onToggleSidebar={handleToggleSidebarFromHeader}
+          isSidebarCollapsed={isSidebarCollapsed}
+        />
+      )}
 
       {/* Market Indices Ribbon (Ticker Tape) */}
-      <MarketRibbon onSelectSymbol={handleOpenDeepRecord} />
+      {!isTopicFullscreen && <MarketRibbon onSelectSymbol={handleOpenDeepRecord} />}
 
-      {/* Main Container */}
-      <main className="main-content">
-        {/* Desk Navigation Tabs */}
-        <div className="workstation-action-bar">
-          {/* Navigation Segments / Quick Desk Views */}
-          <div className="tab-list">
+      {/* Institutional Shell Body: Persistent Modern Sidebar + Full-Width Workspace */}
+      <div className="desk-shell-layout">
+        <TopicSidebar
+          activeTab={activeTab}
+          onSelectTopic={handleSelectSidebarTopic}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={handleToggleCollapseSidebar}
+          isMobileOpen={isMobileSidebarOpen}
+          onCloseMobile={() => setIsMobileSidebarOpen(false)}
+          isFullscreen={isTopicFullscreen}
+          onToggleFullscreen={handleToggleFullscreen}
+          watchlistCount={watchlistSymbols.length}
+        />
+
+        {/* Main Container */}
+        <main className="main-content">
+          {/* Compact Active Topic Strip (Drawer Trigger on Mobile/Fullscreen + Active Topic + Fullscreen Button) */}
+          <div className="topic-workspace-bar">
+            <div className="topic-workspace-left">
+              <button
+                type="button"
+                className="topic-drawer-trigger"
+                onClick={() => setIsMobileSidebarOpen(true)}
+                aria-label="Open Topics Sidebar"
+                title="Switch Market Desk or Topic"
+              >
+                <Menu size={15} />
+                <span>Topics</span>
+              </button>
+
+              <div className="topic-active-heading">
+                <span className="topic-active-icon-box">
+                  <CurrentTopicIcon size={16} />
+                </span>
+                <span className="topic-active-title">{currentTopic.label}</span>
+              </div>
+            </div>
+
             <button
               type="button"
-              className={`tab-btn ${activeTab === 'all-markets' ? 'active' : ''}`}
-              onClick={() => setActiveTab('all-markets')}
+              className={`topic-fullscreen-btn ${isTopicFullscreen ? 'is-fullscreen' : ''}`}
+              onClick={handleToggleFullscreen}
+              title={isTopicFullscreen ? 'Exit Full Screen Mode (Esc)' : 'Open Current Topic in Full Screen'}
+              aria-label={isTopicFullscreen ? 'Exit Full Screen Mode' : 'Open Current Topic in Full Screen'}
             >
-              <Layers size={16} /> All Companies Market
-            </button>
-            <button
-              type="button"
-              className={`tab-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
-              onClick={() => setActiveTab('dashboard')}
-            >
-              <LayoutDashboard size={16} /> Workstation
-            </button>
-            <button
-              type="button"
-              className={`tab-btn ${activeTab === 'nse-india' ? 'active' : ''}`}
-              onClick={() => setActiveTab('nse-india')}
-            >
-              <Landmark size={16} /> NSE Indian Market
-            </button>
-            <button
-              type="button"
-              className={`tab-btn ${activeTab === 'global-indices' ? 'active' : ''}`}
-              onClick={() => setActiveTab('global-indices')}
-            >
-              <Globe size={16} /> Global Major Indices
-            </button>
-            <button
-              type="button"
-              className={`tab-btn ${activeTab === 'gold-silver' ? 'active' : ''}`}
-              onClick={() => setActiveTab('gold-silver')}
-            >
-              <GoldBarIcon size={16} /> Gold & Silver Market
-            </button>
-            <button
-              type="button"
-              className={`tab-btn ${activeTab === 'watchlist-alerts' || activeTab === 'watchlist' || activeTab === 'alerts' ? 'active' : ''}`}
-              onClick={() => { if (!token) { setIsAuthModalOpen(true); return; } setActiveTab('watchlist-alerts'); }}
-            >
-              <BookmarkCheck size={16} /> Watchlist & Price Alerts
-            </button>
-            <button
-              type="button"
-              className={`tab-btn ${activeTab === 'portfolio' ? 'active' : ''}`}
-              onClick={() => { if (!token) { setIsAuthModalOpen(true); return; } setActiveTab('portfolio'); }}
-            >
-              <Briefcase size={16} /> Paper Trading ($1,000)
-            </button>
-            <button
-              type="button"
-              className={`tab-btn ${activeTab === 'profile' ? 'active' : ''}`}
-              onClick={() => { if (!token) { setIsAuthModalOpen(true); return; } setActiveTab('profile'); }}
-            >
-              <User size={16} /> Trader Profile
+              {isTopicFullscreen ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
+              <span className="topic-fullscreen-label">
+                {isTopicFullscreen ? 'Exit Full Screen' : 'Full Screen'}
+              </span>
             </button>
           </div>
-        </div>
 
-        {/* Conditional Tab Rendering - Protected with Tab-Level Error Boundary */}
-        <ErrorBoundary key={activeTab}>
+          {/* Conditional Tab Rendering - Protected with Tab-Level Error Boundary */}
+          <ErrorBoundary key={activeTab}>
           {activeTab === 'dashboard' && (
             <div className="motion-entry" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
               {/* Horizontal Market Leaders Ranked by Market Cap */}
@@ -638,22 +712,25 @@ export function App() {
           )}
         </ErrorBoundary>
       </main>
+      </div>
 
       {/* Global Institutional Footer & Copyright */}
-      <Footer
-        onNavigateTab={(tab) => {
-          setActiveTab(tab);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        onOpenAutoPredictor={handleOpenAutoPredictor}
-        onOpenTradeModal={() => {
-          setTradeTargetSymbol(activeSymbol || 'AAPL');
-          setIsTradeModalOpen(true);
-        }}
-        onOpenAlertModal={() => {
-          handleOpenAlertModal(activeSymbol || 'AAPL');
-        }}
-      />
+      {!isTopicFullscreen && (
+        <Footer
+          onNavigateTab={(tab) => {
+            setActiveTab(tab);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          onOpenAutoPredictor={handleOpenAutoPredictor}
+          onOpenTradeModal={() => {
+            setTradeTargetSymbol(activeSymbol || 'AAPL');
+            setIsTradeModalOpen(true);
+          }}
+          onOpenAlertModal={() => {
+            handleOpenAlertModal(activeSymbol || 'AAPL');
+          }}
+        />
+      )}
 
       {/* Modals */}
       {isAlertModalOpen && (
