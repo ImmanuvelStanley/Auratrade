@@ -37,7 +37,9 @@ import {
   Target,
   FileDown,
   Printer,
-  DollarSign
+  DollarSign,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
@@ -743,6 +745,113 @@ export const SilverBarIcon = React.memo(function SilverBarIcon({ size = 28, styl
   );
 });
 
+const BIS_HALLMARK_DETAILS = [
+  {
+    key: 'gold24k',
+    calcPurityKey: '24k',
+    title: '24 Karat Gold (Pure Bullion)',
+    subtitle: '999 Purity / Investment Bars & Coins',
+    purityLabel: '99.9%',
+    titleColor: 'var(--warning-amber)',
+    iconColor: 'var(--warning-amber)',
+    pillBg: 'rgba(245, 158, 11, 0.15)',
+    pillColor: 'var(--warning-amber)',
+    highlightCol: 'per10g',
+    highlightColor: 'var(--warning-amber)',
+    perGramDecimals: 0,
+    bisStandard: 'IS 1417 / IS 1418 • 24K999 / 999.9 Fineness',
+    hallmarkComponents: 'Minted bullion bars & coins carry assay/refiner 999 or 999.9 certification + serial number; 24K hallmarked articles include BIS Triangle, 24K999 grade & 6-digit HUID.',
+    composition: '99.9%–99.99% Pure Gold (Au) • < 0.1% trace elements (24 of 24 parts gold)',
+    hardness: '2.5 – 3.0 Mohs (Very soft & malleable; bends or scratches under daily wear)',
+    meltingPoint: '1,064 °C • Density: 19.32 g/cm³',
+    finish: 'Distinctive bright, rich warm metallic yellow; virtually zero tarnishing',
+    bestFor: 'Minted investment bars, sovereign/bank coins, Akshaya Tritiya/Dhanteras bullion, vaulting & ETF/SGB price benchmarking',
+    notIdealFor: 'Daily-wear ornaments, rings, heavy chains, or stone/diamond prong settings',
+    makingCharges: '0% – 3% minting/refinery premium on sealed bars & coins (no crafting wastage)',
+    gstRule: 'Flat 3% GST on bullion value (1.5% CGST + 1.5% SGST intra-state); 5% GST only if itemized making charges apply',
+    resaleLiquidity: 'Highest (~99%–100% of live 24K spot buyback value across banks, bullion dealers & jewellers)',
+    verificationTip: 'Check sealed assay certificate (LBMA / MMTC-PAMP / BIS) or verify 6-digit alphanumeric HUID inside the official BIS CARE App.'
+  },
+  {
+    key: 'gold22k',
+    calcPurityKey: '22k',
+    title: '22 Karat Gold (Hallmark Jewellery)',
+    subtitle: '916 Hallmark Jewellery Standard',
+    purityLabel: '91.6%',
+    titleColor: 'var(--text-primary)',
+    iconColor: 'var(--bull-green)',
+    pillBg: 'rgba(6, 182, 212, 0.15)',
+    pillColor: 'var(--accent-cyan)',
+    highlightCol: 'per10g',
+    highlightColor: 'var(--bull-green)',
+    perGramDecimals: 0,
+    bisStandard: 'IS 1417 Mandatory BIS HUID • 22K916 Fineness',
+    hallmarkComponents: 'Mandatory 3-mark laser stamp: BIS Triangular Logo + 22K916 Purity Grade + unique 6-digit alphanumeric HUID code.',
+    composition: '91.67% Pure Gold (Au) + 8.33% Hardening Alloy (copper, silver & trace zinc — 22 parts gold, 2 parts alloy)',
+    hardness: '2.75 – 3.5 Mohs (Durable enough for solid necklaces, bangles & chains without losing traditional lustre)',
+    meltingPoint: '~990 – 1,030 °C • Density: ~17.7 – 18.0 g/cm³',
+    finish: 'Classic rich Indian yellow gold tone with improved structural rigidity over 24K',
+    bestFor: 'Traditional bridal sets, mangalsutras, bangles, plain chains, rings, kadas & heritage temple jewellery',
+    notIdealFor: 'High-tension solitaire diamond claws or micro-pave settings (where 18K holds stones more securely)',
+    makingCharges: 'Typically 8% – 18% of gold value (lower for machine chains, higher for handcrafted/antique/filigree designs)',
+    gstRule: '3% GST on net 22K gold value + 5% GST on separately itemized making/crafting charges',
+    resaleLiquidity: 'High (~91.6% of live 24K price per gram net weight; making charges & GST are non-refundable on buyback/exchange)',
+    verificationTip: 'Always scan or enter the 6-digit alphanumeric HUID in the BIS CARE App ("Verify HUID") to match jeweller, AHC lab & purity.'
+  },
+  {
+    key: 'gold18k',
+    calcPurityKey: '18k',
+    title: '18 Karat Gold (Diamond Studded)',
+    subtitle: '750 Purity / High Strength Jewellery',
+    purityLabel: '75.0%',
+    titleColor: 'var(--text-primary)',
+    iconColor: 'var(--accent-indigo)',
+    pillBg: 'rgba(99, 102, 241, 0.15)',
+    pillColor: 'var(--accent-indigo)',
+    highlightCol: null,
+    highlightColor: 'var(--text-primary)',
+    perGramDecimals: 0,
+    bisStandard: 'IS 1417 Mandatory BIS HUID • 18K750 Fineness',
+    hallmarkComponents: 'Mandatory 3-mark laser stamp: BIS Triangular Logo + 18K750 Purity Grade + unique 6-digit alphanumeric HUID code.',
+    composition: '75.0% Pure Gold (Au) + 25.0% Alloy Metals (copper/silver for yellow/rose gold; palladium/nickel + rhodium coat for white gold)',
+    hardness: '3.5 – 4.5 Mohs (Highest tensile strength & scratch resistance among common jewellery grades)',
+    meltingPoint: '~900 – 960 °C • Density: ~15.2 – 15.9 g/cm³',
+    finish: 'Available in Yellow, Rose (copper-rich), and White (rhodium-plated) finishes',
+    bestFor: 'Solitaire & diamond-studded rings, emerald/ruby/polki gemstone settings, luxury watches & everyday lightweight fashion jewellery',
+    notIdealFor: 'Pure bullion wealth storage (higher making cost & lower gold-by-weight ratio vs 24K/22K)',
+    makingCharges: 'Typically 10% – 22%+ due to precision diamond/gemstone setting labor & finishing',
+    gstRule: '3% GST on net 18K gold + studded diamond/stone value + 5% GST on itemized making charges',
+    resaleLiquidity: 'Moderate-to-High (75% of 24K gold rate by net metal weight; diamond buyback typically 80%–90% with original IGI/GIA invoice)',
+    verificationTip: 'Ensure invoice separates net 18K gold weight from diamond/stone carat weight and confirms HUID on gold mountings.'
+  },
+  {
+    key: 'silverFine',
+    calcPurityKey: 'silver',
+    title: 'Fine Silver (999 Purity)',
+    subtitle: 'Solid Silver Utensils, Coins & Bars',
+    purityLabel: '99.9%',
+    titleColor: 'var(--accent-cyan)',
+    iconColor: 'var(--accent-cyan)',
+    pillBg: 'rgba(6, 182, 212, 0.15)',
+    pillColor: 'var(--accent-cyan)',
+    highlightCol: 'per100g',
+    highlightColor: 'var(--accent-cyan)',
+    perGramDecimals: 1,
+    bisStandard: 'IS 2112:2025 BIS Silver Hallmark • 999 Fineness',
+    hallmarkComponents: 'Hallmarked silver carries the BIS Triangular Mark, 999 fineness grade, and 6-digit alphanumeric HUID (mandatory/standard under IS 2112:2025).',
+    composition: '99.9% Pure Silver (Ag) • < 0.1% trace metals (purer than 925 Sterling Silver which is 92.5% Ag + 7.5% copper)',
+    hardness: '2.5 – 3.0 Mohs (Softest commercial silver grade; 925 Sterling is harder for rings/chains)',
+    meltingPoint: '961.8 °C • Density: 10.49 g/cm³ (Highest thermal & electrical conductivity of any metal)',
+    finish: 'Bright mirror-white metallic sheen; slowly oxidizes in humid sulfur air (easily restored with anti-tarnish cloth)',
+    bestFor: '999 silver bullion bars & minted coins, pooja thalis/idols, pure silverware/utensils, festive gifting & industrial/solar demand hedge',
+    notIdealFor: 'Intricate daily-wear jewellery chains, anklets, or clasped ornaments (use 925 Sterling Silver instead)',
+    makingCharges: '2% – 5% mint premium on 999 bars/coins; flat ₹/gram or 8% – 20% crafting charges on utensils & idols',
+    gstRule: 'Flat 3% GST on silver bullion & articles + 5% GST on separately itemized crafting/making charges',
+    resaleLiquidity: 'High (~95%–99% of live MCX spot for sealed 999 bars/coins; uncertified utensils may see 5%–10% melting/purity deduction)',
+    verificationTip: 'Look for 999 / BIS Hallmark + HUID stamp on silver coins/utensils, or refiner assay seal on 100g/1kg bullion bars.'
+  }
+];
+
 export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
   onSelectSymbol,
   onOpenTradeModal,
@@ -768,6 +877,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
   const [calcPurity, setCalcPurity] = useState('22k'); // '24k' | '22k' | '18k' | '14k' | 'silver' | 'silver925'
   const [calcWeight, setCalcWeight] = useState(10);
   const [calcMakingPercent, setCalcMakingPercent] = useState(10);
+  const [expandedHallmarkKey, setExpandedHallmarkKey] = useState(null);
 
   // Multi-User Tenant Storage Isolation Key Helpers
   const getInvoiceDetailsKey = (userId) => userId ? `bullion_invoice_client_details_${userId}` : 'bullion_invoice_client_details_guest';
@@ -3307,7 +3417,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                   BIS Hallmarked Physical Jewellery Rates (India Standard)
                 </h4>
                 <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                  Rates computed dynamically from pure MCX bullion benchmark. 24 Karat is 99.9% pure investment gold. 22 Karat is 91.6% BIS Hallmark jewellery standard. Excludes local jeweller making charges (typically 8-14%) and GST (3%).
+                  Rates computed dynamically from pure MCX bullion benchmark. Click any row below to view BIS HUID standards, alloy composition, making charges, GST breakdown, hardness, and buyback details.
                 </p>
               </div>
             </div>
@@ -3326,161 +3436,216 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                   </tr>
                 </thead>
                 <tbody>
-                  {/* 24K */}
-                  <tr>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <Award size={20} style={{ color: 'var(--warning-amber)', flexShrink: 0 }} />
-                        <div>
-                          <strong style={{ color: 'var(--warning-amber)', fontSize: '0.96rem' }}>
-                            24 Karat Gold (Pure Bullion)
-                          </strong>
-                          <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                            999 Purity / Investment Bars & Coins
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ textAlign: 'center' }}>
-                      <span className="status-pill" style={{ background: 'rgba(245, 158, 11, 0.15)', color: 'var(--warning-amber)', fontWeight: 800 }}>
-                        99.9%
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--text-primary)' }} className="font-mono">
-                      {formatPriceFromInr(jewelleryRates?.gold24k?.perGram || 15584, 0)}
-                    </td>
-                    <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--text-primary)' }} className="font-mono">
-                      {formatPriceFromInr(jewelleryRates?.gold24k?.per8gPavan || 124672, 0)}
-                    </td>
-                    <td style={{ textAlign: 'right', fontWeight: 900, color: 'var(--warning-amber)', fontSize: '1.05rem' }} className="font-mono">
-                      {formatPriceFromInr(jewelleryRates?.gold24k?.per10g || 155840, 0)}
-                    </td>
-                    <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--text-primary)' }} className="font-mono">
-                      {formatPriceFromInr(jewelleryRates?.gold24k?.per100g || 1558400, 0)}
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <span className="status-pill bg-bull" style={{ fontWeight: 800 }}>
-                        +{formatPriceFromInr(jewelleryRates?.gold24k?.changeToday || 860, 0)} (+{jewelleryRates?.gold24k?.changePercent || 0.57}%)
-                      </span>
-                    </td>
-                  </tr>
+                  {BIS_HALLMARK_DETAILS.map((item) => {
+                    const rate = jewelleryRates?.[item.key] || {};
+                    const fallbackMap = {
+                      gold24k: { perGram: 15584, per8gPavan: 124672, per10g: 155840, per100g: 1558400, changeToday: 860, changePercent: 0.57 },
+                      gold22k: { perGram: 14285, per8gPavan: 114280, per10g: 142850, per100g: 1428500, changeToday: 788, changePercent: 0.57 },
+                      gold18k: { perGram: 11688, per8gPavan: 93504, per10g: 116880, per100g: 1168800, changeToday: 645, changePercent: 0.57 },
+                      silverFine: { perGram: 255, per8gPavan: 2040, per10g: 2550, per100g: 25500, changeToday: 3880, changePercent: 1.59 }
+                    };
+                    const fb = fallbackMap[item.key];
+                    const perGram = rate.perGram ?? fb.perGram;
+                    const per10g = rate.per10g ?? fb.per10g;
+                    const per8gPavan = rate.per8gPavan ?? Math.round(per10g * 0.8);
+                    const per100g = rate.per100g ?? Math.round(per10g * 10);
+                    const changeToday = Number(rate.changeToday ?? fb.changeToday);
+                    const changePercent = Number(rate.changePercent ?? fb.changePercent);
+                    const isPositive = changeToday >= 0;
+                    const isExpanded = expandedHallmarkKey === item.key;
 
-                  {/* 22K */}
-                  <tr>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <Award size={20} style={{ color: 'var(--bull-green)', flexShrink: 0 }} />
-                        <div>
-                          <strong style={{ color: 'var(--text-primary)', fontSize: '0.96rem' }}>
-                            22 Karat Gold (Hallmark Jewellery)
-                          </strong>
-                          <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                            916 Hallmark Jewellery Standard
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ textAlign: 'center' }}>
-                      <span className="status-pill" style={{ background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)', fontWeight: 800 }}>
-                        91.6%
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--text-primary)' }} className="font-mono">
-                      {formatPriceFromInr(jewelleryRates?.gold22k?.perGram || 14285, 0)}
-                    </td>
-                    <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--text-primary)' }} className="font-mono">
-                      {formatPriceFromInr(jewelleryRates?.gold22k?.per8gPavan || 114280, 0)}
-                    </td>
-                    <td style={{ textAlign: 'right', fontWeight: 900, color: 'var(--bull-green)', fontSize: '1.05rem' }} className="font-mono">
-                      {formatPriceFromInr(jewelleryRates?.gold22k?.per10g || 142850, 0)}
-                    </td>
-                    <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--text-primary)' }} className="font-mono">
-                      {formatPriceFromInr(jewelleryRates?.gold22k?.per100g || 1428500, 0)}
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <span className="status-pill bg-bull" style={{ fontWeight: 800 }}>
-                        +{formatPriceFromInr(jewelleryRates?.gold22k?.changeToday || 788, 0)} (+{jewelleryRates?.gold22k?.changePercent || 0.57}%)
-                      </span>
-                    </td>
-                  </tr>
+                    return (
+                      <React.Fragment key={item.key}>
+                        <tr
+                          role="button"
+                          tabIndex={0}
+                          aria-expanded={isExpanded}
+                          onClick={() => setExpandedHallmarkKey((prev) => (prev === item.key ? null : item.key))}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setExpandedHallmarkKey((prev) => (prev === item.key ? null : item.key));
+                            }
+                          }}
+                          style={{
+                            cursor: 'pointer',
+                            background: isExpanded ? 'rgba(56, 189, 248, 0.08)' : undefined,
+                            transition: 'background 0.18s ease'
+                          }}
+                        >
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                              <Award size={20} style={{ color: item.iconColor, flexShrink: 0 }} />
+                              <div style={{ minWidth: 0 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                                  <strong style={{ color: item.titleColor, fontSize: '0.96rem' }}>
+                                    {item.title}
+                                  </strong>
+                                  {isExpanded ? (
+                                    <ChevronDown size={15} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
+                                  ) : (
+                                    <ChevronRight size={15} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                                  )}
+                                </div>
+                                <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                                  {item.subtitle} • <span style={{ color: 'var(--accent-cyan)' }}>{isExpanded ? 'Click to hide details' : 'Click for BIS & alloy details'}</span>
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span className="status-pill" style={{ background: item.pillBg, color: item.pillColor, fontWeight: 800 }}>
+                              {item.purityLabel}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--text-primary)' }} className="font-mono">
+                            {formatPriceFromInr(perGram, item.perGramDecimals)}
+                          </td>
+                          <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--text-primary)' }} className="font-mono">
+                            {formatPriceFromInr(per8gPavan, 0)}
+                          </td>
+                          <td
+                            style={{
+                              textAlign: 'right',
+                              fontWeight: item.key === 'silverFine' ? 800 : 900,
+                              color: item.highlightCol === 'per10g' ? item.highlightColor : 'var(--text-primary)',
+                              fontSize: item.key === 'silverFine' ? undefined : '1.05rem'
+                            }}
+                            className="font-mono"
+                          >
+                            {formatPriceFromInr(per10g, 0)}
+                          </td>
+                          <td
+                            style={{
+                              textAlign: 'right',
+                              fontWeight: item.highlightCol === 'per100g' ? 900 : 800,
+                              color: item.highlightCol === 'per100g' ? item.highlightColor : (item.key === 'gold18k' ? 'var(--text-muted)' : 'var(--text-primary)'),
+                              fontSize: item.highlightCol === 'per100g' ? '1.05rem' : undefined
+                            }}
+                            className="font-mono"
+                          >
+                            {formatPriceFromInr(per100g, 0)}{item.key === 'silverFine' ? ' (100g)' : ''}
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <span className={`status-pill ${isPositive ? 'bg-bull' : 'bg-bear'}`} style={{ fontWeight: 800 }}>
+                              {isPositive ? '+' : '-'}{formatPriceFromInr(Math.abs(changeToday), 0)} ({isPositive ? '+' : '-'}{Math.abs(changePercent)}%)
+                            </span>
+                          </td>
+                        </tr>
 
-                  {/* 18K */}
-                  <tr>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <Award size={20} style={{ color: 'var(--accent-indigo)', flexShrink: 0 }} />
-                        <div>
-                          <strong style={{ color: 'var(--text-primary)', fontSize: '0.96rem' }}>
-                            18 Karat Gold (Diamond Studded)
-                          </strong>
-                          <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                            750 Purity / High Strength Jewellery
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ textAlign: 'center' }}>
-                      <span className="status-pill" style={{ background: 'rgba(99, 102, 241, 0.15)', color: 'var(--accent-indigo)', fontWeight: 800 }}>
-                        75.0%
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--text-primary)' }} className="font-mono">
-                      {formatPriceFromInr(jewelleryRates?.gold18k?.perGram || 11688, 0)}
-                    </td>
-                    <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--text-primary)' }} className="font-mono">
-                      {formatPriceFromInr(jewelleryRates?.gold18k?.per8gPavan || 93504, 0)}
-                    </td>
-                    <td style={{ textAlign: 'right', fontWeight: 900, color: 'var(--text-primary)', fontSize: '1.05rem' }} className="font-mono">
-                      {formatPriceFromInr(jewelleryRates?.gold18k?.per10g || 116880, 0)}
-                    </td>
-                    <td style={{ textAlign: 'right', color: 'var(--text-muted)' }} className="font-mono">
-                      {formatPriceFromInr(Math.round((jewelleryRates?.gold18k?.per10g || 116880) * 10), 0)}
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <span className="status-pill bg-bull" style={{ fontWeight: 800 }}>
-                        +{formatPriceFromInr(jewelleryRates?.gold18k?.changeToday || 645, 0)} (+{jewelleryRates?.gold18k?.changePercent || 0.57}%)
-                      </span>
-                    </td>
-                  </tr>
+                        {isExpanded && (
+                          <tr className="bis-hallmark-detail-row" style={{ background: 'rgba(15, 23, 42, 0.55)' }}>
+                            <td colSpan={7} style={{ padding: '1.1rem 1.25rem', borderTop: '1px solid rgba(56, 189, 248, 0.25)', borderBottom: '1px solid rgba(56, 189, 248, 0.25)' }}>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap' }}>
+                                    <ShieldCheck size={18} style={{ color: 'var(--bull-green)', flexShrink: 0 }} />
+                                    <strong style={{ fontSize: '0.92rem', color: 'var(--text-primary)' }}>
+                                      {item.title} — Complete BIS Specification & Buyer Guide
+                                    </strong>
+                                    <span className="status-pill" style={{ background: item.pillBg, color: item.pillColor, fontSize: '0.72rem', fontWeight: 800 }}>
+                                      {item.bisStandard}
+                                    </span>
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <button
+                                      type="button"
+                                      className="btn btn-primary"
+                                      style={{ fontSize: '0.75rem', padding: '0.38rem 0.8rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setCalcPurity(item.calcPurityKey);
+                                        setActiveSubTab('calculator');
+                                      }}
+                                    >
+                                      <Calculator size={13} />
+                                      Estimate in Billing Calculator
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="btn btn-secondary"
+                                      style={{ fontSize: '0.75rem', padding: '0.38rem 0.65rem' }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setExpandedHallmarkKey(null);
+                                      }}
+                                    >
+                                      Close
+                                    </button>
+                                  </div>
+                                </div>
 
-                  {/* Fine Silver */}
-                  <tr>
-                    <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                        <Award size={20} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
-                        <div>
-                          <strong style={{ color: 'var(--accent-cyan)', fontSize: '0.96rem' }}>
-                            Fine Silver (999 Purity)
-                          </strong>
-                          <span style={{ display: 'block', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                            Solid Silver Utensils, Coins & Bars
-                          </span>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ textAlign: 'center' }}>
-                      <span className="status-pill" style={{ background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)', fontWeight: 800 }}>
-                        99.9%
-                      </span>
-                    </td>
-                    <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--text-primary)' }} className="font-mono">
-                      {formatPriceFromInr(jewelleryRates?.silverFine?.perGram || 255, 1)}
-                    </td>
-                    <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--text-primary)' }} className="font-mono">
-                      {formatPriceFromInr(Math.round((jewelleryRates?.silverFine?.per10g || 2550) * 0.8), 0)}
-                    </td>
-                    <td style={{ textAlign: 'right', fontWeight: 800, color: 'var(--text-primary)' }} className="font-mono">
-                      {formatPriceFromInr(jewelleryRates?.silverFine?.per10g || 2550, 0)}
-                    </td>
-                    <td style={{ textAlign: 'right', fontWeight: 900, color: 'var(--accent-cyan)', fontSize: '1.05rem' }} className="font-mono">
-                      {formatPriceFromInr(jewelleryRates?.silverFine?.per100g || 25500, 0)} (100g)
-                    </td>
-                    <td style={{ textAlign: 'right' }}>
-                      <span className="status-pill bg-bull" style={{ fontWeight: 800 }}>
-                        +{formatPriceFromInr(jewelleryRates?.silverFine?.changeToday || 3880, 0)} (+{jewelleryRates?.silverFine?.changePercent || 1.59}%)
-                      </span>
-                    </td>
-                  </tr>
+                                <div
+                                  style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+                                    gap: '0.75rem'
+                                  }}
+                                >
+                                  <div style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)' }}>
+                                    <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent-cyan)', marginBottom: '0.3rem' }}>
+                                      Alloy Composition
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: 1.45 }}>
+                                      {item.composition}
+                                    </div>
+                                  </div>
+
+                                  <div style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)' }}>
+                                    <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--warning-amber)', marginBottom: '0.3rem' }}>
+                                      BIS Hallmark & HUID Stamps
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: 1.45 }}>
+                                      {item.hallmarkComponents}
+                                    </div>
+                                  </div>
+
+                                  <div style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)' }}>
+                                    <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--bull-green)', marginBottom: '0.3rem' }}>
+                                      Physical Hardness & Finish
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: 1.45 }}>
+                                      {item.hardness}. {item.meltingPoint}. {item.finish}.
+                                    </div>
+                                  </div>
+
+                                  <div style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)' }}>
+                                    <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent-indigo)', marginBottom: '0.3rem' }}>
+                                      Best Use Cases vs Avoid For
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: 1.45 }}>
+                                      <strong>Ideal:</strong> {item.bestFor}.<br />
+                                      <span style={{ color: 'var(--text-secondary)' }}><strong>Avoid for:</strong> {item.notIdealFor}.</span>
+                                    </div>
+                                  </div>
+
+                                  <div style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)' }}>
+                                    <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--warning-amber)', marginBottom: '0.3rem' }}>
+                                      Making Charges & India GST
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: 1.45 }}>
+                                      <strong>Making:</strong> {item.makingCharges}.<br />
+                                      <strong>Tax:</strong> {item.gstRule}.
+                                    </div>
+                                  </div>
+
+                                  <div style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)' }}>
+                                    <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--bull-green)', marginBottom: '0.3rem' }}>
+                                      Resale / Buyback & Verification
+                                    </div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-primary)', lineHeight: 1.45 }}>
+                                      <strong>Resale:</strong> {item.resaleLiquidity}.<br />
+                                      <span style={{ color: 'var(--text-secondary)' }}><strong>Verify:</strong> {item.verificationTip}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
