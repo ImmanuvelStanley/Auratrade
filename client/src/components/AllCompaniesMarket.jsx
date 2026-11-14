@@ -1067,7 +1067,9 @@ function PaginationControls({
   pageSize = 24,
   totalItems = 0,
   onPageChange,
-  onPageSizeChange
+  onPageSizeChange,
+  viewMode,
+  onViewModeChange
 }) {
   if (!totalItems || totalItems <= 0) return null;
   const isAll = pageSize === 'all';
@@ -1079,28 +1081,15 @@ function PaginationControls({
   const endItem = isAll ? totalItems : Math.min(safeCurrentPage * numericSize, totalItems);
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '0.75rem',
-        padding: '0.65rem 1rem',
-        background: 'var(--bg-input)',
-        borderRadius: 'var(--radius-md)',
-        border: '1px solid var(--border-subtle)',
-        fontSize: '0.8rem',
-        margin: '0.5rem 0'
-      }}
-    >
-      <div style={{ color: 'var(--text-secondary)' }}>
+    <div className="screener-pagination-bar">
+      <div className="screener-pagination-count">
         Showing <strong style={{ color: 'var(--text-primary)' }}>{startItem}–{endItem}</strong> of <strong style={{ color: 'var(--accent-cyan)' }}>{totalItems}</strong> global assets
       </div>
 
       {!isAll && safeTotalPages > 1 && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+        <div className="screener-pagination-pages">
           <button
+            type="button"
             className="btn btn-secondary"
             style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem', opacity: safeCurrentPage === 1 ? 0.35 : 1, cursor: safeCurrentPage === 1 ? 'default' : 'pointer' }}
             disabled={safeCurrentPage === 1}
@@ -1117,6 +1106,7 @@ function PaginationControls({
                   <span style={{ color: 'var(--text-muted)', padding: '0 0.2rem' }}>...</span>
                 )}
                 <button
+                  type="button"
                   className={`tier-filter-btn ${safeCurrentPage === p ? 'active' : ''}`}
                   style={{
                     padding: '0.2rem 0.55rem',
@@ -1132,6 +1122,7 @@ function PaginationControls({
             ))}
 
           <button
+            type="button"
             className="btn btn-secondary"
             style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem', opacity: safeCurrentPage >= safeTotalPages ? 0.35 : 1, cursor: safeCurrentPage >= safeTotalPages ? 'default' : 'pointer' }}
             disabled={safeCurrentPage >= safeTotalPages}
@@ -1142,18 +1133,43 @@ function PaginationControls({
         </div>
       )}
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-        <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>View:</span>
-        {[24, 48, 'all'].map((size) => (
-          <button
-            key={size}
-            className={`tier-filter-btn ${pageSize === size ? 'active' : ''}`}
-            style={{ padding: '0.15rem 0.5rem', fontSize: '0.72rem', borderRadius: '4px' }}
-            onClick={() => onPageSizeChange && onPageSizeChange(size)}
-          >
-            {size === 'all' ? `All (${totalItems})` : `${size}/page`}
-          </button>
-        ))}
+      <div className="screener-pagination-right">
+        {onViewModeChange && (
+          <>
+            <div className="screener-pagination-viewmode" role="group" aria-label="Display layout">
+              <button
+                type="button"
+                className={`screener-viewmode-btn ${viewMode === 'table' ? 'active' : ''}`}
+                onClick={() => onViewModeChange('table')}
+              >
+                <List size={14} /> Table
+              </button>
+              <button
+                type="button"
+                className={`screener-viewmode-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                onClick={() => onViewModeChange('grid')}
+              >
+                <LayoutGrid size={14} /> Cards
+              </button>
+            </div>
+            <span className="screener-pagination-divider" aria-hidden="true" />
+          </>
+        )}
+
+        <div className="screener-pagination-size">
+          <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>View:</span>
+          {[24, 48, 'all'].map((size) => (
+            <button
+              key={size}
+              type="button"
+              className={`tier-filter-btn ${pageSize === size ? 'active' : ''}`}
+              style={{ padding: '0.22rem 0.52rem', fontSize: '0.73rem', borderRadius: '4px' }}
+              onClick={() => onPageSizeChange && onPageSizeChange(size)}
+            >
+              {size === 'all' ? `All (${totalItems})` : `${size}/page`}
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -1797,69 +1813,6 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
                 Explore the premier companies of the world economy ordered by market capitalization, real-time valuation, and 30-day AI predictive upside with automated real-time global exchange feeds.
               </p>
             </div>
-
-            {/* Right: Quick Action Toolbar (View Mode Switcher) */}
-            <div
-              className="screener-action-toolbar"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.65rem',
-                flexWrap: 'wrap',
-                alignSelf: 'center'
-              }}
-            >
-              {/* View Mode Switcher */}
-            <div
-              className="screener-viewmode-switcher"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.25rem',
-                background: 'var(--bg-input)',
-                padding: '0.2rem',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--border-subtle)'
-              }}
-            >
-                <button
-                  className={`btn-icon ${viewMode === 'table' ? 'active' : ''}`}
-                  style={{
-                    background: viewMode === 'table' ? 'rgba(6, 182, 212, 0.2)' : 'transparent',
-                    color: viewMode === 'table' ? 'var(--accent-cyan)' : 'var(--text-muted)',
-                    border: 'none',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '0.35rem 0.6rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                    fontSize: '0.8rem',
-                    fontWeight: 600
-                  }}
-                  onClick={() => setViewMode('table')}
-                >
-                  <List size={15} /> Table
-                </button>
-                <button
-                  className={`btn-icon ${viewMode === 'grid' ? 'active' : ''}`}
-                  style={{
-                    background: viewMode === 'grid' ? 'rgba(6, 182, 212, 0.2)' : 'transparent',
-                    color: viewMode === 'grid' ? 'var(--accent-cyan)' : 'var(--text-muted)',
-                    border: 'none',
-                    borderRadius: 'var(--radius-sm)',
-                    padding: '0.35rem 0.6rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.35rem',
-                    fontSize: '0.8rem',
-                    fontWeight: 600
-                  }}
-                  onClick={() => setViewMode('grid')}
-                >
-                  <LayoutGrid size={15} /> Cards
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Overview Hero Stat Pills (Live Auto-Updating + All-Time Best Market Gainer Column) */}
@@ -2309,6 +2262,8 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
           totalItems={totalItems}
           onPageChange={setCurrentPage}
           onPageSizeChange={handlePageSizeChange}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
         />
       )}
 
@@ -2460,6 +2415,8 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
           totalItems={totalItems}
           onPageChange={setCurrentPage}
           onPageSizeChange={handlePageSizeChange}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
         />
       )}
 
