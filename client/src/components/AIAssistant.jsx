@@ -738,28 +738,6 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
                   <div className="assistant-header-name-row">
                     <span className="assistant-header-title">AuraTrade Strategy Desk</span>
                   </div>
-                  <div className="assistant-header-sub-row">
-                    <button
-                      type="button"
-                      className={`assistant-engine-badge ${
-                        geminiKey.trim() && selectedModel !== 'institutional-quant' ? 'is-gemini' : 'is-quant'
-                      }`}
-                      onClick={() => {
-                        setTempKey(geminiKey);
-                        setTempModel(selectedModel);
-                        setTestStatus(null);
-                        setTestMessage('');
-                        setIsConfigOpen(true);
-                      }}
-                      title="Click to Switch AI Engine / Configure API Key"
-                    >
-                      <Cpu size={10} style={{ flexShrink: 0 }} />
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{getActiveModelBadge()}</span>
-                    </button>
-                    {isExpanded && (
-                      <span className="assistant-header-live-tag">• LIVE TELEMETRY</span>
-                    )}
-                  </div>
                 </div>
               </div>
 
