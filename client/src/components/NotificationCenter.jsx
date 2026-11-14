@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from 'react';
 import { CheckCheck, BellOff, X } from 'lucide-react';
-import { useSocket } from '../context/SocketContext';
+import { useSocketNotifications } from '../context/SocketContext';
 
 export function NotificationCenter({ onClose }) {
-  const { notifications, clearNotifications, dismissNotification } = useSocket();
+  const { notifications, clearNotifications, dismissNotification } = useSocketNotifications();
   const menuRef = useRef(null);
 
   // Auto-close when clicking anywhere in empty area outside or pressing Escape

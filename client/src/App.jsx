@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './context/AuthContext';
-import { useSocket } from './context/SocketContext';
+import { useLiveTickerActions } from './context/SocketContext';
 import { Header } from './components/Header';
 import { MarketRibbon } from './components/MarketRibbon';
 import { LiveQuoteCard } from './components/LiveQuoteCard';
@@ -30,7 +30,7 @@ import { TopicSidebar } from './components/TopicSidebar';
 
 export function App() {
   const { user, token } = useAuth();
-  const { subscribe, unsubscribe, subscribeBatch } = useSocket();
+  const { subscribe, unsubscribe, subscribeBatch } = useLiveTickerActions();
 
 
   const [activeTab, setActiveTab] = useState('all-markets'); // 'all-markets' | 'dashboard' | 'gold-silver' | 'watchlist' | 'alerts' | 'portfolio' | 'profile' | 'nse-india' | 'global-indices'

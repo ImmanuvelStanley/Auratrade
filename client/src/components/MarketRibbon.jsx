@@ -1,6 +1,5 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useLayoutEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useLiveTickerActions } from '../context/SocketContext';
-import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { CountryFlag } from './CountryFlag';
 import { defaultAllCompanies } from '../data/defaultAllCompanies';
 
@@ -99,9 +98,8 @@ const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }
   const priceRef = useRef(null);
   const badgeRef = useRef(null);
   const changeWrapRef = useRef(null);
+  const arrowRef = useRef(null);
   const changeTextRef = useRef(null);
-  const upIconRef = useRef(null);
-  const downIconRef = useRef(null);
 
   const prevPriceRef = useRef(initialPrice);
   const flashTimerRef = useRef(null);
@@ -128,8 +126,9 @@ const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }
           changeWrapRef.current.classList.toggle('text-bull', isBull);
           changeWrapRef.current.classList.toggle('text-bear', !isBull);
         }
-        if (upIconRef.current) upIconRef.current.style.display = isBull ? 'inline-flex' : 'none';
-        if (downIconRef.current) downIconRef.current.style.display = isBull ? 'none' : 'inline-flex';
+        if (arrowRef.current) {
+          arrowRef.current.textContent = isBull ? '↗' : '↘';
+        }
       }
 
       const prevPrice = prevPriceRef.current;
@@ -162,7 +161,7 @@ const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }
               priceRef.current.classList.remove('tick-text', 'up', 'down');
             }
             flashTimerRef.current = null;
-          }, 820);
+          }, 650);
         }
       }
 
@@ -220,21 +219,34 @@ const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }
       </span>
 
       <span ref={changeWrapRef} className={`ribbon-change font-mono ${initialBull ? 'text-bull' : 'text-bear'}`}>
-        <span ref={upIconRef} style={{ display: initialBull ? 'inline-flex' : 'none' }}>
-          <ArrowUpRight size={12} />
-        </span>
-        <span ref={downIconRef} style={{ display: initialBull ? 'none' : 'inline-flex' }}>
-          <ArrowDownRight size={12} />
-        </span>
+        <span ref={arrowRef} aria-hidden="true">{initialBull ? '↗' : '↘'}</span>
         <span ref={changeTextRef}>{formatPercentText(initialPct)}</span>
       </span>
     </div>
   );
 });
 
+const RIBBON_SCROLL_SPEED_PX_PER_SEC = 68;
+
 export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol }) {
   const [indices, setIndices] = useState(() => buildMergedRibbonItems(CORE_BENCHMARKS));
+  const [headIndex, setHeadIndex] = useState(0);
+  const [slotCount, setSlotCount] = useState(() => {
+    if (typeof window === 'undefined') return 18;
+    return Math.max(8, Math.min(32, Math.ceil(window.innerWidth / 135) + 4));
+  });
+
   const { getQuote, publishTicks } = useLiveTickerActions();
+
+  const containerRef = useRef(null);
+  const trackRef = useRef(null);
+  const offsetPxRef = useRef(0);
+  const stepWidthRef = useRef(210);
+  const pendingStepWidthRef = useRef(0);
+  const isShiftingRef = useRef(false);
+  const isPausedRef = useRef(false);
+  const indicesLengthRef = useRef(indices.length);
+  indicesLengthRef.current = indices.length;
 
   useEffect(() => {
     let isMounted = true;
@@ -264,7 +276,7 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
           // Push price updates directly to item subscribers without disrupting marquee track geometry
           publishTicks(combinedIncoming);
 
-          // Append only genuinely new symbols so marquee CSS transform never restarts during normal price ticks
+          // Append only genuinely new symbols so marquee window never restarts during normal price ticks
           setIndices((prev) => {
             const known = new Set(prev.map((x) => x.symbol));
             const hasNewSymbol = combinedIncoming.some(
@@ -284,6 +296,122 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
     };
   }, [publishTicks]);
 
+  // Size active marquee DOM window strictly to viewport width + buffer (eliminates GPU texture crashes)
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const updateSlots = (width) => {
+      if (!width || width <= 0) return;
+      const needed = Math.max(8, Math.min(32, Math.ceil(width / 135) + 4));
+      setSlotCount((prev) => (prev === needed ? prev : needed));
+    };
+
+    updateSlots(el.clientWidth);
+
+    if (typeof ResizeObserver !== 'undefined') {
+      const ro = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          updateSlots(entry.contentRect.width);
+        }
+      });
+      ro.observe(el);
+      return () => ro.disconnect();
+    }
+
+    const onResize = () => updateSlots(el.clientWidth);
+    window.addEventListener('resize', onResize, { passive: true });
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  // Build compact sliding window of all 186+ assets (mounts ~10-20 nodes instead of 372+)
+  const visibleEntries = useMemo(() => {
+    const len = indices.length;
+    if (!len) return [];
+    const count = Math.min(slotCount, len);
+    const list = [];
+    for (let i = 0; i < count; i++) {
+      const item = indices[(headIndex + i) % len];
+      list.push(item);
+    }
+    return list;
+  }, [indices, headIndex, slotCount]);
+
+  // Synchronously reconcile track offset before paint when head item wraps offscreen
+  useLayoutEffect(() => {
+    const trackEl = trackRef.current;
+    if (isShiftingRef.current) {
+      offsetPxRef.current = Math.max(0, offsetPxRef.current - pendingStepWidthRef.current);
+      pendingStepWidthRef.current = 0;
+      isShiftingRef.current = false;
+      if (trackEl) {
+        trackEl.style.transform = `translate3d(-${offsetPxRef.current.toFixed(2)}px, 0, 0)`;
+      }
+    }
+    if (trackEl && trackEl.children.length >= 2) {
+      const first = trackEl.children[0];
+      const second = trackEl.children[1];
+      const measuredStep = second.offsetLeft - first.offsetLeft;
+      if (measuredStep > 0) {
+        stepWidthRef.current = measuredStep;
+      }
+    }
+  }, [headIndex, visibleEntries]);
+
+  // Smooth linear 60/120fps GPU compositor conveyor loop with clamped delta
+  useEffect(() => {
+    let rafId = 0;
+    let lastTs = 0;
+
+    const frame = (ts) => {
+      if (!lastTs) lastTs = ts;
+      const dt = Math.min(0.05, Math.max(0, (ts - lastTs) / 1000));
+      lastTs = ts;
+
+      const trackEl = trackRef.current;
+      if (trackEl && !isPausedRef.current && !document.hidden) {
+        offsetPxRef.current += RIBBON_SCROLL_SPEED_PX_PER_SEC * dt;
+
+        if (!isShiftingRef.current && offsetPxRef.current >= stepWidthRef.current - 12 && trackEl.children.length >= 2) {
+          const first = trackEl.children[0];
+          const second = trackEl.children[1];
+          const exactStep = second.offsetLeft - first.offsetLeft;
+          if (exactStep > 0) {
+            stepWidthRef.current = exactStep;
+            if (offsetPxRef.current >= exactStep) {
+              pendingStepWidthRef.current = exactStep;
+              isShiftingRef.current = true;
+              setHeadIndex((prev) => {
+                const len = indicesLengthRef.current || 1;
+                return (prev + 1) % len;
+              });
+            }
+          }
+        }
+
+        trackEl.style.transform = `translate3d(-${offsetPxRef.current.toFixed(2)}px, 0, 0)`;
+      }
+
+      rafId = requestAnimationFrame(frame);
+    };
+
+    rafId = requestAnimationFrame(frame);
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, []);
+
+  const handleMouseEnter = useCallback(() => {
+    if (typeof window !== 'undefined' && window.matchMedia && !window.matchMedia('(hover: hover)').matches) {
+      return;
+    }
+    isPausedRef.current = true;
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    isPausedRef.current = false;
+  }, []);
+
   const handleItemClick = useCallback((idx) => {
     if (!onSelectSymbol) return;
     const live = getQuote(idx.symbol);
@@ -294,9 +422,6 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
     };
     onSelectSymbol(idx.symbol, enrichedItem);
   }, [onSelectSymbol, getQuote]);
-
-  // Steady linear scroll duration (~2.1s per ticker) for consistent frame pacing
-  const trackDurationSec = Math.max(65, Math.round(indices.length * 2.1));
 
   return (
     <div className="market-ribbon-wrapper">
@@ -312,16 +437,16 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
         </div>
       </div>
 
-      {/* Infinite Continuous Moving Marquee Track */}
-      <div className="ticker-track-container">
-        <div className="ticker-track" style={{ animationDuration: `${trackDurationSec}s` }}>
-          {/* Primary Track */}
-          {indices.map((idx, i) => (
-            <RibbonTickerItem key={`orig-${idx.symbol}-${i}`} item={idx} onSelect={handleItemClick} />
-          ))}
-          {/* Duplicate Seamless Loop Track */}
-          {indices.map((idx, i) => (
-            <RibbonTickerItem key={`dup-${idx.symbol}-${i}`} item={idx} onSelect={handleItemClick} />
+      {/* Smooth Windowed Linear Marquee Conveyor */}
+      <div
+        ref={containerRef}
+        className="ticker-track-container"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <div ref={trackRef} className="ticker-track">
+          {visibleEntries.map((idx) => (
+            <RibbonTickerItem key={idx.symbol} item={idx} onSelect={handleItemClick} />
           ))}
         </div>
       </div>

@@ -6,6 +6,7 @@ import { getAllClientQuotes, getClientQuote } from '../services/clientFallbackDa
 
 const SocketContext = createContext(null);
 const SocketActionsContext = createContext(null);
+const SocketNotificationsContext = createContext(null);
 
 export function SocketProvider({ children }) {
   const { token, user } = useAuth();
@@ -518,6 +519,13 @@ export function SocketProvider({ children }) {
     publishTicks
   ]);
 
+  const notificationsValue = useMemo(() => ({
+    notifications,
+    setNotifications,
+    clearNotifications,
+    dismissNotification
+  }), [notifications, clearNotifications, dismissNotification]);
+
   const contextValue = useMemo(() => ({
     socket: socketRef.current,
     connectionStatus,
@@ -550,9 +558,11 @@ export function SocketProvider({ children }) {
 
   return (
     <SocketActionsContext.Provider value={actionsValue}>
-      <SocketContext.Provider value={contextValue}>
-        {children}
-      </SocketContext.Provider>
+      <SocketNotificationsContext.Provider value={notificationsValue}>
+        <SocketContext.Provider value={contextValue}>
+          {children}
+        </SocketContext.Provider>
+      </SocketNotificationsContext.Provider>
     </SocketActionsContext.Provider>
   );
 }
@@ -560,6 +570,12 @@ export function SocketProvider({ children }) {
 export function useSocket() {
   const ctx = useContext(SocketContext);
   if (!ctx) throw new Error('useSocket must be used within a SocketProvider');
+  return ctx;
+}
+
+export function useSocketNotifications() {
+  const ctx = useContext(SocketNotificationsContext);
+  if (!ctx) throw new Error('useSocketNotifications must be used within a SocketProvider');
   return ctx;
 }
 

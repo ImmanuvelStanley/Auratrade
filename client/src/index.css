@@ -581,21 +581,9 @@ body:before {
   gap: 1.05rem;
   width: max-content;
   white-space: nowrap;
-  animation: tickerTapeScroll 65s linear infinite;
   transform: translate3d(0, 0, 0);
   will-change: transform;
   backface-visibility: hidden;
-}
-.ticker-track-container:hover .ticker-track {
-  animation-play-state: paused;
-}
-@keyframes tickerTapeScroll {
-  0% {
-    transform: translate3d(0, 0, 0);
-  }
-  100% {
-    transform: translate3d(-50%, 0, 0);
-  }
 }
 .market-ribbon-container {
   display: flex;
@@ -614,7 +602,7 @@ body:before {
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   color: var(--text-primary);
-  transition: background-color 0.25s ease, border-color 0.25s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
   contain: layout style;
   flex-shrink: 0;
   -webkit-user-select: none;
@@ -623,38 +611,14 @@ body:before {
 .market-ribbon-item:hover {
   background: var(--bg-card-hover);
   border-color: #06b6d480;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px #06b6d440;
 }
 .market-ribbon-item.tick-flash-up {
-  background-color: rgba(16, 185, 129, 0.24) !important;
+  background-color: rgba(16, 185, 129, 0.26) !important;
   border-color: rgba(16, 185, 129, 0.85) !important;
-  animation: ribbonFlashUp 0.9s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .market-ribbon-item.tick-flash-down {
-  background-color: rgba(244, 63, 94, 0.24) !important;
+  background-color: rgba(244, 63, 94, 0.26) !important;
   border-color: rgba(244, 63, 94, 0.85) !important;
-  animation: ribbonFlashDown 0.9s cubic-bezier(0.16, 1, 0.3, 1);
-}
-@keyframes ribbonFlashUp {
-  0% {
-    background-color: rgba(16, 185, 129, 0.38);
-    border-color: rgba(16, 185, 129, 0.95);
-  }
-  100% {
-    background-color: rgba(16, 185, 129, 0.2);
-    border-color: rgba(16, 185, 129, 0.65);
-  }
-}
-@keyframes ribbonFlashDown {
-  0% {
-    background-color: rgba(244, 63, 94, 0.38);
-    border-color: rgba(244, 63, 94, 0.95);
-  }
-  100% {
-    background-color: rgba(244, 63, 94, 0.2);
-    border-color: rgba(244, 63, 94, 0.65);
-  }
 }
 .ribbon-sym {
   font-weight: 700;

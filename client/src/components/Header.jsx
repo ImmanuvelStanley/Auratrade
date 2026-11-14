@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Bell, Menu } from 'lucide-react';
-import { useSocket } from '../context/SocketContext';
+import { useSocketNotifications } from '../context/SocketContext';
 import { NotificationCenter } from './NotificationCenter';
 import { BrandLogo } from './BrandLogo';
 
 export const Header = React.memo(function Header({
   onToggleSidebar
 }) {
-  const { notifications } = useSocket();
+  const { notifications } = useSocketNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.read).length;
