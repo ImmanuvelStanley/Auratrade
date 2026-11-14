@@ -3383,13 +3383,6 @@ select option:checked {
   .tab-btn.active:after {
     display: none !important;
   }
-  .market-leaders-card {
-    padding: 0.6rem 0.75rem !important;
-  }
-  .market-leaders-link-text {
-    display: inline !important;
-    font-size: 0.72rem !important;
-  }
   .live-quote-header-row {
     flex-direction: column !important;
     align-items: stretch !important;

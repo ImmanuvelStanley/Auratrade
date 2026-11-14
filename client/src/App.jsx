@@ -15,7 +15,6 @@ import { AlertModal } from './components/AlertModal';
 import { TradeModal } from './components/TradeModal';
 import { AuthModal } from './components/AuthModal';
 import { AllCompaniesMarket } from './components/AllCompaniesMarket';
-import { MarketLeadersStrip } from './components/MarketLeadersStrip';
 import { UserProfile } from './components/UserProfile';
 import { AutoPredictorModal } from './components/AutoPredictorModal';
 import { NSEIndiaMarketDesk } from './components/NSEIndiaMarketDesk';
@@ -186,7 +185,6 @@ export function App() {
   const handleCloseAlertModal = useCallback(() => setIsAlertModalOpen(false), []);
   const handleOpenAutoPredictor = useCallback(() => setIsAutoPredictorOpen(true), []);
   const handleCloseAutoPredictor = useCallback(() => setIsAutoPredictorOpen(false), []);
-  const handleOpenAllMarkets = useCallback(() => setActiveTab('all-markets'), []);
   const handleCloseTradeModal = useCallback(() => setIsTradeModalOpen(false), []);
 
   // Load Watchlist from Server (supports both authenticated and guest/demo users)
@@ -463,13 +461,6 @@ export function App() {
           <ErrorBoundary key={activeTab}>
           {activeTab === 'dashboard' && (
             <div className="motion-entry" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
-              {/* Horizontal Market Leaders Ranked by Market Cap */}
-              <MarketLeadersStrip
-                activeSymbol={activeSymbol}
-                onSelectSymbol={handleSelectSymbol}
-                onOpenAllMarkets={handleOpenAllMarkets}
-              />
-
               {/* Upper Workstation Row: Charting Mainstage (Left) + Trading Desk Sidebar (Right) */}
               <div className="dashboard-grid">
                 {/* Left Column: Spotlight Live Quote & Interactive Chart */}
