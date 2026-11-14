@@ -3575,13 +3575,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                                   </div>
                                 </div>
 
-                                <div
-                                  style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
-                                    gap: '0.75rem'
-                                  }}
-                                >
+                                <div className="bis-hallmark-cards-grid">
                                   <div style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)' }}>
                                     <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent-cyan)', marginBottom: '0.3rem' }}>
                                       Alloy Composition
