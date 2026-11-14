@@ -4141,6 +4141,63 @@ select option:checked {
   background: #06b6d440;
   color: #38bdf8;
 }
+.market-filter-bar {
+  padding: 1.15rem 1.3rem !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.market-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+.market-filter-row--divided {
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+[data-theme="light"] .market-filter-row--divided {
+  border-top-color: rgba(15, 23, 42, 0.08);
+}
+.market-filter-row-label {
+  width: 72px;
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  user-select: none;
+}
+.market-filter-row-content {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+.market-filter-row-content--spread {
+  justify-content: space-between;
+}
+.market-filter-vdivider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.09);
+  flex-shrink: 0;
+}
+[data-theme="light"] .market-filter-vdivider {
+  background: rgba(15, 23, 42, 0.12);
+}
+.tier-filter-btn:focus:not(:focus-visible) {
+  outline: none;
+}
+.tier-filter-btn:focus-visible {
+  outline: 1.5px solid rgba(56, 189, 248, 0.75);
+  outline-offset: 2px;
+}
 [data-theme="light"] body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
@@ -5034,7 +5091,29 @@ select option:checked {
   }
 
   .market-filter-bar {
-    padding: 0.85rem !important;
+    padding: 0.9rem !important;
+    gap: 0.75rem !important;
+  }
+  .market-filter-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.45rem !important;
+  }
+  .market-filter-row--divided {
+    padding-top: 0.75rem !important;
+  }
+  .market-filter-row-label {
+    width: auto !important;
+    font-size: 0.65rem !important;
+  }
+  .market-filter-row-content,
+  .market-filter-row-content--spread {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.6rem !important;
+  }
+  .market-filter-vdivider {
+    display: none !important;
   }
   .market-filter-pills-group {
     width: 100%;
