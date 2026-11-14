@@ -568,7 +568,61 @@ export function handleFallbackRequest(url, options = {}) {
       ]
     };
   } else if (path.includes('/stocks/global-indices')) {
-    body = { success: true, data: DEFAULT_GLOBAL_INDICES_DATA };
+    const filterRegion = (parsed.searchParams.get('region') || 'all').toLowerCase();
+    const nowTimeStr = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const allBase = DEFAULT_GLOBAL_INDICES_DATA.indices || [];
+    const liveAll = allBase.map((idx) => {
+      const sock = liveQuotes[idx.symbol] || liveQuotes[idx.name?.toUpperCase()];
+      const base = Number(sock?.price ?? idx.last);
+      const prevClose = Number(sock?.previousClose ?? (idx.last - idx.chg)) || base;
+      const tick = parseFloat(((Math.random() - 0.495) * base * 0.0003).toFixed(2));
+      const currentVal = parseFloat((base + tick).toFixed(2));
+      const currentChg = parseFloat((currentVal - prevClose).toFixed(2));
+      const currentChgPct = prevClose > 0 ? parseFloat(((currentChg / prevClose) * 100).toFixed(2)) : idx.chgPercent;
+      return {
+        ...idx,
+        last: currentVal,
+        chg: currentChg,
+        chgPercent: currentChgPct,
+        high: Math.max(Number(idx.high) || currentVal, currentVal),
+        low: Math.min(Number(idx.low) || currentVal, currentVal),
+        time: nowTimeStr,
+        status: 'open',
+        trend: currentChg >= 0 ? 'bull' : 'bear'
+      };
+    });
+    const filtered =
+      filterRegion === 'major' ? liveAll.filter((i) => i.isMajor) :
+      filterRegion === 'commodities' ? liveAll.filter((i) => i.region === 'commodities') :
+      filterRegion === 'americas' ? liveAll.filter((i) => i.region === 'americas') :
+      filterRegion === 'europe' ? liveAll.filter((i) => i.region === 'europe') :
+      filterRegion === 'asia_pacific' ? liveAll.filter((i) => i.region === 'asia_pacific') :
+      liveAll;
+    const pool = filtered.length > 0 ? filtered : liveAll;
+    const advancing = pool.filter((i) => i.chg >= 0).length;
+    const declining = pool.filter((i) => i.chg < 0).length;
+    const sortedByGain = [...pool].sort((a, b) => b.chgPercent - a.chgPercent);
+    body = {
+      success: true,
+      data: {
+        region: filterRegion,
+        timestamp: Date.now(),
+        summary: {
+          totalTracked: liveAll.length,
+          filteredCount: filtered.length,
+          advancing,
+          declining,
+          sentiment: declining > advancing ? 'Risk-Off / Caution' : 'Risk-On / Constructive',
+          topGainer: sortedByGain[0] || null,
+          topLoser: sortedByGain[sortedByGain.length - 1] || null
+        },
+        indices: filtered,
+        topGainers: [...liveAll].sort((a, b) => b.chgPercent - a.chgPercent).slice(0, 5),
+        topLosers: [...liveAll].sort((a, b) => a.chgPercent - b.chgPercent).slice(0, 5),
+        mostActiveValue: [...liveAll].sort((a, b) => (b.turnoverVal || 0) - (a.turnoverVal || 0)).slice(0, 5),
+        mostActiveVolume: [...liveAll].sort((a, b) => (b.volumeVal || 0) - (a.volumeVal || 0)).slice(0, 5)
+      }
+    };
   } else if (path.includes('/stocks/all-markets')) {
     const region = (parsed.searchParams.get('region') || 'all').toLowerCase();
     const tier = (parsed.searchParams.get('tier') || 'all').toLowerCase();

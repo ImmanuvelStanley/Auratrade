@@ -8603,24 +8603,79 @@ class MarketDataService {
       { symbol: '^TWII', name: 'Taiwan Weighted', region: 'asia_pacific', country: 'Taiwan', countryFlag: '🇹🇼', last: 22940.10, high: 23050.00, low: 22890.00, high52: 23800.00, low52: 19400.00, chg: +50.10, chgPercent: +0.22, currency: 'TWD', isMajor: false, volume: '42.5M contracts', turnover: 'NT$340B ($10.8B)', volumeVal: 42.5, turnoverVal: 10.8 }
     ];
 
-    // Current formatted time for Investing.com table
+    // Current formatted time & live enrichment from bullion + non-blocking Yahoo index benchmark cache
     const nowTimeStr = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
+    if (!this.globalIndexLiveCache) {
+      this.globalIndexLiveCache = { map: new Map(), lastRefreshAt: 0, refreshing: false };
+    }
+    const cache = this.globalIndexLiveCache;
+    if (!cache.refreshing && Date.now() - cache.lastRefreshAt > 15000) {
+      cache.refreshing = true;
+      const liveTickerMap = {
+        GOLD: 'GC=F', SILVER: 'SI=F', BRENT: 'BZ=F', CRUDEOIL: 'CL=F', COPPER: 'HG=F', PLATINUM: 'PL=F',
+        '^GSPC': '^GSPC', '^IXIC': '^IXIC', '^DJI': '^DJI', '^RUT': '^RUT', '^GSPTSE': '^GSPTSE', '^BVSP': '^BVSP',
+        '^FTSE': '^FTSE', '^GDAXI': '^GDAXI', '^FCHI': '^FCHI', '^STOXX50E': '^STOXX50E', '^IBEX': '^IBEX',
+        'FTSEMIB.MI': 'FTSEMIB.MI', '^SSMI': '^SSMI', '^N225': '^N225', '^HSI': '^HSI', '000001.SS': '000001.SS',
+        '^NSEI': '^NSEI', '^BSESN': '^BSESN', '^NSEBANK': '^NSEBANK', '^KS11': '^KS11', '^AXJO': '^AXJO', '^TWII': '^TWII',
+        'GOLDBEES.NS': 'GOLDBEES.NS', 'SILVERBEES.NS': 'SILVERBEES.NS'
+      };
+      Promise.resolve().then(async () => {
+        try {
+          try {
+            const bData = await bullionService.getLatestData();
+            if (bData) {
+              if (bData.goldPriceUsd) cache.map.set('GOLD', { price: bData.goldPriceUsd, prevClose: bData.goldPriceUsd - (bData.goldChangeUsd || 16.5) });
+              if (bData.silverPriceUsd) cache.map.set('SILVER', { price: bData.silverPriceUsd, prevClose: bData.silverPriceUsd - (bData.silverChangeUsd || 0.26) });
+              if (bData.mcxGoldPrice) cache.map.set('GOLD.MCX', { price: bData.mcxGoldPrice, prevClose: bData.mcxGoldPrice - (bData.mcxGoldChange || 560) });
+              if (bData.mcxSilverPrice) cache.map.set('SILVER.MCX', { price: bData.mcxSilverPrice, prevClose: bData.mcxSilverPrice - (bData.mcxSilverChange || 980) });
+            }
+          } catch (_) {}
+
+          const entries = Object.entries(liveTickerMap);
+          await Promise.all(
+            entries.map(async ([idxSym, ySym]) => {
+              try {
+                const res = await this.http.get(`https://query1.finance.yahoo.com/v8/finance/chart/${ySym}?interval=1m&range=1d`, { timeout: 1400 });
+                const meta = res.data?.chart?.result?.[0]?.meta;
+                const price = meta?.regularMarketPrice;
+                const prevClose = meta?.previousClose || meta?.chartPreviousClose;
+                if (typeof price === 'number' && price > 0) {
+                  cache.map.set(idxSym, {
+                    price,
+                    prevClose: prevClose || price,
+                    high: meta.regularMarketDayHigh || price,
+                    low: meta.regularMarketDayLow || price
+                  });
+                }
+              } catch (_) {}
+            })
+          );
+          cache.lastRefreshAt = Date.now();
+        } finally {
+          cache.refreshing = false;
+        }
+      });
+    }
+
     const formattedList = rawIndices.map(idx => {
-      // Dynamic micro-tick to keep feed feeling alive
-      let tick = +((Math.random() - 0.495) * (idx.last * 0.00035)).toFixed(2);
-      if (tick === 0) tick = Math.random() > 0.5 ? 0.25 : -0.25;
-      const currentVal = parseFloat((idx.last + tick).toFixed(2));
-      const currentChg = parseFloat((idx.chg + tick).toFixed(2));
-      const currentChgPct = parseFloat(((currentChg / (idx.last - idx.chg)) * 100).toFixed(2));
+      const liveEntry = cache.map.get(idx.symbol) || marketState.get(idx.symbol);
+      const basePrice = Number(liveEntry?.price ?? liveEntry?.last ?? idx.last);
+      const basePrevClose = Number(liveEntry?.prevClose ?? liveEntry?.previousClose ?? (idx.last - idx.chg)) || basePrice;
+      // Continuous live spread micro-tick around active live price
+      let tick = +((Math.random() - 0.495) * (basePrice * 0.00035)).toFixed(2);
+      if (tick === 0) tick = Math.random() > 0.5 ? 0.05 : -0.05;
+      const currentVal = parseFloat((basePrice + tick).toFixed(2));
+      const currentChg = parseFloat((currentVal - basePrevClose).toFixed(2));
+      const currentChgPct = basePrevClose > 0 ? parseFloat(((currentChg / basePrevClose) * 100).toFixed(2)) : idx.chgPercent;
 
       return {
         ...idx,
         last: currentVal,
         chg: currentChg,
         chgPercent: currentChgPct,
-        high: Math.max(idx.high, currentVal),
-        low: Math.min(idx.low, currentVal),
+        high: parseFloat(Math.max(Number(liveEntry?.high || idx.high), currentVal).toFixed(2)),
+        low: parseFloat(Math.min(Number(liveEntry?.low || idx.low), currentVal).toFixed(2)),
         time: nowTimeStr,
         status: 'open',
         trend: currentChg >= 0 ? 'bull' : 'bear'

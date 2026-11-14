@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { CountryFlag } from './CountryFlag';
+import { useSocket } from '../context/SocketContext';
 import {
   Globe,
   TrendingUp,
@@ -7,7 +8,6 @@ import {
   Clock,
   ArrowUpRight,
   ArrowDownRight,
-  RefreshCw,
   Zap,
   Filter,
   Search,
@@ -24,7 +24,27 @@ const globalIndicesCache = {
   major: DEFAULT_GLOBAL_INDICES_DATA
 };
 
+// Map live WebSocket quote keys to GlobalIndicesDesk canonical benchmark symbols
+const SOCKET_TO_INDEX_ALIAS = {
+  'S&P 500': '^GSPC',
+  'SPX': '^GSPC',
+  'NASDAQ': '^IXIC',
+  'DOW JONES': '^DJI',
+  'NIFTY 50': '^NSEI',
+  'NIFTY50': '^NSEI',
+  'BANK NIFTY': '^NSEBANK',
+  'BANKNIFTY': '^NSEBANK',
+  'SENSEX': '^BSESN',
+  'DAX 40': '^GDAXI',
+  'FTSE 100': '^FTSE',
+  'CAC 40': '^FCHI',
+  'NIKKEI 225': '^N225',
+  'HANG SENG': '^HSI',
+  'ASX 200': '^AXJO'
+};
+
 export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelectSymbol, isActive = true }) {
+  const { quotes: socketQuotes } = useSocket();
   const [data, setData] = useState(() => globalIndicesCache['all'] || DEFAULT_GLOBAL_INDICES_DATA);
   const [loading, setLoading] = useState(false);
   const [region, setRegion] = useState('all');
@@ -32,7 +52,11 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
   const [sortBy, setSortBy] = useState('default'); // 'default', 'gain_desc', 'loss_desc', 'name'
   const [activeMoversTab, setActiveMoversTab] = useState('gainers'); // 'gainers' | 'losers' | 'activeValue' | 'activeVolume'
   const prevPricesRef = useRef({});
+  const isFetchingRef = useRef(false);
   const [flashingIndices, setFlashingIndices] = useState({});
+  const [lastSyncedAt, setLastSyncedAt] = useState(() =>
+    new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  );
 
   const { summary, indices, topGainers, topLosers, mostActiveValue, mostActiveVolume } = data || DEFAULT_GLOBAL_INDICES_DATA;
 
@@ -81,51 +105,123 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
     return list;
   }, [indices, searchQuery, sortBy]);
 
-  const fetchGlobalIndices = async (selectedRegion = region) => {
+  const applyFlashCheck = useCallback((dataset) => {
+    const newFlashes = {};
+    const checkItem = (sym, price) => {
+      if (!sym || price === undefined || price === null) return;
+      const oldVal = prevPricesRef.current[sym];
+      if (oldVal !== undefined && oldVal !== price) {
+        newFlashes[sym] = price > oldVal ? 'tick-flash-up' : 'tick-flash-down';
+      }
+      prevPricesRef.current[sym] = price;
+    };
+    (dataset?.indices || []).forEach(idx => checkItem(idx.symbol, idx.last));
+    (dataset?.topGainers || []).forEach(idx => checkItem(idx.symbol, idx.last));
+    (dataset?.topLosers || []).forEach(idx => checkItem(idx.symbol, idx.last));
+    (dataset?.mostActiveValue || []).forEach(idx => checkItem(idx.symbol, idx.last));
+    (dataset?.mostActiveVolume || []).forEach(idx => checkItem(idx.symbol, idx.last));
+
+    if (Object.keys(newFlashes).length > 0) {
+      setFlashingIndices(prev => ({ ...prev, ...newFlashes }));
+      setTimeout(() => {
+        setFlashingIndices({});
+      }, 1100);
+    }
+  }, []);
+
+  const fetchGlobalIndices = useCallback(async (selectedRegion = region) => {
+    if (isFetchingRef.current) return;
+    isFetchingRef.current = true;
     try {
-      const res = await fetch(`/api/stocks/global-indices?region=${selectedRegion}`);
+      const res = await fetch(`/api/stocks/global-indices?region=${selectedRegion}&t=${Date.now()}`);
       const json = await res.json();
       if (json.success && json.data) {
         globalIndicesCache[selectedRegion] = json.data;
-        // Detect price changes and trigger moving tick flash
-        const newFlashes = {};
-        const checkItem = (sym, price) => {
-          if (!sym || price === undefined || price === null) return;
-          const oldVal = prevPricesRef.current[sym];
-          if (oldVal !== undefined && oldVal !== price) {
-            newFlashes[sym] = price > oldVal ? 'tick-flash-up' : 'tick-flash-down';
-          }
-          prevPricesRef.current[sym] = price;
-        };
-
-        (json.data.indices || []).forEach(idx => checkItem(idx.symbol, idx.last));
-        (json.data.topGainers || []).forEach(idx => checkItem(idx.symbol, idx.last));
-        (json.data.topLosers || []).forEach(idx => checkItem(idx.symbol, idx.last));
-        (json.data.mostActiveValue || []).forEach(idx => checkItem(idx.symbol, idx.last));
-        (json.data.mostActiveVolume || []).forEach(idx => checkItem(idx.symbol, idx.last));
-
-        if (Object.keys(newFlashes).length > 0) {
-          setFlashingIndices(prev => ({ ...prev, ...newFlashes }));
-          setTimeout(() => {
-            setFlashingIndices({});
-          }, 1200);
-        }
-
+        applyFlashCheck(json.data);
         setData(json.data);
+        setLastSyncedAt(
+          new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        );
       }
     } catch (e) {
       console.error('Failed to load global indices:', e);
     } finally {
+      isFetchingRef.current = false;
       setLoading(false);
     }
-  };
+  }, [region, applyFlashCheck]);
 
+  // Continuous 4-second auto-sync + instant refresh on tab visibility/window focus
   useEffect(() => {
     if (!isActive) return;
     fetchGlobalIndices(region);
-    const interval = setInterval(() => fetchGlobalIndices(region), 20000);
-    return () => clearInterval(interval);
-  }, [isActive, region]);
+    const interval = setInterval(() => {
+      if (typeof document === 'undefined' || !document.hidden) {
+        fetchGlobalIndices(region);
+      }
+    }, 4000);
+    const handleVisibilityOrFocus = () => {
+      if (!document.hidden) fetchGlobalIndices(region);
+    };
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+    };
+  }, [isActive, region, fetchGlobalIndices]);
+
+  // Real-time flash detection whenever indices data updates
+  useEffect(() => {
+    if (data) applyFlashCheck(data);
+  }, [data, applyFlashCheck]);
+
+  // Real-time SocketContext quote stream merge for zero-delay live index ticks
+  useEffect(() => {
+    if (!isActive || !socketQuotes) return;
+    const nowTimeStr = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    let anyUpdated = false;
+    setData((prev) => {
+      if (!prev || !Array.isArray(prev.indices) || prev.indices.length === 0) return prev;
+      let changed = false;
+      const updateList = (arr) =>
+        (arr || []).map((item) => {
+          if (!item) return item;
+          const sock =
+            socketQuotes[item.symbol] ||
+            Object.entries(SOCKET_TO_INDEX_ALIAS).reduce((acc, [k, v]) => (v === item.symbol && socketQuotes[k] ? socketQuotes[k] : acc), null);
+          if (!sock || typeof sock.price !== 'number' || sock.price === item.last) return item;
+          changed = true;
+          const prevClose = Number(sock.previousClose) || (item.last - item.chg) || sock.price;
+          const newChg = typeof sock.change === 'number' ? sock.change : parseFloat((sock.price - prevClose).toFixed(2));
+          const newChgPct = typeof sock.changePercent === 'number' ? sock.changePercent : (prevClose > 0 ? parseFloat(((newChg / prevClose) * 100).toFixed(2)) : item.chgPercent);
+          return {
+            ...item,
+            last: parseFloat(sock.price.toFixed(2)),
+            chg: parseFloat(newChg.toFixed(2)),
+            chgPercent: parseFloat(newChgPct.toFixed(2)),
+            high: Math.max(Number(item.high) || sock.price, sock.price),
+            low: Math.min(Number(item.low) || sock.price, sock.price),
+            time: nowTimeStr,
+            trend: newChg >= 0 ? 'bull' : 'bear'
+          };
+        });
+
+      const updatedIndices = updateList(prev.indices);
+      if (!changed) return prev;
+      anyUpdated = true;
+      return {
+        ...prev,
+        indices: updatedIndices,
+        topGainers: updateList(prev.topGainers),
+        topLosers: updateList(prev.topLosers),
+        mostActiveValue: updateList(prev.mostActiveValue),
+        mostActiveVolume: updateList(prev.mostActiveVolume)
+      };
+    });
+    if (anyUpdated) setLastSyncedAt(nowTimeStr);
+  }, [isActive, socketQuotes]);
 
   const handleRegionChange = (newRegion) => {
     setRegion(newRegion);
@@ -221,15 +317,24 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => fetchGlobalIndices(region)}
-            style={{ fontSize: '0.8rem', padding: '0.45rem 0.85rem' }}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <span
+            className="status-pill"
+            style={{
+              background: 'rgba(16, 185, 129, 0.12)',
+              borderColor: 'rgba(16, 185, 129, 0.35)',
+              color: 'var(--bull-green)',
+              fontSize: '0.74rem',
+              fontWeight: 700,
+              padding: '0.4rem 0.85rem',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.45rem'
+            }}
           >
-            <RefreshCw size={14} /> Refresh Feeds
-          </button>
+            <span className="status-dot online" />
+            <span className="font-mono">AUTO-SYNC LIVE • {lastSyncedAt}</span>
+          </span>
           <a
             href="https://in.investing.com/indices/major-indices"
             target="_blank"
