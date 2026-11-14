@@ -97,13 +97,21 @@ export function App() {
   });
 
   // Auto-Predictor & Profit-Lock State (strictly isolated per user)
-  const getLockedAssetKey = (userId) => `auratrade_locked_asset_${userId || 'guest'}`;
+  const getLockedAssetKey = (userId) => `auratrade_strategy_plan_${userId || 'guest'}`;
+  const getLegacyLockedAssetKey = (userId) => `auratrade_locked_asset_${userId || 'guest'}`;
 
   const [lockedAsset, setLockedAsset] = useState(() => {
     try {
       const key = getLockedAssetKey(user?.id);
       const saved = localStorage.getItem(key);
-      return saved ? JSON.parse(saved) : null;
+      if (saved) return JSON.parse(saved);
+      const legacy = localStorage.getItem(getLegacyLockedAssetKey(user?.id));
+      if (legacy) {
+        localStorage.setItem(key, legacy);
+        localStorage.removeItem(getLegacyLockedAssetKey(user?.id));
+        return JSON.parse(legacy);
+      }
+      return null;
     } catch (e) {
       return null;
     }
@@ -136,6 +144,7 @@ export function App() {
     try {
       const key = getLockedAssetKey(user?.id);
       localStorage.removeItem(key);
+      localStorage.removeItem(getLegacyLockedAssetKey(user?.id));
     } catch (e) {}
   }, [user?.id]);
 
@@ -480,6 +489,7 @@ export function App() {
                     onUnlockAsset={handleUnlockAsset}
                     onOpenAutoPredictor={handleOpenAutoPredictor}
                     onOpenTradeModal={handleOpenTrade}
+                    onOpenAlertModal={handleOpenAlertModal}
                   />
                 </div>
 
@@ -513,6 +523,7 @@ export function App() {
                   onLockAsset={handleLockAsset}
                   onUnlockAsset={handleUnlockAsset}
                   onOpenAutoPredictor={handleOpenAutoPredictor}
+                  onOpenTradeModal={handleOpenTrade}
                 />
               </div>
 
@@ -643,13 +654,14 @@ export function App() {
         />
       )}
 
-      {/* AI Auto Predictor & Profit-Lock Modal */}
+      {/* AI Goal-Fit Predictor & Strategy Blueprint Modal */}
       <AutoPredictorModal
         isOpen={isAutoPredictorOpen}
         onClose={handleCloseAutoPredictor}
         onLockAsset={handleLockAsset}
         activeLockedAsset={lockedAsset}
         onSelectSymbol={handleSelectSymbolAndGoDashboard}
+        onOpenTradeModal={handleOpenTrade}
       />
 
       {isAuthModalOpen && (

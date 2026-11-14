@@ -4,7 +4,7 @@ import {
   ShoppingCart,
   DollarSign,
   CheckCircle2,
-  Lock,
+  BookmarkCheck,
   ShieldCheck,
   Target,
   Search,
@@ -718,30 +718,51 @@ export function TradeModal({
             </div>
 
             {/* LOCKED PROFIT PROTOCOL ACTIVE BANNER (IF APPLICABLE) */}
-            {lockedAsset && lockedAsset.symbol === symbol && (
-              <div
-                style={{
-                  background: 'linear-gradient(90deg, rgba(6, 182, 212, 0.12) 0%, rgba(16, 185, 129, 0.15) 100%)',
-                  border: '1px solid rgba(16, 185, 129, 0.4)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: '0.75rem 0.95rem',
-                  fontSize: '0.8rem'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
-                  <span style={{ fontWeight: 800, color: 'var(--bull-green)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
-                    <Lock size={13} /> LOCKED ASYMMETRIC TARGET ACTIVE
-                  </span>
-                  <span style={{ color: 'var(--accent-cyan)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
-                    R:R {lockedAsset.rewardRiskRatio} : 1
-                  </span>
+            {lockedAsset && lockedAsset.symbol === symbol && (() => {
+              const planCurr = lockedAsset.currencySymbol || '$';
+              return (
+                <div
+                  style={{
+                    background: 'linear-gradient(90deg, rgba(6, 182, 212, 0.12) 0%, rgba(16, 185, 129, 0.15) 100%)',
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '0.75rem 0.95rem',
+                    fontSize: '0.8rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <span style={{ fontWeight: 800, color: 'var(--bull-green)', display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                      <BookmarkCheck size={14} /> AI STRATEGY PLAN GUARD ACTIVE {lockedAsset.timeHorizon ? `(${lockedAsset.timeHorizon})` : ''}
+                    </span>
+                    <span style={{ color: 'var(--accent-cyan)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>
+                      R:R {lockedAsset.rewardRiskRatio} : 1 {lockedAsset.expectationMatchScore ? `• ${lockedAsset.expectationMatchScore}% Fit` : ''}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem', color: 'var(--text-secondary)' }}>
+                    <span>Goal Target: <strong style={{ color: 'var(--bull-green)' }}>{planCurr}{lockedAsset.targetPrice?.toFixed(2)} (+{lockedAsset.profitGainPercent}%)</strong></span>
+                    <span>Risk Floor: <strong style={{ color: '#f43f5e' }}>{planCurr}{lockedAsset.stopLossPrice?.toFixed(2)} (-{lockedAsset.maxLossPercent}%)</strong></span>
+                    {lockedAsset.suggestedShares && (
+                      <button
+                        type="button"
+                        onClick={() => setShares(String(lockedAsset.suggestedShares))}
+                        style={{
+                          padding: '2px 8px',
+                          borderRadius: '5px',
+                          background: 'rgba(16, 185, 129, 0.18)',
+                          border: '1px solid rgba(16, 185, 129, 0.45)',
+                          color: 'var(--bull-green)',
+                          fontSize: '0.72rem',
+                          fontWeight: 800,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Use {lockedAsset.suggestedShares} Plan Units
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem', color: 'var(--text-secondary)' }}>
-                  <span>Target TP: <strong style={{ color: 'var(--bull-green)' }}>${lockedAsset.targetPrice?.toFixed(2)} (+{lockedAsset.profitGainPercent}%)</strong></span>
-                  <span>Stop Loss: <strong style={{ color: '#f43f5e' }}>${lockedAsset.stopLossPrice?.toFixed(2)} (-{lockedAsset.maxLossPercent}%)</strong></span>
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* BUY / SELL ORDER SPLIT TOGGLE */}
             <div

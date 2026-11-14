@@ -7,8 +7,9 @@ import {
   RefreshCw,
   Clock,
   Activity,
-  Lock,
-  Unlock,
+  BookmarkCheck,
+  Crosshair,
+  Bell,
   Zap,
   ShieldCheck,
   Target,
@@ -136,7 +137,8 @@ export const StockChart = React.memo(function StockChart({
   lockedAsset,
   onUnlockAsset,
   onOpenAutoPredictor,
-  onOpenTradeModal
+  onOpenTradeModal,
+  onOpenAlertModal
 }) {
   const { theme } = useTheme();
   const socketQuote = useSocketQuote(symbol);
@@ -776,7 +778,8 @@ export const StockChart = React.memo(function StockChart({
       ctx.stroke();
 
       // Target Label Pill on right Y-axis
-      const targetTxt = `TARGET $${lockedAsset.targetPrice.toFixed(2)} (+${lockedAsset.profitGainPercent}%)`;
+      const planCurr = lockedAsset.currencySymbol || '$';
+      const targetTxt = `GOAL TARGET ${planCurr}${lockedAsset.targetPrice.toFixed(2)} (+${lockedAsset.profitGainPercent}%)`;
       ctx.font = 'bold 10px "IBM Plex Mono", monospace';
       const tW = ctx.measureText(targetTxt).width + 14;
       ctx.fillStyle = 'rgba(16, 185, 129, 0.95)';
@@ -801,7 +804,8 @@ export const StockChart = React.memo(function StockChart({
       ctx.stroke();
 
       // Stop Loss Label Pill on right Y-axis
-      const stopTxt = `STOP LOSS $${lockedAsset.stopLossPrice.toFixed(2)} (-${lockedAsset.maxLossPercent}%)`;
+      const stopCurr = lockedAsset.currencySymbol || '$';
+      const stopTxt = `RISK FLOOR ${stopCurr}${lockedAsset.stopLossPrice.toFixed(2)} (-${lockedAsset.maxLossPercent}%)`;
       const sW = ctx.measureText(stopTxt).width + 14;
       ctx.fillStyle = 'rgba(244, 63, 94, 0.95)';
       if (ctx.roundRect) {
@@ -1196,10 +1200,10 @@ export const StockChart = React.memo(function StockChart({
               flexShrink: 0
             }}
             onClick={onOpenAutoPredictor}
-            title="Scan 147+ Global Assets and Auto-Lock Best Profitable Asset"
+            title="Scan 309 Global Assets & Match Your Target Return Blueprint"
           >
-            {lockedAsset && lockedAsset.symbol === symbol ? <Lock size={12} /> : <Zap size={12} fill="currentColor" />}
-            <span>{lockedAsset && lockedAsset.symbol === symbol ? 'Locked' : 'Predictor'}</span>
+            {lockedAsset && lockedAsset.symbol === symbol ? <BookmarkCheck size={12} /> : <Crosshair size={12} />}
+            <span>{lockedAsset && lockedAsset.symbol === symbol ? 'Plan Active' : 'AI Predictor'}</span>
           </button>
         </div>
       </div>
@@ -1394,68 +1398,126 @@ export const StockChart = React.memo(function StockChart({
         })()}
       </div>
 
-      {/* Sticky Active Locked Target HUD Banner */}
-      {lockedAsset && lockedAsset.symbol === symbol && (
-        <div
-          style={{
-            background: 'linear-gradient(90deg, rgba(6, 182, 212, 0.12) 0%, rgba(16, 185, 129, 0.14) 100%)',
-            borderBottom: '1px solid rgba(16, 185, 129, 0.35)',
-            padding: '0.45rem 1rem',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexWrap: 'wrap',
-            gap: '0.5rem',
-            fontSize: '0.78rem'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontWeight: 800, color: 'var(--bull-green)' }}>
-              <Lock size={13} /> PROFIT LOCK ACTIVE
-            </span>
-            <span style={{ color: 'var(--text-secondary)' }}>
-              Target (Take-Profit): <strong style={{ color: 'var(--bull-green)' }} className="font-mono">${lockedAsset.targetPrice.toFixed(2)} (+{lockedAsset.profitGainPercent}%)</strong>
-            </span>
-            <span style={{ color: 'var(--text-secondary)' }}>
-              Floor (Stop-Loss): <strong style={{ color: '#f43f5e' }} className="font-mono">${lockedAsset.stopLossPrice.toFixed(2)} (-{lockedAsset.maxLossPercent}%)</strong>
-            </span>
-            <span style={{ background: 'rgba(6, 182, 212, 0.2)', color: 'var(--accent-cyan)', padding: '0.1rem 0.45rem', borderRadius: '4px', fontWeight: 700, fontSize: '0.72rem' }}>
-              R:R {lockedAsset.rewardRiskRatio} : 1
-            </span>
-            <span style={{ background: 'rgba(16, 185, 129, 0.2)', color: 'var(--bull-green)', padding: '0.1rem 0.45rem', borderRadius: '4px', fontWeight: 700, fontSize: '0.72rem' }}>
-              {lockedAsset.winProbability}% Win Prob
-            </span>
-          </div>
+      {/* Sticky Active AI Strategy Plan & Live Target Guard HUD */}
+      {lockedAsset && lockedAsset.symbol === symbol && (() => {
+        const planCurr = lockedAsset.currencySymbol || '$';
+        const curLive = Number(liveQuote?.price || lockedAsset.entryPrice || lockedAsset.currentPrice || 0);
+        const targetP = Number(lockedAsset.targetPrice || 0);
+        const stopP = Number(lockedAsset.stopLossPrice || 0);
+        const span = Math.max(0.0001, targetP - stopP);
+        const progressPct = Math.max(0, Math.min(100, ((curLive - stopP) / span) * 100));
+        const distToTargetPct = curLive > 0 ? (((targetP - curLive) / curLive) * 100).toFixed(1) : lockedAsset.profitGainPercent;
+        const guardStatus = curLive >= targetP ? 'TARGET REACHED' : curLive <= stopP ? 'FLOOR TRIGGERED' : 'GUARD ACTIVE';
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-            <button
-              className="btn btn-primary"
-              style={{
-                padding: '0.2rem 0.6rem',
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                border: 'none',
-                borderRadius: '4px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '3px'
-              }}
-              onClick={() => onOpenTradeModal && onOpenTradeModal(symbol)}
-            >
-              <Zap size={12} fill="#fff" /> Execute Locked Order
-            </button>
-            <button
-              className="btn-icon"
-              style={{ padding: '0.2rem 0.4rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}
-              onClick={onUnlockAsset}
-              title="Unlock Target"
-            >
-              <Unlock size={13} />
-            </button>
+        return (
+          <div
+            style={{
+              background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.12) 0%, rgba(56, 189, 248, 0.1) 60%, rgba(15, 23, 42, 0.9) 100%)',
+              borderBottom: '1px solid rgba(16, 185, 129, 0.38)',
+              padding: '0.55rem 1rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.42rem',
+              fontSize: '0.78rem'
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.55rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', fontWeight: 800, color: 'var(--bull-green)' }}>
+                  <BookmarkCheck size={14} /> AI STRATEGY GUARD • {guardStatus}
+                </span>
+                {lockedAsset.expectationMatchScore && (
+                  <span style={{ background: 'rgba(16, 185, 129, 0.2)', color: 'var(--bull-green)', padding: '0.1rem 0.45rem', borderRadius: '4px', fontWeight: 800, fontSize: '0.7rem' }}>
+                    {lockedAsset.expectationMatchScore}% Fit
+                  </span>
+                )}
+                <span style={{ color: 'var(--text-secondary)' }}>
+                  Goal Target: <strong style={{ color: 'var(--bull-green)' }} className="font-mono">{planCurr}{targetP.toFixed(2)} (+{lockedAsset.profitGainPercent}%)</strong>
+                </span>
+                <span style={{ color: 'var(--text-secondary)' }}>
+                  Risk Floor: <strong style={{ color: '#f43f5e' }} className="font-mono">{planCurr}{stopP.toFixed(2)} (-{lockedAsset.maxLossPercent}%)</strong>
+                </span>
+                <span style={{ background: 'rgba(6, 182, 212, 0.2)', color: 'var(--accent-cyan)', padding: '0.1rem 0.45rem', borderRadius: '4px', fontWeight: 700, fontSize: '0.72rem' }}>
+                  R:R {lockedAsset.rewardRiskRatio}:1 • {lockedAsset.winProbability}% Win
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                {onOpenAlertModal && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ padding: '0.22rem 0.55rem', fontSize: '0.7rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px', borderRadius: '5px' }}
+                    onClick={() => onOpenAlertModal(symbol)}
+                    title="Create Price Alert for Target or Floor"
+                  >
+                    <Bell size={11} /> Set Alert
+                  </button>
+                )}
+                {onOpenAutoPredictor && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    style={{ padding: '0.22rem 0.55rem', fontSize: '0.7rem', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px', borderRadius: '5px' }}
+                    onClick={onOpenAutoPredictor}
+                    title="Adjust Return Goal, Risk Limit, or Horizon"
+                  >
+                    <Crosshair size={11} /> Edit Goal
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  style={{
+                    padding: '0.22rem 0.65rem',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                    border: 'none',
+                    borderRadius: '5px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  onClick={() => onOpenTradeModal && onOpenTradeModal(symbol)}
+                >
+                  <Zap size={12} fill="#fff" /> Trade with Plan
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ padding: '0.22rem 0.5rem', fontSize: '0.7rem', color: 'var(--text-muted)', borderRadius: '5px' }}
+                  onClick={onUnlockAsset}
+                  title="Clear Active Strategy Plan"
+                >
+                  Clear Plan
+                </button>
+              </div>
+            </div>
+
+            {/* Live Risk Floor -> Current Price -> Goal Target Corridor Meter */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+              <span className="font-mono" style={{ color: '#fda4af', fontWeight: 700 }}>
+                Floor {planCurr}{stopP.toFixed(2)}
+              </span>
+              <div style={{ flex: 1, height: '6px', borderRadius: '999px', background: 'rgba(255,255,255,0.08)', overflow: 'hidden', position: 'relative' }}>
+                <div
+                  style={{
+                    width: `${progressPct.toFixed(1)}%`,
+                    height: '100%',
+                    background: progressPct < 25 ? '#f43f5e' : 'linear-gradient(90deg, #38bdf8 0%, #10b981 100%)',
+                    borderRadius: '999px',
+                    transition: 'width 0.35s ease'
+                  }}
+                />
+              </div>
+              <span className="font-mono" style={{ color: '#6ee7b7', fontWeight: 700 }}>
+                Target {planCurr}{targetP.toFixed(2)} ({Number(distToTargetPct) >= 0 ? `+${distToTargetPct}% to goal` : 'Achieved'})
+              </span>
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Canvas Chart Area with Non-Obstructive Floating Overlays */}
       <div

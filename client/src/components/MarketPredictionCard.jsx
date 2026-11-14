@@ -4,8 +4,8 @@ import {
   TrendingUp,
   TrendingDown,
   BrainCircuit,
-  Lock,
-  Unlock,
+  BookmarkCheck,
+  Crosshair,
   ShieldCheck,
   Target,
   Zap,
@@ -22,6 +22,7 @@ import {
   Clock
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { getCurrencySymbol } from '../utils/predictorEngine';
 
 // In-memory prediction cache so tab switching is instant with zero loading delay
 const predictionMemoryCache = new Map();
@@ -31,7 +32,8 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
   lockedAsset,
   onLockAsset,
   onUnlockAsset,
-  onOpenAutoPredictor
+  onOpenAutoPredictor,
+  onOpenTradeModal
 }) {
   const cachedInitial = predictionMemoryCache.get(symbol);
   const { theme } = useTheme();
@@ -384,6 +386,7 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
   if (!prediction) return null;
 
   const isUpside = prediction.target30DUpside >= 0;
+  const predCurr = prediction.currencySymbol || getCurrencySymbol(prediction.currency || lockData?.currency || 'USD');
   const isUndervalued = prediction.valuationStatus === 'UNDERVALUED';
   const isOvervalued = prediction.valuationStatus === 'OVERVALUED';
   const valuationColor = isUndervalued ? 'var(--bull-green)' : isOvervalued ? '#f59e0b' : 'var(--accent-cyan)';
@@ -516,139 +519,160 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
           </div>
         </div>
 
-        {/* Auto Predictor Profit-Lock Protocol Section */}
-        {lockData && (
-          <div
-            style={{
-              background: lockedAsset?.symbol === symbol
-                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.08) 100%)'
-                : 'var(--bg-input)',
-              border: lockedAsset?.symbol === symbol
-                ? '1px solid rgba(16, 185, 129, 0.5)'
-                : '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-md)',
-              padding: '1rem 1.25rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.85rem',
-              boxShadow: lockedAsset?.symbol === symbol ? '0 0 20px rgba(16, 185, 129, 0.15)' : 'none'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span
-                  style={{
-                    background: lockedAsset?.symbol === symbol ? 'rgba(16, 185, 129, 0.2)' : 'rgba(6, 182, 212, 0.2)',
-                    color: lockedAsset?.symbol === symbol ? 'var(--bull-green)' : 'var(--accent-cyan)',
-                    padding: '0.2rem 0.5rem',
-                    borderRadius: '4px',
-                    fontSize: '0.72rem',
-                    fontWeight: 800,
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '3px'
-                  }}
-                >
-                  <Lock size={12} /> PROFIT-LOCK PROTOCOL
-                </span>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  Asymmetric Downside Protection Engine
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  Win Probability: <strong style={{ color: 'var(--bull-green)' }}>{lockData.winProbability}%</strong>
-                </span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  Safety: <strong style={{ color: 'var(--accent-cyan)' }}>{lockData.safetyRating}</strong>
-                </span>
-              </div>
-            </div>
-
-            {/* Metrics Row: Optimal Entry, Target Profit, Stop Floor, R:R */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem', background: 'var(--bg-input)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
-              <div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Optimal Entry</div>
-                <div className="font-mono" style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  ${lockData.currentPrice.toFixed(2)}
+        {/* AI Strategy Blueprint & Past-Record Confidence Section */}
+        {lockData && (() => {
+          const lockCurr = lockData.currencySymbol || predCurr;
+          const tr = lockData.trackRecord;
+          const isPlanActive = lockedAsset?.symbol === symbol;
+          return (
+            <div
+              style={{
+                background: isPlanActive
+                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.08) 100%)'
+                  : 'var(--bg-input)',
+                border: isPlanActive
+                  ? '1px solid rgba(16, 185, 129, 0.5)'
+                  : '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1rem 1.25rem',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.85rem',
+                boxShadow: isPlanActive ? '0 0 20px rgba(16, 185, 129, 0.15)' : 'none'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <span
+                    style={{
+                      background: isPlanActive ? 'rgba(16, 185, 129, 0.2)' : 'rgba(6, 182, 212, 0.2)',
+                      color: isPlanActive ? 'var(--bull-green)' : 'var(--accent-cyan)',
+                      padding: '0.2rem 0.55rem',
+                      borderRadius: '4px',
+                      fontSize: '0.72rem',
+                      fontWeight: 800,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '4px'
+                    }}
+                  >
+                    <BookmarkCheck size={12} /> AI STRATEGY BLUEPRINT
+                  </span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    Past-Record &amp; ATR Risk Guard Engine
+                  </span>
                 </div>
-              </div>
 
-              <div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                  <Target size={11} style={{ color: 'var(--bull-green)' }} /> Target Lock (Take-Profit)
-                </div>
-                <div className="font-mono" style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--bull-green)' }}>
-                  ${lockData.targetPrice.toFixed(2)}
-                </div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--bull-green)', fontWeight: 600 }}>
-                  +{lockData.profitGainPercent}%
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                  {lockData.expectationMatchScore && (
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      Goal Fit: <strong style={{ color: '#7dd3fc' }}>{lockData.expectationMatchScore}%</strong>
+                    </span>
+                  )}
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    Win Probability: <strong style={{ color: 'var(--bull-green)' }}>{lockData.winProbability}%</strong>
+                  </span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    Safety: <strong style={{ color: 'var(--accent-cyan)' }}>{lockData.safetyRating}</strong>
+                  </span>
                 </div>
               </div>
 
-              <div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                  <ShieldCheck size={11} style={{ color: '#f43f5e' }} /> Protected Stop Floor
+              {/* Metrics Row: Optimal Entry, Goal Target, Risk Floor, R:R */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: '0.75rem', background: 'rgba(15, 23, 42, 0.45)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+                <div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Optimal Entry</div>
+                  <div className="font-mono" style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    {lockCurr}{lockData.currentPrice.toFixed(2)}
+                  </div>
                 </div>
-                <div className="font-mono" style={{ fontSize: '1.05rem', fontWeight: 800, color: '#f43f5e' }}>
-                  ${lockData.stopLossPrice.toFixed(2)}
+
+                <div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <Target size={11} style={{ color: 'var(--bull-green)' }} /> Goal Target ({lockData.timeHorizon || '30D'})
+                  </div>
+                  <div className="font-mono" style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--bull-green)' }}>
+                    {lockCurr}{lockData.targetPrice.toFixed(2)}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--bull-green)', fontWeight: 600 }}>
+                    +{lockData.profitGainPercent}% projected
+                  </div>
                 </div>
-                <div style={{ fontSize: '0.7rem', color: '#f43f5e', fontWeight: 600 }}>
-                  -{lockData.maxLossPercent}%
+
+                <div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                    <ShieldCheck size={11} style={{ color: '#f43f5e' }} /> ATR Risk Floor
+                  </div>
+                  <div className="font-mono" style={{ fontSize: '1.05rem', fontWeight: 800, color: '#f43f5e' }}>
+                    {lockCurr}{lockData.stopLossPrice.toFixed(2)}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: '#f43f5e', fontWeight: 600 }}>
+                    -{lockData.maxLossPercent}% downside cap
+                  </div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Reward-to-Risk Ratio</div>
+                  <div className="font-mono" style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>
+                    {lockData.rewardRiskRatio} : 1
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--bull-green)', fontWeight: 600 }}>
+                    {tr ? `${tr.walkForwardAccuracy}% Walk-Fwd Acc` : 'Asymmetric Protection'}
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Reward-to-Risk Ratio</div>
-                <div className="font-mono" style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>
-                  {lockData.rewardRiskRatio} : 1
+              {/* Action Buttons: Find Goal-Fit Asset, Trade Plan, Activate Plan */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', maxWidth: '520px', lineHeight: 1.45 }}>
+                  {lockData.strategyRationale || lockData.lockReason}
                 </div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--bull-green)', fontWeight: 600 }}>
-                  Low Risk Asymmetry
-                </div>
-              </div>
-            </div>
 
-            {/* Action Buttons: Lock Target & Scan 147 Assets */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', maxWidth: '460px' }}>
-                {lockData.lockReason}
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <button
-                  className="btn btn-secondary"
-                  style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
-                  onClick={onOpenAutoPredictor}
-                >
-                  <Zap size={13} style={{ color: 'var(--accent-cyan)' }} />
-                  <span>Scan 147 Assets</span>
-                </button>
-
-                {lockedAsset?.symbol === symbol ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <button
                     className="btn btn-secondary"
-                    style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', borderColor: 'var(--bull-green)', color: 'var(--bull-green)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
-                    onClick={onUnlockAsset}
+                    style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                    onClick={onOpenAutoPredictor}
                   >
-                    <Unlock size={13} />
-                    <span>Unlock Target</span>
+                    <Crosshair size={13} style={{ color: 'var(--accent-cyan)' }} />
+                    <span>Match Goal (309 Assets)</span>
                   </button>
-                ) : (
-                  <button
-                    className="btn btn-primary"
-                    style={{ fontSize: '0.75rem', padding: '0.35rem 0.85rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
-                    onClick={() => onLockAsset && onLockAsset(lockData)}
-                  >
-                    <Lock size={13} />
-                    <span>Lock {symbol} Target</span>
-                  </button>
-                )}
+
+                  {onOpenTradeModal && (
+                    <button
+                      className="btn btn-secondary"
+                      style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem', borderColor: 'rgba(56, 189, 248, 0.45)', color: '#7dd3fc' }}
+                      onClick={() => onOpenTradeModal(symbol)}
+                    >
+                      <Zap size={13} />
+                      <span>Trade Blueprint</span>
+                    </button>
+                  )}
+
+                  {isPlanActive ? (
+                    <button
+                      className="btn btn-secondary"
+                      style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', borderColor: 'var(--bull-green)', color: 'var(--bull-green)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                      onClick={onUnlockAsset}
+                    >
+                      <CheckCircle2 size={13} />
+                      <span>Plan Active • Clear</span>
+                    </button>
+                  ) : (
+                    <button
+                      className="btn btn-primary"
+                      style={{ fontSize: '0.75rem', padding: '0.35rem 0.85rem', display: 'flex', alignItems: 'center', gap: '0.35rem' }}
+                      onClick={() => onLockAsset && onLockAsset(lockData)}
+                    >
+                      <BookmarkCheck size={13} />
+                      <span>Activate {symbol} Plan</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* Current vs Future Value Metrics Grid (5 Cards with DCF Fair Value) */}
         <div
@@ -662,7 +686,7 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
           <div className="prediction-stat-card" style={{ animationDelay: '0.05s' }}>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Current Market Price</div>
             <div className="font-mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.2rem' }}>
-              ${prediction.currentPrice.toFixed(2)}
+              {predCurr}{prediction.currentPrice.toFixed(2)}
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
               Real-time Live Baseline
@@ -673,7 +697,7 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
           <div className="prediction-stat-card" style={{ animationDelay: '0.1s' }}>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>7-Day Model Target</div>
             <div className="font-mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.2rem' }}>
-              ${prediction.target7D.toFixed(2)}
+              {predCurr}{prediction.target7D.toFixed(2)}
             </div>
             <div className="font-mono" style={{ fontSize: '0.74rem', color: prediction.target7DUpside >= 0 ? '#34d399' : '#f87171', marginTop: '0.25rem', fontWeight: 700 }}>
               {prediction.target7DUpside >= 0 ? '+' : ''}{prediction.target7DUpside.toFixed(2)}% Expected
@@ -687,7 +711,7 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
               <span style={{ fontSize: '0.62rem', background: 'rgba(6, 182, 212, 0.2)', padding: '0.1rem 0.35rem', borderRadius: '4px', color: '#38bdf8' }}>AI CORRIDOR</span>
             </div>
             <div className="font-mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.2rem' }}>
-              ${prediction.target30D.toFixed(2)}
+              {predCurr}{prediction.target30D.toFixed(2)}
             </div>
             <div className="font-mono" style={{ fontSize: '0.74rem', color: isUpside ? '#34d399' : '#f87171', marginTop: '0.25rem', fontWeight: 700 }}>
               {isUpside ? '+' : ''}{prediction.target30DUpside.toFixed(2)}% Projected
@@ -703,7 +727,7 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
               </span>
             </div>
             <div className="font-mono" style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.2rem' }}>
-              ${(prediction.fairValuePrice || prediction.currentPrice).toFixed(2)}
+              {predCurr}{(prediction.fairValuePrice || prediction.currentPrice).toFixed(2)}
             </div>
             <div className="font-mono" style={{ fontSize: '0.74rem', color: valuationColor, marginTop: '0.25rem', fontWeight: 700 }}>
               {prediction.marginOfSafety >= 0 ? '+' : ''}{prediction.marginOfSafety}% Margin of Safety
@@ -714,7 +738,7 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
           <div className="prediction-stat-card" style={{ animationDelay: '0.25s' }}>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>90% Statistical Corridor</div>
             <div className="font-mono" style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-secondary)', marginTop: '0.35rem' }}>
-              ${prediction.lowerTarget30D.toFixed(2)} – ${prediction.upperTarget30D.toFixed(2)}
+              {predCurr}{prediction.lowerTarget30D.toFixed(2)} – {predCurr}{prediction.upperTarget30D.toFixed(2)}
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
               Support Floor to Bull Ceiling
@@ -783,7 +807,7 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
             <div>
               <div style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Intrinsic Fair Value</div>
               <div className="font-mono" style={{ fontSize: '1.1rem', fontWeight: 800, color: valuationColor, marginTop: '2px' }}>
-                ${(prediction.fairValuePrice || prediction.currentPrice).toFixed(2)}
+                {predCurr}{(prediction.fairValuePrice || prediction.currentPrice).toFixed(2)}
               </div>
               <div style={{ fontSize: '0.65rem', color: '#64748b' }}>
                 vs Live Market: ${prediction.currentPrice.toFixed(2)}
@@ -837,14 +861,14 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
             <div style={{ textAlign: 'left' }}>
               <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>Wall St Low Target</div>
               <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#f87171' }}>
-                ${ws.lowTarget.toFixed(2)}
+                {predCurr}{ws.lowTarget.toFixed(2)}
               </div>
             </div>
 
             <div style={{ textAlign: 'center', padding: '0.35rem 0.85rem', background: 'rgba(6, 182, 212, 0.14)', borderRadius: '6px', border: '1px solid rgba(6, 182, 212, 0.4)' }}>
               <div style={{ fontSize: '0.66rem', color: 'var(--accent-cyan)', fontWeight: 800 }}>AuraTrade 30D Target</div>
               <div style={{ fontSize: '1.15rem', fontWeight: 800, color: '#38bdf8' }}>
-                ${prediction.target30D.toFixed(2)}
+                {predCurr}{prediction.target30D.toFixed(2)}
               </div>
               <div style={{ fontSize: '0.68rem', color: '#34d399', fontWeight: 700 }}>
                 {prediction.target30DUpside >= 0 ? '+' : ''}{prediction.target30DUpside}% Expected
@@ -854,7 +878,7 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>Wall St 12M Mean</div>
               <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                ${ws.averageTarget.toFixed(2)}
+                {predCurr}{ws.averageTarget.toFixed(2)}
               </div>
               <div style={{ fontSize: '0.68rem', color: ws.upsidePercent >= 0 ? '#34d399' : '#f87171' }}>
                 +{ws.upsidePercent}% 12M Return
@@ -864,7 +888,7 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
             <div style={{ textAlign: 'right' }}>
               <div style={{ fontSize: '0.66rem', color: '#94a3b8' }}>Wall St High Target</div>
               <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#34d399' }}>
-                ${ws.highTarget.toFixed(2)}
+                {predCurr}{ws.highTarget.toFixed(2)}
               </div>
             </div>
           </div>
@@ -1160,7 +1184,7 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px' }}>
                       <Check size={14} style={{ color: '#10b981', flexShrink: 0, marginTop: '2px' }} />
                       <span>
-                        <strong style={{ color: '#38bdf8' }}>Integrated Profit-Lock Protocol</strong> with 3.8:1+ asymmetric Reward-to-Risk ratio and mathematical stop-loss floor to prevent drawdown.
+                        <strong style={{ color: '#38bdf8' }}>Integrated AI Strategy Blueprint &amp; Target Guard</strong> with ATR-calibrated stop floors and past-record expectation scoring.
                       </span>
                     </div>
                   </td>

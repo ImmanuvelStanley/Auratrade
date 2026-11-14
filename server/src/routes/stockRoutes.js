@@ -157,24 +157,49 @@ router.get('/prediction/:symbol', async (req, res) => {
   }
 });
 
-// Auto Predictor: Scan all market assets and pick the best profitable locked asset minimizing risk
+// Auto Predictor: Scan all market assets and match the best asset to user's expected return, risk & horizon
 router.get('/auto-predictor', async (req, res) => {
   try {
     const riskMode = req.query.riskMode || 'balanced';
     const limit = parseInt(req.query.limit, 10) || 6;
-    const result = await predictionService.getAutoPredictorRanking({ riskMode, limit });
+    const horizon = req.query.horizon || '30d';
+    const targetReturn = req.query.targetReturn !== undefined ? parseFloat(req.query.targetReturn) : undefined;
+    const maxRisk = req.query.maxRisk !== undefined ? parseFloat(req.query.maxRisk) : undefined;
+    const region = req.query.region || 'all';
+    const sector = req.query.sector || 'all';
+    const budget = req.query.budget !== undefined ? parseFloat(req.query.budget) : 10000;
+    const result = await predictionService.getAutoPredictorRanking({
+      riskMode,
+      limit,
+      horizon,
+      targetReturn,
+      maxRisk,
+      region,
+      sector,
+      budget
+    });
     res.json(result);
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
 
-// Get individual asset Profit-Lock metrics (target price, stop loss floor, reward/risk ratio)
+// Get individual asset Strategy Blueprint metrics (target price, stop loss floor, reward/risk ratio & history)
 router.get('/profit-lock/:symbol', async (req, res) => {
   try {
     const symbol = req.params.symbol.toUpperCase().trim();
     const strategy = req.query.strategy || req.query.riskMode || 'balanced';
-    const lockData = await predictionService.getAssetProfitLock(symbol, strategy);
+    const horizon = req.query.horizon || '30d';
+    const targetReturn = req.query.targetReturn !== undefined ? parseFloat(req.query.targetReturn) : undefined;
+    const maxRisk = req.query.maxRisk !== undefined ? parseFloat(req.query.maxRisk) : undefined;
+    const budget = req.query.budget !== undefined ? parseFloat(req.query.budget) : 10000;
+    const lockData = await predictionService.getAssetProfitLock(symbol, {
+      riskMode: strategy,
+      horizon,
+      targetReturn,
+      maxRisk,
+      budget
+    });
     res.json({ success: true, data: lockData });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

@@ -1,6 +1,7 @@
 import { defaultAllCompanies } from '../data/defaultAllCompanies';
 import { DEFAULT_GLOBAL_INDICES_DATA } from '../data/defaultGlobalIndices';
 import { generateLocalQuantResponse } from '../utils/aiQuantEngine';
+import { generateClientPrediction, getClientStrategyPlan, getClientAutoPredictorRanking } from '../utils/predictorEngine';
 
 /**
  * Institutional-Grade Client Fallback Data Engine
@@ -630,49 +631,43 @@ export function handleFallbackRequest(url, options = {}) {
     const range = parsed.searchParams.get('range') || '1D';
     body = { success: true, symbol, range, candles: generateCandles(symbol, range) };
   } else if (path.includes('/stocks/prediction/')) {
-    const symbol = path.split('/prediction/')[1] || 'GOLD.MCX';
+    const symbol = decodeURIComponent(path.split('/prediction/')[1]?.split('?')[0] || 'GOLD.MCX');
     const q = getClientQuote(symbol);
     body = {
       success: true,
-      data: {
-        symbol,
-        currentPrice: q.price,
-        direction: q.change >= 0 ? 'BULLISH' : 'BULLISH_REVERSAL',
-        confidenceScore: 88.5,
-        targetPrice30d: parseFloat((q.price * 1.085).toFixed(2)),
-        targetPrice90d: parseFloat((q.price * 1.182).toFixed(2)),
-        stopLossFloor: parseFloat((q.price * 0.945).toFixed(2)),
-        rsi: 58.4,
-        macdSignal: 'Bullish Divergence',
-        recommendation: 'STRONG ACCUMULATE',
-        reasoning: 'Strong institutional liquidity inflows with multi-timeframe moving average confluence.'
-      }
+      data: generateClientPrediction(symbol, q)
     };
   } else if (path.includes('/stocks/profit-lock/')) {
-    const symbol = path.split('/profit-lock/')[1] || 'GOLD.MCX';
+    const symbol = decodeURIComponent(path.split('/profit-lock/')[1]?.split('?')[0] || 'GOLD.MCX');
     const q = getClientQuote(symbol);
+    const riskMode = parsed.searchParams.get('riskMode') || 'balanced';
+    const horizon = parsed.searchParams.get('horizon') || '30d';
+    const targetReturn = parsed.searchParams.get('targetReturn') ? parseFloat(parsed.searchParams.get('targetReturn')) : undefined;
+    const maxRisk = parsed.searchParams.get('maxRisk') ? parseFloat(parsed.searchParams.get('maxRisk')) : undefined;
+    const budget = parsed.searchParams.get('budget') ? parseFloat(parsed.searchParams.get('budget')) : undefined;
     body = {
       success: true,
-      data: {
-        symbol,
-        entryPrice: q.price,
-        target1: parseFloat((q.price * 1.05).toFixed(2)),
-        target2: parseFloat((q.price * 1.12).toFixed(2)),
-        stopLoss: parseFloat((q.price * 0.96).toFixed(2)),
-        riskRewardRatio: '3.25 : 1',
-        profitLockLevel: 'Target 1 Guaranteed Floor'
-      }
+      data: getClientStrategyPlan(symbol, { riskMode, horizon, targetReturn, maxRisk, budget }, q)
     };
   } else if (path.includes('/stocks/auto-predictor')) {
-    body = {
-      success: true,
-      data: [
-        { symbol: 'NVDA', name: 'NVIDIA Corp.', score: 98, returnForecast: '+14.2%', risk: 'Low / Bluechip' },
-        { symbol: 'GOLD.MCX', name: 'MCX Gold (10g)', score: 95, returnForecast: '+11.8%', risk: 'Safe Haven' },
-        { symbol: 'RELIANCE', name: 'Reliance Industries', score: 92, returnForecast: '+9.4%', risk: 'Low' },
-        { symbol: 'AAPL', name: 'Apple Inc.', score: 90, returnForecast: '+8.6%', risk: 'Low' }
-      ]
-    };
+    const riskMode = parsed.searchParams.get('riskMode') || 'balanced';
+    const limit = parseInt(parsed.searchParams.get('limit') || '6', 10);
+    const horizon = parsed.searchParams.get('horizon') || '30d';
+    const region = parsed.searchParams.get('region') || 'all';
+    const sector = parsed.searchParams.get('sector') || 'all';
+    const targetReturn = parsed.searchParams.get('targetReturn') ? parseFloat(parsed.searchParams.get('targetReturn')) : undefined;
+    const maxRisk = parsed.searchParams.get('maxRisk') ? parseFloat(parsed.searchParams.get('maxRisk')) : undefined;
+    const budget = parsed.searchParams.get('budget') ? parseFloat(parsed.searchParams.get('budget')) : undefined;
+    body = getClientAutoPredictorRanking({
+      riskMode,
+      limit,
+      horizon,
+      region,
+      sector,
+      targetReturn,
+      maxRisk,
+      budget
+    });
   } else if (path.includes('/watchlist')) {
     body = { success: true, data: ['AAPL', 'NVDA', 'TSLA', 'MSFT', 'AMZN', 'GOLD.MCX', 'NIFTY 50'] };
   } else if (path.includes('/alerts/notifications')) {
