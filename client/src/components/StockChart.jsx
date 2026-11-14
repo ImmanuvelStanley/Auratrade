@@ -1073,8 +1073,14 @@ export const StockChart = React.memo(function StockChart({
       {/* Chart Control Bar (Fixed Single Line on Desktop, Responsive Wrap on Mobile) */}
       <div className="glass-card-header chart-header-row" style={{ gap: '0.65rem', minWidth: 0, width: '100%', boxSizing: 'border-box' }}>
         <div className="chart-header-left" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0, flexWrap: 'wrap' }}>
-          <span className="glass-card-title font-mono chart-title-text" style={{ fontSize: '1.05rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}>
-            <CountryFlag symbol={symbol} size="sm" />
+          <span className="glass-card-title font-mono chart-title-text" style={{ fontSize: '1.05rem', fontWeight: 800, display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
+            <CountryFlag
+              country={liveQuote?.country}
+              countryCode={liveQuote?.countryCode}
+              countryFlag={liveQuote?.countryFlag}
+              symbol={symbol}
+              size="md"
+            />
             <span>{symbol} Interactive Chart</span>
           </span>
           {clampedPan === 0 ? (

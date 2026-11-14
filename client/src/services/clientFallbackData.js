@@ -14,6 +14,9 @@ const liveQuotes = {};
   liveQuotes[c.symbol.toUpperCase()] = {
     symbol: c.symbol.toUpperCase(),
     name: c.name,
+    country: c.country,
+    countryCode: c.countryCode,
+    countryFlag: c.countryFlag,
     price: c.price,
     change: c.change,
     changePercent: c.changePercent,

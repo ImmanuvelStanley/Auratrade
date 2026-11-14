@@ -1,4 +1,5 @@
 import React from 'react';
+import { defaultAllCompanies } from '../data/defaultAllCompanies';
 
 /**
  * Institutional Vector SVG National Flags & Market Identification
@@ -217,6 +218,82 @@ const FLAG_COMPONENTS = {
   )
 };
 
+const COUNTRY_NAMES = {
+  US: 'United States',
+  IN: 'India',
+  JP: 'Japan',
+  GB: 'United Kingdom',
+  DE: 'Germany',
+  FR: 'France',
+  CN: 'China',
+  HK: 'Hong Kong',
+  TW: 'Taiwan',
+  KR: 'South Korea',
+  NL: 'Netherlands',
+  CH: 'Switzerland',
+  SA: 'Saudi Arabia',
+  BR: 'Brazil',
+  AU: 'Australia',
+  CA: 'Canada',
+  SE: 'Sweden',
+  DK: 'Denmark',
+  IT: 'Italy',
+  EU: 'European Union',
+  UY: 'Latin America',
+  METAL: 'Precious Metals',
+  GL: 'Global / INTL'
+};
+
+// Build instant O(1) lookup map for all workstation companies, ETFs, and indices
+const SYMBOL_COUNTRY_MAP = (() => {
+  const map = new Map();
+  (defaultAllCompanies?.companies || []).forEach((c) => {
+    const sym = String(c.symbol || '').trim().toUpperCase();
+    const code = String(c.countryCode || '').trim().toUpperCase();
+    if (sym && code && code !== 'GL' && FLAG_COMPONENTS[code]) {
+      map.set(sym, {
+        code,
+        name: c.country || COUNTRY_NAMES[code] || code,
+        flag: c.countryFlag || ''
+      });
+    }
+  });
+
+  const extraMappings = [
+    [['S&P 500', '^GSPC', 'NASDAQ', '^IXIC', 'DOW JONES', '^DJI', 'RUSSELL 2000', '^RUT', 'VIX', '^VIX', 'SPY', 'QQQ', 'DIA', 'IWM', 'TLT', 'XLK', 'XLF', 'SOXX', 'GLD', 'BRK-B', 'BRK.B'], 'US', '🇺🇸'],
+    [['NIFTY 50', '^NSEI', 'BANK NIFTY', '^NSEBANK', 'SENSEX', '^BSESN', 'INDIA VIX', '^INDIAVIX', 'NIFTY IT', 'GOLD.MCX', 'SILVER.MCX', 'GOLDBEES.NS', 'SILVERBEES.NS', 'INDA'], 'IN', '🇮🇳'],
+    [['FTSE 100', '^FTSE'], 'GB', '🇬🇧'],
+    [['DAX 40', '^GDAXI'], 'DE', '🇩🇪'],
+    [['CAC 40', '^FCHI'], 'FR', '🇫🇷'],
+    [['NIKKEI 225', '^N225', 'EWJ'], 'JP', '🇯🇵'],
+    [['HANG SENG', '^HSI'], 'HK', '🇭🇰'],
+    [['ASX 200', '^AXJO', 'BHP'], 'AU', '🇦🇺'],
+    [['SHANGHAI', '000001.SS'], 'CN', '🇨🇳'],
+    [['KOSPI', '^KS11', 'SSNLF', 'HXSCF'], 'KR', '🇰🇷'],
+    [['TAIEX', '^TWII', 'TSM', 'MDTKY'], 'TW', '🇹🇼'],
+    [['VGK'], 'EU', '🇪🇺'],
+    [['MELI'], 'UY', '🇺🇾'],
+    [['ARMCO'], 'SA', '🇸🇦'],
+    [['SPOT'], 'SE', '🇸🇪'],
+    [['RACE'], 'IT', '🇮🇹'],
+    [['SHOP'], 'CA', '🇨🇦'],
+    [['NVO'], 'DK', '🇩🇰'],
+    [['ASML', 'STLA'], 'NL', '🇳🇱'],
+    [['PBR', 'VALE'], 'BR', '🇧🇷'],
+    [['GOLD', 'SILVER', 'XAU/USD', 'XAG/USD', 'GC=F', 'SI=F'], 'METAL', '🪙']
+  ];
+
+  extraMappings.forEach(([syms, code, flag]) => {
+    syms.forEach((sym) => {
+      if (!map.has(sym)) {
+        map.set(sym, { code, name: COUNTRY_NAMES[code] || code, flag });
+      }
+    });
+  });
+
+  return map;
+})();
+
 /**
  * Universal Country & Market Resolver
  */
@@ -225,50 +302,25 @@ export function resolveCountryInfo(country = '', symbol = '', countryCode = '', 
   const s = String(symbol || '').trim().toUpperCase();
   const codeParam = String(countryCode || '').trim().toUpperCase();
 
-  // 1. Direct code matching
-  if (codeParam && FLAG_COMPONENTS[codeParam]) {
-    const names = {
-      US: 'United States', IN: 'India', JP: 'Japan', GB: 'United Kingdom',
-      DE: 'Germany', FR: 'France', CN: 'China', HK: 'Hong Kong', TW: 'Taiwan',
-      KR: 'South Korea', NL: 'Netherlands', CH: 'Switzerland', SA: 'Saudi Arabia',
-      BR: 'Brazil', AU: 'Australia', CA: 'Canada', SE: 'Sweden', DK: 'Denmark',
-      IT: 'Italy', EU: 'European Union', UY: 'Latin America', GL: 'Global / INTL'
-    };
-    return { code: codeParam, name: names[codeParam] || country || codeParam, flag: countryFlag || '🌐' };
+  // 1. Direct non-generic ISO countryCode matching
+  if (codeParam && codeParam !== 'GL' && FLAG_COMPONENTS[codeParam]) {
+    return { code: codeParam, name: COUNTRY_NAMES[codeParam] || country || codeParam, flag: countryFlag || '🌐' };
   }
 
-  // 2. Specific market assets / tickers
-  if (s.endsWith('.NS') || s.endsWith('.BO') || s.endsWith('.MCX') || s === 'NIFTY 50' || s === 'BANK NIFTY' || s === 'SENSEX' || s === 'INDIA VIX') {
-    return { code: 'IN', name: 'India', flag: '🇮🇳' };
+  // 2. Exact workstation company / index / ETF lookup by ticker symbol
+  if (s && SYMBOL_COUNTRY_MAP.has(s)) {
+    return SYMBOL_COUNTRY_MAP.get(s);
   }
-  if (s === 'GOLD.MCX' || s === 'SILVER.MCX' || s === 'GOLDBEES.NS' || s === 'SILVERBEES.NS') {
+
+  // 3. Exchange suffix & digital/asset patterns
+  if (s.endsWith('.NS') || s.endsWith('.BO') || s.endsWith('.MCX')) {
     return { code: 'IN', name: 'India', flag: '🇮🇳' };
-  }
-  if (s === 'GOLD' || s === 'SILVER') {
-    return { code: 'METAL', name: 'Precious Metals', flag: '🪙' };
   }
   if (s === 'BTC' || s === 'ETH' || s === 'SOL' || s.includes('BTC') || s.includes('ETH')) {
     return { code: 'GL', name: 'Digital Asset (Crypto)', flag: '🌐' };
   }
-  if (s === 'SPY' || s === 'QQQ' || s === 'DIA' || s === 'IWM' || s === 'TLT' || s === 'XLK' || s === 'XLF' || s === 'SOXX' || s === 'GLD') {
-    return { code: 'US', name: 'United States', flag: '🇺🇸' };
-  }
-  if (s === 'INDA') return { code: 'IN', name: 'India (MSCI ETF)', flag: '🇮🇳' };
-  if (s === 'EWJ') return { code: 'JP', name: 'Japan (MSCI ETF)', flag: '🇯🇵' };
-  if (s === 'VGK') return { code: 'EU', name: 'Europe (FTSE ETF)', flag: '🇪🇺' };
-  if (s === 'MELI') return { code: 'UY', name: 'Latin America', flag: '🇺🇾' };
-  if (s === 'ARMCO') return { code: 'SA', name: 'Saudi Arabia', flag: '🇸🇦' };
-  if (s === 'SPOT') return { code: 'SE', name: 'Sweden', flag: '🇸🇪' };
-  if (s === 'BHP') return { code: 'AU', name: 'Australia', flag: '🇦🇺' };
-  if (s === 'RACE') return { code: 'IT', name: 'Italy', flag: '🇮🇹' };
-  if (s === 'SHOP') return { code: 'CA', name: 'Canada', flag: '🇨🇦' };
-  if (s === 'NVO') return { code: 'DK', name: 'Denmark', flag: '🇩🇰' };
-  if (s === 'ASML' || s === 'STLA') return { code: 'NL', name: 'Netherlands', flag: '🇳🇱' };
-  if (s === 'TSM' || s === 'MDTKY') return { code: 'TW', name: 'Taiwan', flag: '🇹🇼' };
-  if (s === 'SSNLF' || s === 'HXSCF') return { code: 'KR', name: 'South Korea', flag: '🇰🇷' };
-  if (s === 'PBR' || s === 'VALE') return { code: 'BR', name: 'Brazil', flag: '🇧🇷' };
 
-  // 3. Country string matching
+  // 4. Country string & exchange suffix matching
   if (c.includes('united states') || c === 'usa' || c === 'us' || c.includes('global / us')) {
     return { code: 'US', name: 'United States', flag: '🇺🇸' };
   }
