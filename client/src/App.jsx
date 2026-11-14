@@ -441,10 +441,7 @@ export function App() {
       {/* Top Navigation */}
       <Header onToggleSidebar={handleToggleMobileSidebar} />
 
-      {/* Market Indices Ribbon (Ticker Tape) */}
-      <MarketRibbon onSelectSymbol={handleOpenDeepRecord} />
-
-      {/* Institutional Shell Body: Auto-Expanding Hover Sidebar + Full-Width Workspace */}
+      {/* Institutional Shell Body: Fixed Auto-Expanding Hover Sidebar + Full-Width Workspace Column */}
       <div className="desk-shell-layout">
         <TopicSidebar
           activeTab={activeTab}
@@ -456,9 +453,13 @@ export function App() {
           watchlistCount={watchlistSymbols.length}
         />
 
-        {/* Main Container */}
-        <main className="main-content">
-          {/* Conditional Tab Rendering - Protected with Tab-Level Error Boundary */}
+        <div className="desk-main-column">
+          {/* Market Indices Ribbon (Ticker Tape) */}
+          <MarketRibbon onSelectSymbol={handleOpenDeepRecord} />
+
+          {/* Main Container */}
+          <main className="main-content">
+            {/* Conditional Tab Rendering - Protected with Tab-Level Error Boundary */}
           <ErrorBoundary key={activeTab}>
           {activeTab === 'dashboard' && (
             <div className="motion-entry" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
@@ -608,25 +609,26 @@ export function App() {
               onSelectSymbol={handleSelectSymbolAndGoDashboard}
             />
           )}
-        </ErrorBoundary>
-      </main>
-      </div>
+          </ErrorBoundary>
+          </main>
 
-      {/* Global Institutional Footer & Copyright */}
-      <Footer
-        onNavigateTab={(tab) => {
-          setActiveTab(tab);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        onOpenAutoPredictor={handleOpenAutoPredictor}
-        onOpenTradeModal={() => {
-          setTradeTargetSymbol(activeSymbol || 'AAPL');
-          setIsTradeModalOpen(true);
-        }}
-        onOpenAlertModal={() => {
-          handleOpenAlertModal(activeSymbol || 'AAPL');
-        }}
-      />
+          {/* Global Institutional Footer & Copyright */}
+          <Footer
+            onNavigateTab={(tab) => {
+              setActiveTab(tab);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onOpenAutoPredictor={handleOpenAutoPredictor}
+            onOpenTradeModal={() => {
+              setTradeTargetSymbol(activeSymbol || 'AAPL');
+              setIsTradeModalOpen(true);
+            }}
+            onOpenAlertModal={() => {
+              handleOpenAlertModal(activeSymbol || 'AAPL');
+            }}
+          />
+        </div>
+      </div>
 
       {/* Modals */}
       {isAlertModalOpen && (

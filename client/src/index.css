@@ -161,7 +161,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
-  overflow-x: hidden;
+  overflow-x: clip;
   position: relative;
 }
 
@@ -3155,14 +3155,14 @@ select option:checked {
   html,
   body,
   #root {
-    overflow-x: hidden !important;
+    overflow-x: clip !important;
     width: 100% !important;
     max-width: 100vw !important;
   }
   .app-container {
     width: 100% !important;
     max-width: 100vw !important;
-    overflow-x: hidden !important;
+    overflow-x: clip !important;
   }
   .main-content {
     padding: 0.85rem 0.75rem 3.5rem !important;
@@ -8026,6 +8026,14 @@ canvas {
   position: relative;
 }
 
+.desk-main-column {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
 .desk-sidebar-slot {
   width: 68px;
   flex: 0 0 68px;
@@ -8037,9 +8045,11 @@ canvas {
   width: 68px;
   background: linear-gradient(180deg, rgba(10, 17, 32, 0.96) 0%, rgba(7, 12, 23, 0.99) 100%);
   border-right: 1px solid var(--border-subtle);
-  position: sticky;
-  top: 56px;
-  height: calc(100vh - 56px);
+  position: fixed;
+  left: 0;
+  top: 60px;
+  bottom: 0;
+  height: auto;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -8054,6 +8064,12 @@ canvas {
 }
 
 @media (min-width: 1025px) {
+  .navbar {
+    height: 60px;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
   .desk-sidebar:hover {
     width: 256px;
     backdrop-filter: blur(16px);
