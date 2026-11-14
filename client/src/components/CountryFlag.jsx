@@ -182,6 +182,14 @@ const FLAG_COMPONENTS = {
       <rect y="8.2" width="30" height="3.5" fill="#FFFFFF" />
     </svg>
   ),
+  ES: (
+    <svg viewBox="0 0 30 20" width="100%" height="100%" aria-hidden="true">
+      <rect width="30" height="5" fill="#AA151B" />
+      <rect y="5" width="30" height="10" fill="#F1BF00" />
+      <rect y="15" width="30" height="5" fill="#AA151B" />
+      <rect x="7.5" y="7.5" width="3.2" height="5" rx="0.8" fill="#AA151B" />
+    </svg>
+  ),
   EU: (
     <svg viewBox="0 0 30 20" width="100%" height="100%" aria-hidden="true">
       <rect width="30" height="20" fill="#003399" />
@@ -237,6 +245,7 @@ const COUNTRY_NAMES = {
   CA: 'Canada',
   SE: 'Sweden',
   DK: 'Denmark',
+  ES: 'Spain',
   IT: 'Italy',
   EU: 'European Union',
   UY: 'Latin America',
@@ -343,6 +352,7 @@ export function resolveCountryInfo(country = '', symbol = '', countryCode = '', 
   if (c.includes('canada') || s.endsWith('.TO')) return { code: 'CA', name: 'Canada', flag: '🇨🇦' };
   if (c.includes('sweden')) return { code: 'SE', name: 'Sweden', flag: '🇸🇪' };
   if (c.includes('denmark')) return { code: 'DK', name: 'Denmark', flag: '🇩🇰' };
+  if (c.includes('spain') || s.endsWith('.MC')) return { code: 'ES', name: 'Spain', flag: '🇪🇸' };
   if (c.includes('italy') || s.endsWith('.MI')) return { code: 'IT', name: 'Italy', flag: '🇮🇹' };
   if (c.includes('europe')) return { code: 'EU', name: 'Europe', flag: '🇪🇺' };
   if (c.includes('latin america')) return { code: 'UY', name: 'Latin America', flag: '🌎' };

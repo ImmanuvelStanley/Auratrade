@@ -44,6 +44,7 @@ const getCountryCode = (country, symbol) => {
   if (c.includes('japan')) return 'JP';
   if (c.includes('netherlands')) return 'NL';
   if (c.includes('denmark')) return 'DK';
+  if (c.includes('spain')) return 'ES';
   if (c.includes('germany')) return 'DE';
   if (c.includes('france')) return 'FR';
   if (c.includes('united kingdom') || c.includes('uk')) return 'GB';
@@ -57,6 +58,23 @@ const getCountryCode = (country, symbol) => {
   if (c.includes('china') || c.includes('hong kong')) return 'CN';
   if (c.includes('global') || c.includes('crypto') || c.includes('digital') || c.includes('etf') || c.includes('europe')) return 'GL';
   return String(country).trim().substring(0, 2).toUpperCase() || 'GL';
+};
+
+const getCurrencyPrefix = (currency, symbol = '') => {
+  if (symbol === 'VIX' || symbol === 'INDIA VIX' || symbol === 'DXY') return '';
+  switch (String(currency || 'USD').toUpperCase()) {
+    case 'INR': return '₹';
+    case 'EUR': return '€';
+    case 'GBP': return '£';
+    case 'JPY':
+    case 'CNY': return '¥';
+    case 'HKD': return 'HK$';
+    case 'AUD': return 'A$';
+    case 'CAD': return 'CA$';
+    case 'CHF': return 'CHF ';
+    case 'BRL': return 'R$';
+    default: return '$';
+  }
 };
 
 // ============================================================================
@@ -102,6 +120,7 @@ function ComparisonModal({ isOpen, onClose, symbols, allCompanies, onSelectSymbo
             const posPercent = Math.min(100, Math.max(0, ((price - low52) / rangeDiff) * 100));
             const forecastGain = typeof c.forecastGainPercent === 'number' ? c.forecastGainPercent : (Number(c.forecastGainPercent) || 7.5);
             const forecastTarget = typeof c.forecastPrice30d === 'number' ? c.forecastPrice30d : parseFloat((price * (1 + forecastGain / 100)).toFixed(2));
+            const currSym = getCurrencyPrefix(c.currency, c.symbol);
 
             return (
               <div key={c.symbol} className="comparison-column">
@@ -139,7 +158,7 @@ function ComparisonModal({ isOpen, onClose, symbols, allCompanies, onSelectSymbo
                   </div>
                   <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: '0.25rem' }}>
                     <span className={`tick-text ${c.lastTickDirection || 'neutral'} font-mono`} style={{ fontSize: '1.35rem', fontWeight: 800 }}>
-                      ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {currSym}{price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </span>
                     <span className={`quote-change-pill ${isPos ? 'bull' : 'bear'}`} style={{ fontSize: '0.75rem', padding: '0.15rem 0.45rem' }}>
                       {isPos ? '+' : ''}{changePercent.toFixed(2)}%
@@ -174,7 +193,7 @@ function ComparisonModal({ isOpen, onClose, symbols, allCompanies, onSelectSymbo
                   <div className="comparison-metric-row">
                     <span className="comparison-metric-label">30D AI Expected Target</span>
                     <span className="font-mono" style={{ color: 'var(--bull-green)', fontWeight: 700 }}>
-                      ${forecastTarget.toFixed(2)} (+{forecastGain}%)
+                      {currSym}{forecastTarget.toFixed(2)} (+{forecastGain}%)
                     </span>
                   </div>
                   <div className="comparison-metric-row">
@@ -188,8 +207,8 @@ function ComparisonModal({ isOpen, onClose, symbols, allCompanies, onSelectSymbo
                 {/* 52-Week Range */}
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
-                    <span>52W Low: ${c.low52}</span>
-                    <span>52W High: ${c.high52}</span>
+                    <span>52W Low: {currSym}{c.low52}</span>
+                    <span>52W High: {currSym}{c.high52}</span>
                   </div>
                   <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', position: 'relative' }}>
                     <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${posPercent}%`, background: 'linear-gradient(90deg, #06b6d4, #10b981)', borderRadius: '3px' }} />
@@ -266,6 +285,7 @@ const MarketTableRow = React.memo(
     const dayRangeDiff = dayHigh - dayLow || 1;
     const dayPosPercent = Math.min(100, Math.max(0, ((price - dayLow) / dayRangeDiff) * 100));
     const prevClose = Number(c.previousClose) || (price ? parseFloat((price - change).toFixed(2)) : 0);
+    const currSym = getCurrencyPrefix(c.currency, c.symbol);
     const formatVolume = (v) => { if (v >= 1e9) return (v / 1e9).toFixed(1) + 'B'; if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M'; if (v >= 1e3) return (v / 1e3).toFixed(1) + 'K'; return String(v); };
 
     return (
@@ -379,7 +399,7 @@ const MarketTableRow = React.memo(
         {/* Live Price with verified indicator */}
         <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: '0.95rem' }}>
           <div className={`tick-text ${c.lastTickDirection || 'neutral'}`}>
-            ${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {currSym}{price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div
             style={{
@@ -417,8 +437,8 @@ const MarketTableRow = React.memo(
             <td style={{ minWidth: '120px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                  <span>${low52}</span>
-                  <span>${high52}</span>
+                  <span>{currSym}{low52}</span>
+                  <span>{currSym}{high52}</span>
                 </div>
                 <div style={{ width: '100%', height: '5px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '3px', position: 'relative', overflow: 'hidden' }}>
                   <div
@@ -440,8 +460,8 @@ const MarketTableRow = React.memo(
             <td style={{ minWidth: '110px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
-                  <span>${dayLow}</span>
-                  <span>${dayHigh}</span>
+                  <span>{currSym}{dayLow}</span>
+                  <span>{currSym}{dayHigh}</span>
                 </div>
                 <div style={{ width: '100%', height: '4px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '2px', position: 'relative', overflow: 'hidden' }}>
                   <div
@@ -498,7 +518,7 @@ const MarketTableRow = React.memo(
             {/* 30-Day AI Target & Gain */}
             <td style={{ textAlign: 'right' }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--bull-green)', fontSize: '0.88rem' }}>
-                ${forecastTarget.toFixed(2)}
+                {currSym}{forecastTarget.toFixed(2)}
               </div>
               <div style={{ fontSize: '0.7rem', color: 'var(--bull-green)', fontWeight: 600 }}>
                 +{forecastGain}% Expected
@@ -521,17 +541,17 @@ const MarketTableRow = React.memo(
 
             {/* Previous Close */}
             <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-              ${prevClose.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {currSym}{prevClose.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </td>
 
             {/* 52W Low */}
             <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-              ${low52}
+              {currSym}{low52}
             </td>
 
             {/* 52W High */}
             <td style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
-              ${high52}
+              {currSym}{high52}
             </td>
 
             {/* Risk Profile */}
@@ -548,7 +568,7 @@ const MarketTableRow = React.memo(
             {/* 30-Day AI Target */}
             <td style={{ textAlign: 'right' }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--bull-green)', fontSize: '0.9rem' }}>
-                ${forecastTarget.toFixed(2)}
+                {currSym}{forecastTarget.toFixed(2)}
               </div>
             </td>
 
@@ -686,7 +706,7 @@ const MarketInvestorCard = React.memo(
     const dayRangeDiff = dayHigh - dayLow || 1;
     const dayPosPercent = Math.min(100, Math.max(0, ((price - dayLow) / dayRangeDiff) * 100));
     const prevClose = Number(c.previousClose) || (price ? parseFloat((price - change).toFixed(2)) : 0);
-    const currSym = c.currency === 'INR' ? '₹' : c.currency === 'EUR' ? '€' : c.currency === 'GBP' ? '£' : c.currency === 'JPY' ? '¥' : '$';
+    const currSym = getCurrencyPrefix(c.currency, c.symbol);
     const fmtNum = (val) => Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const fmtCompact = (val) => {
       const n = Number(val);
@@ -1369,7 +1389,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
       }
     }
 
-    const totalCount = seen.size || overview?.totalCount || 166;
+    const totalCount = seen.size || overview?.totalCount || defaultAllCompanies?.overview?.totalCount || 309;
     const bullishRatio = totalCount > 0 ? Math.round((bullishCount / totalCount) * 100) : (overview?.bullishRatio || 95);
 
     return {
@@ -1718,7 +1738,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
   }, [onRemoveFromWatchlist]);
 
   const regions = [
-    { id: 'all', label: overview?.totalCount ? `All Markets (${overview.totalCount})` : 'All Markets (166)' },
+    { id: 'all', label: overview?.totalCount ? `All Markets (${overview.totalCount})` : `All Markets (${defaultAllCompanies?.overview?.totalCount || 309})` },
     { id: 'north_america', label: 'North America', flagCode: 'US' },
     { id: 'europe', label: 'Europe', flagCode: 'EU' },
     { id: 'asiapac', label: 'Asia-Pacific', flagCode: 'JP' },
@@ -1753,14 +1773,19 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
     'Consumer Staples',
     'Consumer Cyclical',
     'Energy',
+    'Utilities',
+    'Real Estate',
+    'Automotive',
     'Industrial & Aerospace',
     'Industrials',
     'Basic Materials',
     'Entertainment',
     'Telecommunications',
+    'Market Index',
     'Index ETF',
     'Digital Asset',
-    'Commodity'
+    'Commodity',
+    'Forex'
   ];
 
   return (
@@ -1821,10 +1846,10 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
                 </span>
               </div>
               <div className="overview-stat-val font-mono tabular-nums" style={{ color: 'var(--accent-cyan)' }}>
-                {liveOverview?.totalMarketCapFormatted || overview?.totalMarketCapFormatted || '$166.96T'}
+                {liveOverview?.totalMarketCapFormatted || overview?.totalMarketCapFormatted || defaultAllCompanies?.overview?.totalMarketCapFormatted || '$181.20T'}
               </div>
               <div className="overview-stat-sub">
-                Across {liveOverview?.totalCount || overview?.totalCount || 166}+ Premier Global Assets
+                Across {liveOverview?.totalCount || overview?.totalCount || defaultAllCompanies?.overview?.totalCount || 309}+ Premier Global Assets
               </div>
             </div>
 

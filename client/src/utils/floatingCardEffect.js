@@ -28,3 +28,4 @@ export const floatingCardEvents = {
   onMouseMove: handleFloatingCardMove,
   onMouseLeave: handleFloatingCardLeave
 };
+

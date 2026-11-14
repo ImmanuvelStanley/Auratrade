@@ -569,7 +569,59 @@ export function handleFallbackRequest(url, options = {}) {
   } else if (path.includes('/stocks/global-indices')) {
     body = { success: true, data: DEFAULT_GLOBAL_INDICES_DATA };
   } else if (path.includes('/stocks/all-markets')) {
-    body = { success: true, data: defaultAllCompanies };
+    const region = (parsed.searchParams.get('region') || 'all').toLowerCase();
+    const tier = (parsed.searchParams.get('tier') || 'all').toLowerCase();
+    const sector = (parsed.searchParams.get('sector') || 'all').toLowerCase();
+    const sortBy = parsed.searchParams.get('sortBy') || 'marketCap';
+    const order = parsed.searchParams.get('order') || 'desc';
+    const search = (parsed.searchParams.get('search') || '').trim().toUpperCase();
+
+    const allList = defaultAllCompanies?.companies || [];
+    let list = [...allList];
+    if (region && region !== 'all') {
+      list = list.filter((c) => (c.region || '').toLowerCase() === region);
+    }
+    if (tier && tier !== 'all') {
+      list = list.filter((c) => (c.tier || '').toLowerCase().includes(tier));
+    }
+    if (sector && sector !== 'all') {
+      list = list.filter((c) => (c.sector || '').toLowerCase() === sector);
+    }
+    if (search) {
+      list = list.filter((c) =>
+        c.symbol?.toUpperCase().includes(search) ||
+        c.name?.toUpperCase().includes(search) ||
+        (Array.isArray(c.aliases) && c.aliases.some((a) => String(a).toUpperCase().includes(search))) ||
+        c.country?.toUpperCase().includes(search) ||
+        c.sector?.toUpperCase().includes(search)
+      );
+    }
+    list.sort((a, b) => {
+      let cmp = 0;
+      switch (sortBy) {
+        case 'price': cmp = (b.price || 0) - (a.price || 0); break;
+        case 'changePercent': cmp = (b.changePercent || 0) - (a.changePercent || 0); break;
+        case 'forecastGain': cmp = (b.forecastGainPercent || 0) - (a.forecastGainPercent || 0); break;
+        case 'rating': cmp = (b.ratingScore || 0) - (a.ratingScore || 0); break;
+        case 'peRatio': cmp = (Number(b.peRatio) || 0) - (Number(a.peRatio) || 0); break;
+        case 'volume': cmp = (b.volume || 0) - (a.volume || 0); break;
+        case 'dividendYield': cmp = (parseFloat(b.dividendYield) || 0) - (parseFloat(a.dividendYield) || 0); break;
+        default: cmp = (b.marketCap || 0) - (a.marketCap || 0);
+      }
+      return order === 'asc' ? -cmp : cmp;
+    });
+    const ranked = list.map((item, idx) => ({ ...item, rank: idx + 1 }));
+    body = {
+      success: true,
+      data: {
+        overview: {
+          ...(defaultAllCompanies?.overview || {}),
+          totalCount: allList.length,
+          filteredCount: ranked.length
+        },
+        companies: ranked
+      }
+    };
   } else if (path.includes('/stocks/quote/')) {
     const symbol = path.split('/quote/')[1] || 'GOLD.MCX';
     body = { success: true, data: getClientQuote(symbol) };

@@ -169,11 +169,11 @@ export function resolveAssetProfile(symbol, liveQuotesMap = {}) {
   const price = Number(socketQuote?.price ?? catalogEntry?.price ?? fallbackQuote?.price ?? 150);
   const change = Number(socketQuote?.change ?? catalogEntry?.change ?? fallbackQuote?.change ?? 1.25);
   const changePercent = Number(socketQuote?.changePercent ?? catalogEntry?.changePercent ?? fallbackQuote?.changePercent ?? 0.82);
-  const currency = socketQuote?.currency || catalogEntry?.currency || fallbackQuote?.currency || (['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'SBIN', 'TATAMOTORS', 'GOLD.MCX', 'SILVER.MCX', 'NIFTY 50', 'SENSEX', 'BANK NIFTY'].includes(sym) ? 'INR' : 'USD');
-  const currSymbol = currency === 'INR' ? '₹' : '$';
+  const currency = socketQuote?.currency || catalogEntry?.currency || fallbackQuote?.currency || (['RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'SBIN', 'TATAMOTORS', 'GOLD.MCX', 'SILVER.MCX', 'NIFTY 50', 'NIFTY50', 'SENSEX', 'BANK NIFTY', 'BANKNIFTY'].includes(sym) ? 'INR' : 'USD');
+  const currSymbol = currency === 'INR' ? '₹' : currency === 'EUR' ? '€' : currency === 'GBP' ? '£' : currency === 'JPY' ? '¥' : currency === 'HKD' ? 'HK$' : currency === 'AUD' ? 'A$' : '$';
   const name = catalogEntry?.name || socketQuote?.name || fallbackQuote?.name || `${sym} Corp.`;
   const sector = catalogEntry?.sector || 'Institutional Equity';
-  const pe = catalogEntry?.pe || 26.4;
+  const pe = catalogEntry?.peRatio || catalogEntry?.pe || 26.4;
   const marketCap = catalogEntry?.marketCapFormatted || '$450B';
   const dayHigh = Number(socketQuote?.dayHigh ?? catalogEntry?.dayHigh ?? (price * 1.014));
   const dayLow = Number(socketQuote?.dayLow ?? catalogEntry?.dayLow ?? (price * 0.988));
