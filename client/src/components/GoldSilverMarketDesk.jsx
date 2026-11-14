@@ -3844,75 +3844,130 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
               </div>
 
               <div
+                className="decision-matrix-grid"
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(270px, 1fr))',
-                  gap: '1.25rem'
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(255px, 1fr))',
+                  gap: '1.1rem',
+                  alignItems: 'stretch'
                 }}
               >
                 {(investmentComparison || []).map((item) => (
                   <div
                     key={item.vehicle}
-                    className="glass-card"
+                    className="glass-card decision-matrix-card"
                     style={{
-                      padding: '1.25rem',
+                      padding: '1.15rem 1.2rem',
                       display: 'flex',
                       flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      border: '1px solid rgba(255, 255, 255, 0.08)'
+                      border: '1px solid rgba(255, 255, 255, 0.08)',
+                      height: '100%',
+                      boxSizing: 'border-box'
                     }}
                   >
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                        {item.iconType === 'physical' ? (
-                          <Award size={20} style={{ color: 'var(--warning-amber)', flexShrink: 0 }} />
-                        ) : item.iconType === 'etf' ? (
-                          <TrendingUp size={20} style={{ color: 'var(--bull-green)', flexShrink: 0 }} />
-                        ) : item.iconType === 'sgb' ? (
-                          <Landmark size={20} style={{ color: 'var(--accent-indigo)', flexShrink: 0 }} />
-                        ) : (
-                          <Zap size={20} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
-                        )}
-                        <h5 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 900, color: 'var(--text-primary)' }}>
-                          {item.vehicle}
-                        </h5>
-                      </div>
+                    <div
+                      className="decision-matrix-header"
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.55rem',
+                        minHeight: '2.25rem',
+                        paddingBottom: '0.7rem',
+                        marginBottom: '0.75rem',
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.07)'
+                      }}
+                    >
+                      {item.iconType === 'physical' ? (
+                        <Award size={19} style={{ color: 'var(--warning-amber)', flexShrink: 0 }} />
+                      ) : item.iconType === 'etf' ? (
+                        <TrendingUp size={19} style={{ color: 'var(--bull-green)', flexShrink: 0 }} />
+                      ) : item.iconType === 'sgb' ? (
+                        <Landmark size={19} style={{ color: 'var(--accent-indigo)', flexShrink: 0 }} />
+                      ) : (
+                        <Zap size={19} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
+                      )}
+                      <h5 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1.25 }}>
+                        {item.vehicle}
+                      </h5>
+                    </div>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.78rem', marginBottom: '1rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ color: 'var(--text-muted)' }}>Liquidity:</span>
-                          <strong style={{ color: 'var(--text-primary)' }}>{item.liquidity}</strong>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ color: 'var(--text-muted)' }}>Making Charges:</span>
-                          <strong style={{ color: item.makingCharges.startsWith('0%') ? 'var(--bull-green)' : 'var(--bear-red)' }}>
-                            {item.makingCharges}
+                    <div
+                      className="decision-matrix-rows"
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.55rem',
+                        fontSize: '0.78rem',
+                        marginBottom: '0.9rem',
+                        flex: 1
+                      }}
+                    >
+                      {[
+                        { label: 'Liquidity', value: item.liquidity, color: 'var(--text-primary)' },
+                        {
+                          label: 'Making Charges',
+                          value: item.makingCharges,
+                          color: item.makingCharges.startsWith('0%') ? 'var(--bull-green)' : 'var(--bear-red)'
+                        },
+                        {
+                          label: 'Annual Yield',
+                          value: item.annualYield,
+                          color: item.annualYield.includes('2.5') ? 'var(--warning-amber)' : 'var(--text-secondary)'
+                        },
+                        { label: 'Storage / Custody', value: item.storage, color: 'var(--text-primary)' }
+                      ].map((row, rIdx, arr) => (
+                        <div
+                          key={row.label}
+                          className="decision-matrix-row"
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            gap: '0.75rem',
+                            minHeight: '3.15rem',
+                            boxSizing: 'border-box',
+                            paddingBottom: rIdx < arr.length - 1 ? '0.5rem' : 0,
+                            borderBottom: rIdx < arr.length - 1 ? '1px solid rgba(255, 255, 255, 0.045)' : 'none'
+                          }}
+                        >
+                          <span style={{ color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0, lineHeight: 1.4 }}>
+                            {row.label}:
+                          </span>
+                          <strong
+                            style={{
+                              color: row.color,
+                              textAlign: 'right',
+                              lineHeight: 1.4,
+                              wordBreak: 'break-word'
+                            }}
+                          >
+                            {row.value}
                           </strong>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ color: 'var(--text-muted)' }}>Annual Yield:</span>
-                          <strong style={{ color: item.annualYield.includes('2.5') ? 'var(--warning-amber)' : 'var(--text-secondary)' }}>
-                            {item.annualYield}
-                          </strong>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                          <span style={{ color: 'var(--text-muted)' }}>Storage / Custody:</span>
-                          <strong style={{ color: 'var(--text-primary)' }}>{item.storage}</strong>
-                        </div>
-                      </div>
+                      ))}
+                    </div>
 
-                      <div
-                        style={{
-                          background: 'rgba(255, 255, 255, 0.03)',
-                          padding: '0.55rem 0.65rem',
-                          borderRadius: 'var(--radius-sm)',
-                          fontSize: '0.74rem',
-                          color: 'var(--text-secondary)',
-                          lineHeight: 1.35
-                        }}
-                      >
-                        <strong style={{ color: 'var(--accent-cyan)' }}>Best For: </strong>{item.bestFor}
-                      </div>
+                    <div
+                      className="decision-matrix-bestfor"
+                      style={{
+                        marginTop: 'auto',
+                        minHeight: '3.65rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        background: 'rgba(255, 255, 255, 0.035)',
+                        border: '1px solid rgba(255, 255, 255, 0.06)',
+                        padding: '0.6rem 0.75rem',
+                        borderRadius: 'var(--radius-sm)',
+                        fontSize: '0.74rem',
+                        color: 'var(--text-secondary)',
+                        lineHeight: 1.4,
+                        boxSizing: 'border-box'
+                      }}
+                    >
+                      <span>
+                        <strong style={{ color: 'var(--accent-cyan)' }}>Best For: </strong>
+                        {item.bestFor}
+                      </span>
                     </div>
                   </div>
                 ))}
