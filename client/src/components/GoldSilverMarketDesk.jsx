@@ -5,7 +5,6 @@ import {
   Clock,
   ArrowUpRight,
   ArrowDownRight,
-  RefreshCw,
   Zap,
   ShoppingCart,
   Bell,
@@ -963,9 +962,23 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
     setTimeout(() => setProfileToast(null), 2500);
   };
 
+  const isFetchingMetalsRef = useRef(false);
+
+  const getIstClockSnapshot = () => {
+    const now = new Date();
+    return {
+      time: now.toLocaleTimeString('en-GB', { timeZone: 'Asia/Kolkata', hour12: false }),
+      date: now.toLocaleDateString('en-GB', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', year: 'numeric' })
+    };
+  };
+
+  const [liveClock, setLiveClock] = useState(getIstClockSnapshot);
+
   const fetchPreciousMetals = async () => {
+    if (isFetchingMetalsRef.current) return;
+    isFetchingMetalsRef.current = true;
     try {
-      const res = await fetch('/api/stocks/precious-metals');
+      const res = await fetch('/api/stocks/precious-metals', { cache: 'no-store' });
       const json = await res.json();
       if (json.success && json.data) {
         preciousMetalsCache = json.data;
@@ -994,13 +1007,35 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
       }
     } catch (err) {
       console.error('Failed to fetch precious metals data:', err);
+    } finally {
+      isFetchingMetalsRef.current = false;
     }
   };
 
   useEffect(() => {
     fetchPreciousMetals();
-    const interval = setInterval(fetchPreciousMetals, 7000);
-    return () => clearInterval(interval);
+    const dataInterval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        fetchPreciousMetals();
+      }
+    }, 3000);
+    const clockInterval = setInterval(() => {
+      setLiveClock(getIstClockSnapshot());
+    }, 1000);
+    const handleResumeSync = () => {
+      if (document.visibilityState === 'visible') {
+        setLiveClock(getIstClockSnapshot());
+        fetchPreciousMetals();
+      }
+    };
+    document.addEventListener('visibilitychange', handleResumeSync);
+    window.addEventListener('online', handleResumeSync);
+    return () => {
+      clearInterval(dataInterval);
+      clearInterval(clockInterval);
+      document.removeEventListener('visibilitychange', handleResumeSync);
+      window.removeEventListener('online', handleResumeSync);
+    };
   }, []);
 
   const {
@@ -1343,17 +1378,19 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
         <div className="bullion-hero-actions">
           <div className="bullion-ist-pill">
             <Clock size={14} style={{ color: 'var(--warning-amber)', flexShrink: 0 }} />
-            <span>IST: <strong style={{ color: 'var(--text-primary)' }}>{istTime || '14:30:00'}</strong> ({istDate || 'Today'})</span>
+            <span>IST: <strong style={{ color: 'var(--text-primary)' }}>{liveClock.time || istTime || '14:30:00'}</strong> ({liveClock.date || istDate || 'Today'})</span>
           </div>
 
-          <button
-            type="button"
+          <a
+            href="https://www.mcxindia.com/"
+            target="_blank"
+            rel="noopener noreferrer"
             className="btn btn-secondary bullion-refresh-btn"
-            onClick={fetchPreciousMetals}
-            title="Refresh Live Commodity Quotes"
+            style={{ textDecoration: 'none' }}
+            title="Verify live gold & silver rates on Official MCX India Portal"
           >
-            <RefreshCw size={13} /> Refresh
-          </button>
+            Official Portal <ExternalLink size={13} />
+          </a>
         </div>
       </div>
 

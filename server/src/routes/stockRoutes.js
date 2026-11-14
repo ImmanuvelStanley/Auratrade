@@ -129,7 +129,7 @@ router.get('/global-indices', async (req, res) => {
 router.get('/precious-metals', async (req, res) => {
   try {
     const data = await marketDataService.getPreciousMetalsData();
-    res.setHeader('Cache-Control', 'public, max-age=3');
+    res.setHeader('Cache-Control', 'no-cache');
     res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
