@@ -649,7 +649,7 @@ let preciousMetalsCache = (() => {
         localStorage.removeItem('auratrade_precious_metals_cache');
       }
     }
-  } catch (e) {}
+  } catch (e) { }
   return DEFAULT_PRECIOUS_METALS_DATA;
 })();
 

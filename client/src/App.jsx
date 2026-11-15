@@ -132,7 +132,7 @@ export function App() {
     try {
       const key = getLockedAssetKey(user?.id);
       localStorage.setItem(key, JSON.stringify(asset));
-    } catch (e) {}
+    } catch (e) { }
     if (asset?.symbol) {
       setActiveSymbol(asset.symbol);
     }
@@ -144,7 +144,7 @@ export function App() {
       const key = getLockedAssetKey(user?.id);
       localStorage.removeItem(key);
       localStorage.removeItem(getLegacyLockedAssetKey(user?.id));
-    } catch (e) {}
+    } catch (e) { }
   }, [user?.id]);
 
   // Modals state
@@ -171,7 +171,7 @@ export function App() {
         });
         setIsAuthModalOpen(true);
       }
-    } catch (e) {}
+    } catch (e) { }
   }, []);
 
   const handleOpenAuthModal = useCallback(() => setIsAuthModalOpen(true), []);
@@ -205,7 +205,7 @@ export function App() {
       if (json.success && json.symbols) {
         setWatchlistSymbols(json.symbols);
       }
-    } catch (e) {}
+    } catch (e) { }
   }, [token]);
 
   // Load Alerts from Server
@@ -218,7 +218,7 @@ export function App() {
       if (json.success && json.alerts) {
         setAlerts(json.alerts);
       }
-    } catch (e) {}
+    } catch (e) { }
   }, [token]);
 
   // Load Portfolio from Server keyed strictly to current user token
@@ -233,9 +233,9 @@ export function App() {
         try {
           const cacheKey = getPortfolioCacheKey(user?.id);
           localStorage.setItem(cacheKey, JSON.stringify(json.portfolio));
-        } catch (e) {}
+        } catch (e) { }
       }
-    } catch (e) {}
+    } catch (e) { }
   }, [token, user?.id]);
 
   // Immediate switch to exact user ID balance upon user state update
@@ -252,7 +252,7 @@ export function App() {
             minBalance: user.minBalance !== undefined ? user.minBalance : (prev?.minBalance || 100)
           }));
         }
-      } catch (e) {}
+      } catch (e) { }
     } else {
       setPortfolio({
         cashBalance: 1000.00,
@@ -311,10 +311,10 @@ export function App() {
         if (json.success && json.data) {
           try {
             localStorage.setItem('auratrade_precious_metals_cache', JSON.stringify(json.data));
-          } catch (e) {}
+          } catch (e) { }
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, [token, user?.id, loadWatchlist, loadAlerts, loadPortfolio]);
 
   // Subscribe to active symbol and watchlist batch
@@ -342,7 +342,7 @@ export function App() {
         setWatchlistSymbols(json.symbols);
         subscribe(symbol);
       }
-    } catch (e) {}
+    } catch (e) { }
   }, [token, subscribe]);
 
   const handleRemoveFromWatchlist = useCallback(async (symbol) => {
@@ -358,7 +358,7 @@ export function App() {
         setWatchlistSymbols(json.symbols);
         unsubscribe(symbol);
       }
-    } catch (e) {}
+    } catch (e) { }
   }, [token, unsubscribe]);
 
   const handleToggleWatchlist = useCallback((sym) => {
@@ -382,7 +382,7 @@ export function App() {
       if (json.success) {
         loadAlerts();
       }
-    } catch (e) {}
+    } catch (e) { }
   }, [token, loadAlerts]);
 
   const handleDeleteAlert = useCallback(async (id) => {
@@ -396,7 +396,7 @@ export function App() {
       if (json.success) {
         loadAlerts();
       }
-    } catch (e) {}
+    } catch (e) { }
   }, [token, loadAlerts]);
 
   const handleOpenTrade = useCallback((sym) => {
@@ -418,20 +418,20 @@ export function App() {
     if (!sym) return;
     const mappedChartSym =
       sym === 'NIFTY 50' || sym === 'INDIA VIX' || sym === 'USD/INR' ? 'RELIANCE' :
-      sym === 'BANK NIFTY' ? 'HDFCBANK' :
-      sym === 'SENSEX' ? 'TCS' :
-      sym === 'NIFTY IT' ? 'INFY' :
-      sym === 'S&P 500' ? 'SPY' :
-      sym === 'NASDAQ' ? 'QQQ' :
-      sym === 'DOW JONES' ? 'DIA' :
-      sym === 'DAX 40' ? 'SAP' :
-      sym === 'FTSE 100' ? 'SHEL' :
-      sym === 'CAC 40' ? 'MC.PA' :
-      sym === 'NIKKEI 225' ? 'TM' :
-      sym === 'HANG SENG' ? 'BABA' :
-      sym === 'ASX 200' ? 'BHP' :
-      sym === 'BTC/USD' ? 'IBIT' :
-      sym;
+        sym === 'BANK NIFTY' ? 'HDFCBANK' :
+          sym === 'SENSEX' ? 'TCS' :
+            sym === 'NIFTY IT' ? 'INFY' :
+              sym === 'S&P 500' ? 'SPY' :
+                sym === 'NASDAQ' ? 'QQQ' :
+                  sym === 'DOW JONES' ? 'DIA' :
+                    sym === 'DAX 40' ? 'SAP' :
+                      sym === 'FTSE 100' ? 'SHEL' :
+                        sym === 'CAC 40' ? 'MC.PA' :
+                          sym === 'NIKKEI 225' ? 'TM' :
+                            sym === 'HANG SENG' ? 'BABA' :
+                              sym === 'ASX 200' ? 'BHP' :
+                                sym === 'BTC/USD' ? 'IBIT' :
+                                  sym;
     setActiveSymbol(mappedChartSym);
     setDeepRecordModal({ isOpen: true, symbol: sym, item });
   }, []);
@@ -466,153 +466,153 @@ export function App() {
           {/* Main Container */}
           <main className="main-content">
             {/* Conditional Tab Rendering - Protected with Tab-Level Error Boundary */}
-          <ErrorBoundary key={activeTab}>
-          {activeTab === 'dashboard' && (
-            <div className="motion-entry" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
-              {/* Upper Workstation Row: Charting Mainstage (Left) + Trading Desk Sidebar (Right) */}
-              <div className="dashboard-grid">
-                {/* Left Column: Spotlight Live Quote & Interactive Chart */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0, maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
-                  <LiveQuoteCard
-                    symbol={activeSymbol}
-                    isInWatchlist={isInWatchlist}
-                    onToggleWatchlist={handleToggleWatchlist}
-                    onOpenAlertModal={handleOpenAlertModal}
-                    onOpenTradeModal={handleOpenTrade}
-                    onOpenDeepRecord={handleOpenDeepRecord}
-                  />
+            <ErrorBoundary key={activeTab}>
+              {activeTab === 'dashboard' && (
+                <div className="motion-entry" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
+                  {/* Upper Workstation Row: Charting Mainstage (Left) + Trading Desk Sidebar (Right) */}
+                  <div className="dashboard-grid">
+                    {/* Left Column: Spotlight Live Quote & Interactive Chart */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', minWidth: 0, maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
+                      <LiveQuoteCard
+                        symbol={activeSymbol}
+                        isInWatchlist={isInWatchlist}
+                        onToggleWatchlist={handleToggleWatchlist}
+                        onOpenAlertModal={handleOpenAlertModal}
+                        onOpenTradeModal={handleOpenTrade}
+                        onOpenDeepRecord={handleOpenDeepRecord}
+                      />
 
-                  <StockChart
-                    symbol={activeSymbol}
-                    lockedAsset={lockedAsset}
-                    onUnlockAsset={handleUnlockAsset}
-                    onOpenAutoPredictor={handleOpenAutoPredictor}
-                    onOpenTradeModal={handleOpenTrade}
-                    onOpenAlertModal={handleOpenAlertModal}
-                  />
+                      <StockChart
+                        symbol={activeSymbol}
+                        lockedAsset={lockedAsset}
+                        onUnlockAsset={handleUnlockAsset}
+                        onOpenAutoPredictor={handleOpenAutoPredictor}
+                        onOpenTradeModal={handleOpenTrade}
+                        onOpenAlertModal={handleOpenAlertModal}
+                      />
+                    </div>
+
+                    {/* Right Column: Quick Trading Desk + Compact Live Watchlist */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', minWidth: 0, maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
+                      <QuickTradeWidget
+                        symbol={activeSymbol}
+                        portfolio={portfolio}
+                        onOpenTradeModal={handleOpenTrade}
+                        onTradeComplete={loadPortfolio}
+                      />
+
+                      <WatchlistTable
+                        watchlistSymbols={watchlistSymbols}
+                        activeSymbol={activeSymbol}
+                        compact={true}
+                        alerts={alerts}
+                        onSelectSymbol={handleSelectSymbol}
+                        onAddToWatchlist={handleAddToWatchlist}
+                        onRemoveFromWatchlist={handleRemoveFromWatchlist}
+                        onOpenAlertModal={handleOpenAlertModal}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Lower Workstation Row: Full-Width Panoramic Market Prediction & Future Valuation */}
+                  <div className="perf-section" style={{ padding: 0 }}>
+                    <MarketPredictionCard
+                      symbol={activeSymbol}
+                      lockedAsset={lockedAsset}
+                      onLockAsset={handleLockAsset}
+                      onUnlockAsset={handleUnlockAsset}
+                      onOpenAutoPredictor={handleOpenAutoPredictor}
+                      onOpenTradeModal={handleOpenTrade}
+                    />
+                  </div>
+
+                  {/* Complete Inception-to-Present Stock Record & Valuation Intelligence Dossier */}
+                  <div className="perf-section" style={{ padding: 0 }}>
+                    <StockDeepRecordSection
+                      symbol={activeSymbol}
+                      isModal={false}
+                      isInWatchlist={isInWatchlist}
+                      onToggleWatchlist={() => handleToggleWatchlist(activeSymbol)}
+                      onOpenAlertModal={() => handleOpenAlertModal(activeSymbol)}
+                      onOpenTradeModal={() => handleOpenTrade(activeSymbol)}
+                    />
+                  </div>
                 </div>
+              )}
 
-                {/* Right Column: Quick Trading Desk + Compact Live Watchlist */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', minWidth: 0, maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
-                  <QuickTradeWidget
-                    symbol={activeSymbol}
-                    portfolio={portfolio}
-                    onOpenTradeModal={handleOpenTrade}
-                    onTradeComplete={loadPortfolio}
-                  />
-
-                  <WatchlistTable
-                    watchlistSymbols={watchlistSymbols}
-                    activeSymbol={activeSymbol}
-                    compact={true}
-                    alerts={alerts}
-                    onSelectSymbol={handleSelectSymbol}
-                    onAddToWatchlist={handleAddToWatchlist}
-                    onRemoveFromWatchlist={handleRemoveFromWatchlist}
-                    onOpenAlertModal={handleOpenAlertModal}
-                  />
-                </div>
-              </div>
-
-              {/* Lower Workstation Row: Full-Width Panoramic Market Prediction & Future Valuation */}
-              <div className="perf-section" style={{ padding: 0 }}>
-                <MarketPredictionCard
-                  symbol={activeSymbol}
-                  lockedAsset={lockedAsset}
-                  onLockAsset={handleLockAsset}
-                  onUnlockAsset={handleUnlockAsset}
-                  onOpenAutoPredictor={handleOpenAutoPredictor}
+              {activeTab === 'all-markets' && (
+                <AllCompaniesMarket
+                  isActive={true}
+                  onSelectSymbol={handleSelectSymbolAndGoDashboard}
+                  onOpenDeepRecord={handleOpenDeepRecord}
                   onOpenTradeModal={handleOpenTrade}
+                  onOpenAlertModal={handleOpenAlertModal}
+                  watchlistSymbols={watchlistSymbols}
+                  onAddToWatchlist={handleAddToWatchlist}
+                  onRemoveFromWatchlist={handleRemoveFromWatchlist}
                 />
-              </div>
+              )}
 
-              {/* Complete Inception-to-Present Stock Record & Valuation Intelligence Dossier */}
-              <div className="perf-section" style={{ padding: 0 }}>
-                <StockDeepRecordSection
-                  symbol={activeSymbol}
-                  isModal={false}
-                  isInWatchlist={isInWatchlist}
-                  onToggleWatchlist={() => handleToggleWatchlist(activeSymbol)}
-                  onOpenAlertModal={() => handleOpenAlertModal(activeSymbol)}
-                  onOpenTradeModal={() => handleOpenTrade(activeSymbol)}
+              {activeTab === 'gold-silver' && (
+                <GoldSilverMarketDesk
+                  onSelectSymbol={handleSelectSymbolAndGoDashboard}
+                  onOpenTradeModal={handleOpenTrade}
+                  onOpenAlertModal={handleOpenAlertModal}
+                  isActive={true}
                 />
-              </div>
-            </div>
-          )}
+              )}
 
-          {activeTab === 'all-markets' && (
-            <AllCompaniesMarket
-              isActive={true}
-              onSelectSymbol={handleSelectSymbolAndGoDashboard}
-              onOpenDeepRecord={handleOpenDeepRecord}
-              onOpenTradeModal={handleOpenTrade}
-              onOpenAlertModal={handleOpenAlertModal}
-              watchlistSymbols={watchlistSymbols}
-              onAddToWatchlist={handleAddToWatchlist}
-              onRemoveFromWatchlist={handleRemoveFromWatchlist}
-            />
-          )}
+              {(activeTab === 'watchlist-alerts' || activeTab === 'watchlist' || activeTab === 'alerts') && (
+                <WatchlistAlertsHub
+                  watchlistSymbols={watchlistSymbols}
+                  activeSymbol={activeSymbol}
+                  alerts={alerts}
+                  onSelectSymbol={handleSelectSymbolAndGoDashboard}
+                  onAddToWatchlist={handleAddToWatchlist}
+                  onRemoveFromWatchlist={handleRemoveFromWatchlist}
+                  onToggleAlert={handleToggleAlert}
+                  onDeleteAlert={handleDeleteAlert}
+                  onOpenCreateAlertModal={handleOpenAlertModal}
+                  onOpenTradeModal={handleOpenTrade}
+                  initialViewMode={activeTab === 'alerts' ? 'alerts' : (activeTab === 'watchlist' ? 'watchlist' : 'dual')}
+                />
+              )}
 
-          {activeTab === 'gold-silver' && (
-            <GoldSilverMarketDesk
-              onSelectSymbol={handleSelectSymbolAndGoDashboard}
-              onOpenTradeModal={handleOpenTrade}
-              onOpenAlertModal={handleOpenAlertModal}
-              isActive={true}
-            />
-          )}
+              {activeTab === 'portfolio' && (
+                <PortfolioView
+                  portfolio={portfolio}
+                  onOpenTradeModal={handleOpenTrade}
+                  onTradeComplete={loadPortfolio}
+                />
+              )}
 
-          {(activeTab === 'watchlist-alerts' || activeTab === 'watchlist' || activeTab === 'alerts') && (
-            <WatchlistAlertsHub
-              watchlistSymbols={watchlistSymbols}
-              activeSymbol={activeSymbol}
-              alerts={alerts}
-              onSelectSymbol={handleSelectSymbolAndGoDashboard}
-              onAddToWatchlist={handleAddToWatchlist}
-              onRemoveFromWatchlist={handleRemoveFromWatchlist}
-              onToggleAlert={handleToggleAlert}
-              onDeleteAlert={handleDeleteAlert}
-              onOpenCreateAlertModal={handleOpenAlertModal}
-              onOpenTradeModal={handleOpenTrade}
-              initialViewMode={activeTab === 'alerts' ? 'alerts' : (activeTab === 'watchlist' ? 'watchlist' : 'dual')}
-            />
-          )}
+              {activeTab === 'profile' && (
+                <UserProfile
+                  portfolio={portfolio}
+                  watchlistSymbols={watchlistSymbols}
+                  alerts={alerts}
+                  onSelectSymbol={handleSelectSymbolAndGoDashboard}
+                  onOpenTradeModal={handleOpenTrade}
+                  onResetPortfolio={loadPortfolio}
+                  onNavigateTab={setActiveTab}
+                  onOpenSecurityCenter={() => setIsSecurityModalOpen(true)}
+                />
+              )}
 
-          {activeTab === 'portfolio' && (
-            <PortfolioView
-              portfolio={portfolio}
-              onOpenTradeModal={handleOpenTrade}
-              onTradeComplete={loadPortfolio}
-            />
-          )}
+              {activeTab === 'nse-india' && (
+                <NSEIndiaMarketDesk
+                  isActive={true}
+                  onSelectSymbol={handleSelectSymbolAndGoDashboard}
+                />
+              )}
 
-          {activeTab === 'profile' && (
-            <UserProfile
-              portfolio={portfolio}
-              watchlistSymbols={watchlistSymbols}
-              alerts={alerts}
-              onSelectSymbol={handleSelectSymbolAndGoDashboard}
-              onOpenTradeModal={handleOpenTrade}
-              onResetPortfolio={loadPortfolio}
-              onNavigateTab={setActiveTab}
-              onOpenSecurityCenter={() => setIsSecurityModalOpen(true)}
-            />
-          )}
-
-          {activeTab === 'nse-india' && (
-            <NSEIndiaMarketDesk
-              isActive={true}
-              onSelectSymbol={handleSelectSymbolAndGoDashboard}
-            />
-          )}
-
-          {activeTab === 'global-indices' && (
-            <GlobalIndicesDesk
-              isActive={true}
-              onSelectSymbol={handleSelectSymbolAndGoDashboard}
-            />
-          )}
-          </ErrorBoundary>
+              {activeTab === 'global-indices' && (
+                <GlobalIndicesDesk
+                  isActive={true}
+                  onSelectSymbol={handleSelectSymbolAndGoDashboard}
+                />
+              )}
+            </ErrorBoundary>
           </main>
 
           {/* Global Institutional Footer & Copyright */}

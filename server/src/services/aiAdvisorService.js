@@ -453,23 +453,23 @@ Safe Buying Power = Account Cash Balance - Safe Zone Minimum Reserve
       // =========================================================================
     } else if (
       ((/\bgold\b/i.test(message) && !lowerMsg.includes('golden cross') && !lowerMsg.includes('golden pocket')) ||
-      /\bsilver\b/i.test(message) ||
-      lowerMsg.includes('bullion') ||
-      lowerMsg.includes('24k') ||
-      lowerMsg.includes('999') ||
-      lowerMsg.includes('huid') ||
-      lowerMsg.includes('bis hallmarking') ||
-      lowerMsg.includes('lbma') ||
-      lowerMsg.includes('vault') ||
-      lowerMsg.includes('vaulting') ||
-      lowerMsg.includes('hallmarking') ||
-      lowerMsg.includes('physical delivery') ||
-      lowerMsg.includes('digital gold') ||
-      lowerMsg.includes('xau') ||
-      lowerMsg.includes('xag') ||
-      lowerMsg.includes('gold to silver ratio') ||
-      lowerMsg.includes('gold-to-silver ratio') ||
-      lowerMsg.includes('gsr'))
+        /\bsilver\b/i.test(message) ||
+        lowerMsg.includes('bullion') ||
+        lowerMsg.includes('24k') ||
+        lowerMsg.includes('999') ||
+        lowerMsg.includes('huid') ||
+        lowerMsg.includes('bis hallmarking') ||
+        lowerMsg.includes('lbma') ||
+        lowerMsg.includes('vault') ||
+        lowerMsg.includes('vaulting') ||
+        lowerMsg.includes('hallmarking') ||
+        lowerMsg.includes('physical delivery') ||
+        lowerMsg.includes('digital gold') ||
+        lowerMsg.includes('xau') ||
+        lowerMsg.includes('xag') ||
+        lowerMsg.includes('gold to silver ratio') ||
+        lowerMsg.includes('gold-to-silver ratio') ||
+        lowerMsg.includes('gsr'))
     ) {
       thinking = [
         "Decoded intent: Precious metals inquiry covering bullion specifications, hallmarking, vaulting, and trading mechanics.",
