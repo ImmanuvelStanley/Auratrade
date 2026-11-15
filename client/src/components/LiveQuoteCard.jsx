@@ -617,7 +617,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                       <strong style={{ color: 'var(--bull-green)' }}>● Real-Time Live Tape</strong>
                     ) : (
                       <strong style={{ color: dateSnapshot.vsLiveChange >= 0 ? 'var(--bull-green)' : 'var(--bear-red)' }}>
-                        {dateSnapshot.vsLiveChange >= 0 ? '+' : ''}${dateSnapshot.vsLiveChange.toFixed(2)} ({dateSnapshot.vsLivePercent >= 0 ? '+' : ''}{dateSnapshot.vsLivePercent.toFixed(2)}%)
+                        {dateSnapshot.vsLiveChange >= 0 ? '+' : '-'}${Math.abs(dateSnapshot.vsLiveChange).toFixed(2)} ({dateSnapshot.vsLivePercent >= 0 ? '+' : ''}{dateSnapshot.vsLivePercent.toFixed(2)}%)
                       </strong>
                     )}
                   </div>
@@ -761,7 +761,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
               <span style={{ color: 'var(--text-secondary)' }}>
                 vs Current Live (${quote.price.toFixed(2)}):{' '}
                 <strong style={{ color: dateSnapshot.vsLiveChange >= 0 ? 'var(--bull-green)' : 'var(--bear-red)' }}>
-                  {dateSnapshot.vsLiveChange >= 0 ? '+' : ''}${dateSnapshot.vsLiveChange.toFixed(2)} ({dateSnapshot.vsLivePercent >= 0 ? '+' : ''}{dateSnapshot.vsLivePercent.toFixed(2)}%)
+                  {dateSnapshot.vsLiveChange >= 0 ? '+' : '-'}${Math.abs(dateSnapshot.vsLiveChange).toFixed(2)} ({dateSnapshot.vsLivePercent >= 0 ? '+' : ''}{dateSnapshot.vsLivePercent.toFixed(2)}%)
                 </strong>
               </span>
               <span style={{ color: 'var(--text-muted)', fontSize: '0.7rem' }}>

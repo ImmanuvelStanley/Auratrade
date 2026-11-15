@@ -162,7 +162,7 @@ export const WatchlistAlertsHub = React.memo(function WatchlistAlertsHub({
                 gap: '0.4rem',
                 cursor: 'pointer'
               }}
-              title="Browse 160+ companies across US, NSE India, Commodities, and Crypto"
+              title="Browse 300+ assets across US, NSE India, Commodities, and Crypto"
             >
               <Globe size={15} style={{ color: 'var(--accent-cyan)' }} />
               <span>Browse Markets</span>

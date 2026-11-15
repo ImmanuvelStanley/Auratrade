@@ -19,7 +19,7 @@ import { CountryFlag } from './CountryFlag';
 let cachedMarketCompanies = null;
 
 const MARKET_REGIONS = [
-  { id: 'all', label: 'All Markets', flag: 'ALL', count: '160+' },
+  { id: 'all', label: 'All Markets', flag: 'ALL', count: '300+' },
   { id: 'north_america', label: 'North America', flag: '🇺🇸', count: '75' },
   { id: 'europe', label: 'Europe (UK / EU)', flag: '🇪🇺', count: '24' },
   { id: 'asiapac', label: 'Asia-Pacific', flag: '🇯🇵', count: '20' },

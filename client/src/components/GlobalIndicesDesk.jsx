@@ -18,6 +18,12 @@ import {
 
 import { DEFAULT_GLOBAL_INDICES_DATA } from '../data/defaultGlobalIndices';
 
+const fmtSigned = (v, decimals = 2) => {
+  const n = Number(v ?? 0);
+  if (Number.isNaN(n)) return '0.00';
+  return `${n > 0 ? '+' : ''}${n.toFixed(decimals)}`;
+};
+
 // Module-level in-memory cache for instant zero-spinner tab switching
 const globalIndicesCache = {
   all: DEFAULT_GLOBAL_INDICES_DATA,
@@ -403,7 +409,7 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
               {summary?.topGainer?.name || '--'}
             </span>
             <span className="font-mono status-pill bg-bull" style={{ fontWeight: 700, fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>
-              +{Number(summary?.topGainer?.chgPercent || 0).toFixed(2)}%
+              {fmtSigned(summary?.topGainer?.chgPercent)}%
             </span>
           </div>
         </div>
@@ -417,7 +423,7 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
               {summary?.topLoser?.name || '--'}
             </span>
             <span className="font-mono status-pill bg-bear" style={{ fontWeight: 700, fontSize: '0.75rem', padding: '0.2rem 0.5rem' }}>
-              {Number(summary?.topLoser?.chgPercent || 0).toFixed(2)}%
+              {fmtSigned(summary?.topLoser?.chgPercent)}%
             </span>
           </div>
         </div>
@@ -557,7 +563,7 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <span className={`font-mono ${isBull ? 'text-bull' : 'text-bear'}`} style={{ fontWeight: 700, fontSize: '0.85rem' }}>
-                        {isBull ? '+' : ''}{stock.chg !== undefined && stock.chg !== null ? Number(stock.chg).toFixed(2) : '--'}
+                        {stock.chg !== undefined && stock.chg !== null ? fmtSigned(stock.chg) : '--'}
                       </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
@@ -565,7 +571,7 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
                         className={`status-pill ${isBull ? 'bg-bull' : 'bg-bear'}`}
                         style={{ display: 'inline-flex', padding: '0.2rem 0.5rem', fontSize: '0.78rem', fontWeight: 700 }}
                       >
-                        {isBull ? '+' : ''}{Number(stock.chgPercent ?? 0).toFixed(2)}%
+                        {fmtSigned(stock.chgPercent)}%
                       </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
@@ -783,7 +789,7 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
                     </td>
                     <td style={{ textAlign: 'right' }}>
                       <span className={`font-mono ${isBull ? 'text-bull' : 'text-bear'}`} style={{ fontWeight: 700, fontSize: '0.85rem' }}>
-                        {isBull ? '+' : ''}{idx.chg !== undefined && idx.chg !== null ? Number(idx.chg).toFixed(2) : '--'}
+                        {idx.chg !== undefined && idx.chg !== null ? fmtSigned(idx.chg) : '--'}
                       </span>
                     </td>
                     <td style={{ textAlign: 'right' }}>
@@ -792,7 +798,7 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
                         style={{ display: 'inline-flex', padding: '0.25rem 0.55rem', fontSize: '0.8rem', fontWeight: 700 }}
                       >
                         {isBull ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
-                        {isBull ? '+' : ''}{Number(idx.chgPercent ?? 0).toFixed(2)}%
+                        {fmtSigned(idx.chgPercent)}%
                       </span>
                     </td>
                     <td style={{ textAlign: 'center' }}>
@@ -805,17 +811,7 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
                       <button
                         type="button"
                         className="btn btn-secondary"
-                        onClick={() => {
-                          // Map index to stock, ETF, or direct commodity
-                          const sym = idx.symbol || '';
-                          const mapped = sym === '^GSPC' ? 'SPY' :
-                                         sym === '^IXIC' ? 'QQQ' :
-                                         sym === '^DJI' ? 'DIA' :
-                                         sym === '^NSEI' ? 'RELIANCE' :
-                                         sym === '^BSESN' ? 'TCS' :
-                                         sym.startsWith('^') ? 'AAPL' : sym;
-                          onSelectSymbol && onSelectSymbol(mapped);
-                        }}
+                        onClick={() => handleInspectIndex(idx)}
                         style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem' }}
                       >
                         <Zap size={12} style={{ color: 'var(--accent-cyan)' }} /> View Chart

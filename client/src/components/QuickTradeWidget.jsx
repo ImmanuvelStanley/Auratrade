@@ -21,8 +21,8 @@ export function QuickTradeWidget({ symbol, portfolio, onOpenTradeModal, onTradeC
     setLoading(true);
     setQuickStatus('');
 
-    const userCash = portfolio?.cashBalance !== undefined ? Number(portfolio.cashBalance) : 100000;
-    const minBalance = Number(portfolio?.minBalance !== undefined ? portfolio.minBalance : 2500);
+    const userCash = portfolio?.cashBalance !== undefined ? Number(portfolio.cashBalance) : 1000;
+    const minBalance = Number(portfolio?.minBalance !== undefined ? portfolio.minBalance : 100);
     const safeTradingPower = Math.max(0, userCash - minBalance);
     const orderCost = sharesCount * price;
 
@@ -92,7 +92,7 @@ export function QuickTradeWidget({ symbol, portfolio, onOpenTradeModal, onTradeC
             >
               {sharesOwned > 0 ? (
                 <>
-                  {isBull ? '+' : ''}${pnl.toFixed(2)} ({isBull ? '+' : ''}{pnlPct.toFixed(1)}%)
+                  {pnl >= 0 ? '+' : '-'}${Math.abs(pnl).toFixed(2)} ({pnlPct >= 0 ? '+' : ''}{pnlPct.toFixed(1)}%)
                 </>
               ) : (
                 '--'

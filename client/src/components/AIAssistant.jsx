@@ -431,7 +431,7 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
         message: query,
         symbol: sym,
         quote: currentQuote,
-        portfolio: { cash: user?.balance || 100000 },
+        portfolio: { cash: user?.cashBalance ?? 1000 },
         history: updatedHistory
       });
       pushAiPayload(localQuantData);
@@ -441,7 +441,7 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
         message: query,
         symbol: sym,
         quote: currentQuote,
-        portfolio: { cash: user?.balance || 100000 },
+        portfolio: { cash: user?.cashBalance ?? 1000 },
         history: updatedHistory
       });
       pushAiPayload(fallbackData);
@@ -764,6 +764,16 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
                   {chatHistory.length > 0 && (
                     <span className="assistant-hdr-badge">{chatHistory.length}</span>
                   )}
+                </button>
+
+                <button
+                  type="button"
+                  className={`assistant-hdr-btn ${isConfigOpen ? 'active' : ''}`}
+                  onClick={() => setIsConfigOpen(true)}
+                  title="AI Reasoning Engine & Credentials"
+                >
+                  <Cpu size={13} />
+                  <span>Engine</span>
                 </button>
 
                 <button

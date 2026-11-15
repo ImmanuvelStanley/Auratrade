@@ -120,7 +120,7 @@ export function SecurityModal({ isOpen, onClose }) {
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 3500,
+        zIndex: 99999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',

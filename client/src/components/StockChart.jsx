@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { useSocketQuote } from '../context/SocketContext';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import {
   BarChart3,
   LineChart as LineChartIcon,
@@ -151,18 +152,23 @@ export const StockChart = React.memo(function StockChart({
   const lastHoverIndexRef = useRef(null);
   const isMouseOverRef = useRef(false);
 
-  const [range, setRange] = useState(() => {
+  const { user } = useAuth();
+  const readWorkstationPrefs = () => {
     try {
-      const keys = Object.keys(localStorage);
-      const prefKey = keys.find(k => k.startsWith('trader_workstation_prefs_'));
-      if (prefKey) {
-        const parsed = JSON.parse(localStorage.getItem(prefKey));
-        if (parsed?.defaultChartInterval) return parsed.defaultChartInterval;
-      }
-    } catch (e) {}
-    return '1D';
-  });
-  const [chartType, setChartType] = useState('area'); // 'area' | 'candle'
+      const scopedKey = user?.id ? `trader_workstation_prefs_${user.id}` : 'trader_workstation_prefs_guest';
+      const raw = localStorage.getItem(scopedKey) || (() => {
+        const fallbackKey = Object.keys(localStorage).find((k) => k.startsWith('trader_workstation_prefs_'));
+        return fallbackKey ? localStorage.getItem(fallbackKey) : null;
+      })();
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  };
+  const mapChartTypePref = (val) => (val === 'candlestick' || val === 'candle' ? 'candle' : 'area');
+
+  const [range, setRange] = useState(() => readWorkstationPrefs()?.defaultChartInterval || '1D');
+  const [chartType, setChartType] = useState(() => mapChartTypePref(readWorkstationPrefs()?.defaultChartType)); // 'area' | 'candle'
   const liveQuoteRef = useRef(liveQuote);
   liveQuoteRef.current = liveQuote;
 
@@ -220,11 +226,14 @@ export const StockChart = React.memo(function StockChart({
     return () => window.removeEventListener('auratrade_calendar_date_changed', handleCalendarDateChange);
   }, [symbol, range]);
 
-  // Listen to workstation settings changes for defaultChartInterval
+  // Listen to workstation settings changes for defaultChartInterval & defaultChartType
   useEffect(() => {
     const handlePrefs = (e) => {
       if (e.detail?.defaultChartInterval) {
         setRange(e.detail.defaultChartInterval);
+      }
+      if (e.detail?.defaultChartType) {
+        setChartType(mapChartTypePref(e.detail.defaultChartType));
       }
     };
     window.addEventListener('workstation_prefs_changed', handlePrefs);
@@ -1385,7 +1394,7 @@ export const StockChart = React.memo(function StockChart({
                 <span><strong style={{ color: 'var(--text-muted)' }}>Vol:</strong> {vol}</span>
                 {isInspectingHistory && latestCandle ? (
                   <span style={{ color: c.close >= latestCandle.close ? 'var(--bull-green)' : 'var(--bear-red)', fontWeight: 600 }}>
-                    {c.close >= latestCandle.close ? '+' : ''}${(c.close - latestCandle.close).toFixed(2)} vs Live
+                    {c.close >= latestCandle.close ? '+' : '-'}${Math.abs(c.close - latestCandle.close).toFixed(2)} vs Live
                   </span>
                 ) : (
                   <span style={{ color: rangeChg >= 0 ? 'var(--bull-green)' : 'var(--bear-red)', fontWeight: 600 }}>

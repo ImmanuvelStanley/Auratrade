@@ -8096,7 +8096,8 @@ canvas {
 [data-theme="light"] [style*="linear-gradient"][style*="15, 23, 42"],
 [data-theme="light"] [style*="linear-gradient"][style*="11, 18, 33"],
 [data-theme="light"] [style*="linear-gradient"][style*="17, 24, 39"],
-[data-theme="light"] [style*="linear-gradient"][style*="30, 41, 59"] {
+[data-theme="light"] [style*="linear-gradient"][style*="30, 41, 59"],
+[data-theme="light"] .bullion-spotlight-card {
   background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%) !important;
   border-color: #cbd5e1 !important;
 }

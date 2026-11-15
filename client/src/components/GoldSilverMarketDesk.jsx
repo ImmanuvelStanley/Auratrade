@@ -886,13 +886,16 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
 
   // Multi-User Tenant Storage Isolation Key Helpers
   const getInvoiceDetailsKey = (userId) => userId ? `bullion_invoice_client_details_${userId}` : 'bullion_invoice_client_details_guest';
-  const getProfileStorageKey = (userId) => userId ? `trader_profile_${userId}` : 'trader_extended_profile_guest';
+  const getProfileStorageKey = (userId) => userId ? `trader_extended_profile_${userId}` : 'trader_extended_profile_guest';
 
   // Extended Trader Profile States (Persisted in localStorage strictly per user)
   const [traderProfile, setTraderProfile] = useState(() => {
     try {
-      const userKey = user?.id ? getProfileStorageKey(user.id) : null;
-      const saved = (userKey && localStorage.getItem(userKey)) || (user ? null : localStorage.getItem('trader_extended_profile'));
+      const saved =
+        (user?.id
+          ? (localStorage.getItem(`trader_extended_profile_${user.id}`) || localStorage.getItem(`trader_profile_${user.id}`))
+          : localStorage.getItem('trader_extended_profile_guest')) ||
+        (!user ? localStorage.getItem('trader_extended_profile') : null);
       if (saved) {
         return { ...DEFAULT_TRADER_PROFILE, ...JSON.parse(saved) };
       }
@@ -904,7 +907,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
           ...(user.traderProfile || {})
         };
       }
-    } catch (e) {}
+    } catch (e) { }
     return DEFAULT_TRADER_PROFILE;
   });
 
@@ -918,7 +921,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
         if (parsed.currency) return parsed.currency;
       }
       if (user?.traderProfile?.currency) return user.traderProfile.currency;
-    } catch (e) {}
+    } catch (e) { }
     return 'USD';
   });
 
@@ -930,7 +933,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
       const key = getInvoiceDetailsKey(user?.id);
       const saved = localStorage.getItem(key);
       if (saved) return JSON.parse(saved);
-    } catch (e) {}
+    } catch (e) { }
     return {
       name: user?.name || '',
       phone: user?.phone || '',
@@ -958,7 +961,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
           pan: ''
         });
       }
-    } catch (e) {}
+    } catch (e) { }
 
     const profKey = user?.id ? getProfileStorageKey(user.id) : null;
     try {
@@ -980,7 +983,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
         setTraderProfile(DEFAULT_TRADER_PROFILE);
         setActiveCurrency('USD');
       }
-    } catch (e) {}
+    } catch (e) { }
   }, [user?.id]);
 
   // Cross-Tab & Inter-Component Sync for Trader Profile
@@ -992,7 +995,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
           const parsed = JSON.parse(e.newValue);
           setTraderProfile(prev => ({ ...prev, ...parsed }));
           if (parsed.currency) setActiveCurrency(parsed.currency);
-        } catch (err) {}
+        } catch (err) { }
       }
     };
     const handleCustom = (e) => {
@@ -1099,7 +1102,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
         preciousMetalsCache = json.data;
         try {
           localStorage.setItem('auratrade_precious_metals_cache', JSON.stringify(json.data));
-        } catch (e) {}
+        } catch (e) { }
 
         // Detect tick changes and flash
         const newFlashes = {};
@@ -1261,7 +1264,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
       try {
         const key = getInvoiceDetailsKey(user?.id);
         localStorage.setItem(key, JSON.stringify(updated));
-      } catch (e) {}
+      } catch (e) { }
       return updated;
     });
   };
@@ -1278,7 +1281,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
     try {
       const key = getInvoiceDetailsKey(user?.id);
       localStorage.setItem(key, JSON.stringify(filled));
-    } catch (e) {}
+    } catch (e) { }
     setProfileToast('Populated client details from your profile!');
     setTimeout(() => setProfileToast(null), 3000);
   };
@@ -1495,6 +1498,15 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
             <Clock size={14} style={{ color: 'var(--warning-amber)', flexShrink: 0 }} />
             <span>IST: <strong style={{ color: 'var(--text-primary)' }}>{liveClock.time || istTime || '14:30:00'}</strong> ({liveClock.date || istDate || 'Today'})</span>
           </div>
+
+          <button
+            type="button"
+            onClick={handleDownloadMarketBriefPdf}
+            className="btn btn-secondary bullion-refresh-btn"
+            title="Download Official Bullion Market Brief PDF"
+          >
+            Market Brief <FileDown size={13} />
+          </button>
 
           <a
             href="https://www.mcxindia.com/"
@@ -1796,13 +1808,13 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
           <div
             style={{
               background: 'rgba(255, 255, 255, 0.03)',
-              padding: '0.55rem 0.85rem',
+              padding: '0.65rem 0.85rem',
               borderRadius: 'var(--radius-sm)',
               border: '1px solid rgba(99, 102, 241, 0.18)',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
-              gap: '0.4rem',
+              gap: '0.55rem',
               flex: 1
             }}
           >
@@ -1843,14 +1855,12 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
             </div>
           </div>
 
-          <div className="bullion-spotlight-breakdown" style={{ gridTemplateColumns: '1fr' }}>
-            <div>
-              <div style={{ fontSize: '0.66rem', color: 'var(--accent-indigo)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
-                Strategy Signal
-              </div>
-              <strong style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontWeight: 700, display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={ratio?.signal || 'Silver shows strong industrial demand outperformance.'}>
-                {ratio?.signal || 'Silver shows strong industrial demand outperformance.'}
-              </strong>
+          <div style={{ borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '0.65rem' }}>
+            <div style={{ fontSize: '0.66rem', color: 'var(--accent-indigo)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+              Strategy Signal
+            </div>
+            <div style={{ fontSize: '0.78rem', color: 'var(--text-primary)', fontWeight: 600, marginTop: '0.1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={ratio?.signal || 'Silver shows strong industrial demand outperformance.'}>
+              {ratio?.signal || 'Silver shows strong industrial demand outperformance.'}
             </div>
           </div>
 
@@ -2088,24 +2098,24 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                             background: metal.category?.includes('International')
                               ? 'rgba(6, 182, 212, 0.12)'
                               : metal.category?.includes('Futures')
-                              ? 'rgba(245, 158, 11, 0.12)'
-                              : metal.category?.includes('ETF')
-                              ? 'rgba(168, 85, 247, 0.12)'
-                              : 'rgba(16, 185, 129, 0.12)',
+                                ? 'rgba(245, 158, 11, 0.12)'
+                                : metal.category?.includes('ETF')
+                                  ? 'rgba(168, 85, 247, 0.12)'
+                                  : 'rgba(16, 185, 129, 0.12)',
                             border: metal.category?.includes('International')
                               ? '1px solid rgba(6, 182, 212, 0.3)'
                               : metal.category?.includes('Futures')
-                              ? '1px solid rgba(245, 158, 11, 0.3)'
-                              : metal.category?.includes('ETF')
-                              ? '1px solid rgba(168, 85, 247, 0.3)'
-                              : '1px solid rgba(16, 185, 129, 0.3)',
+                                ? '1px solid rgba(245, 158, 11, 0.3)'
+                                : metal.category?.includes('ETF')
+                                  ? '1px solid rgba(168, 85, 247, 0.3)'
+                                  : '1px solid rgba(16, 185, 129, 0.3)',
                             color: metal.category?.includes('International')
                               ? 'var(--accent-cyan)'
                               : metal.category?.includes('Futures')
-                              ? 'var(--warning-amber)'
-                              : metal.category?.includes('ETF')
-                              ? '#c084fc'
-                              : 'var(--bull-green)'
+                                ? 'var(--warning-amber)'
+                                : metal.category?.includes('ETF')
+                                  ? '#c084fc'
+                                  : 'var(--bull-green)'
                           }}
                         >
                           {metal.category}
@@ -2970,22 +2980,22 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
                   {(calcPurity === 'silver' || calcPurity === 'silver925'
                     ? [
-                        { label: '10g (Coin)', val: 10 },
-                        { label: '25g (Payal/Anklet)', val: 25 },
-                        { label: '50g (Ornaments)', val: 50 },
-                        { label: '100g (Gift Bar)', val: 100 },
-                        { label: '250g (Pooja Article)', val: 250 },
-                        { label: '500g (Half Kg)', val: 500 },
-                        { label: '1000g (1 Kg Bar)', val: 1000 }
-                      ]
+                      { label: '10g (Coin)', val: 10 },
+                      { label: '25g (Payal/Anklet)', val: 25 },
+                      { label: '50g (Ornaments)', val: 50 },
+                      { label: '100g (Gift Bar)', val: 100 },
+                      { label: '250g (Pooja Article)', val: 250 },
+                      { label: '500g (Half Kg)', val: 500 },
+                      { label: '1000g (1 Kg Bar)', val: 1000 }
+                    ]
                     : [
-                        { label: '1g', val: 1 },
-                        { label: '8g (1 Pavan)', val: 8 },
-                        { label: '10g (1 Tola)', val: 10 },
-                        { label: '25g (Bangle)', val: 25 },
-                        { label: '50g (Bridal Set)', val: 50 },
-                        { label: '100g (Gold Bar)', val: 100 }
-                      ]
+                      { label: '1g', val: 1 },
+                      { label: '8g (1 Pavan)', val: 8 },
+                      { label: '10g (1 Tola)', val: 10 },
+                      { label: '25g (Bangle)', val: 25 },
+                      { label: '50g (Bridal Set)', val: 50 },
+                      { label: '100g (Gold Bar)', val: 100 }
+                    ]
                   ).map((chip) => (
                     <button
                       key={chip.label}
@@ -4063,7 +4073,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                   Nippon India Gold ETF
                 </h4>
                 <div className="font-mono text-bull" style={{ fontSize: '1.6rem', fontWeight: 900, margin: '0.4rem 0' }}>
-                  ₹{(quotes['GOLDBEES.NS']?.price || 66.85).toFixed(2)}
+                  {formatPriceFromInr(quotes['GOLDBEES.NS']?.price || 126.48, 2)}
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.85rem' }}>
                   Liquid fractional gold units (~0.01g per unit). Trade instantly during NSE market hours.
@@ -4094,7 +4104,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                   Nippon India Silver ETF
                 </h4>
                 <div className="font-mono text-bull" style={{ fontSize: '1.6rem', fontWeight: 900, margin: '0.4rem 0' }}>
-                  ₹{(quotes['SILVERBEES.NS']?.price || 89.40).toFixed(2)}
+                  {formatPriceFromInr(quotes['SILVERBEES.NS']?.price || 224.07, 2)}
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.85rem' }}>
                   Direct physical-backed silver units (~1g per unit). Highly liquid ETF tracking domestic silver.
@@ -4238,10 +4248,19 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
 
             {/* Modal Body Form */}
             <div style={{ padding: '1.25rem 1.4rem', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                 <span style={{ fontSize: '0.75rem', color: 'var(--warning-amber)', fontWeight: 800, textTransform: 'uppercase' }}>
                   Client Credentials Form
                 </span>
+                <button
+                  type="button"
+                  onClick={handleAutoFillInvoiceProfile}
+                  className="btn btn-secondary"
+                  style={{ fontSize: '0.72rem', padding: '0.28rem 0.6rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}
+                  title="Auto-fill recipient details from your saved Trader Profile"
+                >
+                  <UserCheck size={12} /> Auto-Fill from Profile
+                </button>
               </div>
 
               {/* Form Fields */}

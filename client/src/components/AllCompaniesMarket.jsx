@@ -1871,7 +1871,12 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
             <div
               className="overview-stat-box"
               {...floatingCardEvents}
-              onClick={() => handleSelectSymbol(liveOverview?.topConviction?.symbol || 'NVDA')}
+              onClick={() => {
+                const sym = liveOverview?.topConviction?.symbol || 'NVDA';
+                const item = rawCompanies.find((c) => c.symbol === sym) || liveOverview?.topConviction || null;
+                if (onOpenDeepRecord) onOpenDeepRecord(sym, item);
+                else handleSelectSymbol(sym);
+              }}
               style={{ cursor: 'pointer' }}
               title="Open Top AI Conviction Pick complete record"
             >
@@ -1895,7 +1900,12 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
             <div
               className="overview-stat-box"
               {...floatingCardEvents}
-              onClick={() => handleSelectSymbol(liveOverview?.topGainer?.symbol || 'SONY')}
+              onClick={() => {
+                const sym = liveOverview?.topGainer?.symbol || 'SONY';
+                const item = rawCompanies.find((c) => c.symbol === sym) || liveOverview?.topGainer || null;
+                if (onOpenDeepRecord) onOpenDeepRecord(sym, item);
+                else handleSelectSymbol(sym);
+              }}
               style={{ cursor: 'pointer' }}
               title="Open Worldwide Live Top Gainer complete record"
             >
@@ -1928,7 +1938,12 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
             <div
               className="overview-stat-box"
               {...floatingCardEvents}
-              onClick={() => handleSelectSymbol(liveOverview?.allTimeBestGainer?.symbol || 'MSFT')}
+              onClick={() => {
+                const sym = liveOverview?.allTimeBestGainer?.symbol || 'MSFT';
+                const item = rawCompanies.find((c) => c.symbol === sym) || liveOverview?.allTimeBestGainer || null;
+                if (onOpenDeepRecord) onOpenDeepRecord(sym, item);
+                else handleSelectSymbol(sym);
+              }}
               style={{ cursor: 'pointer', borderColor: 'rgba(245, 158, 11, 0.25)' }}
               title="Open All-Time Best Market Gainer (Since Stock Market Start Till Now) complete record"
             >
@@ -2143,7 +2158,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
             </div>
 
             {/* Quick Reset Button (Visible whenever filters differ from defaults) */}
-            {(selectedRegion !== 'all' || selectedTier !== 'all' || selectedSector !== 'all' || searchQuery || sortBy !== 'marketCap' || sortOrder !== 'desc') && (
+            {(selectedRegion !== 'all' || selectedTier !== 'all' || selectedSector !== 'all' || activePreset !== 'all' || searchQuery || sortBy !== 'marketCap' || sortOrder !== 'desc') && (
               <>
                 <span className="market-filter-vdivider" aria-hidden="true" />
                 <button
@@ -2152,6 +2167,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
                     setSelectedRegion('all');
                     setSelectedTier('all');
                     setSelectedSector('all');
+                    setActivePreset('all');
                     setSearchQuery('');
                     setSortBy('marketCap');
                     setSortOrder('desc');

@@ -8136,8 +8136,8 @@ class MarketDataService {
 
   // Get historical candles for charts matching real exchange trading hours and Google Finance (1D, 1W, 1M, 1Y, 5Y, 10Y)
   async getHistoricalCandles(symbol, range = '1D') {
-    const sym = symbol.toUpperCase().trim();
-    const cachedState = this.marketState[sym];
+    const sym = resolveCanonicalSymbol(symbol);
+    const cachedState = marketState.get(sym);
     const quote = (cachedState && cachedState.price > 0) ? cachedState : await this.getQuote(sym);
     const currentPrice = quote.price;
 

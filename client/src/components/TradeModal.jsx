@@ -67,8 +67,9 @@ export function TradeModal({
   // Read extended trader profile for PDF statement personalization (user-scoped)
   const traderProfile = (() => {
     try {
-      const userKey = user?.id ? `trader_profile_${user.id}` : null;
-      const saved = (userKey && localStorage.getItem(userKey)) || (user ? null : localStorage.getItem('trader_extended_profile'));
+      const saved = user?.id
+        ? (localStorage.getItem(`trader_extended_profile_${user.id}`) || localStorage.getItem(`trader_profile_${user.id}`))
+        : (localStorage.getItem('trader_extended_profile_guest') || localStorage.getItem('trader_extended_profile'));
       if (saved) return JSON.parse(saved);
       if (user?.traderProfile) return user.traderProfile;
     } catch (e) {}
@@ -1181,7 +1182,7 @@ export function TradeModal({
               {loading ? (
                 <span>Submitting to Direct DMA...</span>
               ) : (isSafeZoneBreach && !allowReserveBreach) ? (
-                <span>ALERT: Exceeds Safe Reserve ($${minBalance.toFixed(2)})</span>
+                <span>ALERT: Exceeds Safe Reserve (${minBalance.toFixed(2)})</span>
               ) : (
                 <>
                   <span>

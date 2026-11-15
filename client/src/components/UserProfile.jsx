@@ -32,6 +32,7 @@ import {
   ExternalLink,
   Sun,
   Moon,
+  Shield,
   ShieldCheck,
   Globe,
   Coins,
@@ -221,7 +222,8 @@ export function UserProfile({
   onSelectSymbol,
   onOpenTradeModal,
   onResetPortfolio,
-  onNavigateTab
+  onNavigateTab,
+  onOpenSecurityCenter
 }) {
   const { user, token, logout, updateProfile, changePassword, deleteAccount } = useAuth();
   const { theme, setTheme, toggleTheme } = useTheme();
@@ -747,7 +749,7 @@ export function UserProfile({
   }
 
   // Live portfolio metrics (Exact cash balance tied to authenticated user ID)
-  const cashBalance = portfolio?.cashBalance !== undefined ? Number(portfolio.cashBalance) : 100000;
+  const cashBalance = portfolio?.cashBalance !== undefined ? Number(portfolio.cashBalance) : 1000;
   const investedValue = Number(portfolio?.investedValue) || 0;
   const totalValue = Number(portfolio?.totalPortfolioValue) || (cashBalance + investedValue);
   const unrealizedPnL = Number(portfolio?.totalUnrealizedPnL) || 0;
@@ -757,7 +759,7 @@ export function UserProfile({
   const isProfitable = unrealizedPnL >= 0;
 
   // Safe Zone & Minimum Balance metrics
-  const minBalance = Number(profileForm.minBalance !== undefined ? profileForm.minBalance : (traderProfile.minBalance !== undefined ? traderProfile.minBalance : (user?.minBalance !== undefined ? user.minBalance : 2500)));
+  const minBalance = Number(profileForm.minBalance !== undefined ? profileForm.minBalance : (traderProfile.minBalance !== undefined ? traderProfile.minBalance : (user?.minBalance !== undefined ? user.minBalance : 100)));
   const safeTradingPower = Math.max(0, cashBalance - minBalance);
   const safeZoneStatus = cashBalance < minBalance ? 'BREACHED' : (cashBalance <= minBalance * 1.15 ? 'WARNING' : 'OPTIMAL');
   const dualMinBalance = formatDualCurrency(minBalance, 2);
@@ -1229,7 +1231,7 @@ export function UserProfile({
           }}
         >
           <CheckCircle2 size={16} />
-          <span>Paper trading portfolio reset to $100,000.00 cash balance successfully.</span>
+          <span>Paper trading portfolio reset to $1,000.00 cash balance successfully.</span>
         </div>
       )}
 
@@ -3872,7 +3874,7 @@ export function UserProfile({
                 No executed trades recorded yet
               </p>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', margin: '0 0 1.25rem', maxWidth: '420px', marginLeft: 'auto', marginRight: 'auto' }}>
-                Execute a paper trade on any global stock using your $100,000 cash balance to start populating your audit ledger.
+                Execute a paper trade on any global stock using your $1,000 starting cash balance to start populating your audit ledger.
               </p>
               <button
                 className="btn btn-primary"
@@ -3957,7 +3959,7 @@ export function UserProfile({
                         </td>
                         <td style={{ textAlign: 'right' }} className="font-mono">
                           <span style={{ color: isUp ? '#34d399' : '#f87171', fontWeight: 700 }}>
-                            {isUp ? '+' : ''}${holdingPnL.toFixed(2)} ({isUp ? '+' : ''}{holdingPnLPercent.toFixed(2)}%)
+                            {holdingPnL >= 0 ? '+' : '-'}${Math.abs(holdingPnL).toFixed(2)} ({holdingPnLPercent >= 0 ? '+' : ''}{holdingPnLPercent.toFixed(2)}%)
                           </span>
                         </td>
                         <td style={{ textAlign: 'center' }}>
@@ -3992,7 +3994,7 @@ export function UserProfile({
                 No open stock positions
               </p>
               <p style={{ color: 'var(--text-secondary)', fontSize: '0.82rem', margin: '0 0 1.25rem', maxWidth: '420px', marginLeft: 'auto', marginRight: 'auto' }}>
-                You have $100,000 cash balance ready to deploy. Browse the worldwide market screener to open positions.
+                You have a live cash balance ready to deploy. Browse the worldwide market screener to open positions.
               </p>
               <button
                 className="btn btn-primary"
@@ -5304,14 +5306,26 @@ export function UserProfile({
 
           {/* Section: Security Center — Change Password & Account Deletion */}
           <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid rgba(99,102,241,0.2)' }}>
-            <div>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <ShieldCheck size={18} style={{ color: '#818cf8' }} />
-                Security Center
-              </h3>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.2rem 0 0' }}>
-                Manage your account password and security credentials.
-              </p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <ShieldCheck size={18} style={{ color: '#818cf8' }} />
+                  Security Center
+                </h3>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0.2rem 0 0' }}>
+                  Manage your account password and security credentials.
+                </p>
+              </div>
+              {onOpenSecurityCenter && (
+                <button
+                  type="button"
+                  onClick={onOpenSecurityCenter}
+                  className="btn btn-secondary"
+                  style={{ fontSize: '0.78rem', padding: '0.45rem 0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+                >
+                  <Shield size={14} style={{ color: '#10b981' }} /> Cyber Defense Telemetry
+                </button>
+              )}
             </div>
 
             {/* Change Password */}
@@ -5375,7 +5389,7 @@ export function UserProfile({
                   Reset Simulated Portfolio Balance
                 </h4>
                 <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, maxWidth: '640px' }}>
-                  Restores your sandbox portfolio back to the initial starting cash balance of <strong>$100,000.00 USD</strong>. All current open positions and past transaction logs will be permanently erased.
+                  Restores your sandbox portfolio back to the initial starting cash balance of <strong>$1,000.00 USD</strong>. All current open positions and past transaction logs will be permanently erased.
                 </p>
               </div>
 
@@ -5388,10 +5402,10 @@ export function UserProfile({
                   fontSize: '0.82rem',
                   gap: '0.45rem'
                 }}
-                title="Reset simulation back to $100,000"
+                title="Reset simulation back to $1,000"
               >
                 <RefreshCw size={14} className={resetting ? 'spin' : ''} />
-                <span>{resetting ? 'Resetting...' : 'Reset to $100k Balance'}</span>
+                <span>{resetting ? 'Resetting...' : 'Reset to $1,000 Balance'}</span>
               </button>
             </div>
           </div>

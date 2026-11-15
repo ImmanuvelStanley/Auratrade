@@ -19,6 +19,8 @@ class AIAdvisorService {
     let userId = null;
     let apiKey = '';
     let selectedModel = 'gemini-2.0-flash';
+    let clientQuote = null;
+    let history = [];
 
     if (typeof param1 === 'object' && param1 !== null) {
       message = param1.message || '';
@@ -26,6 +28,8 @@ class AIAdvisorService {
       userId = param1.userId || null;
       apiKey = param1.apiKey || process.env.GEMINI_API_KEY || '';
       selectedModel = param1.model || 'gemini-2.0-flash';
+      clientQuote = param1.quote || null;
+      history = Array.isArray(param1.history) ? param1.history : [];
     } else {
       message = param1 || '';
       symbol = param2 || '';
@@ -47,6 +51,9 @@ class AIAdvisorService {
     try {
       quote = await marketDataService.getQuote(detectedTicker);
     } catch (e) { }
+    if (!quote && clientQuote) {
+      quote = clientQuote;
+    }
     try {
       prediction = await predictionService.generatePrediction(detectedTicker);
     } catch (e) { }
@@ -56,9 +63,14 @@ class AIAdvisorService {
       }
     } catch (e) { }
 
+    const currCode = quote?.currency || (detectedTicker.endsWith('.NS') || detectedTicker.endsWith('.BO') || detectedTicker.endsWith('.MCX') ? 'INR' : 'USD');
+    const currSymbol = currCode === 'INR' ? '₹' : currCode === 'EUR' ? '€' : currCode === 'GBP' ? '£' : currCode === 'JPY' || currCode === 'CNY' ? '¥' : '$';
+
     const liveContext = {
       symbol: detectedTicker,
       name: quote?.name || `${detectedTicker} Corporation`,
+      currency: currCode,
+      currSymbol,
       currentPrice: quote ? quote.price : 150.0,
       change: quote ? quote.change : 0,
       changePercent: quote ? quote.changePercent : 0,
@@ -75,7 +87,8 @@ class AIAdvisorService {
       wallStreetTarget: prediction?.wallStreetConsensus ? prediction.wallStreetConsensus.averageTarget : (quote ? quote.price * 1.12 : 168.0),
       modelAccuracy: prediction?.modelAudit ? prediction.modelAudit.directionalAccuracy90D : '87.8%',
       cashBalance: portfolio ? portfolio.cashBalance : 1000.0,
-      portfolioEquity: portfolio ? portfolio.totalEquity || portfolio.cashBalance : 1000.0
+      portfolioEquity: portfolio ? portfolio.totalEquity || portfolio.cashBalance : 1000.0,
+      history
     };
 
     // 1. If Gemini API Key is present, attempt live Google Gemini LLM Generation with Thinking
@@ -114,7 +127,7 @@ class AIAdvisorService {
 You are equipped with advanced multi-step reasoning capabilities, complete mastery of the AuraTrade platform architecture, and deep knowledge of global financial markets, macroeconomics, derivatives, and regulatory frameworks.
 
 AuraTrade Platform Architecture & Workstations ("Within the Page"):
-- All Markets Screener ('all-markets'): 30+ institutional US equities with sector filtering, market cap tiers, real P/E, 52-week ranges, dividend yields, and institutional appeal.
+- All Markets Screener ('all-markets'): 300+ global equities, ETFs, indices, commodities, and crypto assets across US, Europe, Asia-Pacific, and India with sector filtering, market cap tiers, real P/E, 52-week ranges, dividend yields, and institutional appeal.
 - Workstation Terminal ('dashboard'): US Equities terminal with live candlestick/line charts (1D, 1W, 1M, 1Y, 5Y), technical indicators (RSI, MACD, Bollinger Bands, Moving Averages 20/50/200), real-time order flow tape, and depth of market.
 - NSE India Market Desk ('nse-india'): NIFTY 50 and SENSEX benchmark indices, top Indian bluechips (RELIANCE.NS, TCS.NS, HDFCBANK.NS, INFY.NS, ICICIBANK.NS, BHARTIARTL.NS, SBIN.NS, ITC.NS, HINDUNILVR.NS, LT.NS), Indian trading hours (9:15 AM - 3:30 PM IST), T+1 rolling settlement cycle under SEBI, and INR currency denomination.
 - Bullion & Precious Metals Desk ('gold-silver'): 24K Physical Gold (999 Purity) and 999 Fine Silver, live Spot XAU/USD & XAG/USD feeds, BIS Hallmarking with 6-digit alphanumeric HUID (Hallmark Unique Identification), LBMA Good Delivery 400 oz / 1,000 oz standards, Tier-1 allocated insured vaulting in Brink's and Malca-Amit (Zurich, London, Mumbai), physical doorstep delivery vs digital gold tokenization, GST 3.0%, and Gold-to-Silver ratio mean-reversion trading.
@@ -132,7 +145,7 @@ Outside-the-Page Financial Context:
 - Taxation & Regulations: IRS 30-day Wash Sale Rule (disallowed loss added to replacement share basis), Short-term vs Long-term capital gains, Form 1099-B, Section 1256 Contracts (60/40 tax rule), Indian Section 112A (LTCG 12.5% > ₹1.25L) & Section 111A (STCG 20%), SIPC protection up to $500,000 ($250,000 cash).
 
 Real-time Market Context:
-- Inspected Asset: ${liveContext.symbol} (${liveContext.name}), Live Price: $${liveContext.currentPrice.toFixed(2)}, RSI (14): ${liveContext.rsi}, 30-Day Target: $${liveContext.target30D.toFixed(2)} (+${liveContext.upside.toFixed(1)}%), Rating: ${liveContext.rating}.
+- Inspected Asset: ${liveContext.symbol} (${liveContext.name}), Live Price: ${liveContext.currSymbol}${liveContext.currentPrice.toFixed(2)}, RSI (14): ${liveContext.rsi}, 30-Day Target: ${liveContext.currSymbol}${liveContext.target30D.toFixed(2)} (+${liveContext.upside.toFixed(1)}%), Rating: ${liveContext.rating}.
 - Trader Available Capital: $${liveContext.cashBalance.toLocaleString('en-US', { maximumFractionDigits: 2 })}.
 
 CRITICAL INSTRUCTIONS:
@@ -350,7 +363,7 @@ Welcome to **AuraTrade Pro**, an institutional-grade multi-asset workstation eng
 
 #### The 8 Dedicated Workstation Desks
 1. **All Companies Screener ([AuraTrade: All Markets])**:
-   * Full database of 30+ institutional US bluechips (Apple, Microsoft, NVIDIA, Berkshire Hathaway, Eli Lilly, etc.) with live P/E ratios, 52-week ranges, dividend yields, and sector classifications.
+   * Full database of 300+ global stocks, ETFs, sovereign indices, bullion, commodities, and crypto (Apple, Microsoft, NVIDIA, Reliance, TCS, etc.) with live P/E ratios, 52-week ranges, dividend yields, and sector classifications.
 2. **Workstation Terminal ([AuraTrade: Terminal])**:
    * The core charting cockpit. Displays multi-timeframe candlestick and line charts (1D, 1W, 1M, 1Y, 5Y), technical indicators (RSI, MACD, Bollinger Bands, Moving Averages 20/50/200), and real-time order flow tape.
 3. **NSE India Market Desk ([AuraTrade: NSE India])**:

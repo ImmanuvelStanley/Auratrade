@@ -100,7 +100,7 @@ export function Footer({
                     if (onOpenAutoPredictor) onOpenAutoPredictor();
                   }}
                 >
-                  <ChevronRight size={13} /> Quantum Neural Market Predictor
+                  <ChevronRight size={13} /> AI Goal-Fit Predictor & Strategy Blueprint
                 </button>
               </li>
               <li>
@@ -125,7 +125,7 @@ export function Footer({
               </li>
               <li>
                 <button type="button" onClick={() => handleNav('portfolio')}>
-                  <ChevronRight size={13} /> Virtual Paper Trading ($100,000)
+                  <ChevronRight size={13} /> Virtual Paper Trading ($1,000)
                 </button>
               </li>
               <li>
@@ -311,7 +311,7 @@ export function Footer({
                   </p>
                   <h4 style={{ color: 'var(--text-primary)', marginBottom: '0.75rem', fontSize: '1.05rem' }}>2. Virtual Simulation & Zero Legal Tender Clause</h4>
                   <p style={{ marginBottom: '1rem' }}>
-                    All account balances, including the standard $100,000.00 baseline paper trading credits, margins, purchasing power, and realized or unrealized trading profits, are completely fictional and represent zero legal tender. No real currency is held in escrow, deposited, or transferred through these virtual simulation desks.
+                    All account balances, including the standard $1,000.00 baseline paper trading credits, margins, purchasing power, and realized or unrealized trading profits, are completely fictional and represent zero legal tender. No real currency is held in escrow, deposited, or transferred through these virtual simulation desks.
                   </p>
                   <h4 style={{ color: 'var(--text-primary)', marginBottom: '0.75rem', fontSize: '1.05rem' }}>3. Proprietary Intellectual Property</h4>
                   <p>

@@ -359,7 +359,7 @@ export const WatchlistTable = React.memo(function WatchlistTable({
                       onClick={() => setIsChooserOpen(true)}
                     >
                       <Plus size={14} />
-                      <span>Browse 160+ Companies Across Markets</span>
+                      <span>Browse 300+ Assets Across Markets</span>
                     </button>
                   </div>
                 </td>

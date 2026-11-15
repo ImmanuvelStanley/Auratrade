@@ -7,7 +7,7 @@ const { optionalAuth } = require('../middleware/authMiddleware');
 // Primary AI strategy and trade advice generation
 router.post('/chat', optionalAuth, async (req, res) => {
   try {
-    const { message, symbol, apiKey, model } = req.body;
+    const { message, symbol, quote, history, apiKey, model } = req.body;
     const userId = req.user ? req.user.id : null;
     const effectiveApiKey = (apiKey || req.headers['x-gemini-api-key'] || '').trim();
     const effectiveModel = (model || req.headers['x-ai-model'] || 'gemini-2.0-flash').trim();
@@ -15,6 +15,8 @@ router.post('/chat', optionalAuth, async (req, res) => {
     const response = await aiAdvisorService.generateAdvice({
       message,
       symbol,
+      quote,
+      history,
       userId,
       apiKey: effectiveApiKey,
       model: effectiveModel

@@ -338,7 +338,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
               >
                 <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)' }}>{sym}</span>
                 <span className={`font-mono ${flashClass}`} style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  {sym === 'INDIA VIX' ? '' : '₹'}{priceVal ? priceVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}
+                  {priceVal ? priceVal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}
                 </span>
                 <span style={{ fontSize: '0.72rem', fontWeight: 700, color: isBull ? 'var(--bull-green)' : 'var(--bear-red)', display: 'inline-flex', alignItems: 'center' }}>
                   {isBull ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
@@ -412,7 +412,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                       transition: 'all 0.15s ease'
                     }}
                   >
-                    {idx.symbol === 'INDIA VIX' ? '' : '₹'}{price ? price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}
+                    {price ? price.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}
                   </span>
                   <span className={`font-mono ${isBull ? 'text-bull' : 'text-bear'}`} style={{ fontSize: '0.85rem', fontWeight: 600 }}>
                     {isBull ? '+' : ''}{chg.toFixed(2)}
@@ -543,7 +543,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Index Benchmark Level</div>
                   <div className="font-mono" style={{ fontSize: '1.35rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                    {currentSector.symbol === 'INDIA VIX' ? '' : '₹'}{secPrice ? secPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}
+                    {secPrice ? secPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}
                   </div>
                 </div>
                 <button
@@ -656,7 +656,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                 <div className="sector-stat-tile">
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>52-Week Range</div>
                   <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                    L: ₹{currentSector.low52?.toLocaleString('en-IN')} — H: ₹{currentSector.high52?.toLocaleString('en-IN')}
+                    L: {currentSector.low52?.toLocaleString('en-IN')} — H: {currentSector.high52?.toLocaleString('en-IN')}
                   </div>
                   <div style={{ fontSize: '0.72rem', color: '#818cf8', marginTop: '0.15rem' }}>{currentSector.sentiment || 'Bullish Stance'}</div>
                 </div>
@@ -941,7 +941,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                           lineHeight: 1.2
                         }}
                       >
-                        ₹{secPrice ? secPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}
+                        {secPrice ? secPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}
                       </div>
 
                       <div style={{ height: '4px', width: '100%', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>

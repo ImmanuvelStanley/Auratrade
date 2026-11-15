@@ -12,8 +12,9 @@ export const PortfolioView = React.memo(function PortfolioView({ portfolio, onOp
 
   const traderProfile = (() => {
     try {
-      const userKey = user?.id ? `trader_profile_${user.id}` : null;
-      const saved = (userKey && localStorage.getItem(userKey)) || (user ? null : localStorage.getItem('trader_extended_profile'));
+      const saved = user?.id
+        ? (localStorage.getItem(`trader_extended_profile_${user.id}`) || localStorage.getItem(`trader_profile_${user.id}`))
+        : (localStorage.getItem('trader_extended_profile_guest') || localStorage.getItem('trader_extended_profile'));
       if (saved) return JSON.parse(saved);
       if (user?.traderProfile) return user.traderProfile;
     } catch (e) {}
@@ -82,7 +83,7 @@ export const PortfolioView = React.memo(function PortfolioView({ portfolio, onOp
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', marginTop: '0.35rem' }}>
             <span className={`font-mono ${isOverallBull ? 'text-bull' : 'text-bear'}`} style={{ fontWeight: 600 }}>
-              {isOverallBull ? '+' : ''}${totalPnL.toFixed(2)} ({totalPnLPercent.toFixed(2)}%)
+              {totalPnL >= 0 ? '+' : '-'}${Math.abs(totalPnL).toFixed(2)} ({totalPnLPercent.toFixed(2)}%)
             </span>
             <span style={{ color: 'var(--text-muted)' }}>Unrealized Return</span>
           </div>
@@ -184,7 +185,7 @@ export const PortfolioView = React.memo(function PortfolioView({ portfolio, onOp
               {dynamicHoldings.length === 0 ? (
                 <tr>
                   <td colSpan="7" style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-muted)' }}>
-                    No stock holdings yet. Use the <strong>Trade</strong> button on any stock to buy simulated shares with your $100k balance.
+                    No stock holdings yet. Use the <strong>Trade</strong> button on any stock to buy simulated shares with your $1,000 starting paper balance.
                   </td>
                 </tr>
               ) : (
@@ -219,7 +220,7 @@ export const PortfolioView = React.memo(function PortfolioView({ portfolio, onOp
                           style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', fontWeight: 600 }}
                         >
                           {isBull ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                          {isBull ? '+' : ''}${h.pnl.toFixed(2)} ({h.pnlPercent.toFixed(2)}%)
+                          {h.pnl >= 0 ? '+' : '-'}${Math.abs(h.pnl).toFixed(2)} ({h.pnlPercent.toFixed(2)}%)
                         </span>
                       </td>
                       <td style={{ textAlign: 'right' }}>

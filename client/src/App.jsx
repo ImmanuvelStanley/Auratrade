@@ -72,12 +72,11 @@ export function App() {
 
   const [portfolio, setPortfolio] = useState(() => {
     try {
-      const savedUser = localStorage.getItem('auratrade_token');
       const saved = localStorage.getItem('auratrade_portfolio_cache');
       return saved ? JSON.parse(saved) : {
-        cashBalance: 100000.00,
+        cashBalance: 1000.00,
         investedValue: 0.00,
-        totalPortfolioValue: 100000.00,
+        totalPortfolioValue: 1000.00,
         totalUnrealizedPnL: 0.00,
         totalPnLPercent: 0.00,
         holdings: [],
@@ -85,9 +84,9 @@ export function App() {
       };
     } catch (e) {
       return {
-        cashBalance: 100000.00,
+        cashBalance: 1000.00,
         investedValue: 0.00,
-        totalPortfolioValue: 100000.00,
+        totalPortfolioValue: 1000.00,
         totalUnrealizedPnL: 0.00,
         totalPnLPercent: 0.00,
         holdings: [],
@@ -583,6 +582,7 @@ export function App() {
             <PortfolioView
               portfolio={portfolio}
               onOpenTradeModal={handleOpenTrade}
+              onTradeComplete={loadPortfolio}
             />
           )}
 
@@ -595,6 +595,7 @@ export function App() {
               onOpenTradeModal={handleOpenTrade}
               onResetPortfolio={loadPortfolio}
               onNavigateTab={setActiveTab}
+              onOpenSecurityCenter={() => setIsSecurityModalOpen(true)}
             />
           )}
 
@@ -617,14 +618,16 @@ export function App() {
           {/* Global Institutional Footer & Copyright */}
           <Footer
             onNavigateTab={(tab) => {
+              const gated = ['watchlist-alerts', 'watchlist', 'alerts', 'portfolio', 'profile'].includes(tab);
+              if (gated && !token) {
+                setIsAuthModalOpen(true);
+                return;
+              }
               setActiveTab(tab);
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             onOpenAutoPredictor={handleOpenAutoPredictor}
-            onOpenTradeModal={() => {
-              setTradeTargetSymbol(activeSymbol || 'AAPL');
-              setIsTradeModalOpen(true);
-            }}
+            onOpenTradeModal={() => handleOpenTrade(activeSymbol || 'AAPL')}
             onOpenAlertModal={() => {
               handleOpenAlertModal(activeSymbol || 'AAPL');
             }}
@@ -704,13 +707,15 @@ export function App() {
       <AIAssistant
         activeSymbol={activeSymbol}
         onNavigate={(tab) => {
+          const gated = ['watchlist-alerts', 'watchlist', 'alerts', 'portfolio', 'profile'].includes(tab);
+          if (gated && !token) {
+            setIsAuthModalOpen(true);
+            return;
+          }
           setActiveTab(tab);
           window.scrollTo({ top: 0, behavior: 'instant' });
         }}
-        onOpenTrade={(sym) => {
-          if (sym) setActiveSymbol(sym);
-          setIsTradeModalOpen(true);
-        }}
+        onOpenTrade={(sym) => handleOpenTrade(sym)}
         onOpenAutoPredictor={() => setIsAutoPredictorOpen(true)}
       />
     </div>
