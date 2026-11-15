@@ -852,76 +852,159 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
         </div>
 
         {/* Right Card: Sectoral Indices Performance Heatmap */}
-        <div className="glass-card" style={{ padding: '1.35rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <h4 style={{ fontSize: '0.95rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-              <Activity size={16} style={{ color: 'var(--accent-cyan)' }} /> NSE Sectoral Indices Performance
-            </h4>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              10 Key Indian Sectors
-            </span>
-          </div>
+        {(() => {
+          const validSectors = (sectoralIndices || []).filter(Boolean);
+          const advancingSectors = validSectors.filter((s) => Number(s.changePercent ?? s.pChange ?? 0) >= 0).length;
+          const sortedByPerf = [...validSectors].sort(
+            (a, b) => Number(b.changePercent ?? b.pChange ?? 0) - Number(a.changePercent ?? a.pChange ?? 0)
+          );
+          const leadingSector = sortedByPerf[0] || null;
+          const laggingSector = sortedByPerf[sortedByPerf.length - 1] || null;
+          const avgSectorMove = validSectors.length > 0
+            ? validSectors.reduce((acc, s) => acc + Number(s.changePercent ?? s.pChange ?? 0), 0) / validSectors.length
+            : 0;
 
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))',
-              gap: '0.75rem'
-            }}
-          >
-            {sectoralIndices?.map((sec) => {
-              if (!sec) return null;
-              const secChgPct = Number(sec.changePercent ?? sec.pChange ?? 0);
-              const isBull = secChgPct >= 0;
-              const secPrice = Number(sec.price ?? sec.ltp ?? 0);
+          return (
+            <div className="glass-card" style={{ padding: '1.35rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <h4 style={{ fontSize: '0.95rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.45rem', margin: 0 }}>
+                  <Activity size={16} style={{ color: 'var(--accent-cyan)' }} /> NSE Sectoral Indices Performance
+                </h4>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  <strong style={{ color: 'var(--bull-green)' }}>{advancingSectors}</strong>/{validSectors.length} Advancing • {validSectors.length} Key Indian Sectors
+                </span>
+              </div>
 
-              return (
-                <div
-                  key={sec.symbol}
-                  style={{
-                    padding: '0.85rem',
-                    borderRadius: 'var(--radius-md)',
-                    background: isBull ? 'rgba(16, 185, 129, 0.08)' : 'rgba(244, 63, 94, 0.08)',
-                    border: `1px solid ${isBull ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)'}`,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    gap: '0.35rem'
-                  }}
-                >
-                  <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-                    {sec.symbol}
-                  </span>
-                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                    <span
-                      className={`font-mono ${flashingSymbols[sec.symbol] || ''}`}
+              <div className="nse-sectoral-grid">
+                {validSectors.map((sec) => {
+                  const secChgPct = Number(sec.changePercent ?? sec.pChange ?? 0);
+                  const isBull = secChgPct >= 0;
+                  const secPrice = Number(sec.price ?? sec.ltp ?? 0);
+                  const strengthWidth = Math.max(14, Math.min(100, Math.abs(secChgPct) * 55));
+
+                  return (
+                    <div
+                      key={sec.symbol}
+                      className="nse-sectoral-tile"
                       style={{
-                        fontSize: '0.95rem',
-                        fontWeight: 800,
-                        color: 'var(--text-primary)',
-                        display: 'inline-block',
-                        borderRadius: '3px',
-                        padding: '1px 4px'
+                        padding: '0.78rem 0.85rem',
+                        borderRadius: 'var(--radius-md)',
+                        background: isBull ? 'rgba(16, 185, 129, 0.08)' : 'rgba(244, 63, 94, 0.08)',
+                        border: `1px solid ${isBull ? 'rgba(16, 185, 129, 0.22)' : 'rgba(244, 63, 94, 0.22)'}`,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: '0.45rem',
+                        height: '100%',
+                        boxSizing: 'border-box',
+                        minWidth: 0
                       }}
                     >
-                      ₹{secPrice ? secPrice.toLocaleString('en-IN') : '--'}
-                    </span>
-                    <span
-                      className="font-mono"
-                      style={{
-                        fontSize: '0.8rem',
-                        fontWeight: 700,
-                        color: isBull ? 'var(--bull-green)' : 'var(--bear-red)'
-                      }}
-                    >
-                      {isBull ? '+' : ''}{secChgPct.toFixed(2)}%
-                    </span>
-                  </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.35rem' }}>
+                        <span
+                          style={{
+                            fontSize: '0.7rem',
+                            fontWeight: 700,
+                            color: 'var(--text-secondary)',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            letterSpacing: '0.02em'
+                          }}
+                          title={sec.symbol}
+                        >
+                          {sec.symbol}
+                        </span>
+                        <span
+                          className="font-mono"
+                          style={{
+                            fontSize: '0.74rem',
+                            fontWeight: 800,
+                            color: isBull ? 'var(--bull-green)' : 'var(--bear-red)',
+                            fontVariantNumeric: 'tabular-nums',
+                            whiteSpace: 'nowrap',
+                            flexShrink: 0
+                          }}
+                        >
+                          {isBull ? '+' : ''}{secChgPct.toFixed(2)}%
+                        </span>
+                      </div>
+
+                      <div
+                        className={`font-mono ${flashingSymbols[sec.symbol] || ''}`}
+                        style={{
+                          fontSize: '0.98rem',
+                          fontWeight: 800,
+                          color: 'var(--text-primary)',
+                          fontVariantNumeric: 'tabular-nums',
+                          whiteSpace: 'nowrap',
+                          lineHeight: 1.2
+                        }}
+                      >
+                        ₹{secPrice ? secPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}
+                      </div>
+
+                      <div style={{ height: '4px', width: '100%', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                        <div
+                          style={{
+                            width: `${strengthWidth}%`,
+                            height: '100%',
+                            borderRadius: '999px',
+                            background: isBull ? 'var(--bull-green)' : 'var(--bear-red)',
+                            opacity: 0.85
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Sector Rotation Summary Footer aligned with Left Card Currency Strip */}
+              <div
+                style={{
+                  paddingTop: '0.85rem',
+                  borderTop: '1px solid var(--border-subtle)',
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                  gap: '0.6rem'
+                }}
+              >
+                <div style={{ padding: '0.5rem 0.7rem', background: 'var(--bg-input)', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Sector Breadth</span>
+                  <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>
+                    {advancingSectors}↑ / {validSectors.length - advancingSectors}↓
+                  </strong>
                 </div>
-              );
-            })}
-          </div>
-        </div>
+
+                {leadingSector && (
+                  <div style={{ padding: '0.5rem 0.7rem', background: 'var(--bg-input)', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem' }}>
+                    <span style={{ color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Leader</span>
+                    <strong className="font-mono" style={{ color: 'var(--bull-green)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {leadingSector.symbol.replace('NIFTY ', '')} ({Number(leadingSector.changePercent ?? leadingSector.pChange ?? 0) >= 0 ? '+' : ''}{Number(leadingSector.changePercent ?? leadingSector.pChange ?? 0).toFixed(2)}%)
+                    </strong>
+                  </div>
+                )}
+
+                {laggingSector && (
+                  <div style={{ padding: '0.5rem 0.7rem', background: 'var(--bg-input)', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem' }}>
+                    <span style={{ color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Laggard</span>
+                    <strong className="font-mono" style={{ color: Number(laggingSector.changePercent ?? laggingSector.pChange ?? 0) >= 0 ? 'var(--bull-green)' : 'var(--bear-red)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {laggingSector.symbol.replace('NIFTY ', '')} ({Number(laggingSector.changePercent ?? laggingSector.pChange ?? 0) >= 0 ? '+' : ''}{Number(laggingSector.changePercent ?? laggingSector.pChange ?? 0).toFixed(2)}%)
+                    </strong>
+                  </div>
+                )}
+
+                <div style={{ padding: '0.5rem 0.7rem', background: 'var(--bg-input)', borderRadius: 'var(--radius-sm)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>Avg Move</span>
+                  <strong className="font-mono" style={{ color: avgSectorMove >= 0 ? 'var(--bull-green)' : 'var(--bear-red)' }}>
+                    {avgSectorMove >= 0 ? '+' : ''}{avgSectorMove.toFixed(2)}%
+                  </strong>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Bottom Section: Top Gainers, Losers & Most Active Equities (Live NSE Table) */}
