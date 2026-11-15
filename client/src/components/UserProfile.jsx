@@ -1481,64 +1481,79 @@ export function UserProfile({
       </div>
 
       {/* =========================================================================
-          4. PROFILE SECTION NAVIGATION (OPTIONS TO VIEW)
+          4. PROFILE SECTION NAVIGATION (HIGH-VISIBILITY SEGMENTED PILL DOCK)
           ========================================================================= */}
       <div
-        className="tab-list"
-        style={{
-          gap: '0.4rem',
-          borderBottom: '1px solid var(--border-subtle)',
-          paddingBottom: '0.15rem',
-          marginBottom: '0.25rem'
-        }}
+        className="profile-subnav-dock"
+        role="tablist"
+        aria-label="Trader Profile Sections"
       >
-        <button
-          type="button"
-          className={`tab-btn ${activeSubTab === 'overview' ? 'active' : ''}`}
-          onClick={() => setActiveSubTab('overview')}
-        >
-          <PieChart size={15} /> Overview &amp; Summary
-        </button>
-
-        <button
-          type="button"
-          className={`tab-btn ${activeSubTab === 'profile-edit' ? 'active' : ''}`}
-          onClick={() => setActiveSubTab('profile-edit')}
-        >
-          <Edit3 size={15} /> Edit Profile &amp; Region
-        </button>
-
-        <button
-          type="button"
-          className={`tab-btn ${activeSubTab === 'bullion' ? 'active' : ''}`}
-          onClick={() => setActiveSubTab('bullion')}
-        >
-          <Scale size={15} /> Bullion Purchasing Power
-        </button>
-
-        <button
-          type="button"
-          className={`tab-btn ${activeSubTab === 'ledger' ? 'active' : ''}`}
-          onClick={() => setActiveSubTab('ledger')}
-        >
-          <History size={15} /> Execution Ledger ({transactions.length})
-        </button>
-
-        <button
-          type="button"
-          className={`tab-btn ${activeSubTab === 'positions' ? 'active' : ''}`}
-          onClick={() => setActiveSubTab('positions')}
-        >
-          <Layers size={15} /> Active Holdings ({holdings.length})
-        </button>
-
-        <button
-          type="button"
-          className={`tab-btn ${activeSubTab === 'settings' ? 'active' : ''}`}
-          onClick={() => setActiveSubTab('settings')}
-        >
-          <SlidersHorizontal size={15} /> Preferences
-        </button>
+        {[
+          {
+            id: 'overview',
+            label: 'Overview & Summary',
+            icon: PieChart,
+            accent: '#38bdf8'
+          },
+          {
+            id: 'profile-edit',
+            label: 'Edit Profile & Region',
+            icon: Edit3,
+            accent: '#a78bfa'
+          },
+          {
+            id: 'bullion',
+            label: 'Bullion Purchasing Power',
+            icon: Scale,
+            accent: '#fbbf24'
+          },
+          {
+            id: 'ledger',
+            label: 'Execution Ledger',
+            count: transactions.length,
+            icon: History,
+            accent: '#34d399'
+          },
+          {
+            id: 'positions',
+            label: 'Active Holdings',
+            count: holdings.length,
+            icon: Layers,
+            accent: '#60a5fa'
+          },
+          {
+            id: 'settings',
+            label: 'Preferences & Feeds',
+            icon: SlidersHorizontal,
+            accent: '#f472b6'
+          }
+        ].map((item) => {
+          const IconComponent = item.icon;
+          const isActive = activeSubTab === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              className={`profile-subnav-pill ${isActive ? 'active' : ''}`}
+              onClick={() => setActiveSubTab(item.id)}
+            >
+              <span
+                className="profile-subnav-icon"
+                style={{ '--tab-accent': item.accent }}
+              >
+                <IconComponent size={14} />
+              </span>
+              <span className="profile-subnav-label">{item.label}</span>
+              {item.count !== undefined && (
+                <span className="profile-subnav-count tabular-nums">
+                  {item.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* =========================================================================
