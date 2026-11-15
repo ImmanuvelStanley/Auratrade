@@ -5515,9 +5515,28 @@ select option:checked {
 .bullion-spotlight-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
   gap: 1.25rem;
   width: 100%;
   box-sizing: border-box;
+}
+.bullion-spotlight-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.75rem;
+  height: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.bullion-spotlight-breakdown {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  min-height: 51px;
+  gap: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 0.65rem;
 }
 @media (max-width: 1100px) {
   .bullion-spotlight-grid {

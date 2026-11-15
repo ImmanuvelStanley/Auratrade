@@ -862,6 +862,11 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
   // Always initialize with instant data so the screen NEVER blocks with a spinner
   const [data, setData] = useState(preciousMetalsCache);
   const [activeSubTab, setActiveSubTab] = useState('catalog'); // 'catalog' | 'citywise' | 'calculator' | 'jewellery' | 'returns' | 'guide'
+  const subnavRef = useRef(null);
+  const jumpToSubTab = (tab) => {
+    setActiveSubTab(tab);
+    subnavRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
   const prevPricesRef = useRef({});
   const [flashingSymbols, setFlashingSymbols] = useState({});
   const { quotes } = useSocket();
@@ -1508,7 +1513,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
       <div className="bullion-spotlight-grid">
         {/* Card 1: Gold Master Spotlight */}
         <div
-          className="glass-card"
+          className="glass-card bullion-spotlight-card"
           style={{
             padding: '1.35rem 1.45rem',
             position: 'relative',
@@ -1517,8 +1522,8 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
             background: 'linear-gradient(135deg, rgba(22, 19, 13, 0.85) 0%, rgba(30, 24, 16, 0.55) 100%)'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
               <div
                 style={{
                   width: '42px',
@@ -1535,53 +1540,62 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
               >
                 <GoldBarIcon size={28} />
               </div>
-              <div>
-                <span style={{ fontSize: '0.72rem', color: 'var(--warning-amber)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em' }}>
+              <div style={{ minWidth: 0 }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--warning-amber)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'block', lineHeight: 1.2 }}>
                   World Bullion Sovereign
                 </span>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-primary)', margin: '0.1rem 0 0 0' }}>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-primary)', margin: '0.15rem 0 0 0', lineHeight: 1.2 }}>
                   Gold (XAU / MCX)
                 </h3>
               </div>
             </div>
             <span
               className={`status-pill ${liveGoldPct >= 0 ? 'bg-bull' : 'bg-bear'}`}
-              style={{ fontWeight: 800, fontSize: '0.8rem', padding: '0.25rem 0.6rem' }}
+              style={{ fontWeight: 800, fontSize: '0.78rem', padding: '0.25rem 0.6rem', flexShrink: 0 }}
             >
               {liveGoldPct >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
               {liveGoldPct >= 0 ? '+' : ''}{liveGoldPct.toFixed(2)}%
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem', margin: '0.85rem 0' }}>
-            <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.65rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(245, 158, 11, 0.15)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', flex: 1, alignItems: 'stretch' }}>
+            <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.65rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(245, 158, 11, 0.15)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                 Spot Gold (XAU)
               </div>
-              <div className="font-mono" style={{ fontSize: '1.28rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '0.15rem' }}>
+              <div className="font-mono" style={{ fontSize: '1.28rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '0.15rem', fontVariantNumeric: 'tabular-nums' }}>
                 {formatPriceFromUsd(liveGoldPrice, 2)}
               </div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>1 Troy Ounce ({currentCurrency.symbol}/oz)</div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>1 Troy Ounce ({currentCurrency.symbol}/oz)</div>
             </div>
 
-            <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.65rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(245, 158, 11, 0.15)' }}>
+            <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.65rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(245, 158, 11, 0.15)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                 MCX India (10g)
               </div>
-              <div className="font-mono text-bull" style={{ fontSize: '1.28rem', fontWeight: 900, marginTop: '0.15rem' }}>
+              <div className="font-mono text-bull" style={{ fontSize: '1.28rem', fontWeight: 900, marginTop: '0.15rem', fontVariantNumeric: 'tabular-nums' }}>
                 {formatPriceFromInr(liveGoldMcxPrice, 0)}
               </div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Pure Bullion ({currentCurrency.symbol}/10g)</div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>Pure Bullion ({currentCurrency.symbol}/10g)</div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-secondary)', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '0.65rem', marginTop: '0.65rem', flexWrap: 'wrap', gap: '0.4rem' }}>
-            <span>24K Gram: <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>{formatPriceFromInr(Math.round(liveGoldMcxPrice / 10), 0)}</strong></span>
-            <span>22K Hallmark: <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>{formatPriceFromInr(Math.round((liveGoldMcxPrice * 0.916) / 10), 0)}</strong></span>
-            <span>1 Pavan (8g): <strong className="font-mono text-bull">{formatPriceFromInr(Math.round((liveGoldMcxPrice * 0.916 * 8) / 10), 0)}</strong></span>
+          <div className="bullion-spotlight-breakdown">
+            <div>
+              <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>24K (1g)</div>
+              <strong className="font-mono" style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatPriceFromInr(Math.round(liveGoldMcxPrice / 10), 0)}</strong>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>22K (1g)</div>
+              <strong className="font-mono" style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatPriceFromInr(Math.round((liveGoldMcxPrice * 0.916) / 10), 0)}</strong>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>1 Pavan (8g)</div>
+              <strong className="font-mono text-bull" style={{ fontSize: '0.82rem', fontVariantNumeric: 'tabular-nums' }}>{formatPriceFromInr(Math.round((liveGoldMcxPrice * 0.916 * 8) / 10), 0)}</strong>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.85rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
               type="button"
               className="btn btn-primary"
@@ -1613,7 +1627,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
 
         {/* Card 2: Silver Master Spotlight */}
         <div
-          className="glass-card"
+          className="glass-card bullion-spotlight-card"
           style={{
             padding: '1.35rem 1.45rem',
             position: 'relative',
@@ -1622,8 +1636,8 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
             background: 'linear-gradient(135deg, rgba(14, 25, 36, 0.85) 0%, rgba(18, 33, 49, 0.55) 100%)'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
               <div
                 style={{
                   width: '42px',
@@ -1640,53 +1654,62 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
               >
                 <SilverBarIcon size={28} />
               </div>
-              <div>
-                <span style={{ fontSize: '0.72rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em' }}>
+              <div style={{ minWidth: 0 }}>
+                <span style={{ fontSize: '0.7rem', color: 'var(--accent-cyan)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'block', lineHeight: 1.2 }}>
                   Industrial & Monetary Metal
                 </span>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-primary)', margin: '0.1rem 0 0 0' }}>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-primary)', margin: '0.15rem 0 0 0', lineHeight: 1.2 }}>
                   Silver (XAG / MCX)
                 </h3>
               </div>
             </div>
             <span
               className={`status-pill ${liveSilverPct >= 0 ? 'bg-bull' : 'bg-bear'}`}
-              style={{ fontWeight: 800, fontSize: '0.8rem', padding: '0.25rem 0.6rem' }}
+              style={{ fontWeight: 800, fontSize: '0.78rem', padding: '0.25rem 0.6rem', flexShrink: 0 }}
             >
               {liveSilverPct >= 0 ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
               {liveSilverPct >= 0 ? '+' : ''}{liveSilverPct.toFixed(2)}%
             </span>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem', margin: '0.85rem 0' }}>
-            <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.65rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(6, 182, 212, 0.15)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', flex: 1, alignItems: 'stretch' }}>
+            <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.65rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(6, 182, 212, 0.15)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                 Spot Silver (XAG)
               </div>
-              <div className="font-mono" style={{ fontSize: '1.28rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '0.15rem' }}>
+              <div className="font-mono" style={{ fontSize: '1.28rem', fontWeight: 900, color: 'var(--text-primary)', marginTop: '0.15rem', fontVariantNumeric: 'tabular-nums' }}>
                 {formatPriceFromUsd(liveSilverPrice, 2)}
               </div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>1 Troy Ounce ({currentCurrency.symbol}/oz)</div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>1 Troy Ounce ({currentCurrency.symbol}/oz)</div>
             </div>
 
-            <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.65rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(6, 182, 212, 0.15)' }}>
+            <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.65rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(6, 182, 212, 0.15)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                 MCX India Bullion (1kg)
               </div>
-              <div className="font-mono text-bull" style={{ fontSize: '1.28rem', fontWeight: 900, marginTop: '0.15rem' }}>
+              <div className="font-mono text-bull" style={{ fontSize: '1.28rem', fontWeight: 900, marginTop: '0.15rem', fontVariantNumeric: 'tabular-nums' }}>
                 {formatPriceFromInr(liveSilverMcxPrice, 0)}
               </div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Pure 999 Fine ({currentCurrency.symbol}/kg)</div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>Pure 999 Fine ({currentCurrency.symbol}/kg)</div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem', color: 'var(--text-secondary)', borderTop: '1px solid rgba(255, 255, 255, 0.08)', paddingTop: '0.65rem', marginTop: '0.65rem', flexWrap: 'wrap', gap: '0.4rem' }}>
-            <span>Silver 1g: <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>{formatPriceFromInr(liveSilverMcxPrice / 1000, 2)}</strong></span>
-            <span>Silver 10g: <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>{formatPriceFromInr(Math.round(liveSilverMcxPrice / 100), 0)}</strong></span>
-            <span>Silver 100g: <strong className="font-mono text-bull">{formatPriceFromInr(Math.round(liveSilverMcxPrice / 10), 0)}</strong></span>
+          <div className="bullion-spotlight-breakdown">
+            <div>
+              <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Silver 1g</div>
+              <strong className="font-mono" style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatPriceFromInr(liveSilverMcxPrice / 1000, 2)}</strong>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Silver 10g</div>
+              <strong className="font-mono" style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatPriceFromInr(Math.round(liveSilverMcxPrice / 100), 0)}</strong>
+            </div>
+            <div>
+              <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Silver 100g</div>
+              <strong className="font-mono text-bull" style={{ fontSize: '0.82rem', fontVariantNumeric: 'tabular-nums' }}>{formatPriceFromInr(Math.round(liveSilverMcxPrice / 10), 0)}</strong>
+            </div>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.85rem' }}>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
               type="button"
               className="btn btn-primary"
@@ -1718,7 +1741,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
 
         {/* Card 3: Gold / Silver Ratio & Macro Drivers */}
         <div
-          className="glass-card"
+          className="glass-card bullion-spotlight-card"
           style={{
             padding: '1.35rem 1.45rem',
             position: 'relative',
@@ -1727,14 +1750,32 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
             background: 'linear-gradient(135deg, rgba(17, 24, 39, 0.85) 0%, rgba(30, 27, 75, 0.45) 100%)'
           }}
         >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.65rem' }}>
-            <div>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em' }}>
-                Macro Valuation Benchmark
-              </span>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--text-primary)', margin: '0.15rem 0 0 0' }}>
-                Gold / Silver Ratio
-              </h3>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', minWidth: 0 }}>
+              <div
+                style={{
+                  width: '42px',
+                  height: '42px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.24) 0%, rgba(79, 70, 229, 0.08) 100%)',
+                  border: '1px solid rgba(99, 102, 241, 0.38)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxShadow: '0 4px 14px rgba(99, 102, 241, 0.16)',
+                  flexShrink: 0
+                }}
+              >
+                <Scale size={22} color="#818cf8" />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <span style={{ fontSize: '0.7rem', color: '#818cf8', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.04em', display: 'block', lineHeight: 1.2 }}>
+                  Macro Valuation Benchmark
+                </span>
+                <h3 style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--text-primary)', margin: '0.15rem 0 0 0', lineHeight: 1.2 }}>
+                  Gold / Silver Ratio
+                </h3>
+              </div>
             </div>
             <span
               className="status-pill"
@@ -1742,70 +1783,110 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                 background: 'rgba(99, 102, 241, 0.15)',
                 borderColor: 'rgba(99, 102, 241, 0.35)',
                 color: 'var(--accent-indigo)',
-                fontSize: '0.72rem',
-                padding: '0.2rem 0.55rem',
-                fontWeight: 800
+                fontSize: '0.78rem',
+                padding: '0.25rem 0.6rem',
+                fontWeight: 800,
+                flexShrink: 0
               }}
             >
               Mean: {ratio?.mean || 74.0}
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginBottom: '0.4rem' }}>
-            <div className="font-mono" style={{ fontSize: '2.1rem', fontWeight: 900, color: 'var(--text-primary)' }}>
-              {ratio?.current || (liveGoldPrice / liveSilverPrice).toFixed(2)}
-              <span style={{ fontSize: '1rem', color: 'var(--text-muted)', fontWeight: 500 }}> : 1</span>
-            </div>
-            <span
-              className={`status-pill ${ratio?.deviationPercent > 0 ? 'bg-bull' : 'bg-bear'}`}
-              style={{ fontSize: '0.75rem', fontWeight: 800 }}
-            >
-              {ratio?.deviationPercent > 0 ? '+' : ''}{ratio?.deviationPercent || '-11.7'}% vs Mean
-            </span>
-          </div>
-
-          {/* Visual Ratio Gauge Bar */}
-          <div style={{ margin: '0.65rem 0 0.4rem' }}>
-            <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(255, 255, 255, 0.1)', position: 'relative', overflow: 'hidden' }}>
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  top: 0,
-                  bottom: 0,
-                  width: `${Math.min(100, Math.max(15, ((ratio?.current || 74) / 110) * 100))}%`,
-                  background: 'linear-gradient(90deg, #10b981, #6366f1, #f59e0b)',
-                  borderRadius: '4px',
-                  transition: 'width 0.8s ease'
-                }}
-              />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
-              <span>50 (Silver Rich)</span>
-              <span style={{ color: 'var(--text-secondary)' }}>74 (Historical Mean)</span>
-              <span>100+ (Gold Rich)</span>
-            </div>
-          </div>
-
           <div
             style={{
-              background: 'rgba(255, 255, 255, 0.04)',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              background: 'rgba(255, 255, 255, 0.03)',
+              padding: '0.55rem 0.85rem',
               borderRadius: 'var(--radius-sm)',
-              padding: '0.5rem 0.65rem',
-              fontSize: '0.75rem',
-              color: 'var(--text-secondary)',
-              marginTop: '0.5rem'
+              border: '1px solid rgba(99, 102, 241, 0.18)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              gap: '0.4rem',
+              flex: 1
             }}
           >
-            <strong style={{ color: 'var(--accent-indigo)' }}>Strategy Signal: </strong>
-            {ratio?.signal || 'Silver shows strong industrial demand outperformance.'}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.6rem', flexWrap: 'wrap' }}>
+              <div className="font-mono" style={{ fontSize: '1.65rem', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1.1, fontVariantNumeric: 'tabular-nums' }}>
+                {ratio?.current || (liveGoldPrice / liveSilverPrice).toFixed(2)}
+                <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)', fontWeight: 600 }}> : 1</span>
+              </div>
+              <span
+                className={`status-pill ${ratio?.deviationPercent > 0 ? 'bg-bull' : 'bg-bear'}`}
+                style={{ fontSize: '0.74rem', fontWeight: 800 }}
+              >
+                {ratio?.deviationPercent > 0 ? '+' : ''}{ratio?.deviationPercent || '-11.7'}% vs Mean
+              </span>
+            </div>
+
+            {/* Visual Ratio Gauge Bar */}
+            <div>
+              <div style={{ height: '8px', borderRadius: '4px', background: 'rgba(255, 255, 255, 0.1)', position: 'relative', overflow: 'hidden' }}>
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: `${Math.min(100, Math.max(15, ((ratio?.current || 74) / 110) * 100))}%`,
+                    background: 'linear-gradient(90deg, #10b981, #6366f1, #f59e0b)',
+                    borderRadius: '4px',
+                    transition: 'width 0.8s ease'
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>
+                <span>50 (Silver Rich)</span>
+                <span style={{ color: 'var(--text-secondary)' }}>74 (Mean)</span>
+                <span>100+ (Gold Rich)</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="bullion-spotlight-breakdown" style={{ gridTemplateColumns: '1fr' }}>
+            <div>
+              <div style={{ fontSize: '0.66rem', color: 'var(--accent-indigo)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.03em' }}>
+                Strategy Signal
+              </div>
+              <strong style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontWeight: 700, display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={ratio?.signal || 'Silver shows strong industrial demand outperformance.'}>
+                {ratio?.signal || 'Silver shows strong industrial demand outperformance.'}
+              </strong>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => jumpToSubTab('returns')}
+              style={{ flex: 1, padding: '0.45rem', fontSize: '0.78rem', justifyContent: 'center' }}
+            >
+              <TrendingUp size={13} /> Returns Matrix
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => jumpToSubTab('calculator')}
+              style={{ padding: '0.45rem 0.75rem', fontSize: '0.78rem' }}
+              title="Open Jewellery & GST Calculator"
+            >
+              <Calculator size={13} /> Calc
+            </button>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => jumpToSubTab('guide')}
+              style={{ padding: '0.45rem 0.65rem', fontSize: '0.78rem' }}
+              title="Taxes, ETFs & SGB Guide"
+            >
+              <Layers size={13} />
+            </button>
           </div>
         </div>
       </div>
 
       {/* Desk Navigation Sub-Tabs: 6 Comprehensive Bullion Modules */}
-      <div className="glass-card" style={{ padding: '1.25rem', width: '100%', boxSizing: 'border-box' }}>
+      <div ref={subnavRef} className="glass-card" style={{ padding: '1.25rem', width: '100%', boxSizing: 'border-box' }}>
         <div className="bullion-subnav-strip">
           <div className="bullion-subnav-pills global-regional-strip mobile-touch-strip">
             <button
