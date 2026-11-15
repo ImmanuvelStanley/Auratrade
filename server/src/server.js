@@ -11,6 +11,7 @@ const config = require('./config');
 const { setupSocketManager } = require('./socket/socketManager');
 const alertEngine = require('./services/alertEngine');
 const ingestionWorker = require('./services/ingestionWorker');
+const marketFeedManager = require('./services/marketFeedManager');
 const securitySentinel = require('./services/securitySentinel');
 const securityMiddleware = require('./middleware/securityMiddleware');
 const store = require('./models/store');
@@ -23,6 +24,7 @@ const alertRoutes = require('./routes/alertRoutes');
 const portfolioRoutes = require('./routes/portfolioRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const securityRoutes = require('./routes/securityRoutes');
+const marketFeedRoutes = require('./routes/marketFeedRoutes');
 
 const app = express();
 const server = http.createServer(app);
@@ -85,12 +87,17 @@ app.use(cors({
     return callback(null, false);
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Webhook-Secret', 'X-Webhook-Signature', 'X-Finnhub-Secret'],
   credentials: true
 }));
 
-// Limit incoming body size to prevent memory-exhaustion DoS attacks
-app.use(express.json({ limit: '1mb' }));
+// Limit incoming body size to prevent memory-exhaustion DoS attacks (preserve rawBody for webhook HMAC verification)
+app.use(express.json({
+  limit: '1mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString('utf8');
+  }
+}));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
 // 3. Deep Request & Payload Threat Scanner (SQLi, NoSQLi, XSS, Path Traversal, RCE)
@@ -118,6 +125,7 @@ const io = new Server(server, {
 // Attach io to engines
 alertEngine.setSocketServer(io);
 ingestionWorker.setSocketServer(io);
+marketFeedManager.setSocketServer(io);
 securitySentinel.setSocketServer(io);
 setupSocketManager(io);
 
@@ -149,6 +157,7 @@ app.use('/api/alerts', alertRoutes);
 app.use('/api/portfolio', portfolioRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/security', securityRoutes);
+app.use('/api/market-feed', marketFeedRoutes);
 
 // Client Static Files & Single Page App (SPA) Handling
 const candidatePaths = [

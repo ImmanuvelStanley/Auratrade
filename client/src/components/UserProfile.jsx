@@ -69,6 +69,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { downloadOrderPdf, downloadStatementPdf } from '../utils/statementPdfGenerator';
 import { DepositCashModal } from './DepositCashModal';
+import { MarketFeedIntegrationCard } from './MarketFeedIntegrationCard';
 
 const WORLD_CURRENCIES = {
   USD: { code: 'USD', symbol: '$', name: 'US Dollar', flag: '🇺🇸' },
@@ -5245,11 +5246,11 @@ export function UserProfile({
               <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                 {[
                   { label: 'Off ($0)', val: 0 },
-                  { label: '$1,000', val: 1000 },
-                  { label: '$2,500 (Standard)', val: 2500 },
-                  { label: '$5,000 (Pro)', val: 5000 },
-                  { label: '$10,000 (Safety)', val: 10000 },
-                  { label: '$25,000 (Max)', val: 25000 }
+                  { label: '$100 (Standard)', val: 100 },
+                  { label: '$250 (Pro)', val: 250 },
+                  { label: '$500 (Safety)', val: 500 },
+                  { label: '$750 (High)', val: 750 },
+                  { label: '$1,000 (Max)', val: 1000 }
                 ].map(p => (
                   <button
                     key={p.val}
@@ -5280,8 +5281,8 @@ export function UserProfile({
                   <input
                     type="number"
                     min="0"
-                    step="500"
-                    value={traderProfile.minBalance !== undefined ? traderProfile.minBalance : 2500}
+                    step="50"
+                    value={traderProfile.minBalance !== undefined ? traderProfile.minBalance : 100}
                     onChange={(e) => updateTraderProfile({ minBalance: Math.max(0, parseFloat(e.target.value) || 0) })}
                     style={{
                       width: '100%',
@@ -5303,6 +5304,9 @@ export function UserProfile({
               </div>
             </div>
           </div>
+
+          {/* Section 3: Live Market Data Feeds & Webhook Bridge */}
+          <MarketFeedIntegrationCard />
 
           {/* Section: Security Center — Change Password & Account Deletion */}
           <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', border: '1px solid rgba(99,102,241,0.2)' }}>

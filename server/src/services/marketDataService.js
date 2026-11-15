@@ -1,6 +1,7 @@
 const axios = require('axios');
 const config = require('../config');
 const bullionService = require('./bullionService');
+const marketFeedManager = require('./marketFeedManager');
 
 // Comprehensive Worldwide Institutional Market Catalog (Global Titans Ranked by Market Cap)
 const STOCK_CATALOG = {
@@ -7933,9 +7934,60 @@ class MarketDataService {
     });
   }
 
-  // Get current quote with multi-source fallback and canonical symbol resolution
+  // Normalize and inject an external webhook or API provider tick into live market state
+  ingestExternalTick(rawTick = {}) {
+    const sym = resolveCanonicalSymbol(rawTick.symbol || 'AAPL');
+    const prev = marketState.get(sym);
+    const catInfo = this.getCatalogInfo(sym) || STOCK_CATALOG[sym];
+    const incomingPrice = Math.max(0.01, parseFloat(Number(rawTick.price).toFixed(2)));
+    const prevClose = parseFloat(
+      Number(rawTick.previousClose ?? prev?.previousClose ?? catInfo?.basePrice ?? incomingPrice).toFixed(2)
+    );
+    const change = rawTick.change !== undefined
+      ? parseFloat(Number(rawTick.change).toFixed(2))
+      : parseFloat((incomingPrice - prevClose).toFixed(2));
+    const changePercent = rawTick.changePercent !== undefined
+      ? parseFloat(Number(rawTick.changePercent).toFixed(2))
+      : (prevClose > 0 ? parseFloat(((change / prevClose) * 100).toFixed(2)) : 0);
+
+    const lastTickDirection = prev
+      ? (incomingPrice > prev.price ? 'up' : incomingPrice < prev.price ? 'down' : 'neutral')
+      : (change >= 0 ? 'up' : 'down');
+
+    const marketTime = Number(rawTick.timestamp) || Date.now();
+    const quote = {
+      ...(prev || {}),
+      symbol: sym,
+      name: catInfo?.name || prev?.name || sym,
+      sector: catInfo?.sector || prev?.sector || 'Equities',
+      price: incomingPrice,
+      previousClose: prevClose,
+      change,
+      changePercent,
+      currency: catInfo?.currency || prev?.currency || (sym.endsWith('.NS') || sym.endsWith('.BO') || sym.endsWith('.MCX') ? 'INR' : 'USD'),
+      countryFlag: catInfo?.countryFlag || prev?.countryFlag || '🌐',
+      unit: catInfo?.unit || prev?.unit || '',
+      dayHigh: parseFloat(Math.max(Number(rawTick.dayHigh) || 0, prev?.dayHigh || 0, incomingPrice).toFixed(2)),
+      dayLow: parseFloat(Math.min(Number(rawTick.dayLow) || incomingPrice, prev?.dayLow || incomingPrice, incomingPrice).toFixed(2)),
+      volume: Number(rawTick.volume) || (prev?.volume || 1000000) + 100,
+      lastTickDirection,
+      source: rawTick.source || 'External-Live',
+      webhookExpiresAt: rawTick.webhookExpiresAt || prev?.webhookExpiresAt || 0,
+      regularMarketTime: marketTime,
+      regularMarketDate: new Date(marketTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      regularMarketTimeStr: new Date(marketTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      timestamp: Date.now(),
+      updatedAt: new Date().toISOString()
+    };
+
+    marketState.set(sym, quote);
+    return quote;
+  }
+
+  // Get current quote with multi-source fallback (Webhook -> Configured API -> Yahoo -> Simulator)
   async getQuote(symbol) {
     const sym = resolveCanonicalSymbol(symbol);
+    const preferred = marketFeedManager.configState?.preferredProvider || 'auto';
 
     // Direct routing for Indian bullion derivatives & benchmarks
     if (['GOLD.MCX', 'SILVER.MCX', 'SGB_BENCHMARK'].includes(sym)) {
@@ -7948,9 +8000,57 @@ class MarketDataService {
       } catch (err) {}
     }
 
+    // 0. If a fresh external Webhook push tick is cached within TTL (and user didn't force simulator/specific pull API)
+    const cachedState = marketState.get(sym);
+    if (
+      cachedState &&
+      cachedState.webhookExpiresAt &&
+      cachedState.webhookExpiresAt > Date.now() &&
+      (preferred === 'auto' || preferred === 'webhook')
+    ) {
+      return cachedState;
+    }
+
+    if (preferred === 'simulator') {
+      marketFeedManager.recordSimulatorResult();
+      return this.generateSimulatedTick(sym);
+    }
+
+    // 1. Try configured external API providers (Finnhub / Alpha Vantage) according to priority
+    const tryFinnhub = async () => {
+      if (!marketFeedManager.configState.finnhubApiKey) return null;
+      try {
+        const tick = await marketFeedManager.fetchFinnhubQuote(sym);
+        return this.ingestExternalTick(tick);
+      } catch (err) {
+        return null;
+      }
+    };
+
+    const tryAlphaVantage = async () => {
+      if (!marketFeedManager.configState.alphaVantageKey) return null;
+      try {
+        const tick = await marketFeedManager.fetchAlphaVantageQuote(sym);
+        return this.ingestExternalTick(tick);
+      } catch (err) {
+        return null;
+      }
+    };
+
+    if (preferred === 'finnhub') {
+      const q = (await tryFinnhub()) || (await tryAlphaVantage());
+      if (q) return q;
+    } else if (preferred === 'alphavantage') {
+      const q = (await tryAlphaVantage()) || (await tryFinnhub());
+      if (q) return q;
+    } else if (preferred === 'auto') {
+      const q = (await tryFinnhub()) || (await tryAlphaVantage());
+      if (q) return q;
+    }
+
     const yahooSym = getYahooTicker(sym);
 
-    // 1. Try Yahoo Finance API
+    // 2. Try Yahoo Finance API
     try {
       const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSym}?interval=1m&range=1d`;
       const response = await this.http.get(url);
@@ -8000,9 +8100,11 @@ class MarketDataService {
         };
 
         marketState.set(sym, quote);
+        marketFeedManager.recordYahooResult(true);
         return quote;
       }
     } catch (err) {
+      marketFeedManager.recordYahooResult(false, err.message);
       // Yahoo finance failed or market closed, fallback to bullionService if precious metal
       if (['GOLD', 'SILVER', 'USD/INR'].includes(sym)) {
         try {
@@ -8015,7 +8117,8 @@ class MarketDataService {
       }
     }
 
-    // 2. High-fidelity Synthetic Brownian Motion generator
+    // 3. High-fidelity Synthetic Brownian Motion generator
+    marketFeedManager.recordSimulatorResult();
     return this.generateSimulatedTick(sym);
   }
 
