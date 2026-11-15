@@ -70,7 +70,9 @@ class DataStore {
       this.portfolios.set(demoId, {
         userId: demoId,
         cashBalance: 1000.00,
+        realizedPnL: 0.00,
         holdings: [],
+        orders: [],
         transactions: []
       });
       this.watchlists.set(demoId, new Set(['AAPL', 'MSFT', 'NVDA', 'TSLA', 'GOLD']));
@@ -863,7 +865,9 @@ class DataStore {
       portfolio = {
         userId,
         cashBalance: 1000.00,
+        realizedPnL: 0.00,
         holdings: [],
+        orders: [],
         transactions: []
       };
       this.portfolios.set(userId, portfolio);
@@ -872,6 +876,11 @@ class DataStore {
       if (this.isMongoConnected) {
         Portfolio.findOneAndUpdate({ userId }, portfolio, { upsert: true }).catch(e => console.error('[DataStore] Mongo getPortfolio upsert error:', e.message));
       }
+    } else {
+      if (portfolio.realizedPnL === undefined) portfolio.realizedPnL = 0;
+      if (!Array.isArray(portfolio.orders)) portfolio.orders = [];
+      if (!Array.isArray(portfolio.holdings)) portfolio.holdings = [];
+      if (!Array.isArray(portfolio.transactions)) portfolio.transactions = [];
     }
     return portfolio;
   }
@@ -880,7 +889,9 @@ class DataStore {
     const portfolio = {
       userId,
       cashBalance: initialBalance,
+      realizedPnL: 0.00,
       holdings: [],
+      orders: [],
       transactions: []
     };
     this.portfolios.set(userId, portfolio);
@@ -920,43 +931,63 @@ class DataStore {
     return { portfolio, transaction: tx };
   }
 
-  async executeTrade(userId, { symbol, type, shares, price, allowReserveBreach = false }) {
+  async executeTrade(userId, { symbol, type, shares, price, allowReserveBreach = false, executionMode = 'MARKET' }) {
     const sym = symbol.toUpperCase().trim();
-    const qty = parseInt(shares, 10);
-    const cost = qty * price;
+    const roundQty = (val) => Math.round(val * 10000) / 10000;
+    let qty = roundQty(parseFloat(shares));
+    const unitPrice = parseFloat(price);
     const portfolio = await this.getPortfolio(userId);
     const user = await this.findUserById(userId);
-    const minBalance = (user && user.minBalance !== undefined) ? Number(user.minBalance) : 0;
+    const minBalance = (user && user.minBalance !== undefined) ? Number(user.minBalance) : 100;
 
-    if (qty <= 0) throw new Error('Shares must be greater than 0.');
+    if (!Number.isFinite(qty) || qty < 0.0001) {
+      throw new Error('Shares must be at least 0.0001.');
+    }
+    if (!Number.isFinite(unitPrice) || unitPrice <= 0) {
+      throw new Error('Invalid execution price.');
+    }
+
+    let realizedPnL = null;
 
     if (type === 'BUY') {
-      if (portfolio.cashBalance < cost) {
+      const cost = parseFloat((qty * unitPrice).toFixed(2));
+      if (portfolio.cashBalance + 0.001 < cost) {
         throw new Error(`Insufficient funds. Available: $${portfolio.cashBalance.toFixed(2)}, Required: $${cost.toFixed(2)}`);
       }
-      if (!allowReserveBreach && (portfolio.cashBalance - cost) < minBalance) {
+      if (!allowReserveBreach && (portfolio.cashBalance - cost) + 0.001 < minBalance) {
         const safeAvailable = Math.max(0, portfolio.cashBalance - minBalance);
         throw new Error(`Safe Zone Protection Active: Order of $${cost.toFixed(2)} leaves $${(portfolio.cashBalance - cost).toFixed(2)}, breaching your required safe reserve of $${minBalance.toFixed(2)}. Max safe purchase: $${safeAvailable.toFixed(2)}.`);
       }
-      portfolio.cashBalance -= cost;
+      portfolio.cashBalance = Math.max(0, parseFloat((portfolio.cashBalance - cost).toFixed(2)));
 
       const existingHolding = portfolio.holdings.find(h => h.symbol === sym);
       if (existingHolding) {
         const totalOldCost = existingHolding.shares * existingHolding.averagePrice;
-        existingHolding.shares += qty;
-        existingHolding.averagePrice = (totalOldCost + cost) / existingHolding.shares;
+        const nextShares = roundQty(existingHolding.shares + qty);
+        existingHolding.averagePrice = (totalOldCost + cost) / nextShares;
+        existingHolding.shares = nextShares;
       } else {
-        portfolio.holdings.push({ symbol: sym, shares: qty, averagePrice: price });
+        portfolio.holdings.push({ symbol: sym, shares: qty, averagePrice: unitPrice });
       }
     } else if (type === 'SELL') {
       const existingHolding = portfolio.holdings.find(h => h.symbol === sym);
-      if (!existingHolding || existingHolding.shares < qty) {
+      if (!existingHolding || existingHolding.shares + 0.00005 < qty) {
         throw new Error(`Cannot sell ${qty} shares. Current position: ${existingHolding ? existingHolding.shares : 0} shares.`);
       }
-      portfolio.cashBalance += cost;
-      existingHolding.shares -= qty;
-      if (existingHolding.shares === 0) {
+      // Prevent residual floating-point dust when closing out full position
+      if (qty >= existingHolding.shares - 0.0001) {
+        qty = existingHolding.shares;
+      }
+      const proceeds = parseFloat((qty * unitPrice).toFixed(2));
+      realizedPnL = parseFloat(((unitPrice - existingHolding.averagePrice) * qty).toFixed(2));
+      portfolio.cashBalance = parseFloat((portfolio.cashBalance + proceeds).toFixed(2));
+      portfolio.realizedPnL = parseFloat(((portfolio.realizedPnL || 0) + realizedPnL).toFixed(2));
+
+      const remaining = roundQty(existingHolding.shares - qty);
+      if (remaining < 0.0001) {
         portfolio.holdings = portfolio.holdings.filter(h => h.symbol !== sym);
+      } else {
+        existingHolding.shares = remaining;
       }
     } else {
       throw new Error('Invalid trade type. Must be BUY or SELL.');
@@ -967,7 +998,9 @@ class DataStore {
       type,
       symbol: sym,
       shares: qty,
-      price,
+      price: unitPrice,
+      executionMode,
+      realizedPnL,
       timestamp: new Date().toISOString()
     };
     portfolio.transactions.unshift(tx);
@@ -979,6 +1012,165 @@ class DataStore {
     }
 
     return { portfolio, transaction: tx };
+  }
+
+  async createPendingOrder(userId, { symbol, type, orderKind = 'LIMIT', shares, targetPrice, allowReserveBreach = false, ocoGroupId = null }) {
+    const sym = String(symbol || '').toUpperCase().trim();
+    const qty = Math.round(parseFloat(shares) * 10000) / 10000;
+    const trigger = parseFloat(targetPrice);
+    const side = String(type || '').toUpperCase();
+    const kind = String(orderKind || 'LIMIT').toUpperCase();
+
+    if (!sym || !['BUY', 'SELL'].includes(side)) {
+      throw new Error('Order symbol and valid type (BUY/SELL) are required.');
+    }
+    if (!['LIMIT', 'STOP_LOSS', 'TAKE_PROFIT'].includes(kind)) {
+      throw new Error('Order kind must be LIMIT, STOP_LOSS, or TAKE_PROFIT.');
+    }
+    if (!Number.isFinite(qty) || qty < 0.0001) {
+      throw new Error('Order shares must be at least 0.0001.');
+    }
+    if (!Number.isFinite(trigger) || trigger <= 0) {
+      throw new Error('Order trigger/limit price must be greater than $0.');
+    }
+
+    const portfolio = await this.getPortfolio(userId);
+    const user = await this.findUserById(userId);
+    const minBalance = (user && user.minBalance !== undefined) ? Number(user.minBalance) : 100;
+
+    if (side === 'BUY') {
+      const estCost = qty * trigger;
+      if (portfolio.cashBalance + 0.001 < estCost) {
+        throw new Error(`Insufficient funds for pending limit order ($${estCost.toFixed(2)} required, $${portfolio.cashBalance.toFixed(2)} available).`);
+      }
+      if (!allowReserveBreach && (portfolio.cashBalance - estCost) + 0.001 < minBalance) {
+        throw new Error(`Safe Zone Reserve prevents queueing $${estCost.toFixed(2)} order. Enable 'Authorize Safe Zone Breach' or reduce size.`);
+      }
+    } else if (kind === 'LIMIT') {
+      const existingHolding = portfolio.holdings.find(h => h.symbol === sym);
+      if (!existingHolding || existingHolding.shares + 0.00005 < qty) {
+        throw new Error(`Insufficient ${sym} shares to queue SELL order.`);
+      }
+    }
+
+    const order = {
+      id: 'ord_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+      symbol: sym,
+      type: side,
+      orderKind: kind,
+      shares: qty,
+      targetPrice: parseFloat(trigger.toFixed(2)),
+      allowReserveBreach: Boolean(allowReserveBreach),
+      ocoGroupId: ocoGroupId || null,
+      status: 'PENDING',
+      fillPrice: null,
+      rejectReason: null,
+      createdAt: new Date().toISOString(),
+      filledAt: null
+    };
+
+    portfolio.orders.unshift(order);
+    portfolio.orders = portfolio.orders.slice(0, 60);
+    this.save(true);
+
+    if (this.isMongoConnected) {
+      Portfolio.findOneAndUpdate({ userId }, portfolio, { upsert: true }).catch(e => console.error('[DataStore] Mongo createPendingOrder error:', e.message));
+    }
+
+    return { portfolio, order };
+  }
+
+  async cancelPendingOrder(userId, orderId) {
+    const portfolio = await this.getPortfolio(userId);
+    const idx = portfolio.orders.findIndex(o => o.id === orderId);
+    if (idx === -1) {
+      throw new Error('Order not found.');
+    }
+    const order = portfolio.orders[idx];
+    if (order.status !== 'PENDING') {
+      throw new Error(`Order is already ${order.status}.`);
+    }
+    order.status = 'CANCELLED';
+    order.filledAt = new Date().toISOString();
+    this.save(true);
+
+    if (this.isMongoConnected) {
+      Portfolio.findOneAndUpdate({ userId }, portfolio, { upsert: true }).catch(e => console.error('[DataStore] Mongo cancelPendingOrder error:', e.message));
+    }
+    return { portfolio, order };
+  }
+
+  async evaluatePendingOrdersForTick(symbol, livePrice) {
+    const sym = String(symbol || '').toUpperCase().trim();
+    const px = Number(livePrice);
+    if (!sym || !Number.isFinite(px) || px <= 0) return [];
+
+    const notificationsEmitted = [];
+
+    for (const [userId, portfolio] of this.portfolios.entries()) {
+      if (!Array.isArray(portfolio.orders) || portfolio.orders.length === 0) continue;
+
+      const matchingPending = portfolio.orders.filter(o => o.symbol === sym && o.status === 'PENDING');
+      for (const order of matchingPending) {
+        if (order.status !== 'PENDING') continue; // May have been cancelled by OCO sibling earlier in loop
+
+        let shouldTrigger = false;
+        if (order.orderKind === 'LIMIT') {
+          shouldTrigger = order.type === 'BUY' ? (px <= order.targetPrice) : (px >= order.targetPrice);
+        } else if (order.orderKind === 'TAKE_PROFIT') {
+          shouldTrigger = order.type === 'SELL' ? (px >= order.targetPrice) : (px <= order.targetPrice);
+        } else if (order.orderKind === 'STOP_LOSS') {
+          shouldTrigger = order.type === 'SELL' ? (px <= order.targetPrice) : (px >= order.targetPrice);
+        }
+
+        if (!shouldTrigger) continue;
+
+        try {
+          const result = await this.executeTrade(userId, {
+            symbol: order.symbol,
+            type: order.type,
+            shares: order.shares,
+            price: px,
+            allowReserveBreach: order.allowReserveBreach,
+            executionMode: order.orderKind
+          });
+
+          order.status = 'FILLED';
+          order.fillPrice = px;
+          order.filledAt = new Date().toISOString();
+
+          // Cancel any paired OCO protective order in the same bracket group
+          if (order.ocoGroupId) {
+            portfolio.orders.forEach((other) => {
+              if (other.id !== order.id && other.ocoGroupId === order.ocoGroupId && other.status === 'PENDING') {
+                other.status = 'CANCELLED';
+                other.filledAt = new Date().toISOString();
+              }
+            });
+          }
+
+          const pnlText = result.transaction?.realizedPnL !== null && result.transaction?.realizedPnL !== undefined
+            ? ` (Realized P&L: ${result.transaction.realizedPnL >= 0 ? '+' : '-'}$${Math.abs(result.transaction.realizedPnL).toFixed(2)})`
+            : '';
+
+          const notif = await this.addNotification(userId, {
+            orderId: order.id,
+            symbol: sym,
+            title: `${order.orderKind} ${order.type} Filled: ${sym}`,
+            message: `Auto-executed ${order.type} ${order.shares} ${sym} at $${px.toFixed(2)} (Trigger: $${order.targetPrice.toFixed(2)})${pnlText}`,
+            price: px
+          });
+          notificationsEmitted.push({ userId, order, notification: notif });
+        } catch (err) {
+          order.status = 'REJECTED';
+          order.rejectReason = err.message;
+          order.filledAt = new Date().toISOString();
+        }
+        this.save(true);
+      }
+    }
+
+    return notificationsEmitted;
   }
 
   // --- GDPR Account Deletion --- Permanently purges all data associated with a user

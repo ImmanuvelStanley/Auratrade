@@ -16,10 +16,26 @@ const UserSchema = new mongoose.Schema({
 const PortfolioSchema = new mongoose.Schema({
   userId: { type: String, required: true, unique: true, index: true },
   cashBalance: { type: Number, default: 1000.00 },
+  realizedPnL: { type: Number, default: 0.00 },
   holdings: [{
     symbol: { type: String, required: true },
     shares: { type: Number, required: true },
     averagePrice: { type: Number, required: true }
+  }],
+  orders: [{
+    id: { type: String, required: true },
+    symbol: { type: String, required: true },
+    type: { type: String, required: true }, // BUY | SELL
+    orderKind: { type: String, default: 'LIMIT' }, // LIMIT | STOP_LOSS | TAKE_PROFIT
+    shares: { type: Number, required: true },
+    targetPrice: { type: Number, required: true },
+    allowReserveBreach: { type: Boolean, default: false },
+    ocoGroupId: { type: String, default: null },
+    status: { type: String, default: 'PENDING' }, // PENDING | FILLED | CANCELLED | REJECTED
+    fillPrice: { type: Number, default: null },
+    rejectReason: { type: String, default: null },
+    createdAt: { type: String, default: () => new Date().toISOString() },
+    filledAt: { type: String, default: null }
   }],
   transactions: [{
     id: { type: String, required: true },
@@ -27,6 +43,8 @@ const PortfolioSchema = new mongoose.Schema({
     symbol: { type: String, required: true },
     shares: { type: Number, required: true },
     price: { type: Number, required: true },
+    executionMode: { type: String, default: 'MARKET' },
+    realizedPnL: { type: Number, default: null },
     timestamp: { type: String, default: () => new Date().toISOString() }
   }]
 }, { timestamps: true });

@@ -583,6 +583,8 @@ export function App() {
                   portfolio={portfolio}
                   onOpenTradeModal={handleOpenTrade}
                   onTradeComplete={loadPortfolio}
+                  onSelectSymbol={handleSelectSymbolAndGoDashboard}
+                  lockedAsset={lockedAsset}
                 />
               )}
 

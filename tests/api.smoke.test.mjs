@@ -165,4 +165,92 @@ describe('AuraTrade Backend API & Webhook Smoke Suite', () => {
     assert.equal(quoteBody.data.price, 342.75);
     assert.equal(quoteBody.data.source, 'Webhook-CI');
   });
+
+  it('supports fractional paper trades, OCO SL/TP brackets, limit auto-fills, realized P&L, and account reset', async () => {
+    const authHeaders = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${authToken}`
+    };
+
+    // 1. Fractional BUY with OCO SL/TP brackets (AAPL live price is 342.75; 0.25 shares = $85.69)
+    const buyRes = await fetch(`${baseUrl}/api/portfolio/trade`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({
+        symbol: 'AAPL',
+        type: 'BUY',
+        shares: 0.25,
+        orderKind: 'MARKET',
+        stopLossPrice: 310.0,
+        takeProfitPrice: 365.0
+      })
+    });
+    assert.equal(buyRes.status, 200);
+    const buyBody = await buyRes.json();
+    assert.equal(buyBody.success, true);
+    assert.equal(buyBody.trade.shares, 0.25);
+    assert.equal(buyBody.bracketOrders.length, 2, 'BUY should create SL and TP OCO bracket orders');
+
+    // 2. Queue a standalone BUY LIMIT order and test DELETE cancel
+    const queueRes = await fetch(`${baseUrl}/api/portfolio/trade`, {
+      method: 'POST',
+      headers: authHeaders,
+      body: JSON.stringify({
+        symbol: 'MSFT',
+        type: 'BUY',
+        shares: 0.5,
+        orderKind: 'LIMIT',
+        limitPrice: 200.0
+      })
+    });
+    assert.equal(queueRes.status, 200);
+    const queueBody = await queueRes.json();
+    assert.equal(queueBody.pending, true);
+    const msftOrderId = queueBody.order.id;
+
+    const cancelRes = await fetch(`${baseUrl}/api/portfolio/orders/${msftOrderId}`, {
+      method: 'DELETE',
+      headers: authHeaders
+    });
+    assert.equal(cancelRes.status, 200);
+
+    // 3. Push live webhook tick >= takeProfitPrice (370.0) so TP bracket fills and cancels OCO sibling SL
+    const tpTick = JSON.stringify({ symbol: 'AAPL', price: 370.0, volume: 1200000, source: 'Webhook-TP-CI' });
+    const tpHmac = crypto.createHmac('sha256', 'ci_wh_secret_9876').update(tpTick).digest('hex');
+    const tpRes = await fetch(`${baseUrl}/api/market-feed/webhook`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Webhook-Signature': `sha256=${tpHmac}`
+      },
+      body: tpTick
+    });
+    assert.equal(tpRes.status, 200);
+
+    // Give async alertEngine / pending order tick evaluation a brief settle window
+    await new Promise((r) => setTimeout(r, 150));
+
+    const portRes = await fetch(`${baseUrl}/api/portfolio`, { headers: authHeaders });
+    assert.equal(portRes.status, 200);
+    const portBody = await portRes.json();
+    assert.equal(portBody.portfolio.holdings.length, 0, 'AAPL position should be closed after Take-Profit fill');
+    assert.ok(portBody.portfolio.realizedPnL > 0, `expected positive realizedPnL after TP exit, got ${portBody.portfolio.realizedPnL}`);
+    assert.equal(portBody.portfolio.closedTradesCount, 1);
+    assert.equal(portBody.portfolio.winRate, 100);
+
+    const aaplOrders = portBody.portfolio.orders.filter((o) => o.symbol === 'AAPL');
+    assert.equal(aaplOrders.find((o) => o.orderKind === 'TAKE_PROFIT')?.status, 'FILLED');
+    assert.equal(aaplOrders.find((o) => o.orderKind === 'STOP_LOSS')?.status, 'CANCELLED');
+
+    // 4. Reset paper portfolio cleanly back to $1,000.00
+    const resetRes = await fetch(`${baseUrl}/api/portfolio/reset`, {
+      method: 'POST',
+      headers: authHeaders
+    });
+    assert.equal(resetRes.status, 200);
+    const resetBody = await resetRes.json();
+    assert.equal(resetBody.portfolio.cashBalance, 1000);
+    assert.equal(resetBody.portfolio.realizedPnL, 0);
+    assert.deepEqual(resetBody.portfolio.orders, []);
+  });
 });

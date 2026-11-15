@@ -202,8 +202,45 @@ const run = async () => {
     })()`);
     await sleep(600);
     await assertViewHealthy('authed:Paper Trading');
-    const paperHas1000 = await evalJs(`/\\$1,000(\\.00)?/.test(document.body.innerText)`);
-    assert.equal(paperHas1000, true, 'Paper Trading must display $1,000 balance');
+    const paperChecks = await evalJs(`(() => {
+      const t = document.body.innerText || '';
+      return {
+        has1000: /\\$1,000(\\.00)?/.test(t),
+        hasRealized: /Realized P&L/i.test(t),
+        hasReset: /Reset\s*\(\$1,000\)/i.test(t) || t.toLowerCase().includes('reset ($1,000)'),
+        hasAllocation: /Capital Allocation/i.test(t)
+      };
+    })()`);
+    assert.equal(paperChecks.has1000, true, 'Paper Trading must display $1,000 balance');
+    assert.equal(paperChecks.hasRealized, true, 'Paper Trading must display Realized P&L & Win Rate KPI card');
+    assert.equal(paperChecks.hasReset, true, 'Paper Trading must display Reset ($1,000) control');
+    assert.equal(paperChecks.hasAllocation, true, 'Paper Trading must display Capital Allocation bar');
+
+    // Open TradeModal inside Paper Trading to verify Limit & $ Amount controls render cleanly
+    await evalJs(`(() => {
+      const btn = Array.from(document.querySelectorAll('button')).find((b) => /Execute Trade/i.test(b.innerText));
+      if (btn) btn.click();
+    })()`);
+    await sleep(400);
+    const modalChecks = await evalJs(`(() => {
+      const t = document.body.innerText || '';
+      return {
+        hasLimit: /Limit \(Target Price\)/i.test(t) || t.toLowerCase().includes('limit (target price)'),
+        hasUsdMode: t.includes('$ Amount'),
+        hasBrackets: /Protective Brackets/i.test(t)
+      };
+    })()`);
+    assert.equal(modalChecks.hasLimit, true, 'TradeModal must show Limit execution mode');
+    assert.equal(modalChecks.hasUsdMode, true, 'TradeModal must show $ Amount fractional sizing mode');
+    assert.equal(modalChecks.hasBrackets, true, 'TradeModal must show SL/TP Protective Brackets on BUY');
+    await evalJs(`(() => {
+      const closeBtn = document.querySelector('.modal-overlay button[aria-label="Close"], .modal-overlay button');
+      const esc = new KeyboardEvent('keydown', { key: 'Escape' });
+      window.dispatchEvent(esc);
+      const overlay = document.querySelector('.modal-overlay');
+      if (overlay) overlay.click();
+    })()`);
+    await sleep(250);
 
     await evalJs(`(() => {
       const profileBtn = document.querySelector('.sidebar-profile-trigger') || Array.from(document.querySelectorAll('.sidebar-topic-btn')).find((b) => b.innerText.includes('Trader Profile'));
@@ -230,7 +267,7 @@ const run = async () => {
     // Mobile 390px pass
     await cdp('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
     await sleep(400);
-    for (const tab of ['All Companies Market', 'Gold & Silver Market']) {
+    for (const tab of ['All Companies Market', 'Paper Trading', 'Gold & Silver Market']) {
       await evalJs(`(() => {
         const btn = Array.from(document.querySelectorAll('.sidebar-topic-btn')).find((b) => b.innerText.includes(${JSON.stringify(tab)}));
         if (btn) btn.click();

@@ -17,6 +17,18 @@ class AlertEngine {
     const lastPrice = this.lastObservedPrices.get(symbol) || price;
     this.lastObservedPrices.set(symbol, price);
 
+    // 1. Evaluate pending Limit / Stop-Loss / Take-Profit Paper Trading Orders
+    try {
+      const filledOrders = await store.evaluatePendingOrdersForTick(symbol, price);
+      if (filledOrders.length > 0 && this.io) {
+        for (const item of filledOrders) {
+          this.io.to(`user:${item.userId}`).emit('alert-triggered', item.notification);
+        }
+      }
+    } catch (err) {
+      console.error('[AlertEngine] Pending order evaluation error:', err.message);
+    }
+
     const activeAlerts = await store.getAllActiveAlerts();
     const symbolAlerts = activeAlerts.filter(a => a.symbol === symbol);
 

@@ -57,11 +57,18 @@ export function TradeModal({
   const { quotes, subscribe } = useSocket();
   const [symbol, setSymbol] = useState(defaultSymbol);
   const [orderType, setOrderType] = useState('BUY'); // 'BUY' | 'SELL'
-  const [shares, setShares] = useState('10');
+  const [orderKind, setOrderKind] = useState('MARKET'); // 'MARKET' | 'LIMIT'
+  const [limitPrice, setLimitPrice] = useState('');
+  const [sizeMode, setSizeMode] = useState('SHARES'); // 'SHARES' | 'USD'
+  const [shares, setShares] = useState('1');
+  const [usdAmount, setUsdAmount] = useState('100');
+  const [stopLossPrice, setStopLossPrice] = useState('');
+  const [takeProfitPrice, setTakeProfitPrice] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [executedTrade, setExecutedTrade] = useState(null);
+  const [queuedOrder, setQueuedOrder] = useState(null);
   const [latestCashBalance, setLatestCashBalance] = useState(null);
 
   // Read extended trader profile for PDF statement personalization (user-scoped)
@@ -137,17 +144,31 @@ export function TradeModal({
     setSymbol(newSym);
     setSearchQuery('');
     setShowSearchDropdown(false);
+    setLimitPrice('');
+    setStopLossPrice('');
+    setTakeProfitPrice('');
     setError('');
+  };
+
+  const floorShares = (val) => Math.max(0, Math.floor(Number(val || 0) * 10000) / 10000);
+  const formatSharesQty = (val) => {
+    const n = Number(val || 0);
+    return Number.isInteger(n) ? String(n) : String(Math.round(n * 10000) / 10000);
   };
 
   const liveQuote = quotes[symbol];
   const price = liveQuote?.price || 150.00;
-  const numShares = parseInt(shares, 10) || 0;
-  const totalCost = numShares * price;
+  const parsedLimitPrice = parseFloat(limitPrice);
+  const execPrice = orderKind === 'LIMIT' && Number.isFinite(parsedLimitPrice) && parsedLimitPrice > 0 ? parsedLimitPrice : price;
+  const rawShares = sizeMode === 'USD'
+    ? floorShares((parseFloat(usdAmount) || 0) / execPrice)
+    : (parseFloat(shares) || 0);
+  const numShares = Math.round(rawShares * 10000) / 10000;
+  const totalCost = Math.round(numShares * execPrice * 100) / 100;
 
   const currentHolding = portfolio?.holdings?.find(h => h.symbol === symbol);
   const userCash = portfolio?.cashBalance !== undefined ? Number(portfolio.cashBalance) : 0;
-  const minBalance = Number(user?.minBalance !== undefined ? user.minBalance : (portfolio?.minBalance !== undefined ? portfolio.minBalance : 100));
+  const minBalance = Number(user?.minBalance ?? portfolio?.minBalance ?? 100);
   const safeTradingPower = Math.max(0, userCash - minBalance);
   const isSafeZoneBreach = orderType === 'BUY' && totalCost > safeTradingPower && totalCost <= userCash;
   const [allowReserveBreach, setAllowReserveBreach] = useState(false);
@@ -155,25 +176,46 @@ export function TradeModal({
   const isPos = liveQuote?.change !== undefined ? liveQuote.change >= 0 : true;
 
   const handleStepShares = (delta) => {
-    const nextVal = Math.max(1, (parseInt(shares, 10) || 0) + delta);
-    setShares(String(nextVal));
+    if (sizeMode === 'USD') {
+      const nextUsd = Math.max(10, (parseFloat(usdAmount) || 0) + (delta < 0 ? -25 : delta * 25));
+      setUsdAmount(String(Math.round(nextUsd * 100) / 100));
+    } else {
+      const nextVal = Math.max(0.0001, (parseFloat(shares) || 0) + delta);
+      setShares(formatSharesQty(nextVal));
+    }
   };
 
   const handleQuickPercent = (pct) => {
     if (orderType === 'BUY') {
       const deployableCash = safeTradingPower > 0 && !allowReserveBreach ? safeTradingPower : userCash;
-      const maxShares = Math.floor(deployableCash / price);
-      setShares(String(Math.max(1, Math.floor(maxShares * pct))));
+      if (sizeMode === 'USD') {
+        const targetUsd = Math.max(1, Math.round(deployableCash * pct * 100) / 100);
+        setUsdAmount(String(targetUsd));
+      } else {
+        const maxShares = floorShares(deployableCash / execPrice);
+        const qty = floorShares(maxShares * pct);
+        setShares(qty >= 0.0001 ? formatSharesQty(qty) : '0.0001');
+      }
     } else {
-      const holdingShares = currentHolding?.shares || 0;
-      setShares(String(Math.max(1, Math.floor(holdingShares * pct))));
+      const holdingShares = Number(currentHolding?.shares || 0);
+      const qty = pct === 1.0 ? holdingShares : floorShares(holdingShares * pct);
+      if (sizeMode === 'USD') {
+        setUsdAmount(String(Math.max(1, Math.round(qty * execPrice * 100) / 100)));
+      } else {
+        setShares(qty > 0 ? formatSharesQty(qty) : '0');
+      }
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (numShares <= 0) {
-      setError('Please specify at least 1 share.');
+    if (!Number.isFinite(numShares) || numShares < 0.0001) {
+      setError('Please specify at least 0.0001 shares (or a larger dollar amount).');
+      return;
+    }
+
+    if (orderKind === 'LIMIT' && (!Number.isFinite(parsedLimitPrice) || parsedLimitPrice <= 0)) {
+      setError('Please enter a valid positive Limit target price.');
       return;
     }
 
@@ -187,9 +229,22 @@ export function TradeModal({
       return;
     }
 
-    if (orderType === 'SELL' && (!currentHolding || currentHolding.shares < numShares)) {
+    if (orderType === 'SELL' && (!currentHolding || Number(currentHolding.shares) + 1e-6 < numShares)) {
       setError(`Insufficient shares. You own ${currentHolding ? currentHolding.shares : 0} shares of ${symbol}.`);
       return;
+    }
+
+    const parsedSL = stopLossPrice ? parseFloat(stopLossPrice) : undefined;
+    const parsedTP = takeProfitPrice ? parseFloat(takeProfitPrice) : undefined;
+    if (orderKind === 'MARKET' && orderType === 'BUY') {
+      if (parsedSL !== undefined && (!Number.isFinite(parsedSL) || parsedSL <= 0 || parsedSL >= execPrice)) {
+        setError(`Stop-Loss price must be greater than $0 and below current entry ($${execPrice.toFixed(2)}).`);
+        return;
+      }
+      if (parsedTP !== undefined && (!Number.isFinite(parsedTP) || parsedTP <= execPrice)) {
+        setError(`Take-Profit price must be above current entry ($${execPrice.toFixed(2)}).`);
+        return;
+      }
     }
 
     setLoading(true);
@@ -207,30 +262,48 @@ export function TradeModal({
           symbol,
           type: orderType,
           shares: numShares,
-          allowReserveBreach
+          allowReserveBreach,
+          orderKind,
+          limitPrice: orderKind === 'LIMIT' ? parsedLimitPrice : undefined,
+          stopLossPrice: (orderKind === 'MARKET' && orderType === 'BUY' && parsedSL) ? parsedSL : undefined,
+          takeProfitPrice: (orderKind === 'MARKET' && orderType === 'BUY' && parsedTP) ? parsedTP : undefined
         })
       });
 
       const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Trade order failed');
 
-      const tradeDetails = {
-        id: json.trade?.id || `tx_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-        symbol: json.trade?.symbol || symbol,
-        type: json.trade?.type || orderType,
-        shares: json.trade?.shares || numShares,
-        price: json.trade?.price || price,
-        timestamp: json.trade?.timestamp || new Date().toISOString(),
-        name: liveQuote?.name || symbol
-      };
-      setExecutedTrade(tradeDetails);
-      const updatedCash = json.cashBalance !== undefined 
-        ? json.cashBalance 
-        : (orderType === 'BUY' ? userCash - totalCost : userCash + totalCost);
+      if (json.pending && json.order) {
+        setQueuedOrder({
+          ...json.order,
+          name: liveQuote?.name || symbol
+        });
+        setExecutedTrade(null);
+      } else {
+        const tradeDetails = {
+          id: json.trade?.id || `tx_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+          symbol: json.trade?.symbol || symbol,
+          type: json.trade?.type || orderType,
+          shares: json.trade?.shares || numShares,
+          price: json.trade?.price || price,
+          realizedPnL: json.trade?.realizedPnL,
+          bracketOrders: json.bracketOrders || [],
+          timestamp: json.trade?.timestamp || new Date().toISOString(),
+          name: liveQuote?.name || symbol
+        };
+        setExecutedTrade(tradeDetails);
+        setQueuedOrder(null);
+      }
+
+      const updatedCash = json.cashBalance !== undefined
+        ? json.cashBalance
+        : (orderKind === 'MARKET'
+            ? (orderType === 'BUY' ? userCash - totalCost : userCash + totalCost)
+            : userCash);
       setLatestCashBalance(updatedCash);
       setSuccessMsg(json.message);
-      
-      // Play audio chime for verified execution
+
+      // Play audio chime for verified execution / order queue
       soundFx.playAlertChime();
 
       if (onTradeComplete) onTradeComplete();
@@ -317,9 +390,90 @@ export function TradeModal({
         </div>
 
         {/* =================================================================
-            POST-TRADE EXECUTED CONFIRMATION SCREEN
+            POST-TRADE CONFIRMATION SCREEN (QUEUED LIMIT OR EXECUTED MARKET)
             ================================================================= */}
-        {executedTrade ? (
+        {queuedOrder ? (
+          <div style={{ padding: '1.6rem', display: 'flex', flexDirection: 'column', gap: '1.15rem' }}>
+            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
+              <div
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '50%',
+                  background: 'rgba(6, 182, 212, 0.14)',
+                  border: '1px solid rgba(6, 182, 212, 0.42)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--accent-cyan)',
+                  boxShadow: '0 0 20px rgba(6, 182, 212, 0.22)'
+                }}
+              >
+                <Clock size={30} />
+              </div>
+              <div style={{ fontSize: '1.22rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.2rem', fontFamily: 'var(--font-brand)' }}>
+                {queuedOrder.orderKind} Order Queued
+              </div>
+              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, maxWidth: '420px' }}>
+                {successMsg || `Working ${queuedOrder.type} ${queuedOrder.shares} ${queuedOrder.symbol} @ $${Number(queuedOrder.targetPrice).toFixed(2)}. Automatically fills when live market reaches your target.`}
+              </p>
+            </div>
+
+            <div
+              style={{
+                background: 'var(--bg-input)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1.05rem 1.2rem',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2, 1fr)',
+                gap: '0.8rem',
+                fontSize: '0.84rem'
+              }}
+            >
+              <div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Order ID</div>
+                <div className="font-mono" style={{ fontWeight: 700, color: 'var(--accent-cyan)' }}>{queuedOrder.id}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Security / Side</div>
+                <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                  {queuedOrder.symbol} · <span style={{ color: queuedOrder.type === 'BUY' ? 'var(--bull-green)' : 'var(--bear-red)' }}>{queuedOrder.type}</span>
+                </div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Order Quantity</div>
+                <div className="font-mono" style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{formatSharesQty(queuedOrder.shares)} shares</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Trigger Price</div>
+                <div className="font-mono" style={{ fontWeight: 700, color: 'var(--warning-amber)' }}>${Number(queuedOrder.targetPrice).toFixed(2)}</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={() => {
+                  setQueuedOrder(null);
+                  setShares('1');
+                }}
+                style={{ width: '100%', padding: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem' }}
+              >
+                <ShoppingCart size={16} /> Place Another Order
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={onClose}
+                style={{ fontSize: '0.8rem', padding: '0.45rem', background: 'transparent', color: 'var(--text-muted)', border: 'none', cursor: 'pointer' }}
+              >
+                Done & Return to Portfolio
+              </button>
+            </div>
+          </div>
+        ) : executedTrade ? (
           <div style={{ padding: '1.6rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
               <div
@@ -426,6 +580,29 @@ export function TradeModal({
                   ${(Number(executedTrade.shares) * Number(executedTrade.price)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
+
+              {executedTrade.bracketOrders?.length > 0 && (
+                <div style={{ paddingTop: '0.55rem', borderTop: '1px solid var(--border-subtle)', display: 'flex', flexWrap: 'wrap', gap: '0.45rem', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>OCO Protection Active:</span>
+                  {executedTrade.bracketOrders.map((bo) => (
+                    <span
+                      key={bo.id}
+                      className="font-mono"
+                      style={{
+                        fontSize: '0.7rem',
+                        fontWeight: 700,
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: '4px',
+                        background: bo.orderKind === 'TAKE_PROFIT' ? 'rgba(16, 185, 129, 0.14)' : 'rgba(244, 63, 94, 0.14)',
+                        color: bo.orderKind === 'TAKE_PROFIT' ? 'var(--bull-green)' : 'var(--bear-red)',
+                        border: `1px solid ${bo.orderKind === 'TAKE_PROFIT' ? 'rgba(16, 185, 129, 0.35)' : 'rgba(244, 63, 94, 0.35)'}`
+                      }}
+                    >
+                      {bo.orderKind === 'TAKE_PROFIT' ? 'TP' : 'SL'} @ ${Number(bo.targetPrice).toFixed(2)}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Action Bar with PDF Soft Copy Download */}
@@ -497,7 +674,8 @@ export function TradeModal({
                   className="btn btn-secondary"
                   onClick={() => {
                     setExecutedTrade(null);
-                    setShares('10');
+                    setQueuedOrder(null);
+                    setShares('1');
                   }}
                   style={{
                     padding: '0.65rem',
@@ -901,37 +1079,180 @@ export function TradeModal({
                   ${price.toFixed(2)}
                 </div>
                 <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                  Position: <strong style={{ color: 'var(--text-primary)' }}>{currentHolding ? currentHolding.shares : 0}</strong> shares
+                  Position: <strong style={{ color: 'var(--text-primary)' }}>{currentHolding ? formatSharesQty(currentHolding.shares) : 0}</strong> shares
                 </div>
               </div>
             </div>
 
-            {/* QUANTITY & SMART SIZING STEPPERS */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
-                <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-                  Quantity of Shares / Contracts
-                </label>
-                <div style={{ display: 'flex', gap: '0.3rem' }}>
-                  {[1, 5, 10, 50, 100].map((step) => (
+            {/* ORDER EXECUTION MODE: MARKET vs LIMIT */}
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.45rem',
+                padding: '0.6rem 0.75rem',
+                background: 'var(--bg-input)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-md)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Zap size={13} style={{ color: 'var(--accent-cyan)' }} /> Execution Type
+                </span>
+                <div style={{ display: 'flex', gap: '0.3rem', background: 'rgba(15, 23, 42, 0.35)', padding: '3px', borderRadius: '7px', border: '1px solid var(--border-subtle)' }}>
+                  {[
+                    { id: 'MARKET', label: 'Market (Instant)' },
+                    { id: 'LIMIT', label: 'Limit (Target Price)' }
+                  ].map((mode) => (
                     <button
-                      key={step}
+                      key={mode.id}
                       type="button"
-                      onClick={() => handleStepShares(step)}
+                      onClick={() => {
+                        setOrderKind(mode.id);
+                        if (mode.id === 'LIMIT' && !limitPrice) {
+                          const defaultLimit = orderType === 'BUY' ? price * 0.985 : price * 1.02;
+                          setLimitPrice(defaultLimit.toFixed(2));
+                        }
+                      }}
                       style={{
-                        padding: '0.15rem 0.45rem',
-                        borderRadius: '4px',
-                        background: 'var(--bg-input)',
-                        border: '1px solid var(--border-subtle)',
-                        color: 'var(--text-secondary)',
-                        fontSize: '0.68rem',
+                        padding: '0.24rem 0.6rem',
+                        borderRadius: '5px',
+                        fontSize: '0.72rem',
                         fontWeight: 700,
-                        cursor: 'pointer'
+                        border: 'none',
+                        cursor: 'pointer',
+                        background: orderKind === mode.id ? 'rgba(6, 182, 212, 0.18)' : 'transparent',
+                        color: orderKind === mode.id ? 'var(--accent-cyan)' : 'var(--text-secondary)'
                       }}
                     >
-                      +{step}
+                      {mode.label}
                     </button>
                   ))}
+                </div>
+              </div>
+
+              {orderKind === 'LIMIT' && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '0.15rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                      {orderType === 'BUY' ? 'Fill at or below Limit Price ($)' : 'Fill at or above Limit Price ($)'}
+                    </div>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      required
+                      className="input-field font-mono"
+                      style={{ width: '100%', padding: '0.45rem 0.65rem', fontSize: '0.9rem', fontWeight: 700 }}
+                      value={limitPrice}
+                      onChange={(e) => setLimitPrice(e.target.value)}
+                      placeholder={price.toFixed(2)}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.25rem', alignSelf: 'flex-end', paddingBottom: '2px' }}>
+                    {(orderType === 'BUY' ? [-0.02, -0.05] : [0.02, 0.05]).map((pct) => (
+                      <button
+                        key={pct}
+                        type="button"
+                        onClick={() => setLimitPrice((price * (1 + pct)).toFixed(2))}
+                        style={{
+                          padding: '0.42rem 0.5rem',
+                          borderRadius: '6px',
+                          background: 'rgba(255, 255, 255, 0.04)',
+                          border: '1px solid var(--border-subtle)',
+                          color: 'var(--text-secondary)',
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {pct > 0 ? `+${pct * 100}%` : `${pct * 100}%`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* QUANTITY & SMART SIZING STEPPERS (SHARES vs $ AMOUNT) */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem', marginBottom: '0.4rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setSizeMode('SHARES')}
+                    style={{
+                      padding: '0.22rem 0.55rem',
+                      borderRadius: '5px',
+                      fontSize: '0.74rem',
+                      fontWeight: 700,
+                      border: '1px solid var(--border-subtle)',
+                      cursor: 'pointer',
+                      background: sizeMode === 'SHARES' ? 'rgba(59, 130, 246, 0.18)' : 'var(--bg-input)',
+                      color: sizeMode === 'SHARES' ? '#60a5fa' : 'var(--text-muted)'
+                    }}
+                  >
+                    Shares (Fractional)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSizeMode('USD')}
+                    style={{
+                      padding: '0.22rem 0.55rem',
+                      borderRadius: '5px',
+                      fontSize: '0.74rem',
+                      fontWeight: 700,
+                      border: '1px solid var(--border-subtle)',
+                      cursor: 'pointer',
+                      background: sizeMode === 'USD' ? 'rgba(16, 185, 129, 0.18)' : 'var(--bg-input)',
+                      color: sizeMode === 'USD' ? 'var(--bull-green)' : 'var(--text-muted)'
+                    }}
+                  >
+                    $ Amount
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                  {sizeMode === 'SHARES'
+                    ? [0.25, 0.5, 1, 5, 10].map((step) => (
+                        <button
+                          key={step}
+                          type="button"
+                          onClick={() => handleStepShares(step)}
+                          style={{
+                            padding: '0.15rem 0.45rem',
+                            borderRadius: '4px',
+                            background: 'var(--bg-input)',
+                            border: '1px solid var(--border-subtle)',
+                            color: 'var(--text-secondary)',
+                            fontSize: '0.68rem',
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          +{step}
+                        </button>
+                      ))
+                    : [25, 50, 100, 250].map((amt) => (
+                        <button
+                          key={amt}
+                          type="button"
+                          onClick={() => setUsdAmount(String(amt))}
+                          style={{
+                            padding: '0.15rem 0.45rem',
+                            borderRadius: '4px',
+                            background: 'var(--bg-input)',
+                            border: '1px solid var(--border-subtle)',
+                            color: 'var(--text-secondary)',
+                            fontSize: '0.68rem',
+                            fontWeight: 700,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          ${amt}
+                        </button>
+                      ))}
                 </div>
               </div>
 
@@ -939,7 +1260,7 @@ export function TradeModal({
               <div style={{ display: 'flex', alignItems: 'stretch', gap: '0.45rem' }}>
                 <button
                   type="button"
-                  onClick={() => handleStepShares(-1)}
+                  onClick={() => handleStepShares(sizeMode === 'SHARES' ? -0.5 : -1)}
                   style={{
                     width: '42px',
                     borderRadius: '8px',
@@ -956,29 +1277,53 @@ export function TradeModal({
                   <Minus size={16} />
                 </button>
 
-                <input
-                  type="number"
-                  min="1"
-                  required
-                  className="input-field font-mono"
-                  style={{
-                    flex: 1,
-                    textAlign: 'center',
-                    fontSize: '1.15rem',
-                    fontWeight: 800,
-                    height: '42px',
-                    borderRadius: '8px',
-                    background: 'var(--bg-input)',
-                    border: '1px solid var(--border-subtle)',
-                    color: 'var(--text-primary)'
-                  }}
-                  value={shares}
-                  onChange={(e) => setShares(e.target.value)}
-                />
+                {sizeMode === 'SHARES' ? (
+                  <input
+                    type="number"
+                    step="any"
+                    min="0.0001"
+                    required
+                    className="input-field font-mono"
+                    style={{
+                      flex: 1,
+                      textAlign: 'center',
+                      fontSize: '1.15rem',
+                      fontWeight: 800,
+                      height: '42px',
+                      borderRadius: '8px',
+                      background: 'var(--bg-input)',
+                      border: '1px solid var(--border-subtle)',
+                      color: 'var(--text-primary)'
+                    }}
+                    value={shares}
+                    onChange={(e) => setShares(e.target.value)}
+                  />
+                ) : (
+                  <input
+                    type="number"
+                    step="any"
+                    min="1"
+                    required
+                    className="input-field font-mono"
+                    style={{
+                      flex: 1,
+                      textAlign: 'center',
+                      fontSize: '1.15rem',
+                      fontWeight: 800,
+                      height: '42px',
+                      borderRadius: '8px',
+                      background: 'var(--bg-input)',
+                      border: '1px solid var(--border-subtle)',
+                      color: 'var(--text-primary)'
+                    }}
+                    value={usdAmount}
+                    onChange={(e) => setUsdAmount(e.target.value)}
+                  />
+                )}
 
                 <button
                   type="button"
-                  onClick={() => handleStepShares(1)}
+                  onClick={() => handleStepShares(sizeMode === 'SHARES' ? 0.5 : 1)}
                   style={{
                     width: '42px',
                     borderRadius: '8px',
@@ -995,6 +1340,15 @@ export function TradeModal({
                   <Plus size={16} />
                 </button>
               </div>
+
+              {sizeMode === 'USD' && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.32rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                  <span>Calculated Fractional Allocation:</span>
+                  <span className="font-mono" style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>
+                    ≈ {formatSharesQty(numShares)} shares @ ${execPrice.toFixed(2)}
+                  </span>
+                </div>
+              )}
 
               {/* Percentage Allocators */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.45rem', marginTop: '0.55rem' }}>
@@ -1020,6 +1374,97 @@ export function TradeModal({
                 ))}
               </div>
             </div>
+
+            {/* OPTIONAL OCO RISK BRACKETS FOR MARKET BUY */}
+            {orderType === 'BUY' && orderKind === 'MARKET' && (
+              <div
+                style={{
+                  padding: '0.65rem 0.75rem',
+                  background: 'var(--bg-input)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: 'var(--radius-md)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.45rem'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
+                  <span style={{ fontSize: '0.73rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Target size={13} style={{ color: 'var(--warning-amber)' }} /> Protective Brackets (Optional Auto SL / TP)
+                  </span>
+                  <div style={{ display: 'flex', gap: '0.3rem' }}>
+                    {lockedAsset?.symbol === symbol && lockedAsset?.stopLossPrice && lockedAsset?.targetPrice && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStopLossPrice(Number(lockedAsset.stopLossPrice).toFixed(2));
+                          setTakeProfitPrice(Number(lockedAsset.targetPrice).toFixed(2));
+                        }}
+                        style={{
+                          padding: '0.15rem 0.45rem',
+                          borderRadius: '4px',
+                          background: 'rgba(16, 185, 129, 0.16)',
+                          border: '1px solid rgba(16, 185, 129, 0.35)',
+                          color: 'var(--bull-green)',
+                          fontSize: '0.66rem',
+                          fontWeight: 700,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Apply Guard SL/TP
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStopLossPrice((price * 0.95).toFixed(2));
+                        setTakeProfitPrice((price * 1.1).toFixed(2));
+                      }}
+                      style={{
+                        padding: '0.15rem 0.45rem',
+                        borderRadius: '4px',
+                        background: 'rgba(255, 255, 255, 0.04)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.66rem',
+                        fontWeight: 700,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      -5% / +10%
+                    </button>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <div>
+                    <div style={{ fontSize: '0.66rem', color: 'var(--bear-red)', fontWeight: 700, marginBottom: '0.2rem' }}>Stop-Loss Price ($)</div>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      placeholder={`< $${price.toFixed(2)}`}
+                      className="input-field font-mono"
+                      style={{ width: '100%', padding: '0.38rem 0.55rem', fontSize: '0.82rem' }}
+                      value={stopLossPrice}
+                      onChange={(e) => setStopLossPrice(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.66rem', color: 'var(--bull-green)', fontWeight: 700, marginBottom: '0.2rem' }}>Take-Profit Price ($)</div>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0.01"
+                      placeholder={`> $${price.toFixed(2)}`}
+                      className="input-field font-mono"
+                      style={{ width: '100%', padding: '0.38rem 0.55rem', fontSize: '0.82rem' }}
+                      value={takeProfitPrice}
+                      onChange={(e) => setTakeProfitPrice(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* INSTITUTIONAL FINANCIAL LEDGER & SAFE ZONE RESERVE */}
             <div
@@ -1186,7 +1631,7 @@ export function TradeModal({
               ) : (
                 <>
                   <span>
-                    Confirm {orderType} {numShares} {symbol} • ${(totalCost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {orderKind === 'LIMIT' ? `Queue ${orderType} LIMIT` : `Confirm ${orderType}`} {formatSharesQty(numShares)} {symbol} • ${(totalCost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                   <ArrowRight size={18} />
                 </>
