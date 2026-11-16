@@ -207,7 +207,7 @@ const run = async () => {
           return {
             present: true,
             left: cr.left,
-            hasDetails: txt.includes('O:') && txt.includes('H:') && txt.includes('L:') && txt.includes('C:') && txt.includes('Vol:'),
+            hasDetails: txt.includes('O:') && txt.includes('H:') && txt.includes('L:') && txt.includes('C:') && txt.includes('Vol:') && txt.includes('Rng:'),
             insideContainer: cr.left >= pr.left && cr.right <= pr.right && cr.top >= pr.top && cr.bottom <= pr.bottom
           };
         })()`);

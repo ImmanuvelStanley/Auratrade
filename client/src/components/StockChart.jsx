@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState, useMemo } from 're
 import { useSocketQuote } from '../context/SocketContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { getCurrencySymbol } from '../utils/predictorEngine';
 import {
   BarChart3,
   LineChart as LineChartIcon,
@@ -144,6 +145,16 @@ export const StockChart = React.memo(function StockChart({
   const { theme } = useTheme();
   const socketQuote = useSocketQuote(symbol);
   const liveQuote = propLiveQuote || socketQuote;
+  const inferCurrFromSymbol = (sym = '') => {
+    const s = String(sym).toUpperCase();
+    if (s.endsWith('.NS') || s.endsWith('.BO') || s === '^NSEI' || s === '^BSESN') return 'INR';
+    if (s.endsWith('.L')) return 'GBP';
+    if (s.endsWith('.DE') || s.endsWith('.PA')) return 'EUR';
+    if (s.endsWith('.T')) return 'JPY';
+    if (s.endsWith('.HK')) return 'HKD';
+    return 'USD';
+  };
+  const chartCurr = liveQuote?.currencySymbol || getCurrencySymbol(liveQuote?.currency || inferCurrFromSymbol(symbol));
   const baseCanvasRef = useRef(null);
   const overlayCanvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -928,8 +939,8 @@ export const StockChart = React.memo(function StockChart({
   };
 
   const computeFloatingCardTarget = (cursorX, cursorY, containerW, containerH, panBars) => {
-    const cardW = containerW < 440 ? 196 : 216;
-    const cardH = 114;
+    const cardW = containerW < 440 ? 214 : 238;
+    const cardH = 136;
     const gapX = 18;
     const minLeft = 10;
     const maxRight = Math.max(cardW + 20, containerW - 78);
@@ -1776,10 +1787,10 @@ export const StockChart = React.memo(function StockChart({
               opacity: hoverData && Math.abs(hoverData.hY - liveDataPos.y) < 22 ? 0 : 1,
               transition: 'opacity 0.15s ease'
             }}
-            title={liveDataPos.isHistorical ? `Current Live Market Price: $${liveDataPos.price.toFixed(2)} (Click Return to Live)` : `Live Market Price: $${liveDataPos.price.toFixed(2)}`}
+            title={liveDataPos.isHistorical ? `Current Live Market Price: ${chartCurr}${liveDataPos.price.toFixed(2)} (Click Return to Live)` : `Live Market Price: ${chartCurr}${liveDataPos.price.toFixed(2)}`}
           >
             <span className="chart-floating-live-beacon" />
-            <span>LIVE ${liveDataPos.price.toFixed(2)}</span>
+            <span>LIVE {chartCurr}{liveDataPos.price.toFixed(2)}</span>
           </div>
         )}
 
@@ -1804,11 +1815,20 @@ export const StockChart = React.memo(function StockChart({
           const chg = prevC ? c.close - prevC.close : hoverData.change;
           const chgPct = prevC && prevC.close > 0 ? (chg / prevC.close) * 100 : hoverData.changePercent;
           const isPos = chg >= 0;
+          const chgSign = isPos ? '+' : '-';
+          const barSpread = Math.max(0, c.high - c.low);
+          const barSpreadPct = c.low > 0 ? (barSpread / c.low) * 100 : 0;
+
           const firstCandle = candles.length > 0 ? candles[0] : c;
           const rangeChg = c.close - (firstCandle?.open || c.open);
           const rangeChgPct = firstCandle?.open > 0 ? (rangeChg / firstCandle.open) * 100 : 0;
           const isInspectingHistory = hoverData.isHistorical || clampedPan > 0;
-          const cardW = (hoverData.containerW || 640) < 440 ? 196 : 216;
+
+          // Clear directional delta from inspected point -> current Live price
+          const toLiveDiff = latestCandle ? latestCandle.close - c.close : 0;
+          const toLivePct = c.close > 0 ? (toLiveDiff / c.close) * 100 : 0;
+          const toLiveSign = toLiveDiff >= 0 ? '+' : '-';
+          const cardW = (hoverData.containerW || 640) < 440 ? 214 : 238;
 
           return (
             <div
@@ -1824,29 +1844,39 @@ export const StockChart = React.memo(function StockChart({
               </div>
 
               <div className="chart-floating-card-price-row">
-                <span className="chart-floating-card-price">${c.close.toFixed(2)}</span>
+                <span className="chart-floating-card-price">{chartCurr}{c.close.toFixed(2)}</span>
                 <span className={`chart-floating-card-pct ${isPos ? 'bull' : 'bear'}`}>
-                  {isPos ? '+' : ''}{chgPct.toFixed(2)}%
+                  {chgSign}{chartCurr}{Math.abs(chg).toFixed(2)} ({chgSign}{Math.abs(chgPct).toFixed(2)}%)
                 </span>
               </div>
 
               <div className="chart-floating-card-ohlc">
-                <span><strong>O:</strong> ${c.open.toFixed(2)}</span>
-                <span><strong>H:</strong> <em className="bull">${c.high.toFixed(2)}</em></span>
-                <span><strong>L:</strong> <em className="bear">${c.low.toFixed(2)}</em></span>
-                <span><strong>C:</strong> <em className="cyan">${c.close.toFixed(2)}</em></span>
+                <span><strong>O:</strong> {chartCurr}{c.open.toFixed(2)}</span>
+                <span><strong>H:</strong> <em className="bull">{chartCurr}{c.high.toFixed(2)}</em></span>
+                <span><strong>L:</strong> <em className="bear">{chartCurr}{c.low.toFixed(2)}</em></span>
+                <span><strong>C:</strong> <em className="cyan">{chartCurr}{c.close.toFixed(2)}</em></span>
+              </div>
+
+              <div className="chart-floating-card-meta">
+                <span><strong>Vol:</strong> {hoverData.volumeFormatted}</span>
+                <span><strong>Rng:</strong> {chartCurr}{barSpread.toFixed(2)} ({barSpreadPct.toFixed(2)}%)</span>
               </div>
 
               <div className="chart-floating-card-foot">
-                <span><strong>Vol:</strong> {hoverData.volumeFormatted}</span>
                 {isInspectingHistory && latestCandle ? (
-                  <span className={c.close >= latestCandle.close ? 'bull' : 'bear'}>
-                    {c.close >= latestCandle.close ? '+' : '-'}${Math.abs(c.close - latestCandle.close).toFixed(2)} vs Live
-                  </span>
+                  <>
+                    <span><strong>To Live:</strong></span>
+                    <span className={toLiveDiff >= 0 ? 'bull' : 'bear'}>
+                      Now {toLiveSign}{chartCurr}{Math.abs(toLiveDiff).toFixed(2)} ({toLiveSign}{Math.abs(toLivePct).toFixed(2)}%)
+                    </span>
+                  </>
                 ) : (
-                  <span className={rangeChg >= 0 ? 'bull' : 'bear'}>
-                    {range}: {rangeChg >= 0 ? '+' : ''}{rangeChgPct.toFixed(2)}%
-                  </span>
+                  <>
+                    <span><strong>{range} Return:</strong></span>
+                    <span className={rangeChg >= 0 ? 'bull' : 'bear'}>
+                      {rangeChg >= 0 ? '+' : '-'}{chartCurr}{Math.abs(rangeChg).toFixed(2)} ({rangeChg >= 0 ? '+' : ''}{rangeChgPct.toFixed(2)}%)
+                    </span>
+                  </>
                 )}
               </div>
             </div>
@@ -1863,7 +1893,7 @@ export const StockChart = React.memo(function StockChart({
               borderColor: hoverData.isHistorical ? '#f59e0b' : undefined
             }}
           >
-            ${hoverData.candle.close.toFixed(2)}
+            {chartCurr}{hoverData.candle.close.toFixed(2)}
           </div>
         )}
 

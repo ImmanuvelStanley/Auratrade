@@ -2087,6 +2087,18 @@ select option:checked {
 .chart-floating-card-ohlc em.cyan {
   color: var(--accent-cyan);
 }
+.chart-floating-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  font-size: 0.64rem;
+  color: #cbd5e1;
+}
+.chart-floating-card-meta strong {
+  color: #94a3b8;
+  font-weight: 600;
+}
 .chart-floating-card-foot {
   display: flex;
   align-items: center;
@@ -2094,7 +2106,7 @@ select option:checked {
   gap: 0.4rem;
   padding-top: 0.25rem;
   border-top: 1px solid rgba(148, 163, 184, 0.18);
-  font-size: 0.65rem;
+  font-size: 0.64rem;
   color: #cbd5e1;
 }
 .chart-floating-card-foot strong {
@@ -4597,13 +4609,15 @@ select option:checked {
   color: #334155 !important;
 }
 [data-theme="light"] .chart-floating-card-time,
-[data-theme="light"] .chart-floating-card-ohlc {
+[data-theme="light"] .chart-floating-card-ohlc,
+[data-theme="light"] .chart-floating-card-meta {
   color: #334155 !important;
 }
 [data-theme="light"] .chart-floating-card-price {
   color: #0f172a !important;
 }
 [data-theme="light"] .chart-floating-card-ohlc strong,
+[data-theme="light"] .chart-floating-card-meta strong,
 [data-theme="light"] .chart-floating-card-foot strong {
   color: #64748b !important;
 }
