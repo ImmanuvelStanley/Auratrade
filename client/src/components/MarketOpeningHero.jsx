@@ -1,7 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import {
-  ArrowUpRight,
-  Sparkles
+  ArrowUpRight
 } from 'lucide-react';
 import { formatAllTimePercent } from '../utils/stockRecordEngine';
 
@@ -54,8 +53,7 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
   rawCompanies = [],
   totalAssetsCount = 309,
   onSelectSymbol,
-  onOpenDeepRecord,
-  onExploreAiUpside
+  onOpenDeepRecord
 }) {
   const [spotlightTab, setSpotlightTab] = useState('ai'); // 'ai' | 'mover' | 'legacy'
   const [tabPaused, setTabPaused] = useState(false);
@@ -227,15 +225,6 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
             >
               <span>Open {activeSpotlight.symbol} Workstation</span>
               <ArrowUpRight size={15} strokeWidth={2.2} />
-            </button>
-
-            <button
-              type="button"
-              className="opening-cta-secondary"
-              onClick={() => onExploreAiUpside && onExploreAiUpside()}
-            >
-              <Sparkles size={14} />
-              <span>AI 30D Alpha Picks</span>
             </button>
           </div>
 

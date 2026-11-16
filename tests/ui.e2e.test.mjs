@@ -198,12 +198,14 @@ const run = async () => {
     assert.equal(bellLayout.insideBtn, true, 'Unread count badge must fit cleanly inside the notification bell pill button');
     assert.equal(bellLayout.clearOfIcon, true, 'Unread count badge must not overlap the bell icon');
 
-    // Verify Signature Architectural Opening Stage & Interactive Pulse Observatory
+    // Verify Signature Architectural Opening Stage & Streamlined Strategy Segmented Bar
     const openingHeroCheck = await evalJs(`(() => {
       const stage = document.querySelector('.opening-bento-stage');
       const wave = document.querySelector('.opening-pulse-svg');
       const cta = document.getElementById('opening-workstation-cta');
       const dockCells = document.querySelectorAll('.opening-telemetry-cell').length;
+      const strategyPills = document.querySelectorAll('.market-filter-bar .screener-strategy-pill').length;
+      const bodyTxt = document.body.innerText || '';
       const moverTab = Array.from(document.querySelectorAll('.opening-obs-tab')).find((b) => /24H Mover/i.test(b.innerText));
       if (moverTab) moverTab.click();
       return {
@@ -211,6 +213,9 @@ const run = async () => {
         hasWave: !!wave,
         hasCta: !!cta,
         dockCells,
+        strategyPills,
+        hasRemovedAlphaBtn: !/AI 30D Alpha Picks/i.test(bodyTxt),
+        hasRemovedRedundantPresets: !/Mega-Cap Club|Dividend Aristocrats/i.test(bodyTxt),
         stageWidthOk: stage ? stage.getBoundingClientRect().right <= window.innerWidth + 1 : false
       };
     })()`);
@@ -218,6 +223,9 @@ const run = async () => {
     assert.equal(openingHeroCheck.hasWave, true, 'Pulse Observatory SVG waveform must render');
     assert.equal(openingHeroCheck.hasCta, true, 'Workstation primary CTA must render in opening stage');
     assert.equal(openingHeroCheck.dockCells, 4, 'Telemetry dock must render 4 metric slots');
+    assert.equal(openingHeroCheck.strategyPills, 5, 'Clean strategy segmented bar must render 5 essential options');
+    assert.equal(openingHeroCheck.hasRemovedAlphaBtn, true, 'Redundant AI 30D Alpha Picks secondary CTA must be removed');
+    assert.equal(openingHeroCheck.hasRemovedRedundantPresets, true, 'Redundant Mega-Cap Club and Dividend Aristocrats presets must be removed');
     assert.equal(openingHeroCheck.stageWidthOk, true, 'Opening hero must fit cleanly within viewport');
     await sleep(120);
     const obsSwitched = await evalJs(`(() => {

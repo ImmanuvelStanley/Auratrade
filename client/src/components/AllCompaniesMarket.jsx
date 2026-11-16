@@ -7,12 +7,10 @@ import {
   Filter,
   ArrowUpDown,
   Sparkles,
-  ShieldCheck,
   Zap,
   Bookmark,
   Bell,
   ExternalLink,
-  DollarSign,
   Layers,
   BarChart2,
   PieChart,
@@ -1239,7 +1237,6 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
   const [isAutoIngesting, setIsAutoIngesting] = useState(false);
   const [autoIngestFailedSymbol, setAutoIngestFailedSymbol] = useState(null);
   const lastAutoIngestAttemptRef = useRef('');
-  const screenerPresetRef = useRef(null);
 
   // High-performance pagination state
   const [pageSize, setPageSize] = useState(24); // 24, 48, or 'all'
@@ -1465,10 +1462,6 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
       switch (activePreset) {
         case 'ai_upside':
           return (Number(c?.forecastGainPercent) || 0) >= 10;
-        case 'dividend':
-          return parseFloat(c?.dividendYield || 0) >= 1.5;
-        case 'mega_cap':
-          return (Number(c?.marketCap) || 0) >= 1000000000000;
         case 'top_gainers':
           return (Number(c?.changePercent) || 0) >= 1.0;
         case 'strong_buy':
@@ -1739,14 +1732,6 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
     onRemoveFromWatchlist(sym);
   }, [onRemoveFromWatchlist]);
 
-  const handleExploreAiUpside = useCallback(() => {
-    setActivePreset('ai_upside');
-    setCurrentPage(1);
-    if (screenerPresetRef.current) {
-      screenerPresetRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, []);
-
   const regions = [
     { id: 'all', label: overview?.totalCount ? `All Markets (${overview.totalCount})` : `All Markets (${defaultAllCompanies?.overview?.totalCount || 309})` },
     { id: 'north_america', label: 'North America', flagCode: 'US' },
@@ -1766,12 +1751,10 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
 
   const presets = [
     { id: 'all', label: 'All Assets', icon: Layers },
-    { id: 'ai_upside', label: 'AI High Upside (>10%)', icon: Sparkles },
-    { id: 'dividend', label: 'Dividend Aristocrats (>1.5%)', icon: DollarSign },
-    { id: 'mega_cap', label: 'Mega-Cap Club ($1T+)', icon: ShieldCheck },
-    { id: 'top_gainers', label: "Today's Top Gainers", icon: TrendingUp },
-    { id: 'strong_buy', label: 'Strong Buy Only', icon: CheckCircle2 },
-    { id: 'near_52w_low', label: 'Oversold (Near 52W Low)', icon: TrendingDown }
+    { id: 'ai_upside', label: 'AI Upside >10%', icon: Sparkles },
+    { id: 'top_gainers', label: 'Top Gainers', icon: TrendingUp },
+    { id: 'strong_buy', label: 'Strong Buy', icon: CheckCircle2 },
+    { id: 'near_52w_low', label: 'Near 52W Low', icon: TrendingDown }
   ];
 
   const sectors = [
@@ -1809,34 +1792,41 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
         totalAssetsCount={defaultAllCompanies?.overview?.totalCount || 309}
         onSelectSymbol={handleSelectSymbol}
         onOpenDeepRecord={onOpenDeepRecord}
-        onExploreAiUpside={handleExploreAiUpside}
       />
 
-      {/* Screener Strategy Quick-Presets Ribbon (Clean Vector Icons, No Emojis) */}
-      <div ref={screenerPresetRef} className="screener-preset-ribbon">
-        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginRight: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-          <Sparkles size={13} style={{ color: 'var(--accent-cyan)' }} /> Presets:
-        </span>
-        {presets.map(p => {
-          const Icon = p.icon;
-          return (
-            <button
-              key={p.id}
-              type="button"
-              className={`screener-preset-pill ${activePreset === p.id ? 'active' : ''}`}
-              onClick={() => setActivePreset(p.id)}
-            >
-              <Icon size={13} />
-              <span>{p.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Interactive Filter & Sorting Control Bar */}
+      {/* Interactive Filter & Strategy Control Bar (Unified 3-Row Grid Layout) */}
       <div className="market-filter-bar glass-card" style={{ marginBottom: '0.85rem' }}>
-        {/* Row 1: Geographic Region Scope & Instant Search (Search pinned right on desktop) */}
+        {/* Row 1: Essential Strategy Views (Clean Segmented Rail + Live Matched Count) */}
         <div className="market-filter-row">
+          <span className="market-filter-row-label">Strategy</span>
+          <div className="market-filter-row-content screener-strategy-row-content">
+            <div className="screener-strategy-segment" role="group" aria-label="Screener quick strategies">
+              {presets.map((p) => {
+                const Icon = p.icon;
+                const isSelected = activePreset === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    type="button"
+                    aria-pressed={isSelected}
+                    className={`screener-strategy-pill${isSelected ? ' active' : ''}`}
+                    onClick={() => setActivePreset(p.id)}
+                  >
+                    <Icon size={13} />
+                    <span>{p.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <span className="screener-matched-badge font-mono tabular-nums">
+              {filteredRawCompanies.length} Assets
+            </span>
+          </div>
+        </div>
+
+        {/* Row 2: Geographic Region Scope & Instant Search (Search pinned right on desktop) */}
+        <div className="market-filter-row market-filter-row--divided">
           <span className="market-filter-row-label">Markets</span>
           <div className="market-filter-row-content market-filter-row-content--markets">
             {/* Region Tabs with National/Regional Flags */}
