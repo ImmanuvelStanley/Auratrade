@@ -773,16 +773,6 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
 
                 <button
                   type="button"
-                  className={`assistant-hdr-btn ${isConfigOpen ? 'active' : ''}`}
-                  onClick={() => setIsConfigOpen(true)}
-                  title="Adaptive Question-Level Routing & Optional Cloud Key"
-                >
-                  <Sparkles size={13} />
-                  <span>Auto AI</span>
-                </button>
-
-                <button
-                  type="button"
                   className="assistant-hdr-btn-icon close-btn"
                   onClick={() => setIsOpen(false)}
                   title="Close Strategy Desk"

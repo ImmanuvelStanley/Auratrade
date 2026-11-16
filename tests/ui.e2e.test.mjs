@@ -258,29 +258,28 @@ const run = async () => {
         await evalJs(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))`);
         await sleep(150);
 
-        // Verify Strategy Desk uses Adaptive Auto-Engine Routing (no manual Select Execution Engine picker)
+        // Verify Strategy Desk hides Engine/Auto AI button & automatically routes questions cleanly
         await evalJs(`(() => {
           const orb = document.querySelector('button[aria-label="Open Trading Strategy Desk"]');
           if (orb) orb.click();
         })()`);
         await sleep(300);
-        await evalJs(`(() => {
-          const autoAiBtn = Array.from(document.querySelectorAll('.assistant-hdr-btn')).find((b) => /Auto AI/i.test(b.innerText));
-          if (autoAiBtn) autoAiBtn.click();
-        })()`);
-        await sleep(250);
-        const aiConfigCheck = await evalJs(`(() => {
-          const modal = document.querySelector('.assistant-config-modal');
-          const t = modal ? modal.innerText : '';
+        const aiHeaderCheck = await evalJs(`(() => {
+          const btns = Array.from(document.querySelectorAll('.assistant-hdr-btn')).map((b) => b.innerText.trim());
+          const starter = document.querySelector('.assistant-starter-chip');
+          if (starter) starter.click();
           return {
-            open: !!modal,
-            hasManualSelect: /select execution engine/i.test(t),
-            hasAutoRouting: /smart complexity routing active/i.test(t) && /level 1/i.test(t) && /level 3/i.test(t)
+            hasEngineOrAutoAiBtn: btns.some((t) => /Auto AI|Engine/i.test(t)),
+            btnsCount: btns.length
           };
         })()`);
-        assert.equal(aiConfigCheck.open, true, 'Strategy Desk Auto AI panel must open');
-        assert.equal(aiConfigCheck.hasManualSelect, false, 'Manual Select Execution Engine picker must be removed');
-        assert.equal(aiConfigCheck.hasAutoRouting, true, 'Adaptive Question-Level Auto-Routing summary must be shown');
+        assert.equal(aiHeaderCheck.hasEngineOrAutoAiBtn, false, 'Auto AI / Engine header button must stay hidden');
+        await sleep(500);
+        const aiReplyOk = await evalJs(`(() => {
+          const pill = document.querySelector('.assistant-ai-desk-pill');
+          return pill ? /AUTO L[123]/i.test(pill.innerText) : false;
+        })()`);
+        assert.equal(aiReplyOk, true, 'Strategy Desk must auto-route prompt and show AUTO L1/L2/L3 badge');
         await evalJs(`(() => {
           const closeBtn = document.querySelector('.assistant-hdr-btn-icon.close-btn');
           if (closeBtn) closeBtn.click();
