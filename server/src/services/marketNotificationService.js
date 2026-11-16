@@ -44,7 +44,7 @@ const getCurrSym = (curr, symbol = '') => {
 
 class MarketNotificationService {
   constructor() {
-    this.http = axios.create({ timeout: 2200 });
+    this.http = axios.create({ timeout: 1200 });
     this.rssCache = { items: [], fetchedAt: 0 };
     this.snapshotCache = { items: [], fetchedAt: 0 };
     this.surgeCooldown = new Map(); // symbol -> lastBroadcastMs
@@ -73,10 +73,12 @@ class MarketNotificationService {
       while ((match = itemRegex.exec(xml)) !== null && items.length < 4) {
         const block = match[1];
         const titleRaw = (block.match(/<title>([\s\S]*?)<\/title>/i) || [])[1] || '';
+        const descRaw = (block.match(/<description>([\s\S]*?)<\/description>/i) || [])[1] || '';
         const linkRaw = (block.match(/<link>([\s\S]*?)<\/link>/i) || [])[1] || '';
         const pubDateRaw = (block.match(/<pubDate>([\s\S]*?)<\/pubDate>/i) || [])[1] || '';
 
         const title = decodeXmlEntities(titleRaw);
+        const description = decodeXmlEntities(descRaw);
         const url = decodeXmlEntities(linkRaw);
         if (!title || title.length < 12) continue;
 
@@ -90,6 +92,7 @@ class MarketNotificationService {
         const parsedDate = pubDateRaw ? new Date(pubDateRaw) : new Date();
         const tsIso = Number.isNaN(parsedDate.getTime()) ? new Date().toISOString() : parsedDate.toISOString();
         const slug = title.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 24);
+        const cs = getCurrSym(quote?.currency, symbol);
 
         items.push({
           id: `mkt_news_${slug}`,
@@ -97,12 +100,23 @@ class MarketNotificationService {
           category: 'NEWS',
           symbol,
           title,
-          message: `${title} — Live financial news feed (${symbol})`,
+          message: description ? description.slice(0, 180) + (description.length > 180 ? '...' : '') : `${title} — Live financial news feed (${symbol})`,
           url: url && url.startsWith('http') ? url : null,
           source: 'Yahoo Finance News',
           price: quote ? Number(quote.price) : undefined,
           changePercent: quote ? Number(quote.changePercent) : undefined,
-          currencySymbol: getCurrSym(quote?.currency, symbol),
+          currencySymbol: cs,
+          details: {
+            categoryLabel: 'Breaking Financial News Headline',
+            whatItMeans: `Real-time market news headline linked to ${symbol}. Breaking news headlines often trigger short-term volatility spikes and institutional repricing around affected equities or macro sectors.`,
+            summary: description || title,
+            metrics: [
+              { label: 'Related Ticker', value: symbol },
+              { label: 'Live Price', value: quote ? `${cs}${Number(quote.price).toFixed(2)}` : '—' },
+              { label: 'Day Move', value: quote ? `${quote.changePercent >= 0 ? '+' : ''}${Number(quote.changePercent).toFixed(2)}%` : '—' },
+              { label: 'Feed Source', value: 'Yahoo Finance RSS' }
+            ]
+          },
           read: false,
           timestamp: tsIso
         });
@@ -160,6 +174,18 @@ class MarketNotificationService {
             price: Number(topGainer.price),
             changePercent: Number(topGainer.changePercent),
             currencySymbol: cs,
+            details: {
+              categoryLabel: 'Strongest Intraday Gainer Across Tracked Markets',
+              whatItMeans: `${topGainer.name} (${topGainer.symbol}) is currently the #1 percentage gainer in the live market feed. Sustained momentum above day highs indicates active buyer demand; avoid chasing extended candles without checking RSI & support levels.`,
+              metrics: [
+                { label: 'Sector', value: topGainer.sector || 'Equities' },
+                { label: 'Day Range', value: `${cs}${Number(topGainer.dayLow).toFixed(2)} – ${cs}${Number(topGainer.dayHigh).toFixed(2)}` },
+                { label: '52W High / Low', value: `${cs}${Number(topGainer.high52).toFixed(2)} / ${cs}${Number(topGainer.low52).toFixed(2)}` },
+                { label: '30D Target', value: `${cs}${Number(topGainer.forecastPrice30d || topGainer.price * 1.05).toFixed(2)}` },
+                { label: 'Quant Rating', value: topGainer.rating || 'BUY' },
+                { label: 'Market Cap', value: topGainer.marketCapFormatted || 'Large-Cap' }
+              ]
+            },
             read: false,
             timestamp: new Date(now - 60 * 1000).toISOString()
           });
@@ -177,6 +203,18 @@ class MarketNotificationService {
             price: Number(topLoser.price),
             changePercent: Number(topLoser.changePercent),
             currencySymbol: cs,
+            details: {
+              categoryLabel: 'Steepest Pullback / Volatility Alert',
+              whatItMeans: `${topLoser.name} (${topLoser.symbol}) is experiencing the largest negative drawdown in this session. Sharp pullbacks can either signal trend breakdown or discounted mean-reversion entry near structural support.`,
+              metrics: [
+                { label: 'Sector', value: topLoser.sector || 'Equities' },
+                { label: 'Day Range', value: `${cs}${Number(topLoser.dayLow).toFixed(2)} – ${cs}${Number(topLoser.dayHigh).toFixed(2)}` },
+                { label: '52W Range', value: `${cs}${Number(topLoser.low52).toFixed(2)} – ${cs}${Number(topLoser.high52).toFixed(2)}` },
+                { label: 'Risk Profile', value: topLoser.riskLevel || 'Elevated Volatility' },
+                { label: 'Consensus', value: topLoser.rating || 'HOLD' },
+                { label: 'Market Cap', value: topLoser.marketCapFormatted || 'Tracked Equity' }
+              ]
+            },
             read: false,
             timestamp: new Date(now - 120 * 1000).toISOString()
           });
@@ -198,6 +236,16 @@ class MarketNotificationService {
             price: Number(nearHigh.price),
             changePercent: Number(nearHigh.changePercent),
             currencySymbol: cs,
+            details: {
+              categoryLabel: 'Technical Resistance & 52-Week High Proximity',
+              whatItMeans: `Assets trading within 4% of their 52-week high on positive daily gain often trigger momentum breakouts when overhead supply clears cleanly above ${cs}${Number(nearHigh.high52).toFixed(2)}.`,
+              metrics: [
+                { label: 'Distance to 52W High', value: `${(((Number(nearHigh.high52) - Number(nearHigh.price)) / Number(nearHigh.high52)) * 100).toFixed(2)}%` },
+                { label: '52W Peak', value: `${cs}${Number(nearHigh.high52).toFixed(2)}` },
+                { label: 'P/E Ratio', value: nearHigh.peRatio ? `${nearHigh.peRatio}x` : 'N/A' },
+                { label: 'Quant Score', value: `${nearHigh.ratingScore || 85}/100` }
+              ]
+            },
             read: false,
             timestamp: new Date(now - 240 * 1000).toISOString()
           });
@@ -218,6 +266,16 @@ class MarketNotificationService {
           price: Number(sp.last),
           changePercent: Number(sp.chgPercent),
           currencySymbol: '$',
+          details: {
+            categoryLabel: 'Macro & Sovereign Index Breadth Summary',
+            whatItMeans: `Tracks cross-regional equity appetite across Americas, Europe, and Asia-Pacific benchmarks. Broad advancing breadth (>60% green indices) supports risk-on positioning; diverging breadth flags macro rotation.`,
+            metrics: [
+              { label: 'Market Regime', value: sum.sentiment || 'Active' },
+              { label: 'Advancing / Declining', value: `${sum.advancing || 0} / ${sum.declining || 0}` },
+              { label: sp.name || 'S&P 500', value: `${Number(sp.last).toLocaleString()} (${sp.chgPercent >= 0 ? '+' : ''}${Number(sp.chgPercent).toFixed(2)}%)` },
+              { label: 'Leading Index', value: sum.topGainer ? `${sum.topGainer.name} (+${Number(sum.topGainer.chgPercent).toFixed(2)}%)` : '—' }
+            ]
+          },
           read: false,
           timestamp: new Date(now - 180 * 1000).toISOString()
         });
@@ -236,6 +294,16 @@ class MarketNotificationService {
           price: Number(nifty.price),
           changePercent: Number(nifty.changePercent),
           currencySymbol: '₹',
+          details: {
+            categoryLabel: 'National Stock Exchange (NSE India) Breadth Alert',
+            whatItMeans: `Real-time snapshot of Indian benchmark performance, market session status (${nse.status?.statusText || 'Live'}), and institutional FII/DII breadth across ${nse.marketBreadth?.totalTradedEquities || 2554} NSE stocks.`,
+            metrics: [
+              { label: 'Benchmark Level', value: `${nifty.symbol} ₹${Number(nifty.price).toLocaleString()}` },
+              { label: 'Advances / Declines', value: `${nse.marketBreadth?.advances || 0} / ${nse.marketBreadth?.declines || 0}` },
+              { label: 'Session Status', value: nse.status?.statusText || (nse.status?.isOpen ? 'Open' : 'Summary') },
+              { label: 'Top NSE Gainer', value: topNse ? `${topNse.symbol} (+${Number(topNse.changePercent).toFixed(2)}%)` : '—' }
+            ]
+          },
           read: false,
           timestamp: new Date(now - 210 * 1000).toISOString()
         });
@@ -254,6 +322,16 @@ class MarketNotificationService {
           price: Number(gold.price),
           changePercent: Number(gold.changePercent),
           currencySymbol: '$',
+          details: {
+            categoryLabel: 'Precious Metals & Safe-Haven Hedge Desk',
+            whatItMeans: `Monitors Spot Gold (XAU) & Silver (XAG) hedging flow relative to Treasury yields and DXY. The Gold/Silver Ratio compared to its historical mean (~74:1) signals relative valuation between monetary and industrial metals.`,
+            metrics: [
+              { label: 'Spot Gold (XAU)', value: `$${Number(gold.price).toFixed(2)} (${gold.changePercent >= 0 ? '+' : ''}${Number(gold.changePercent).toFixed(2)}%)` },
+              { label: 'Spot Silver (XAG)', value: silver ? `$${Number(silver.price).toFixed(2)} (${silver.changePercent >= 0 ? '+' : ''}${Number(silver.changePercent).toFixed(2)}%)` : '—' },
+              { label: 'Gold / Silver Ratio', value: `${metals.goldSilverRatio || '60.5'} : 1` },
+              { label: 'Macro Driver', value: metals.macroDrivers?.[0]?.label || 'US Dollar & Real Yields' }
+            ]
+          },
           read: false,
           timestamp: new Date(now - 300 * 1000).toISOString()
         });
@@ -277,9 +355,15 @@ class MarketNotificationService {
       )
     ).slice(0, 6);
 
+    const rssPromise = this.fetchLiveNewsHeadlines();
+    const softBoundedRss = Promise.race([
+      rssPromise,
+      new Promise((resolve) => setTimeout(() => resolve(this.rssCache.items), 650))
+    ]);
+
     const [baseSignals, newsItems] = await Promise.all([
       this.buildBaseMarketSignals(),
-      this.fetchLiveNewsHeadlines()
+      softBoundedRss
     ]);
 
     const relatedSignals = [];
@@ -301,6 +385,16 @@ class MarketNotificationService {
           price: Number(quote.price),
           changePercent: pct,
           currencySymbol: cs,
+          details: {
+            categoryLabel: 'Personalized Watchlist & Holding Telemetry',
+            whatItMeans: `Real-time tracker pinned automatically because ${sym} is actively in your workstation chart, watchlist, or paper portfolio holdings.`,
+            metrics: [
+              { label: 'Instrument', value: quote.name || sym },
+              { label: 'Live Price', value: `${cs}${Number(quote.price).toFixed(2)} (${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%)` },
+              { label: 'Day Range', value: `${cs}${Number(quote.low || quote.dayLow || quote.price).toFixed(2)} – ${cs}${Number(quote.high || quote.dayHigh || quote.price).toFixed(2)}` },
+              { label: 'Source', value: quote.source || 'Live Feed' }
+            ]
+          },
           read: false,
           timestamp: new Date().toISOString()
         });

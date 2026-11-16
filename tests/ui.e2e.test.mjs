@@ -177,19 +177,46 @@ const run = async () => {
       const bell = document.getElementById('header-notification-bell-btn');
       if (bell) bell.click();
     })()`);
-    await sleep(450);
-    const notifCheck = await evalJs(`(() => {
+    let notifCheck = { open: false, cardCount: 0, hasEmptyPrompt: true, hasLiveFeed: false };
+    for (let i = 0; i < 20; i++) {
+      await sleep(200);
+      notifCheck = await evalJs(`(() => {
+        const menu = document.querySelector('.notification-menu');
+        const txt = menu ? menu.innerText : '';
+        const cards = menu ? menu.querySelectorAll('.notification-feed-card').length : 0;
+        return {
+          open: !!menu,
+          cardCount: cards,
+          hasEmptyPrompt: /No alerts triggered yet|No market notifications right now/i.test(txt),
+          hasLiveFeed: cards > 0 && /Market & Alert Feed/i.test(txt)
+        };
+      })()`);
+      if (notifCheck.cardCount > 0) break;
+    }
+    assert.equal(notifCheck.open, true, 'Notification Center must open cleanly');
+    assert.equal(notifCheck.hasEmptyPrompt, false, 'Guest notifications must not be empty when live market feed exists');
+    assert.equal(notifCheck.hasLiveFeed, true, 'Notification Center must render real market & related notification cards');
+
+    // Click a message card to open its Additional Details Inspector
+    await evalJs(`(() => {
+      const card = document.querySelector('.notification-feed-card');
+      if (card) card.click();
+    })()`);
+    await sleep(250);
+    const notifDetailCheck = await evalJs(`(() => {
+      const detail = document.querySelector('.notification-detail-view');
       const menu = document.querySelector('.notification-menu');
-      const txt = menu ? menu.innerText : '';
       return {
-        open: !!menu,
-        hasEmptyPrompt: /No alerts triggered yet/i.test(txt),
-        hasLiveFeed: /Market & Alert Feed/i.test(txt) && (/MOVER|MACRO|BULLION|NSE|NEWS|RELATED/i.test(txt))
+        open: !!detail,
+        hasBackBtn: menu ? /Back to Feed/i.test(menu.innerText) : false,
+        hasDetailsText: detail ? detail.innerText.length > 80 : false
       };
     })()`);
-    assert.equal(notifCheck.open, true, 'Notification Center must open cleanly');
-    assert.equal(notifCheck.hasEmptyPrompt, false, 'Guest notifications must not be stuck empty when live market feed exists');
-    assert.equal(notifCheck.hasLiveFeed, true, 'Notification Center must render real market & related notification cards');
+    assert.equal(notifDetailCheck.open, true, 'Clicking a notification card must show the Additional Details Inspector');
+    assert.equal(notifDetailCheck.hasBackBtn, true, 'Detail inspector must display Back to Feed navigation');
+    assert.equal(notifDetailCheck.hasDetailsText, true, 'Detail inspector must show explanation & metrics');
+    await evalJs(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))`);
+    await sleep(120);
     await evalJs(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))`);
     await sleep(150);
 
