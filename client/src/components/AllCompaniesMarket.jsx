@@ -31,8 +31,9 @@ import {
 import { useSocket } from '../context/SocketContext';
 import { defaultAllCompanies } from '../data/defaultAllCompanies';
 import { CountryFlag } from './CountryFlag';
-import { getAllTimeReturnSummary, formatAllTimePercent } from '../utils/stockRecordEngine';
+import { getAllTimeReturnSummary } from '../utils/stockRecordEngine';
 import { floatingCardEvents } from '../utils/floatingCardEffect';
+import { MarketOpeningHero } from './MarketOpeningHero';
 
 // Helper to map country or asset to institutional ISO country/market code
 const getCountryCode = (country, symbol) => {
@@ -1238,6 +1239,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
   const [isAutoIngesting, setIsAutoIngesting] = useState(false);
   const [autoIngestFailedSymbol, setAutoIngestFailedSymbol] = useState(null);
   const lastAutoIngestAttemptRef = useRef('');
+  const screenerPresetRef = useRef(null);
 
   // High-performance pagination state
   const [pageSize, setPageSize] = useState(24); // 24, 48, or 'all'
@@ -1737,6 +1739,14 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
     onRemoveFromWatchlist(sym);
   }, [onRemoveFromWatchlist]);
 
+  const handleExploreAiUpside = useCallback(() => {
+    setActivePreset('ai_upside');
+    setCurrentPage(1);
+    if (screenerPresetRef.current) {
+      screenerPresetRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
+
   const regions = [
     { id: 'all', label: overview?.totalCount ? `All Markets (${overview.totalCount})` : `All Markets (${defaultAllCompanies?.overview?.totalCount || 309})` },
     { id: 'north_america', label: 'North America', flagCode: 'US' },
@@ -1790,195 +1800,20 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
 
   return (
     <div className="all-markets-container motion-entry stagger-2">
-      {/* Page Header & Executive Market Banner */}
-      {/* overflow:visible + contain:none override to allow the Download dropdown to extend outside this card */}
-      <div className="glass-card" style={{ marginBottom: '0.85rem', background: 'var(--profile-hero-bg)', overflow: 'visible', contain: 'none' }}>
-        <div className="glass-card-body" style={{ padding: '0.95rem 1.2rem', overflow: 'visible' }}>
-          {/* Executive Header Row */}
-          <div
-            className="screener-header-row"
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '0.75rem',
-              paddingBottom: '0.75rem',
-              marginBottom: '0.75rem',
-              borderBottom: '1px solid rgba(255, 255, 255, 0.07)'
-            }}
-          >
-            <div className="screener-title-block" style={{ flex: '1 1 auto', minWidth: 0 }}>
-              <h1
-                className="screener-main-title"
-                style={{
-                  fontFamily: 'var(--font-brand)',
-                  fontSize: '1.48rem',
-                  fontWeight: 800,
-                  letterSpacing: '-0.02em',
-                  margin: '0 0 0.22rem 0',
-                  color: 'var(--text-primary)',
-                  lineHeight: 1.2
-                }}
-              >
-                Worldwide Global Market Hierarchy & Real-Time Screener
-              </h1>
-              <p
-                className="screener-main-subtitle"
-                style={{
-                  color: 'var(--text-secondary)',
-                  fontSize: '0.84rem',
-                  margin: 0,
-                  lineHeight: 1.4
-                }}
-              >
-                Explore the premier companies of the world economy ordered by market capitalization, real-time valuation, and 30-day AI predictive upside with automated real-time global exchange feeds.
-              </p>
-            </div>
-          </div>
-
-          {/* Overview Hero Stat Pills (Live Auto-Updating + All-Time Best Market Gainer Column) */}
-          <div className="overview-stats-grid" style={{ marginTop: 0 }}>
-            <div className="overview-stat-box" {...floatingCardEvents}>
-              <div className="overview-stat-label">
-                <span className="overview-stat-label-text">Total Market Cap</span>
-                <span className="overview-stat-label-badge" style={{ color: 'var(--bull-green)' }}>
-                  <Zap size={9} /> LIVE
-                </span>
-              </div>
-              <div className="overview-stat-val font-mono tabular-nums" style={{ color: 'var(--accent-cyan)' }}>
-                {liveOverview?.totalMarketCapFormatted || overview?.totalMarketCapFormatted || defaultAllCompanies?.overview?.totalMarketCapFormatted || '$181.20T'}
-              </div>
-              <div className="overview-stat-sub">
-                Across {liveOverview?.totalCount || overview?.totalCount || defaultAllCompanies?.overview?.totalCount || 309}+ Premier Global Assets
-              </div>
-            </div>
-
-            <div className="overview-stat-box" {...floatingCardEvents}>
-              <div className="overview-stat-label">
-                <span className="overview-stat-label-text">Market Breadth</span>
-                <span className="overview-stat-label-badge tabular-nums" style={{ color: 'var(--text-muted)' }}>
-                  {liveOverview?.advancingCount ?? 0}↑ / {liveOverview?.decliningCount ?? 0}↓
-                </span>
-              </div>
-              <div className="overview-stat-val font-mono tabular-nums" style={{ color: 'var(--bull-green)' }}>
-                {liveOverview?.bullishRatio ?? overview?.bullishRatio ?? 99}%
-              </div>
-              <div className="overview-stat-sub">
-                Consensus BUY / STRONG BUY
-              </div>
-            </div>
-
-            <div
-              className="overview-stat-box"
-              {...floatingCardEvents}
-              onClick={() => {
-                const sym = liveOverview?.topConviction?.symbol || 'NVDA';
-                const item = rawCompanies.find((c) => c.symbol === sym) || liveOverview?.topConviction || null;
-                if (onOpenDeepRecord) onOpenDeepRecord(sym, item);
-                else handleSelectSymbol(sym);
-              }}
-              style={{ cursor: 'pointer' }}
-              title="Open Top AI Conviction Pick complete record"
-            >
-              <div className="overview-stat-label">
-                <span className="overview-stat-label-text">AI Conviction Pick</span>
-                <span className="overview-stat-label-badge" style={{ color: 'var(--accent-cyan)' }}>
-                  30D MODEL
-                </span>
-              </div>
-              <div className="overview-stat-val">
-                <span style={{ fontWeight: 800, whiteSpace: 'nowrap' }}>{liveOverview?.topConviction?.symbol || 'NVDA'}</span>
-                <span className="badge-pill tabular-nums" style={{ background: 'var(--bull-green-bg)', color: 'var(--bull-green)', fontSize: '0.7rem', whiteSpace: 'nowrap' }}>
-                  +{Number(liveOverview?.topConviction?.forecastGain ?? 14.2).toFixed(1)}% 30D
-                </span>
-              </div>
-              <div className="overview-stat-sub">
-                {liveOverview?.topConviction?.name || 'NVIDIA Corporation'}
-              </div>
-            </div>
-
-            <div
-              className="overview-stat-box"
-              {...floatingCardEvents}
-              onClick={() => {
-                const sym = liveOverview?.topGainer?.symbol || 'SONY';
-                const item = rawCompanies.find((c) => c.symbol === sym) || liveOverview?.topGainer || null;
-                if (onOpenDeepRecord) onOpenDeepRecord(sym, item);
-                else handleSelectSymbol(sym);
-              }}
-              style={{ cursor: 'pointer' }}
-              title="Open Worldwide Live Top Gainer complete record"
-            >
-              <div className="overview-stat-label">
-                <span className="overview-stat-label-text">24H Top Gainer</span>
-                <span className="overview-stat-label-badge" style={{ color: 'var(--bull-green)' }}>
-                  LIVE
-                </span>
-              </div>
-              <div className="overview-stat-val">
-                <span style={{ fontWeight: 800, whiteSpace: 'nowrap' }}>{liveOverview?.topGainer?.symbol || 'SONY'}</span>
-                <span
-                  className="badge-pill tabular-nums"
-                  style={{
-                    background: Number(liveOverview?.topGainer?.changePercent ?? 0) >= 0 ? 'var(--bull-green-bg)' : 'rgba(239, 68, 68, 0.14)',
-                    color: Number(liveOverview?.topGainer?.changePercent ?? 0) >= 0 ? 'var(--bull-green)' : 'var(--bear-red)',
-                    fontSize: '0.7rem',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {Number(liveOverview?.topGainer?.changePercent ?? 0) >= 0 ? '+' : ''}
-                  {Number(liveOverview?.topGainer?.changePercent ?? 0).toFixed(2)}%
-                </span>
-              </div>
-              <div className="overview-stat-sub">
-                {liveOverview?.topGainer?.name || 'Sony Group Corporation'}
-              </div>
-            </div>
-
-            <div
-              className="overview-stat-box"
-              {...floatingCardEvents}
-              onClick={() => {
-                const sym = liveOverview?.allTimeBestGainer?.symbol || 'MSFT';
-                const item = rawCompanies.find((c) => c.symbol === sym) || liveOverview?.allTimeBestGainer || null;
-                if (onOpenDeepRecord) onOpenDeepRecord(sym, item);
-                else handleSelectSymbol(sym);
-              }}
-              style={{ cursor: 'pointer', borderColor: 'rgba(245, 158, 11, 0.25)' }}
-              title="Open All-Time Best Market Gainer (Since Stock Market Start Till Now) complete record"
-            >
-              <div className="overview-stat-label">
-                <span className="overview-stat-label-text">All-Time Gainer</span>
-                <span className="overview-stat-label-badge" style={{ color: 'var(--warning-amber)' }}>
-                  SINCE {liveOverview?.allTimeBestGainer?.ipoYear || 1986}
-                </span>
-              </div>
-              <div className="overview-stat-val">
-                <span style={{ fontWeight: 800, whiteSpace: 'nowrap' }}>{liveOverview?.allTimeBestGainer?.symbol || 'MSFT'}</span>
-                <span
-                  className="badge-pill tabular-nums"
-                  style={{
-                    background: 'rgba(16, 185, 129, 0.14)',
-                    color: 'var(--bull-green)',
-                    fontSize: '0.68rem',
-                    whiteSpace: 'nowrap'
-                  }}
-                >
-                  {formatAllTimePercent(liveOverview?.allTimeBestGainer?.allTimeReturnPercent || 708343)}
-                </span>
-              </div>
-              <div className="overview-stat-sub">
-                {liveOverview?.allTimeBestGainer
-                  ? `${Math.round(liveOverview.allTimeBestGainer.allTimeMultiple).toLocaleString()}x Till Now • ${liveOverview.allTimeBestGainer.name}`
-                  : 'Since Market Start Till Now'}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Signature Architectural Asymmetric Opening Hero */}
+      <MarketOpeningHero
+        liveOverview={liveOverview}
+        overview={overview}
+        quotes={quotes}
+        rawCompanies={rawCompanies}
+        totalAssetsCount={defaultAllCompanies?.overview?.totalCount || 309}
+        onSelectSymbol={handleSelectSymbol}
+        onOpenDeepRecord={onOpenDeepRecord}
+        onExploreAiUpside={handleExploreAiUpside}
+      />
 
       {/* Screener Strategy Quick-Presets Ribbon (Clean Vector Icons, No Emojis) */}
-      <div className="screener-preset-ribbon">
+      <div ref={screenerPresetRef} className="screener-preset-ribbon">
         <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginRight: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
           <Sparkles size={13} style={{ color: 'var(--accent-cyan)' }} /> Presets:
         </span>

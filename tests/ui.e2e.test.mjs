@@ -198,6 +198,34 @@ const run = async () => {
     assert.equal(bellLayout.insideBtn, true, 'Unread count badge must fit cleanly inside the notification bell pill button');
     assert.equal(bellLayout.clearOfIcon, true, 'Unread count badge must not overlap the bell icon');
 
+    // Verify Signature Architectural Opening Stage & Interactive Pulse Observatory
+    const openingHeroCheck = await evalJs(`(() => {
+      const stage = document.querySelector('.opening-bento-stage');
+      const wave = document.querySelector('.opening-pulse-svg');
+      const cta = document.getElementById('opening-workstation-cta');
+      const dockCells = document.querySelectorAll('.opening-telemetry-cell').length;
+      const moverTab = Array.from(document.querySelectorAll('.opening-obs-tab')).find((b) => /24H Mover/i.test(b.innerText));
+      if (moverTab) moverTab.click();
+      return {
+        hasStage: !!stage,
+        hasWave: !!wave,
+        hasCta: !!cta,
+        dockCells,
+        stageWidthOk: stage ? stage.getBoundingClientRect().right <= window.innerWidth + 1 : false
+      };
+    })()`);
+    assert.equal(openingHeroCheck.hasStage, true, 'Signature architectural opening bento stage must render');
+    assert.equal(openingHeroCheck.hasWave, true, 'Pulse Observatory SVG waveform must render');
+    assert.equal(openingHeroCheck.hasCta, true, 'Workstation primary CTA must render in opening stage');
+    assert.equal(openingHeroCheck.dockCells, 4, 'Telemetry dock must render 4 metric slots');
+    assert.equal(openingHeroCheck.stageWidthOk, true, 'Opening hero must fit cleanly within viewport');
+    await sleep(120);
+    const obsSwitched = await evalJs(`(() => {
+      const k = document.querySelector('.opening-obs-mode-badge');
+      return k ? /24H MOMENTUM LEADER/i.test(k.innerText) : false;
+    })()`);
+    assert.equal(obsSwitched, true, 'Clicking 24H Mover tab inside Pulse Observatory must switch live spotlight card');
+
     // Verify Notification Bell shows live market & related notifications even before sign-in
     await evalJs(`(() => {
       const bell = document.getElementById('header-notification-bell-btn');

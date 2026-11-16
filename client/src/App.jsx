@@ -26,6 +26,7 @@ import { StockDeepRecordModal, StockDeepRecordSection } from './components/Stock
 import { Footer } from './components/Footer';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { TopicSidebar } from './components/TopicSidebar';
+import { OpeningReveal } from './components/OpeningReveal';
 
 export function App() {
   const { user, token } = useAuth();
@@ -444,6 +445,9 @@ export function App() {
 
   return (
     <div className="app-container">
+      {/* Non-blocking Kinetic Split-Horizon Brand Entrance */}
+      <OpeningReveal />
+
       {/* Top Navigation */}
       <Header
         onToggleSidebar={handleToggleMobileSidebar}
