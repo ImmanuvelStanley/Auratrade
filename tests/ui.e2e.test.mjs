@@ -177,7 +177,7 @@ const run = async () => {
       const bell = document.getElementById('header-notification-bell-btn');
       if (bell) bell.click();
     })()`);
-    let notifCheck = { open: false, cardCount: 0, hasEmptyPrompt: true, hasLiveFeed: false };
+    let notifCheck = { open: false, cardCount: 0, hasEmptyPrompt: true, hasLiveFeed: false, hasManualLiveSync: true };
     for (let i = 0; i < 20; i++) {
       await sleep(200);
       notifCheck = await evalJs(`(() => {
@@ -188,7 +188,8 @@ const run = async () => {
           open: !!menu,
           cardCount: cards,
           hasEmptyPrompt: /No alerts triggered yet|No market notifications right now/i.test(txt),
-          hasLiveFeed: cards > 0 && /Market & Alert Feed/i.test(txt)
+          hasLiveFeed: cards > 0 && /Market & Alert Feed/i.test(txt),
+          hasManualLiveSync: /Live Sync/i.test(txt)
         };
       })()`);
       if (notifCheck.cardCount > 0) break;
@@ -196,6 +197,7 @@ const run = async () => {
     assert.equal(notifCheck.open, true, 'Notification Center must open cleanly');
     assert.equal(notifCheck.hasEmptyPrompt, false, 'Guest notifications must not be empty when live market feed exists');
     assert.equal(notifCheck.hasLiveFeed, true, 'Notification Center must render real market & related notification cards');
+    assert.equal(notifCheck.hasManualLiveSync, false, 'Manual Live Sync button must be removed in favor of automatic sync');
 
     // Click a message card to open its Additional Details Inspector
     await evalJs(`(() => {

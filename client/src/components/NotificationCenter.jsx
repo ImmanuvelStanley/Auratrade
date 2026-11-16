@@ -3,7 +3,6 @@ import {
   CheckCheck,
   BellOff,
   X,
-  RefreshCw,
   ExternalLink,
   TrendingUp,
   TrendingDown,
@@ -86,8 +85,16 @@ export function NotificationCenter({ onClose, onSelectSymbol }) {
   const { getQuote } = useLiveTickerActions();
   const [filterTab, setFilterTab] = useState('ALL'); // 'ALL' | 'MARKET' | 'ALERTS'
   const [selectedNotifId, setSelectedNotifId] = useState(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const menuRef = useRef(null);
+
+  useEffect(() => {
+    if (!refreshMarketNotifications) return undefined;
+    refreshMarketNotifications();
+    const autoSyncTimer = setInterval(() => {
+      refreshMarketNotifications();
+    }, 15000);
+    return () => clearInterval(autoSyncTimer);
+  }, [refreshMarketNotifications]);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -120,17 +127,6 @@ export function NotificationCenter({ onClose, onSelectSymbol }) {
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [onClose, selectedNotifId]);
-
-  const handleRefreshFeed = async (e) => {
-    e.stopPropagation();
-    if (!refreshMarketNotifications || isRefreshing) return;
-    setIsRefreshing(true);
-    try {
-      await refreshMarketNotifications();
-    } finally {
-      setTimeout(() => setIsRefreshing(false), 350);
-    }
-  };
 
   const getNotifKey = (n, idx) => n.id || n._id || `notif_${idx}`;
   const isMarketItem = (n) => n.kind === 'market' || n.kind === 'news' || String(n.id || '').startsWith('mkt_');
@@ -234,29 +230,6 @@ export function NotificationCenter({ onClose, onSelectSymbol }) {
             </div>
           ) : (
             <>
-              <button
-                type="button"
-                onClick={handleRefreshFeed}
-                disabled={isRefreshing}
-                style={{
-                  background: 'rgba(16, 185, 129, 0.12)',
-                  border: '1px solid rgba(16, 185, 129, 0.32)',
-                  borderRadius: 'var(--radius-sm)',
-                  color: 'var(--bull-green)',
-                  fontSize: '0.7rem',
-                  fontWeight: 700,
-                  padding: '0.2rem 0.48rem',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.25rem'
-                }}
-                title="Fetch latest live market movers, indices & headlines"
-              >
-                <RefreshCw size={12} className={isRefreshing ? 'spin' : ''} />
-                <span>Live Sync</span>
-              </button>
-
               {notifications.length > 0 && (
                 <button
                   type="button"
@@ -601,7 +574,7 @@ export function NotificationCenter({ onClose, onSelectSymbol }) {
               <p style={{ fontSize: '0.74rem', marginTop: '0.35rem', color: 'var(--text-muted)' }}>
                 {filterTab === 'ALERTS'
                   ? 'Set target price alerts or bracket orders to get notified immediately.'
-                  : 'Click Live Sync above to pull the latest market movers and breaking headlines.'}
+                  : 'Live market movers and breaking headlines sync automatically as updates arrive.'}
               </p>
             </div>
           ) : (

@@ -22,6 +22,7 @@ export function SocketProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const [activeSubscriptions, setActiveSubscriptions] = useState(new Set());
   const activeSubscriptionsRef = useRef(new Set());
+  const notificationsSyncBusyRef = useRef(false);
 
   const tokenRef = useRef(token);
   tokenRef.current = token;
@@ -425,6 +426,8 @@ export function SocketProvider({ children }) {
   };
 
   const fetchNotificationsFeed = useCallback(async ({ resetDismissed = false } = {}) => {
+    if (notificationsSyncBusyRef.current) return;
+    notificationsSyncBusyRef.current = true;
     try {
       if (resetDismissed) {
         try { sessionStorage.removeItem('auratrade_dismissed_mkt_ids'); } catch (_) {}
@@ -451,16 +454,31 @@ export function SocketProvider({ children }) {
       }
     } catch (err) {
       console.error('Failed to load market notifications:', err);
+    } finally {
+      notificationsSyncBusyRef.current = false;
     }
   }, []);
 
-  // Fetch initial & periodic real Market + Alert notifications (for BOTH guest & authenticated users)
+  // Fetch initial, periodic, and focus-triggered real Market + Alert notifications automatically
   useEffect(() => {
     fetchNotificationsFeed();
     const interval = setInterval(() => {
       fetchNotificationsFeed();
-    }, 45000);
-    return () => clearInterval(interval);
+    }, 25000);
+
+    const handleVisibilityOrFocus = () => {
+      if (document.visibilityState === 'visible') {
+        fetchNotificationsFeed();
+      }
+    };
+    window.addEventListener('focus', handleVisibilityOrFocus);
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleVisibilityOrFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus);
+    };
   }, [token, fetchNotificationsFeed]);
 
   const subscribe = useCallback((symbol) => {
@@ -590,7 +608,7 @@ export function SocketProvider({ children }) {
     clearNotifications,
     dismissNotification,
     markAllNotificationsRead,
-    refreshMarketNotifications: () => fetchNotificationsFeed({ resetDismissed: true }),
+    refreshMarketNotifications: fetchNotificationsFeed,
     publishTicks
   }), [
     getQuote,
@@ -611,7 +629,7 @@ export function SocketProvider({ children }) {
     clearNotifications,
     dismissNotification,
     markAllNotificationsRead,
-    refreshMarketNotifications: () => fetchNotificationsFeed({ resetDismissed: true })
+    refreshMarketNotifications: fetchNotificationsFeed
   }), [notifications, clearNotifications, dismissNotification, markAllNotificationsRead, fetchNotificationsFeed]);
 
   const contextValue = useMemo(() => ({
@@ -629,7 +647,7 @@ export function SocketProvider({ children }) {
     clearNotifications,
     dismissNotification,
     markAllNotificationsRead,
-    refreshMarketNotifications: () => fetchNotificationsFeed({ resetDismissed: true }),
+    refreshMarketNotifications: fetchNotificationsFeed,
     publishTicks
   }), [
     connectionStatus,
