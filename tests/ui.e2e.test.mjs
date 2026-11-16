@@ -178,6 +178,42 @@ const run = async () => {
       })()`);
       await sleep(700);
       await assertViewHealthy(`desktop:${tab}`);
+      if (tab === 'Workstation') {
+        const barCheck = await evalJs(`(() => {
+          const bar = document.querySelector('.chart-permanent-ticker-bar');
+          const txt = bar ? bar.innerText : '';
+          return { exists: !!bar, hasOhlcClutter: txt.includes('Vol:') || txt.includes('O:') };
+        })()`);
+        assert.equal(barCheck.exists, true, 'StockChart ticker bar must exist');
+        assert.equal(barCheck.hasOhlcClutter, false, 'Top bar near time must not render inline OHLC/Vol details');
+
+        const chartBox = await evalJs(`(() => {
+          const el = document.querySelector('.chart-canvas-container');
+          if (!el) return null;
+          el.scrollIntoView({ block: 'center' });
+          const r = el.getBoundingClientRect();
+          return { x: r.left + r.width * 0.45, y: r.top + r.height * 0.5, rect: { left: r.left, right: r.right, top: r.top, bottom: r.bottom } };
+        })()`);
+        assert.ok(chartBox, 'Workstation chart container must be present');
+        await cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x: chartBox.x, y: chartBox.y });
+        await sleep(250);
+        const floatCheck = await evalJs(`(() => {
+          const card = document.querySelector('.chart-floating-cursor-card');
+          const container = document.querySelector('.chart-canvas-container');
+          if (!card || !container) return { present: false };
+          const cr = card.getBoundingClientRect();
+          const pr = container.getBoundingClientRect();
+          const txt = card.innerText || '';
+          return {
+            present: true,
+            hasDetails: txt.includes('O:') && txt.includes('H:') && txt.includes('L:') && txt.includes('C:') && txt.includes('Vol:'),
+            insideContainer: cr.left >= pr.left && cr.right <= pr.right && cr.top >= pr.top && cr.bottom <= pr.bottom
+          };
+        })()`);
+        assert.equal(floatCheck.present, true, 'Floating cursor details card must appear on chart hover');
+        assert.equal(floatCheck.hasDetails, true, 'Floating card must show O/H/L/C and Vol details');
+        assert.equal(floatCheck.insideContainer, true, 'Floating card must remain strictly inside chart bounds');
+      }
     }
 
     // Authenticated sign-in + Paper Trading + Trader Profile Settings (Webhook UI)

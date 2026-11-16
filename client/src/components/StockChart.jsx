@@ -1015,11 +1015,12 @@ export const StockChart = React.memo(function StockChart({
         timeStr = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' });
       }
 
-      const volumeFormatted = candle.volume >= 1e6
-        ? `${(candle.volume / 1e6).toFixed(2)}M`
-        : candle.volume >= 1e3
-        ? `${(candle.volume / 1e3).toFixed(1)}K`
-        : `${candle.volume || 0}`;
+      const rawVol = candle.volume && candle.volume > 0 ? candle.volume : 148500;
+      const volumeFormatted = rawVol >= 1e6
+        ? `${(rawVol / 1e6).toFixed(2)}M`
+        : rawVol >= 1e3
+        ? `${(rawVol / 1e3).toFixed(1)}K`
+        : `${rawVol}`;
 
       setHoverData({
         index: globalIndex,
@@ -1033,6 +1034,8 @@ export const StockChart = React.memo(function StockChart({
         changePercent,
         timeStr,
         volumeFormatted,
+        containerW: boundsRef.current.width || rect.width,
+        containerH: boundsRef.current.height || rect.height,
         isHistorical: globalIndex < allCandles.length - 1
       });
     });
@@ -1345,66 +1348,40 @@ export const StockChart = React.memo(function StockChart({
           </label>
         </div>
 
-        {/* Current Active Candle Details */}
-        {(() => {
-          const c = hoverData ? hoverData.candle : (visibleCandles.length > 0 ? visibleCandles[visibleCandles.length - 1] : latestCandle);
-          if (!c) return <div style={{ color: 'var(--text-muted)' }}>Awaiting market data...</div>;
-
-          const prevC = hoverData && hoverData.index > 0
-            ? candles[hoverData.index - 1]
-            : (visibleCandles.length > 1 ? visibleCandles[visibleCandles.length - 2] : null);
-          const chg = prevC ? c.close - prevC.close : (hoverData ? hoverData.change : 0);
-          const chgPct = prevC && prevC.close > 0 ? (chg / prevC.close) * 100 : (hoverData ? hoverData.changePercent : 0);
-          const isPos = chg >= 0;
-          const rawVol = c.volume && c.volume > 0 ? c.volume : 148500;
-          const vol = hoverData && hoverData.volumeFormatted && hoverData.volumeFormatted !== '0'
-            ? hoverData.volumeFormatted
-            : (rawVol >= 1e6 ? `${(rawVol / 1e6).toFixed(2)}M` : rawVol >= 1e3 ? `${(rawVol / 1e3).toFixed(1)}K` : `${rawVol}`);
-          const firstCandle = candles.length > 0 ? candles[0] : c;
-          const rangeChg = c.close - (firstCandle?.open || c.open);
-          const rangeChgPct = firstCandle?.open > 0 ? (rangeChg / firstCandle.open) * 100 : 0;
-          const isInspectingHistory = (hoverData && hoverData.isHistorical) || clampedPan > 0;
-
-          return (
-            <div className="chart-ticker-metrics-cluster" style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'nowrap', whiteSpace: 'nowrap', minWidth: 0, flexShrink: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
-                <span style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  ${c.close.toFixed(2)}
-                </span>
-                <span
-                  style={{
-                    fontSize: '0.68rem',
-                    fontWeight: 700,
-                    padding: '0.08rem 0.3rem',
-                    borderRadius: '4px',
-                    background: isPos ? 'rgba(16, 185, 129, 0.18)' : 'rgba(244, 63, 94, 0.18)',
-                    color: isPos ? 'var(--bull-green)' : 'var(--bear-red)',
-                    border: `1px solid ${isPos ? 'rgba(16, 185, 129, 0.35)' : 'rgba(244, 63, 94, 0.35)'}`
-                  }}
-                >
-                  {isPos ? '+' : ''}{chgPct.toFixed(2)}%
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', flexWrap: 'nowrap', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                <span><strong style={{ color: 'var(--text-muted)' }}>O:</strong> ${c.open.toFixed(2)}</span>
-                <span><strong style={{ color: 'var(--text-muted)' }}>H:</strong> <span style={{ color: 'var(--bull-green)', fontWeight: 700 }}>${c.high.toFixed(2)}</span></span>
-                <span><strong style={{ color: 'var(--text-muted)' }}>L:</strong> <span style={{ color: 'var(--bear-red)', fontWeight: 700 }}>${c.low.toFixed(2)}</span></span>
-                <span><strong style={{ color: 'var(--text-muted)' }}>C:</strong> <span style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>${c.close.toFixed(2)}</span></span>
-                <span><strong style={{ color: 'var(--text-muted)' }}>Vol:</strong> {vol}</span>
-                {isInspectingHistory && latestCandle ? (
-                  <span style={{ color: c.close >= latestCandle.close ? 'var(--bull-green)' : 'var(--bear-red)', fontWeight: 600 }}>
-                    {c.close >= latestCandle.close ? '+' : '-'}${Math.abs(c.close - latestCandle.close).toFixed(2)} vs Live
-                  </span>
-                ) : (
-                  <span style={{ color: rangeChg >= 0 ? 'var(--bull-green)' : 'var(--bear-red)', fontWeight: 600 }}>
-                    {range}: {rangeChg >= 0 ? '+' : ''}{rangeChgPct.toFixed(2)}%
-                  </span>
-                )}
-              </div>
-            </div>
-          );
-        })()}
+        {/* Right Hint Pill (Details now float directly inside the interactive chart on hover) */}
+        <div
+          className="chart-ticker-hint-cluster"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.45rem',
+            flexShrink: 0,
+            whiteSpace: 'nowrap',
+            color: 'var(--text-muted)',
+            fontSize: '0.69rem',
+            fontWeight: 600
+          }}
+        >
+          {hoverData ? (
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                color: hoverData.isHistorical ? '#f59e0b' : 'var(--accent-cyan)',
+                fontWeight: 700
+              }}
+            >
+              <Crosshair size={12} />
+              <span>Floating Inspector Active</span>
+            </span>
+          ) : (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+              <Crosshair size={11} style={{ color: 'var(--accent-cyan)', opacity: 0.85 }} />
+              <span>{range} • Hover chart for candle details</span>
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Sticky Active AI Strategy Plan & Live Target Guard HUD */}
@@ -1705,28 +1682,80 @@ export const StockChart = React.memo(function StockChart({
           </div>
         )}
 
-        {/* Compact Floating Cursor Price Pill (Floats directly above reticle without blocking upcoming candles) */}
-        {hoverData && (
-          <div
-            className="chart-floating-cursor-pill"
-            style={{
-              left: `${hoverData.hX}px`,
-              top: `${Math.max(48, hoverData.hY - 12)}px`,
-              borderColor: hoverData.isHistorical ? '#f59e0b' : '#38bdf8'
-            }}
-          >
-            <span>${hoverData.candle.close.toFixed(2)}</span>
-            <span
+        {/* Floating Crosshair Details Card (OHLC, Vol, Change & vs Live floating cleanly beside reticle) */}
+        {hoverData && (() => {
+          const c = hoverData.candle;
+          const prevC = hoverData.index > 0 ? candles[hoverData.index - 1] : null;
+          const chg = prevC ? c.close - prevC.close : hoverData.change;
+          const chgPct = prevC && prevC.close > 0 ? (chg / prevC.close) * 100 : hoverData.changePercent;
+          const isPos = chg >= 0;
+          const firstCandle = candles.length > 0 ? candles[0] : c;
+          const rangeChg = c.close - (firstCandle?.open || c.open);
+          const rangeChgPct = firstCandle?.open > 0 ? (rangeChg / firstCandle.open) * 100 : 0;
+          const isInspectingHistory = hoverData.isHistorical || clampedPan > 0;
+
+          const containerW = hoverData.containerW || 640;
+          const containerH = hoverData.containerH || 380;
+          const cardW = containerW < 440 ? 196 : 216;
+          const cardH = 114;
+          const minLeft = 10;
+          const maxRight = Math.max(cardW + 20, containerW - 76);
+          const minTop = clampedPan > 0 ? 44 : 10;
+          const maxBottom = Math.max(minTop + cardH + 10, containerH - 34);
+
+          const canPlaceRight = hoverData.hX + 14 + cardW <= maxRight;
+          const rawLeft = canPlaceRight ? hoverData.hX + 14 : hoverData.hX - cardW - 14;
+          const clampedLeft = Math.max(minLeft, Math.min(maxRight - cardW, rawLeft));
+
+          const canPlaceAbove = hoverData.hY - cardH - 12 >= minTop;
+          const rawTop = canPlaceAbove ? hoverData.hY - cardH - 12 : hoverData.hY + 14;
+          const clampedTop = Math.max(minTop, Math.min(maxBottom - cardH, rawTop));
+
+          return (
+            <div
+              className={`chart-floating-cursor-card ${hoverData.isHistorical ? 'historical' : 'live'}`}
               style={{
-                color: hoverData.change >= 0 ? 'var(--bull-green)' : 'var(--bear-red)',
-                fontSize: '0.68rem',
-                fontWeight: 700
+                left: `${clampedLeft}px`,
+                top: `${clampedTop}px`,
+                width: `${cardW}px`
               }}
             >
-              {hoverData.change >= 0 ? '+' : ''}{hoverData.changePercent.toFixed(1)}%
-            </span>
-          </div>
-        )}
+              <div className="chart-floating-card-head">
+                <span className="chart-floating-card-time">{hoverData.timeStr}</span>
+                <span className={`chart-floating-card-tag ${hoverData.isHistorical ? 'hist' : 'curr'}`}>
+                  {hoverData.isHistorical ? 'HIST' : (chartType === 'candle' ? 'BAR' : 'TICK')}
+                </span>
+              </div>
+
+              <div className="chart-floating-card-price-row">
+                <span className="chart-floating-card-price">${c.close.toFixed(2)}</span>
+                <span className={`chart-floating-card-pct ${isPos ? 'bull' : 'bear'}`}>
+                  {isPos ? '+' : ''}{chgPct.toFixed(2)}%
+                </span>
+              </div>
+
+              <div className="chart-floating-card-ohlc">
+                <span><strong>O:</strong> ${c.open.toFixed(2)}</span>
+                <span><strong>H:</strong> <em className="bull">${c.high.toFixed(2)}</em></span>
+                <span><strong>L:</strong> <em className="bear">${c.low.toFixed(2)}</em></span>
+                <span><strong>C:</strong> <em className="cyan">${c.close.toFixed(2)}</em></span>
+              </div>
+
+              <div className="chart-floating-card-foot">
+                <span><strong>Vol:</strong> {hoverData.volumeFormatted}</span>
+                {isInspectingHistory && latestCandle ? (
+                  <span className={c.close >= latestCandle.close ? 'bull' : 'bear'}>
+                    {c.close >= latestCandle.close ? '+' : '-'}${Math.abs(c.close - latestCandle.close).toFixed(2)} vs Live
+                  </span>
+                ) : (
+                  <span className={rangeChg >= 0 ? 'bull' : 'bear'}>
+                    {range}: {rangeChg >= 0 ? '+' : ''}{rangeChgPct.toFixed(2)}%
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Interactive Floating Y-Axis Price Badge */}
         {hoverData && (
