@@ -257,6 +257,35 @@ const run = async () => {
         assert.equal(monthGridOk, true, 'Modern calendar must switch smoothly to 12-month pill grid');
         await evalJs(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))`);
         await sleep(150);
+
+        // Verify Strategy Desk uses Adaptive Auto-Engine Routing (no manual Select Execution Engine picker)
+        await evalJs(`(() => {
+          const orb = document.querySelector('button[aria-label="Open Trading Strategy Desk"]');
+          if (orb) orb.click();
+        })()`);
+        await sleep(300);
+        await evalJs(`(() => {
+          const autoAiBtn = Array.from(document.querySelectorAll('.assistant-hdr-btn')).find((b) => /Auto AI/i.test(b.innerText));
+          if (autoAiBtn) autoAiBtn.click();
+        })()`);
+        await sleep(250);
+        const aiConfigCheck = await evalJs(`(() => {
+          const modal = document.querySelector('.assistant-config-modal');
+          const t = modal ? modal.innerText : '';
+          return {
+            open: !!modal,
+            hasManualSelect: /select execution engine/i.test(t),
+            hasAutoRouting: /smart complexity routing active/i.test(t) && /level 1/i.test(t) && /level 3/i.test(t)
+          };
+        })()`);
+        assert.equal(aiConfigCheck.open, true, 'Strategy Desk Auto AI panel must open');
+        assert.equal(aiConfigCheck.hasManualSelect, false, 'Manual Select Execution Engine picker must be removed');
+        assert.equal(aiConfigCheck.hasAutoRouting, true, 'Adaptive Question-Level Auto-Routing summary must be shown');
+        await evalJs(`(() => {
+          const closeBtn = document.querySelector('.assistant-hdr-btn-icon.close-btn');
+          if (closeBtn) closeBtn.click();
+        })()`);
+        await sleep(200);
       }
     }
 

@@ -34,6 +34,7 @@ import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
 import { soundFx } from '../utils/audio';
 import { generateLocalQuantResponse } from '../utils/aiQuantEngine';
+import { classifyQuestionLevel } from '../utils/aiQuestionRouter';
 import { getClientQuote } from '../services/clientFallbackData';
 
 export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoPredictor }) {
@@ -75,13 +76,9 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
     setCurrentSessionId(null);
   }, [user?.id]);
 
-  // Model and Key Configuration States
+  // Adaptive Auto-Routing & Optional Cloud Key Configuration States
   const [geminiKey, setGeminiKey] = useState(() => localStorage.getItem('auratrade_gemini_key') || '');
   const [tempKey, setTempKey] = useState(geminiKey);
-  const [selectedModel, setSelectedModel] = useState(
-    () => localStorage.getItem('auratrade_ai_model') || 'institutional-quant'
-  );
-  const [tempModel, setTempModel] = useState(selectedModel);
   const [testStatus, setTestStatus] = useState(null);
   const [testMessage, setTestMessage] = useState('');
 
@@ -318,17 +315,17 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
       return;
     }
     setTestStatus('testing');
-    setTestMessage('Testing connection to Google Gemini API...');
+    setTestMessage('Verifying Google Gemini key for Level 2/3 auto-escalation...');
     try {
       const res = await fetch('/api/ai/verify-key', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ apiKey: tempKey.trim(), model: tempModel })
+        body: JSON.stringify({ apiKey: tempKey.trim(), model: 'auto' })
       });
       const data = await res.json();
       if (data.success) {
         setTestStatus('success');
-        setTestMessage(data.message || 'Connection verified successfully.');
+        setTestMessage(data.message || 'Cloud key verified for automatic routing.');
       } else {
         setTestStatus('error');
         setTestMessage(data.error || 'Verification failed. Please check key.');
@@ -342,9 +339,8 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
   const handleSaveConfig = () => {
     const trimmedKey = tempKey.trim();
     setGeminiKey(trimmedKey);
-    setSelectedModel(tempModel);
     localStorage.setItem('auratrade_gemini_key', trimmedKey);
-    localStorage.setItem('auratrade_ai_model', tempModel);
+    localStorage.removeItem('auratrade_ai_model');
     setIsConfigOpen(false);
   };
 
@@ -358,6 +354,8 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
   const handleSendMessage = async (textToSend) => {
     const query = (textToSend ?? input).trim();
     if (!query || loading) return;
+
+    const route = classifyQuestionLevel(query);
 
     const userMsg = {
       id: 'usr_' + Date.now(),
@@ -373,6 +371,7 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
 
     const pushAiPayload = (aiData) => {
       const msgId = 'ai_' + Date.now();
+      const serverRoute = aiData.questionLevel;
       const aiMsg = {
         id: msgId,
         sender: 'ai',
@@ -382,7 +381,10 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
         references: aiData.references || [],
         tradeSetup: aiData.tradeSetup || null,
         confidence: aiData.confidence || 96,
-        modelUsed: aiData.modelUsed || 'AuraTrade Quant Reasoner v4.2',
+        modelUsed: aiData.modelUsed || 'AuraTrade Adaptive Reasoner',
+        routeLevel: serverRoute?.level || route.level,
+        routeLabel: serverRoute?.badge || route.badge,
+        routeReason: serverRoute?.reason || route.reason,
         quickReplies: aiData.quickReplies || [],
         timestamp: aiData.timestamp || new Date().toISOString()
       };
@@ -394,39 +396,50 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
     };
 
     try {
-      const useExternalGemini = Boolean(geminiKey.trim() && selectedModel !== 'institutional-quant');
-
-      if (useExternalGemini) {
-        const token = localStorage.getItem('auratrade_token');
-        const headers = {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          'x-gemini-api-key': geminiKey.trim(),
-          'x-ai-model': selectedModel
-        };
-
-        const res = await fetch('/api/ai/chat', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({
-            symbol: sym,
-            message: query,
-            quote: currentQuote,
-            history: updatedHistory.slice(-6),
-            apiKey: geminiKey.trim(),
-            model: selectedModel
-          })
+      // Level 1: Deterministic Quant & Live Math -> Direct local quant calculation for instant zero-hallucination precision
+      if (route.preferLocalQuant) {
+        await new Promise((resolve) => setTimeout(resolve, 180));
+        const localQuantData = generateLocalQuantResponse({
+          message: query,
+          symbol: sym,
+          quote: currentQuote,
+          portfolio: { cash: user?.cashBalance ?? 1000 },
+          history: updatedHistory
         });
-
-        const json = await res.json();
-        if (json.success && json.data) {
-          pushAiPayload(json.data);
-          return;
-        }
+        pushAiPayload({ ...localQuantData, questionLevel: route });
+        return;
       }
 
-      // Built-in Quantitative Intelligence Engine v4.2 (instant, exact live telemetry & math)
-      await new Promise((resolve) => setTimeout(resolve, 220));
+      // Level 2 & Level 3: Route automatically via /api/ai/chat (auto-escalates Gemini 1.5/2.0 Flash + Deep Semantic Reasoner)
+      const token = localStorage.getItem('auratrade_token');
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(geminiKey.trim() ? { 'x-gemini-api-key': geminiKey.trim() } : {}),
+        'x-ai-model': 'auto'
+      };
+
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          symbol: sym,
+          message: query,
+          quote: currentQuote,
+          history: updatedHistory.slice(-6),
+          apiKey: geminiKey.trim(),
+          model: 'auto',
+          questionLevel: route
+        })
+      });
+
+      const json = await res.json();
+      if (json.success && json.data) {
+        pushAiPayload(json.data);
+        return;
+      }
+
+      // Resilient local fallback if backend returned non-success
       const localQuantData = generateLocalQuantResponse({
         message: query,
         symbol: sym,
@@ -434,9 +447,9 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
         portfolio: { cash: user?.cashBalance ?? 1000 },
         history: updatedHistory
       });
-      pushAiPayload(localQuantData);
+      pushAiPayload({ ...localQuantData, questionLevel: route });
     } catch {
-      // Zero-failure fallback: always produce an exact quantitative answer
+      // Zero-failure offline/network fallback: always deliver an exact structured answer
       const fallbackData = generateLocalQuantResponse({
         message: query,
         symbol: sym,
@@ -444,7 +457,7 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
         portfolio: { cash: user?.cashBalance ?? 1000 },
         history: updatedHistory
       });
-      pushAiPayload(fallbackData);
+      pushAiPayload({ ...fallbackData, questionLevel: route });
     } finally {
       setLoading(false);
     }
@@ -455,14 +468,6 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
       e.preventDefault();
       handleSendMessage();
     }
-  };
-
-  const getActiveModelBadge = () => {
-    if (geminiKey.trim() && selectedModel !== 'institutional-quant') {
-      if (selectedModel === 'gemini-1.5-flash') return 'GEMINI 1.5 FLASH';
-      return 'GEMINI 2.0 FLASH';
-    }
-    return 'QUANT ENGINE v4.2';
   };
 
   // Helper to format markdown headers, tables, bolding, code blocks, bullet lists, and links
@@ -683,7 +688,7 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
                     display: 'inline-block'
                   }}
                 />
-                Quant AI v4.2
+                Auto Adaptive AI
               </div>
             </div>
           </button>
@@ -770,10 +775,10 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
                   type="button"
                   className={`assistant-hdr-btn ${isConfigOpen ? 'active' : ''}`}
                   onClick={() => setIsConfigOpen(true)}
-                  title="AI Reasoning Engine & Credentials"
+                  title="Adaptive Question-Level Routing & Optional Cloud Key"
                 >
-                  <Cpu size={13} />
-                  <span>Engine</span>
+                  <Sparkles size={13} />
+                  <span>Auto AI</span>
                 </button>
 
                 <button
@@ -1020,9 +1025,12 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
                             {!isUser && (
                               <div className="assistant-ai-card-topbar">
                                 <div className="assistant-ai-card-badges">
-                                  <span className="assistant-ai-desk-pill">
+                                  <span
+                                    className="assistant-ai-desk-pill"
+                                    title={msg.routeReason || msg.modelUsed}
+                                  >
                                     <Cpu size={11} />
-                                    <span>QUANT DESK</span>
+                                    <span>{msg.routeLabel || 'AUTO QUANT DESK'}</span>
                                   </span>
                                   {msg.confidence && (
                                     <span className="assistant-ai-conf-pill">
@@ -1275,12 +1283,12 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
               </div>
             )}
 
-            {/* AI Model & Engine Configuration Modal */}
+            {/* Adaptive Question-Level Auto-Routing & Optional Cloud Key Drawer */}
             {isConfigOpen && (
               <div className="assistant-config-modal">
                 <div className="assistant-config-header">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                    <Cpu size={18} style={{ color: 'var(--accent-cyan)' }} />
+                    <Sparkles size={18} style={{ color: 'var(--accent-cyan)' }} />
                     <div>
                       <h3
                         style={{
@@ -1291,10 +1299,10 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
                           margin: 0
                         }}
                       >
-                        AI Reasoning Engine & Credentials
+                        Adaptive Auto-Engine Routing
                       </h3>
                       <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', margin: 0 }}>
-                        Choose between the built-in Quant Engine v4.2 or external Gemini LLM
+                        Automatically matches each question level to the highest-accuracy execution path
                       </p>
                     </div>
                   </div>
@@ -1307,268 +1315,152 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
                   </button>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem', marginBottom: '1.1rem' }}>
-                  <label
-                    style={{
-                      fontSize: '0.72rem',
-                      fontWeight: 700,
-                      color: 'var(--text-secondary)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.05em'
-                    }}
-                  >
-                    Select Execution Engine
-                  </label>
-
-                  {/* Built-in Institutional Quant Reasoner */}
-                  <div
-                    onClick={() => setTempModel('institutional-quant')}
-                    style={{
-                      padding: '0.8rem 0.9rem',
-                      borderRadius: '10px',
-                      cursor: 'pointer',
-                      background:
-                        tempModel === 'institutional-quant'
-                          ? 'rgba(16, 185, 129, 0.12)'
-                          : 'var(--bg-card-hover)',
-                      border:
-                        tempModel === 'institutional-quant'
-                          ? '1px solid var(--bull-green)'
-                          : '1px solid var(--border-subtle)',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    <div
+                {/* Read-Only Auto-Routing Matrix */}
+                <div
+                  style={{
+                    padding: '0.85rem 0.95rem',
+                    borderRadius: '10px',
+                    background: 'rgba(16, 185, 129, 0.08)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    marginBottom: '1.05rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.55rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--bull-green)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                      Smart Complexity Routing Active
+                    </span>
+                    <span
                       style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '0.25rem'
+                        fontSize: '0.6rem',
+                        padding: '0.12rem 0.45rem',
+                        borderRadius: '4px',
+                        background: 'rgba(16, 185, 129, 0.18)',
+                        color: 'var(--bull-green)',
+                        fontFamily: 'var(--font-mono)',
+                        fontWeight: 700
                       }}
                     >
-                      <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        AuraTrade Quant Engine v4.2 (Recommended)
-                      </span>
-                      <span
-                        style={{
-                          fontSize: '0.6rem',
-                          padding: '0.12rem 0.42rem',
-                          borderRadius: '4px',
-                          background: 'rgba(16, 185, 129, 0.2)',
-                          color: 'var(--bull-green)',
-                          fontFamily: 'var(--font-mono)',
-                          fontWeight: 700
-                        }}
-                      >
-                        ZERO API KEY NEEDED
-                      </span>
-                    </div>
-                    <p style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
-                      Instant multi-step quantitative engine. Recognizes company names, calculates exact dollar profits, compares tickers head-to-head, and projects +1W to +5Y price targets.
-                    </p>
+                      AUTOMATIC
+                    </span>
                   </div>
-
-                  {/* Gemini 2.0 Flash */}
-                  <div
-                    onClick={() => setTempModel('gemini-2.0-flash')}
-                    style={{
-                      padding: '0.8rem 0.9rem',
-                      borderRadius: '10px',
-                      cursor: 'pointer',
-                      background:
-                        tempModel === 'gemini-2.0-flash'
-                          ? 'rgba(6, 182, 212, 0.12)'
-                          : 'var(--bg-card-hover)',
-                      border:
-                        tempModel === 'gemini-2.0-flash'
-                          ? '1px solid var(--accent-cyan)'
-                          : '1px solid var(--border-subtle)',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '0.25rem'
-                      }}
-                    >
-                      <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        Google Gemini 2.0 Flash
-                      </span>
-                      <span
-                        style={{
-                          fontSize: '0.6rem',
-                          padding: '0.12rem 0.42rem',
-                          borderRadius: '4px',
-                          background: 'rgba(6, 182, 212, 0.2)',
-                          color: 'var(--accent-cyan)',
-                          fontFamily: 'var(--font-mono)',
-                          fontWeight: 700
-                        }}
-                      >
-                        THINKING LLM
-                      </span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                    <div>
+                      <strong style={{ color: 'var(--bull-green)', fontFamily: 'var(--font-mono)' }}>Level 1 · Quant Math:</strong> Live quotes, investment ROI, share sizing &amp; ticker comparisons run on deterministic live math with zero hallucination.
                     </div>
-                    <p style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
-                      Connect your personal Google Gemini API key for external cloud LLM generation with automatic local quant fallback.
-                    </p>
-                  </div>
-
-                  {/* Gemini 1.5 Flash */}
-                  <div
-                    onClick={() => setTempModel('gemini-1.5-flash')}
-                    style={{
-                      padding: '0.8rem 0.9rem',
-                      borderRadius: '10px',
-                      cursor: 'pointer',
-                      background:
-                        tempModel === 'gemini-1.5-flash'
-                          ? 'rgba(99, 102, 241, 0.12)'
-                          : 'var(--bg-card-hover)',
-                      border:
-                        tempModel === 'gemini-1.5-flash'
-                          ? '1px solid var(--accent-indigo)'
-                          : '1px solid var(--border-subtle)',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '0.25rem'
-                      }}
-                    >
-                      <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        Google Gemini 1.5 Flash
-                      </span>
-                      <span
-                        style={{
-                          fontSize: '0.6rem',
-                          padding: '0.12rem 0.42rem',
-                          borderRadius: '4px',
-                          background: 'rgba(99, 102, 241, 0.2)',
-                          color: 'var(--accent-indigo)',
-                          fontFamily: 'var(--font-mono)',
-                          fontWeight: 700
-                        }}
-                      >
-                        FAST LLM
-                      </span>
+                    <div>
+                      <strong style={{ color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)' }}>Level 2 · Fast Analyst:</strong> Technical indicators, options Greeks, tax rules &amp; focused setups run on fast contextual synthesis.
                     </div>
-                    <p style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
-                      Low-latency external multi-modal model for cloud-assisted market commentary.
-                    </p>
+                    <div>
+                      <strong style={{ color: 'var(--accent-indigo)', fontFamily: 'var(--font-mono)' }}>Level 3 · Deep Strategist:</strong> Multi-factor macro, hedging &amp; long-term strategy queries escalate automatically to Chain-of-Thought reasoning.
+                    </div>
                   </div>
                 </div>
 
-                {tempModel !== 'institutional-quant' && (
-                  <div style={{ marginBottom: '1.1rem' }}>
-                    <div
+                <div style={{ marginBottom: '1.1rem' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      marginBottom: '0.4rem'
+                    }}
+                  >
+                    <label
                       style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '0.4rem'
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        color: 'var(--text-secondary)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.04em'
                       }}
                     >
-                      <label
-                        style={{
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          color: 'var(--text-secondary)',
-                          textTransform: 'uppercase',
-                          letterSpacing: '0.04em'
-                        }}
-                      >
-                        Google Gemini API Key
-                      </label>
-                      <a
-                        href="https://aistudio.google.com/app/apikey"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                      Optional Cloud Gemini API Key (For Level 2 &amp; 3 Boost)
+                    </label>
+                    <a
+                      href="https://aistudio.google.com/app/apikey"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{
+                        fontSize: '0.7rem',
+                        color: 'var(--accent-cyan)',
+                        textDecoration: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.2rem'
+                      }}
+                    >
+                      Get Free Key <ExternalLink size={10} />
+                    </a>
+                  </div>
+                  <input
+                    type="password"
+                    className="custom-input"
+                    placeholder="Optional: AIzaSy... (Auto-enhances complex Level 2 & 3 queries)"
+                    value={tempKey}
+                    onChange={(e) => setTempKey(e.target.value)}
+                    style={{ fontSize: '0.82rem', fontFamily: 'var(--font-mono)', width: '100%' }}
+                  />
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      marginTop: '0.55rem'
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onClick={handleTestKey}
+                      disabled={testStatus === 'testing'}
+                      style={{
+                        fontSize: '0.72rem',
+                        padding: '0.32rem 0.7rem',
+                        borderRadius: '6px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        background: 'rgba(6, 182, 212, 0.15)',
+                        border: '1px solid rgba(6, 182, 212, 0.35)',
+                        color: 'var(--accent-cyan)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {testStatus === 'testing' && <RefreshCw size={12} className="spin" />}
+                      <span>Test Connection</span>
+                    </button>
+
+                    {testStatus === 'success' && (
+                      <span
                         style={{
                           fontSize: '0.7rem',
-                          color: 'var(--accent-cyan)',
-                          textDecoration: 'none',
+                          color: 'var(--bull-green)',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '0.2rem'
+                          gap: '0.25rem'
                         }}
                       >
-                        Get Free Key <ExternalLink size={10} />
-                      </a>
-                    </div>
-                    <input
-                      type="password"
-                      className="custom-input"
-                      placeholder="AIzaSy..."
-                      value={tempKey}
-                      onChange={(e) => setTempKey(e.target.value)}
-                      style={{ fontSize: '0.82rem', fontFamily: 'var(--font-mono)', width: '100%' }}
-                    />
-
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        marginTop: '0.55rem'
-                      }}
-                    >
-                      <button
-                        type="button"
-                        onClick={handleTestKey}
-                        disabled={testStatus === 'testing'}
+                        <CheckCircle2 size={13} /> Key Verified
+                      </span>
+                    )}
+                    {testStatus === 'error' && (
+                      <span
                         style={{
-                          fontSize: '0.72rem',
-                          padding: '0.32rem 0.7rem',
-                          borderRadius: '6px',
+                          fontSize: '0.7rem',
+                          color: 'var(--bear-red)',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '0.35rem',
-                          background: 'rgba(6, 182, 212, 0.15)',
-                          border: '1px solid rgba(6, 182, 212, 0.35)',
-                          color: 'var(--accent-cyan)',
-                          cursor: 'pointer'
+                          gap: '0.25rem'
                         }}
                       >
-                        {testStatus === 'testing' && <RefreshCw size={12} className="spin" />}
-                        <span>Test Connection</span>
-                      </button>
-
-                      {testStatus === 'success' && (
-                        <span
-                          style={{
-                            fontSize: '0.7rem',
-                            color: 'var(--bull-green)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.25rem'
-                          }}
-                        >
-                          <CheckCircle2 size={13} /> Key Verified
-                        </span>
-                      )}
-                      {testStatus === 'error' && (
-                        <span
-                          style={{
-                            fontSize: '0.7rem',
-                            color: 'var(--bear-red)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.25rem'
-                          }}
-                        >
-                          <AlertCircle size={13} /> {testMessage.slice(0, 32)}
-                        </span>
-                      )}
-                    </div>
+                        <AlertCircle size={13} /> {testMessage.slice(0, 32)}
+                      </span>
+                    )}
                   </div>
-                )}
+                </div>
 
                 <div style={{ marginTop: 'auto', display: 'flex', gap: '0.6rem' }}>
                   <button
@@ -1595,7 +1487,7 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
                     }}
                   >
                     <CheckCircle2 size={14} />
-                    <span>Save Engine Configuration</span>
+                    <span>Save Auto-Routing Settings</span>
                   </button>
                 </div>
               </div>

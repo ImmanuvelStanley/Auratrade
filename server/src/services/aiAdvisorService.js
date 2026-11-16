@@ -9,16 +9,76 @@ class AIAdvisorService {
   }
 
   /**
+   * Adaptive question complexity classifier: matches each user prompt to the
+   * highest-accuracy engine tier automatically without manual user selection.
+   */
+  classifyQuestionLevel(query = '') {
+    const raw = String(query || '').trim();
+    const lower = raw.toLowerCase();
+    const words = raw ? raw.split(/\s+/).filter(Boolean) : [];
+    const wordCount = words.length;
+    const questionMarks = (raw.match(/\?/g) || []).length;
+
+    const hasDeepKeywords =
+      /\b(why|strateg(y|ies)|portfolio|hedg(e|ing)|macro|recession|fed|fomc|inflation|cpi|yield curve|interest rate|allocat(e|ion)|diversif(y|ication)|risk vs reward|bear case|bull case|crash|valuation|fundamental|explain in detail|step by step|pros and cons|scenario|long[- ]term outlook|should i)\b/i.test(
+        lower
+      );
+
+    const hasExactMathOrLookup =
+      /(\$\s*[\d,]+|\b[\d,]+\s*(dollars?|usd|inr|rs)\b|\b(invest|if i put|if i buy|how many shares|calculate|profit|roi|position size|compare\b.*\bvs\b|versus|top\s*\d*\s*stocks|best stocks|trade setup|price target|forecast for)\b)/i.test(
+        lower
+      );
+
+    const hasConceptualOrPlatform =
+      /\b(what is (an?|the )?(rsi|macd|vwap|atr|bollinger|moving average|wash sale|tax|capital gain|options?|greeks?|delta|theta|gamma|vega|safe zone|contract note|huid|bullion|p\/e|pe ratio|market cap|stop[- ]loss|limit order)|how does|how to use|explain\b|define\b|meaning of\b|rsi\b|macd\b|bollinger|moving average|vwap|atr|wash sale|tax\b|capital gain|options?\b|greeks?\b|delta|theta|gamma|vega|safe zone|contract note|huid|bullion|auratrade|tutorial|guide|navigate)\b/i.test(
+        lower
+      );
+
+    if (
+      hasDeepKeywords ||
+      questionMarks >= 2 ||
+      wordCount >= 16 ||
+      (hasExactMathOrLookup && /\b(and|but|or|risk|fed|macro|why|strategy|hedge)\b/i.test(lower) && wordCount >= 11)
+    ) {
+      return {
+        level: 3,
+        tier: 'DEEP_STRATEGY',
+        modelTarget: 'gemini-2.0-flash',
+        badge: 'AUTO L3 • DEEP STRATEGIST',
+        reason: 'Complex macro, multi-factor strategy, or scenario reasoning.'
+      };
+    }
+
+    if (hasExactMathOrLookup && !hasConceptualOrPlatform) {
+      return {
+        level: 1,
+        tier: 'QUANT_PRECISION',
+        modelTarget: 'institutional-quant',
+        badge: 'AUTO L1 • QUANT PRECISION',
+        reason: 'Deterministic calculation, ticker comparison, or live setup lookup.'
+      };
+    }
+
+    return {
+      level: 2,
+      tier: 'BALANCED_ANALYTICAL',
+      modelTarget: 'gemini-1.5-flash',
+      badge: 'AUTO L2 • FAST ANALYST',
+      reason: 'Focused market concept, technical indicator, or platform guidance.'
+    };
+  }
+
+  /**
    * Main entrypoint for generating institutional trading advice.
-   * Supports Google Gemini API (Gemini 2.0 Flash / 1.5 Flash) with Chain-of-Thought thinking,
-   * or seamlessly uses the Advanced Built-in Neural Thought & Semantic Reasoner.
+   * Automatically routes across deterministic Quant math vs Fast/Deep LLM tiers based on question level.
    */
   async generateAdvice(param1, param2, param3) {
     let message = '';
     let symbol = '';
     let userId = null;
     let apiKey = '';
-    let selectedModel = 'gemini-2.0-flash';
+    let selectedModel = 'auto';
+    let explicitLevel = null;
     let clientQuote = null;
     let history = [];
 
@@ -27,7 +87,8 @@ class AIAdvisorService {
       symbol = param1.symbol || '';
       userId = param1.userId || null;
       apiKey = param1.apiKey || process.env.GEMINI_API_KEY || '';
-      selectedModel = param1.model || 'gemini-2.0-flash';
+      selectedModel = param1.model || 'auto';
+      explicitLevel = param1.questionLevel || null;
       clientQuote = param1.quote || null;
       history = Array.isArray(param1.history) ? param1.history : [];
     } else {
@@ -39,6 +100,9 @@ class AIAdvisorService {
 
     const rawMsg = (message || '').trim();
     const lowerMsg = rawMsg.toLowerCase();
+    const routeInfo = explicitLevel?.level ? explicitLevel : this.classifyQuestionLevel(rawMsg);
+    const effectiveModel =
+      !selectedModel || selectedModel === 'auto' ? routeInfo.modelTarget : selectedModel;
 
     // Extract potential ticker symbol from query or default
     const detectedTicker = this.extractTickerFromQuery(rawMsg) || (symbol || 'AAPL').toUpperCase().trim();
@@ -91,29 +155,36 @@ class AIAdvisorService {
       history
     };
 
-    // 1. If Gemini API Key is present, attempt live Google Gemini LLM Generation with Thinking
-    if (apiKey && apiKey.trim().length > 10 && selectedModel !== 'institutional-quant') {
+    // 1. For Level 2 / Level 3 analytical or strategic queries, auto-escalate to Cloud Gemini if key is configured
+    if (apiKey && apiKey.trim().length > 10 && effectiveModel !== 'institutional-quant') {
       try {
         const geminiResult = await this.callGeminiAPI({
           message: rawMsg,
           liveContext,
           apiKey: apiKey.trim(),
-          model: selectedModel.includes('1.5') ? 'gemini-1.5-flash' : 'gemini-2.0-flash'
+          model: effectiveModel.includes('1.5') ? 'gemini-1.5-flash' : 'gemini-2.0-flash'
         });
         if (geminiResult && geminiResult.reply) {
-          return geminiResult;
+          return {
+            ...geminiResult,
+            questionLevel: routeInfo
+          };
         }
       } catch (err) {
         console.warn('[AIAdvisorService] Gemini API call failed, falling back to Deep Semantic Reasoner:', err.message);
       }
     }
 
-    // 2. High-Precision Advanced Semantic Financial Reasoner (Built-in Zero-Key Engine with Thinking)
-    return this.generateDeepSemanticResponse({
+    // 2. Deterministic Quant / Deep Semantic Financial Reasoner (Level 1 exact math OR zero-key Level 2/3)
+    const semanticResult = this.generateDeepSemanticResponse({
       message: rawMsg,
       lowerMsg,
       liveContext
     });
+    return {
+      ...semanticResult,
+      questionLevel: routeInfo
+    };
   }
 
   /**

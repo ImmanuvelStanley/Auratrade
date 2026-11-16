@@ -253,4 +253,26 @@ describe('AuraTrade Backend API & Webhook Smoke Suite', () => {
     assert.equal(resetBody.portfolio.realizedPnL, 0);
     assert.deepEqual(resetBody.portfolio.orders, []);
   });
+
+  it('auto-routes /api/ai/chat across question complexity levels without manual engine selection', async () => {
+    const cases = [
+      { message: 'If I invest $1,000 in AAPL what is my profit?', expectedLevel: 1, expectedTier: 'QUANT_PRECISION' },
+      { message: 'Explain RSI divergence', expectedLevel: 2, expectedTier: 'BALANCED_ANALYTICAL' },
+      { message: 'Why does yield curve inversion affect tech stocks and what hedging portfolio strategy should I use?', expectedLevel: 3, expectedTier: 'DEEP_STRATEGY' }
+    ];
+
+    for (const tc of cases) {
+      const res = await fetch(`${baseUrl}/api/ai/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbol: 'AAPL', message: tc.message, model: 'auto' })
+      });
+      assert.equal(res.status, 200);
+      const body = await res.json();
+      assert.equal(body.success, true);
+      assert.equal(body.data.questionLevel?.level, tc.expectedLevel);
+      assert.equal(body.data.questionLevel?.tier, tc.expectedTier);
+      assert.ok(typeof body.data.reply === 'string' && body.data.reply.length > 40, 'AI reply must be populated');
+    }
+  });
 });
