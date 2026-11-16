@@ -216,6 +216,7 @@ const run = async () => {
         strategyPills,
         hasRemovedAlphaBtn: !/AI 30D Alpha Picks/i.test(bodyTxt),
         hasRemovedRedundantPresets: !/Mega-Cap Club|Dividend Aristocrats/i.test(bodyTxt),
+        hasRemovedAssetsBadge: !document.querySelector('.screener-matched-badge'),
         stageWidthOk: stage ? stage.getBoundingClientRect().right <= window.innerWidth + 1 : false
       };
     })()`);
@@ -226,6 +227,7 @@ const run = async () => {
     assert.equal(openingHeroCheck.strategyPills, 5, 'Clean strategy segmented bar must render 5 essential options');
     assert.equal(openingHeroCheck.hasRemovedAlphaBtn, true, 'Redundant AI 30D Alpha Picks secondary CTA must be removed');
     assert.equal(openingHeroCheck.hasRemovedRedundantPresets, true, 'Redundant Mega-Cap Club and Dividend Aristocrats presets must be removed');
+    assert.equal(openingHeroCheck.hasRemovedAssetsBadge, true, '309 Assets badge must be removed');
     assert.equal(openingHeroCheck.stageWidthOk, true, 'Opening hero must fit cleanly within viewport');
     await sleep(120);
     const obsSwitched = await evalJs(`(() => {

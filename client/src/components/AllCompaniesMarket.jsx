@@ -1796,10 +1796,10 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
 
       {/* Interactive Filter & Strategy Control Bar (Unified 3-Row Grid Layout) */}
       <div className="market-filter-bar glass-card" style={{ marginBottom: '0.85rem' }}>
-        {/* Row 1: Essential Strategy Views (Clean Segmented Rail + Live Matched Count) */}
+        {/* Row 1: Essential Strategy Views (Clean Segmented Rail) */}
         <div className="market-filter-row">
           <span className="market-filter-row-label">Strategy</span>
-          <div className="market-filter-row-content screener-strategy-row-content">
+          <div className="market-filter-row-content">
             <div className="screener-strategy-segment" role="group" aria-label="Screener quick strategies">
               {presets.map((p) => {
                 const Icon = p.icon;
@@ -1818,10 +1818,6 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
                 );
               })}
             </div>
-
-            <span className="screener-matched-badge font-mono tabular-nums">
-              {filteredRawCompanies.length} Assets
-            </span>
           </div>
         </div>
 
