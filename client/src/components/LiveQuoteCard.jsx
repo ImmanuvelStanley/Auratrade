@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useSocketQuote } from '../context/SocketContext';
 import { CountryFlag } from './CountryFlag';
+import { ModernDatePicker } from './ModernDatePicker';
 import {
   toISODateString,
   formatCalendarDate,
@@ -550,25 +551,21 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
 
                 {/* Direct Jump Date Input + Live Reset */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginTop: '0.15rem' }}>
-                  <input
-                    type="date"
-                    value={selectedDateStr}
-                    min="2015-01-01"
-                    max="2036-12-31"
-                    onChange={(e) => {
-                      if (e.target.value) handleSelectDate(e.target.value, false);
-                    }}
-                    style={{
-                      flex: 1,
-                      background: 'var(--bg-card)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: '6px',
-                      color: 'var(--text-primary)',
-                      padding: '0.32rem 0.5rem',
-                      fontSize: '0.74rem',
-                      fontFamily: 'var(--font-mono)'
-                    }}
-                  />
+                  <div style={{ flex: 1 }}>
+                    <ModernDatePicker
+                      value={selectedDateStr}
+                      min="2015-01-01"
+                      max="2036-12-31"
+                      showQuickJumps
+                      onChange={(newDate) => {
+                        if (newDate) handleSelectDate(newDate, false);
+                      }}
+                      inputStyle={{
+                        padding: '0.32rem 0.55rem',
+                        fontSize: '0.74rem'
+                      }}
+                    />
+                  </div>
                   <button
                     type="button"
                     onClick={handleResetToLive}

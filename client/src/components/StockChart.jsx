@@ -3,6 +3,7 @@ import { useSocketQuote } from '../context/SocketContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { getCurrencySymbol } from '../utils/predictorEngine';
+import { ModernDatePicker } from './ModernDatePicker';
 import {
   BarChart3,
   LineChart as LineChartIcon,
@@ -208,7 +209,6 @@ export const StockChart = React.memo(function StockChart({
     daysDiff: 0,
     snapshot: null
   }));
-  const chartDateInputRef = useRef(null);
 
   // Synchronize chart with Past & Future Market Calendar selections
   useEffect(() => {
@@ -1408,70 +1408,62 @@ export const StockChart = React.memo(function StockChart({
                   ? `HISTORY (-${clampedPan} BARS)`
                   : (chartType === 'candle' ? 'LATEST CANDLE' : 'LIVE TICK'))}
           </span>
-          <label
-            title="Click to pick a Past or Future Calendar Date"
-            style={{
-              color: calendarDateState.mode === 'future' ? 'var(--accent-cyan)' : calendarDateState.mode === 'past' ? 'var(--warning-amber)' : 'var(--text-secondary)',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '0.25rem',
-              cursor: 'pointer',
-              padding: '0.1rem 0.35rem',
-              borderRadius: '4px',
-              background: calendarDateState.mode !== 'live' ? 'rgba(6, 182, 212, 0.1)' : 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
-              position: 'relative',
-              fontWeight: 600
+          <ModernDatePicker
+            value={calendarDateState.dateStr}
+            min="2015-01-01"
+            max="2036-12-31"
+            showQuickJumps
+            onChange={(dateStr) => {
+              const snap = computeDateMarketSnapshot(symbol, liveQuoteRef.current, dateStr);
+              window.dispatchEvent(
+                new CustomEvent('auratrade_calendar_date_changed', {
+                  detail: {
+                    source: 'StockChart',
+                    symbol,
+                    dateStr,
+                    snapshot: snap
+                  }
+                })
+              );
             }}
-            onClick={() => {
-              if (chartDateInputRef.current && chartDateInputRef.current.showPicker) {
-                try { chartDateInputRef.current.showPicker(); } catch (e) {}
-              }
-            }}
-          >
-            <Clock size={11} />
-            <span>
-              {hoverData
-                ? hoverData.timeStr
-                : (visibleCandles.length > 0
-                    ? (range === '5Y' || range === '10Y' || calendarDateState.mode !== 'live'
-                        ? new Date(visibleCandles[visibleCandles.length - 1].timestamp || visibleCandles[visibleCandles.length - 1].time * 1000).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
-                        : (range === '1D'
-                            ? new Date(visibleCandles[visibleCandles.length - 1].timestamp || visibleCandles[visibleCandles.length - 1].time * 1000).toLocaleTimeString()
-                            : new Date(visibleCandles[visibleCandles.length - 1].timestamp || visibleCandles[visibleCandles.length - 1].time * 1000).toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' })))
-                    : '--:--:--')}
-            </span>
-            <span style={{ fontSize: '0.6rem', opacity: 0.7 }}>▾</span>
-            <input
-              ref={chartDateInputRef}
-              type="date"
-              min="2015-01-01"
-              max="2036-12-31"
-              value={calendarDateState.dateStr}
-              onChange={(e) => {
-                if (e.target.value) {
-                  const snap = computeDateMarketSnapshot(symbol, liveQuoteRef.current, e.target.value);
-                  window.dispatchEvent(
-                    new CustomEvent('auratrade_calendar_date_changed', {
-                      detail: {
-                        source: 'StockChart',
-                        symbol,
-                        dateStr: e.target.value,
-                        snapshot: snap
-                      }
-                    })
-                  );
-                }
-              }}
-              style={{
-                position: 'absolute',
-                opacity: 0,
-                width: '1px',
-                height: '1px',
-                pointerEvents: 'none'
-              }}
-            />
-          </label>
+            renderTrigger={({ toggle, triggerRef, isOpen }) => (
+              <button
+                ref={triggerRef}
+                type="button"
+                title="Open Modern Past & Future Market Calendar"
+                onClick={toggle}
+                style={{
+                  color: calendarDateState.mode === 'future' ? 'var(--accent-cyan)' : calendarDateState.mode === 'past' ? 'var(--warning-amber)' : 'var(--text-secondary)',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.28rem',
+                  cursor: 'pointer',
+                  padding: '0.14rem 0.42rem',
+                  borderRadius: '5px',
+                  background: isOpen ? 'rgba(56, 189, 248, 0.14)' : calendarDateState.mode !== 'live' ? 'rgba(6, 182, 212, 0.1)' : 'var(--bg-card)',
+                  border: isOpen ? '1px solid rgba(56, 189, 248, 0.55)' : '1px solid var(--border-subtle)',
+                  fontWeight: 600,
+                  fontSize: '0.72rem',
+                  fontFamily: 'var(--font-mono)',
+                  transition: 'all 0.16s ease'
+                }}
+              >
+                <Clock size={11} />
+                <span>
+                  {hoverData
+                    ? hoverData.timeStr
+                    : (visibleCandles.length > 0
+                        ? (range === '5Y' || range === '10Y' || calendarDateState.mode !== 'live'
+                            ? new Date(visibleCandles[visibleCandles.length - 1].timestamp || visibleCandles[visibleCandles.length - 1].time * 1000).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+                            : (range === '1D'
+                                ? new Date(visibleCandles[visibleCandles.length - 1].timestamp || visibleCandles[visibleCandles.length - 1].time * 1000).toLocaleTimeString()
+                                : new Date(visibleCandles[visibleCandles.length - 1].timestamp || visibleCandles[visibleCandles.length - 1].time * 1000).toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' })))
+                        : '--:--:--')}
+                </span>
+                <span style={{ fontSize: '0.6rem', opacity: 0.75, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.18s ease', display: 'inline-block' }}>▾</span>
+              </button>
+            )}
+          />
         </div>
 
         {/* Right Hint Pill (Details now float directly inside the interactive chart on hover) */}

@@ -233,6 +233,30 @@ const run = async () => {
         assert.equal(sweepCheck.present, true, 'Floating card must remain visible during cursor sweep');
         assert.equal(sweepCheck.insideContainer, true, 'Floating card must flip/clamp cleanly near bottom-right corner');
         assert.notEqual(Math.round(sweepCheck.left), Math.round(floatCheck.left), 'Floating card must glide to follow cursor sweep');
+
+        // Verify modern custom calendar popover opens cleanly with month/year grid and zero native input[type="date"]
+        await evalJs(`(() => {
+          const trigger = document.querySelector('.chart-permanent-ticker-bar button[title*="Modern"]');
+          if (trigger) trigger.click();
+        })()`);
+        await sleep(250);
+        const calCheck = await evalJs(`(() => {
+          const pop = document.querySelector('.modern-datepicker-popover');
+          const nativeDates = document.querySelectorAll('input[type="date"]').length;
+          return { open: !!pop, nativeDates, insideViewport: pop ? pop.getBoundingClientRect().right <= window.innerWidth : false };
+        })()`);
+        assert.equal(calCheck.open, true, 'Modern custom calendar popover must open from chart bar trigger');
+        assert.equal(calCheck.nativeDates, 0, 'No old-fashioned native <input type="date"> should remain');
+        assert.equal(calCheck.insideViewport, true, 'Modern calendar popover must stay inside viewport');
+        await evalJs(`(() => {
+          const monthBtn = document.querySelector('.modern-cal-mode-pill');
+          if (monthBtn) monthBtn.click();
+        })()`);
+        await sleep(180);
+        const monthGridOk = await evalJs(`document.querySelectorAll('.modern-cal-pill-item').length === 12`);
+        assert.equal(monthGridOk, true, 'Modern calendar must switch smoothly to 12-month pill grid');
+        await evalJs(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))`);
+        await sleep(150);
       }
     }
 

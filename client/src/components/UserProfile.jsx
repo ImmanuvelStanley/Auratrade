@@ -68,6 +68,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { downloadOrderPdf, downloadStatementPdf } from '../utils/statementPdfGenerator';
+import { ModernDatePicker } from './ModernDatePicker';
 import { DepositCashModal } from './DepositCashModal';
 import { MarketFeedIntegrationCard } from './MarketFeedIntegrationCard';
 
@@ -2720,20 +2721,14 @@ export function UserProfile({
                       <span>Date of Birth (18+ Required) <span style={{ color: '#ef4444' }}>*</span></span>
                       {kycErrors.dob && <span style={{ color: '#ef4444', textTransform: 'none' }}>{kycErrors.dob}</span>}
                     </label>
-                    <input
-                      type="date"
+                    <ModernDatePicker
                       value={profileForm.dob || ''}
-                      onChange={(e) => handleProfileFormChange('dob', e.target.value)}
-                      style={{
-                        width: '100%',
-                        background: 'var(--bg-card)',
-                        border: kycErrors.dob ? '1.5px solid #ef4444' : '1px solid var(--border-subtle)',
-                        borderRadius: 'var(--radius-sm)',
-                        padding: '0.55rem 0.85rem',
-                        color: 'var(--text-primary)',
-                        fontSize: '0.85rem',
-                        fontWeight: 600
-                      }}
+                      min="1925-01-01"
+                      max="2020-12-31"
+                      placeholder="Select birth date"
+                      hasError={Boolean(kycErrors.dob)}
+                      onChange={(newVal) => handleProfileFormChange('dob', newVal)}
+                      inputStyle={{ padding: '0.55rem 0.85rem', fontSize: '0.85rem' }}
                     />
                   </div>
 
@@ -2889,20 +2884,13 @@ export function UserProfile({
                     <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
                       Document Expiry Date (Optional / Lifetime)
                     </label>
-                    <input
-                      type="date"
+                    <ModernDatePicker
                       value={profileForm.idExpiry || ''}
-                      onChange={(e) => handleProfileFormChange('idExpiry', e.target.value)}
-                      style={{
-                        width: '100%',
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: 'var(--radius-sm)',
-                        padding: '0.55rem 0.85rem',
-                        color: 'var(--text-primary)',
-                        fontSize: '0.85rem',
-                        fontWeight: 600
-                      }}
+                      min="2020-01-01"
+                      max="2060-12-31"
+                      placeholder="Select expiry date"
+                      onChange={(newVal) => handleProfileFormChange('idExpiry', newVal)}
+                      inputStyle={{ padding: '0.55rem 0.85rem', fontSize: '0.85rem' }}
                     />
                   </div>
                 </div>
@@ -3391,20 +3379,13 @@ export function UserProfile({
                     <label style={{ display: 'block', fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
                       Nominee Date of Birth
                     </label>
-                    <input
-                      type="date"
+                    <ModernDatePicker
                       value={profileForm.nomineeDob || ''}
-                      onChange={(e) => handleProfileFormChange('nomineeDob', e.target.value)}
-                      style={{
-                        width: '100%',
-                        background: 'var(--bg-card)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: 'var(--radius-sm)',
-                        padding: '0.55rem 0.85rem',
-                        color: 'var(--text-primary)',
-                        fontSize: '0.85rem',
-                        fontWeight: 600
-                      }}
+                      min="1925-01-01"
+                      max="2035-12-31"
+                      placeholder="Select nominee DOB"
+                      onChange={(newVal) => handleProfileFormChange('nomineeDob', newVal)}
+                      inputStyle={{ padding: '0.55rem 0.85rem', fontSize: '0.85rem' }}
                     />
                   </div>
 
