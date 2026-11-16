@@ -505,7 +505,42 @@ const run = async () => {
 
     // Mobile 390px pass
     await cdp('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 2, mobile: true });
-    await sleep(400);
+    await sleep(300);
+
+    // Reload on 390px mobile to verify OpeningReveal alignment & single-line centering
+    await cdp('Page.reload', { ignoreCache: true });
+    let revealCheck = { found: false, centered: false, tagSingleLine: false, emblemOnHorizon: false };
+    for (let i = 0; i < 20; i++) {
+      await sleep(75);
+      revealCheck = await evalJs(`(() => {
+        const emblem = document.querySelector('.opening-reveal-emblem');
+        const brand = document.querySelector('.opening-reveal-brand');
+        const tag = document.querySelector('.opening-reveal-tag');
+        if (!emblem || !brand || !tag) return { found: false, centered: false, tagSingleLine: false, emblemOnHorizon: false };
+        const vwCenter = window.innerWidth / 2;
+        const vhCenter = window.innerHeight / 2;
+        const er = emblem.getBoundingClientRect();
+        const br = brand.getBoundingClientRect();
+        const tr = tag.getBoundingClientRect();
+        const eCenterX = (er.left + er.right) / 2;
+        const bCenterX = (br.left + br.right) / 2;
+        const tCenterX = (tr.left + tr.right) / 2;
+        const eCenterY = (er.top + er.bottom) / 2;
+        return {
+          found: true,
+          centered: Math.abs(eCenterX - vwCenter) <= 5 && Math.abs(bCenterX - vwCenter) <= 8 && Math.abs(tCenterX - vwCenter) <= 8,
+          tagSingleLine: tr.height <= 22,
+          emblemOnHorizon: Math.abs(eCenterY - vhCenter) <= 22
+        };
+      })()`);
+      if (revealCheck.found) break;
+    }
+    assert.equal(revealCheck.found, true, 'Mobile 390px reload must show OpeningReveal curtain briefly');
+    assert.equal(revealCheck.centered, true, 'Mobile 390px OpeningReveal emblem, brand, and tag must be centered');
+    assert.equal(revealCheck.tagSingleLine, true, 'Mobile 390px GLOBAL MARKET INTELLIGENCE tag must stay on a single line');
+    assert.equal(revealCheck.emblemOnHorizon, true, 'Mobile 390px emblem square must sit centered across the horizon beam');
+    await sleep(1100);
+
     for (const tab of ['All Companies Market', 'Paper Trading', 'Gold & Silver Market']) {
       await evalJs(`(() => {
         const btn = Array.from(document.querySelectorAll('.sidebar-topic-btn')).find((b) => b.innerText.includes(${JSON.stringify(tab)}));

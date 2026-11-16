@@ -9725,6 +9725,7 @@ canvas {
    SIGNATURE KINETIC SPLIT-HORIZON OPENING REVEAL
    ============================================================================ */
 .opening-reveal-curtain {
+  --reveal-emblem-half: -36px;
   position: fixed;
   inset: 0;
   z-index: 4800;
@@ -9740,29 +9741,31 @@ canvas {
   height: 50%;
   background: radial-gradient(circle at 50% 100%, rgba(16, 185, 129, 0.08), transparent 65%), #060a12;
   backdrop-filter: blur(18px);
+  z-index: 1;
 }
 
 .opening-curtain-blade--top {
   top: 0;
-  border-bottom: 1px solid rgba(52, 211, 153, 0.25);
-  animation: openingBladeTop 0.72s cubic-bezier(0.76, 0, 0.24, 1) 0.36s forwards;
+  border-bottom: 1px solid rgba(52, 211, 153, 0.22);
+  animation: openingBladeTop 0.72s cubic-bezier(0.76, 0, 0.24, 1) 0.38s forwards;
 }
 
 .opening-curtain-blade--bottom {
   bottom: 0;
-  border-top: 1px solid rgba(6, 182, 212, 0.22);
+  border-top: 1px solid rgba(6, 182, 212, 0.18);
   background: radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.08), transparent 65%), #060a12;
-  animation: openingBladeBottom 0.72s cubic-bezier(0.76, 0, 0.24, 1) 0.36s forwards;
+  animation: openingBladeBottom 0.72s cubic-bezier(0.76, 0, 0.24, 1) 0.38s forwards;
 }
 
 .opening-horizon-beam {
   position: absolute;
-  left: 8%;
-  right: 8%;
+  left: 6%;
+  right: 6%;
   top: 50%;
   height: 1.5px;
+  z-index: 2;
   transform: translateY(-50%) scaleX(0);
-  background: linear-gradient(90deg, transparent 0%, rgba(6, 182, 212, 0.85) 28%, rgba(52, 211, 153, 0.95) 50%, rgba(6, 182, 212, 0.85) 72%, transparent 100%);
+  background: linear-gradient(90deg, transparent 0%, rgba(6, 182, 212, 0.85) 26%, rgba(52, 211, 153, 0.95) 50%, rgba(6, 182, 212, 0.85) 74%, transparent 100%);
   box-shadow: 0 0 22px rgba(16, 185, 129, 0.65);
   animation: openingBeamSweep 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
@@ -9771,50 +9774,69 @@ canvas {
   position: absolute;
   left: 50%;
   top: 50%;
-  transform: translate(-50%, -50%);
+  z-index: 4;
+  width: min(92vw, 440px);
+  padding: 0 12px;
+  box-sizing: border-box;
+  transform: translate(-50%, var(--reveal-emblem-half));
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  animation: openingCenterFade 0.82s cubic-bezier(0.16, 1, 0.3, 1) 0.28s forwards;
+  text-align: center;
+  gap: 0.9rem;
+  animation: openingCenterFade 0.82s cubic-bezier(0.16, 1, 0.3, 1) 0.3s forwards;
 }
 
 .opening-reveal-emblem {
   width: 72px;
   height: 72px;
   border-radius: 18px;
-  background: rgba(15, 23, 42, 0.92);
-  border: 1px solid rgba(52, 211, 153, 0.45);
+  background: #0c1322;
+  border: 1px solid rgba(52, 211, 153, 0.52);
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow:
-    0 16px 40px rgba(0, 0, 0, 0.6),
-    0 0 28px rgba(16, 185, 129, 0.24),
+    0 16px 40px rgba(0, 0, 0, 0.72),
+    0 0 28px rgba(16, 185, 129, 0.26),
     inset 0 1px 0 rgba(255, 255, 255, 0.14);
   animation: openingEmblemPop 0.42s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  flex-shrink: 0;
 }
 
 .opening-reveal-wordmark {
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.2rem;
+  justify-content: center;
+  text-align: center;
+  gap: 0.28rem;
 }
 
 .opening-reveal-brand {
+  display: block;
+  text-align: center;
   font-family: var(--font-brand);
   font-size: 1.05rem;
   font-weight: 800;
   letter-spacing: 0.26em;
+  padding-left: 0.26em;
+  line-height: 1.15;
   color: #f8fafc;
 }
 
 .opening-reveal-tag {
+  display: block;
+  max-width: 100%;
+  text-align: center;
   font-family: var(--font-mono);
-  font-size: 0.64rem;
+  font-size: clamp(0.54rem, 2.3vw, 0.64rem);
   font-weight: 600;
-  letter-spacing: 0.22em;
+  letter-spacing: clamp(0.11em, 0.42vw, 0.2em);
+  padding-left: clamp(0.11em, 0.42vw, 0.2em);
+  line-height: 1.2;
+  white-space: nowrap;
   color: #34d399;
 }
 
@@ -9840,9 +9862,32 @@ canvas {
 }
 
 @keyframes openingCenterFade {
-  0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-  45% { opacity: 1; transform: translate(-50%, -54%) scale(1.03); }
-  100% { opacity: 0; transform: translate(-50%, -62%) scale(0.96); }
+  0% { opacity: 1; transform: translate(-50%, var(--reveal-emblem-half)) scale(1); }
+  45% { opacity: 1; transform: translate(-50%, calc(var(--reveal-emblem-half) - 6px)) scale(1.02); }
+  100% { opacity: 0; transform: translate(-50%, calc(var(--reveal-emblem-half) - 18px)) scale(0.96); }
+}
+
+@media (max-width: 480px) {
+  .opening-reveal-curtain {
+    --reveal-emblem-half: -32px;
+  }
+
+  .opening-reveal-emblem {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+  }
+
+  .opening-reveal-emblem svg {
+    width: 38px;
+    height: 38px;
+  }
+
+  .opening-reveal-brand {
+    font-size: 0.96rem;
+    letter-spacing: 0.24em;
+    padding-left: 0.24em;
+  }
 }
 
 [data-theme="light"] .opening-curtain-blade {
