@@ -36,13 +36,19 @@ export const Header = React.memo(function Header({
           <div style={{ position: 'relative' }} className="header-notification-container">
             <button
               type="button"
-              className="btn-icon"
+              className={`header-bell-btn${unreadCount > 0 ? ' has-unread' : ''}${showNotifications ? ' is-open' : ''}`}
               title="Market Intelligence, News & Triggered Alerts"
+              aria-label={`Notifications (${unreadCount} unread)`}
+              aria-expanded={showNotifications}
               onClick={handleToggleNotifications}
               id="header-notification-bell-btn"
             >
-              <Bell size={17} />
-              {unreadCount > 0 && <span className="notification-badge">{unreadCount}</span>}
+              <Bell size={18} strokeWidth={2.2} className="header-bell-icon" />
+              {unreadCount > 0 && (
+                <span className="notification-badge" aria-hidden="true">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </button>
 
             {showNotifications && (

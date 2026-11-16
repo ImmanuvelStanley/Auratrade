@@ -172,6 +172,32 @@ const run = async () => {
 
     const tabs = ['All Companies Market', 'Workstation', 'NSE Indian Market', 'Global Major Indices', 'Gold & Silver Market'];
 
+    // Verify Notification Bell + unread pill badge fit cleanly inside the header button with no overlap
+    let bellLayout = { ready: false, insideBtn: false, clearOfIcon: false, visibleHeight: 0 };
+    for (let i = 0; i < 20; i++) {
+      await sleep(180);
+      bellLayout = await evalJs(`(() => {
+        const bell = document.getElementById('header-notification-bell-btn');
+        const svg = bell ? bell.querySelector('svg') : null;
+        const badge = bell ? bell.querySelector('.notification-badge') : null;
+        if (!bell || !svg || !badge) return { ready: false, insideBtn: false, clearOfIcon: false, visibleHeight: bell ? bell.getBoundingClientRect().height : 0 };
+        const br = bell.getBoundingClientRect();
+        const sr = svg.getBoundingClientRect();
+        const gr = badge.getBoundingClientRect();
+        return {
+          ready: true,
+          visibleHeight: br.height,
+          insideBtn: gr.left >= br.left && gr.right <= br.right && gr.top >= br.top && gr.bottom <= br.bottom,
+          clearOfIcon: gr.left >= sr.right
+        };
+      })()`);
+      if (bellLayout.ready) break;
+    }
+    assert.equal(bellLayout.ready, true, 'Notification bell and unread count pill must appear automatically on load');
+    assert.ok(bellLayout.visibleHeight >= 34, 'Notification bell button must have crisp header height >= 34px');
+    assert.equal(bellLayout.insideBtn, true, 'Unread count badge must fit cleanly inside the notification bell pill button');
+    assert.equal(bellLayout.clearOfIcon, true, 'Unread count badge must not overlap the bell icon');
+
     // Verify Notification Bell shows live market & related notifications even before sign-in
     await evalJs(`(() => {
       const bell = document.getElementById('header-notification-bell-btn');
@@ -325,11 +351,15 @@ const run = async () => {
           };
         })()`);
         assert.equal(aiHeaderCheck.hasEngineOrAutoAiBtn, false, 'Auto AI / Engine header button must stay hidden');
-        await sleep(500);
-        const aiReplyOk = await evalJs(`(() => {
-          const pill = document.querySelector('.assistant-ai-desk-pill');
-          return pill ? /AUTO L[123]/i.test(pill.innerText) : false;
-        })()`);
+        let aiReplyOk = false;
+        for (let i = 0; i < 20; i++) {
+          await sleep(200);
+          aiReplyOk = await evalJs(`(() => {
+            const pill = document.querySelector('.assistant-ai-desk-pill');
+            return pill ? /AUTO L[123]/i.test(pill.innerText) : false;
+          })()`);
+          if (aiReplyOk) break;
+        }
         assert.equal(aiReplyOk, true, 'Strategy Desk must auto-route prompt and show AUTO L1/L2/L3 badge');
         await evalJs(`(() => {
           const closeBtn = document.querySelector('.assistant-hdr-btn-icon.close-btn');
@@ -353,13 +383,25 @@ const run = async () => {
       if (${JSON.stringify(!!reg.user)}) localStorage.setItem('auratrade_user', ${JSON.stringify(JSON.stringify(reg.user))});
     })()`);
     await cdp('Page.reload', { ignoreCache: true });
-    await sleep(1800);
+    let clickedPaper = false;
+    for (let i = 0; i < 30; i++) {
+      await sleep(200);
+      clickedPaper = await evalJs(`(() => {
+        const btn = Array.from(document.querySelectorAll('.sidebar-topic-btn')).find((b) => b.innerText.includes('Paper Trading'));
+        if (!btn) return false;
+        btn.click();
+        return true;
+      })()`);
+      if (clickedPaper) break;
+    }
+    assert.equal(clickedPaper, true, 'Authenticated reload must render Paper Trading sidebar button');
 
-    await evalJs(`(() => {
-      const btn = Array.from(document.querySelectorAll('.sidebar-topic-btn')).find((b) => b.innerText.includes('Paper Trading'));
-      if (btn) btn.click();
-    })()`);
-    await sleep(600);
+    let paperReady = false;
+    for (let i = 0; i < 20; i++) {
+      await sleep(200);
+      paperReady = await evalJs(`(document.body.innerText || '').length > 300 && /Capital Allocation/i.test(document.body.innerText || '')`);
+      if (paperReady) break;
+    }
     await assertViewHealthy('authed:Paper Trading');
     const paperChecks = await evalJs(`(() => {
       const t = document.body.innerText || '';
