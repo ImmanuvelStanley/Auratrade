@@ -206,6 +206,7 @@ const run = async () => {
           const txt = card.innerText || '';
           return {
             present: true,
+            left: cr.left,
             hasDetails: txt.includes('O:') && txt.includes('H:') && txt.includes('L:') && txt.includes('C:') && txt.includes('Vol:'),
             insideContainer: cr.left >= pr.left && cr.right <= pr.right && cr.top >= pr.top && cr.bottom <= pr.bottom
           };
@@ -213,6 +214,25 @@ const run = async () => {
         assert.equal(floatCheck.present, true, 'Floating cursor details card must appear on chart hover');
         assert.equal(floatCheck.hasDetails, true, 'Floating card must show O/H/L/C and Vol details');
         assert.equal(floatCheck.insideContainer, true, 'Floating card must remain strictly inside chart bounds');
+
+        // Sweep cursor right & lower to confirm smooth translate3d glide & hysteresis flip stay inside bounds
+        await cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x: chartBox.rect.left + (chartBox.rect.right - chartBox.rect.left) * 0.85, y: chartBox.rect.top + (chartBox.rect.bottom - chartBox.rect.top) * 0.78 });
+        await sleep(320);
+        const sweepCheck = await evalJs(`(() => {
+          const card = document.querySelector('.chart-floating-cursor-card');
+          const container = document.querySelector('.chart-canvas-container');
+          if (!card || !container) return { present: false };
+          const cr = card.getBoundingClientRect();
+          const pr = container.getBoundingClientRect();
+          return {
+            present: true,
+            left: cr.left,
+            insideContainer: cr.left >= pr.left && cr.right <= pr.right && cr.top >= pr.top && cr.bottom <= pr.bottom
+          };
+        })()`);
+        assert.equal(sweepCheck.present, true, 'Floating card must remain visible during cursor sweep');
+        assert.equal(sweepCheck.insideContainer, true, 'Floating card must flip/clamp cleanly near bottom-right corner');
+        assert.notEqual(Math.round(sweepCheck.left), Math.round(floatCheck.left), 'Floating card must glide to follow cursor sweep');
       }
     }
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState, useMemo } from 'react';
 import { useSocketQuote } from '../context/SocketContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -151,6 +151,11 @@ export const StockChart = React.memo(function StockChart({
   const mouseMoveRaf = useRef(null);
   const lastHoverIndexRef = useRef(null);
   const isMouseOverRef = useRef(false);
+  const floatingCardRef = useRef(null);
+  const cardTargetPosRef = useRef({ x: 0, y: 0, active: false, side: 'right' });
+  const cardCurrentPosRef = useRef({ x: 0, y: 0 });
+  const cardLerpRafRef = useRef(null);
+  const cardLastFrameRef = useRef(0);
 
   const { user } = useAuth();
   const readWorkstationPrefs = () => {
@@ -922,7 +927,103 @@ export const StockChart = React.memo(function StockChart({
     setIsDragging(false);
   };
 
-  // Mouse Move for Dynamic Hover Crosshair, Drag Panning & Floating Price Positioning
+  const computeFloatingCardTarget = (cursorX, cursorY, containerW, containerH, panBars) => {
+    const cardW = containerW < 440 ? 196 : 216;
+    const cardH = 114;
+    const gapX = 18;
+    const minLeft = 10;
+    const maxRight = Math.max(cardW + 20, containerW - 78);
+    const minTop = panBars > 0 ? 44 : 10;
+    const maxBottom = Math.max(minTop + cardH + 10, containerH - 34);
+
+    // Hysteresis horizontal side flip so cursor near boundary never shakes left <-> right
+    let side = cardTargetPosRef.current.side || 'right';
+    if (side === 'right' && cursorX + gapX + cardW > maxRight) {
+      side = 'left';
+    } else if (side === 'left' && cursorX - gapX - cardW < minLeft) {
+      side = 'right';
+    } else if (side === 'left' && cursorX + gapX + cardW <= maxRight - 28) {
+      side = 'right';
+    }
+
+    const rawX = side === 'right' ? cursorX + gapX : cursorX - cardW - gapX;
+    const x = Math.max(minLeft, Math.min(maxRight - cardW, rawX));
+
+    // Follow cursorY smoothly vertically instead of jumping +/-140px with jagged candle wicks
+    const rawY = cursorY - cardH * 0.5;
+    const y = Math.max(minTop, Math.min(maxBottom - cardH, rawY));
+
+    return { x, y, side };
+  };
+
+  const stopFloatingCardLerp = () => {
+    if (cardLerpRafRef.current) {
+      cancelAnimationFrame(cardLerpRafRef.current);
+      cardLerpRafRef.current = null;
+    }
+    cardTargetPosRef.current.active = false;
+    cardLastFrameRef.current = 0;
+  };
+
+  const startFloatingCardLerp = () => {
+    if (cardLerpRafRef.current) return;
+    const tick = (now) => {
+      if (!cardTargetPosRef.current.active) {
+        cardLerpRafRef.current = null;
+        cardLastFrameRef.current = 0;
+        return;
+      }
+
+      const dt = cardLastFrameRef.current
+        ? Math.min(0.05, Math.max(0.001, (now - cardLastFrameRef.current) / 1000))
+        : 1 / 60;
+      cardLastFrameRef.current = now;
+
+      // Time-normalized soft exponential smoothing (buttery across 60Hz-144Hz monitors)
+      const ease = 1 - Math.exp(-15 * dt);
+      const curr = cardCurrentPosRef.current;
+      const target = cardTargetPosRef.current;
+      const dx = target.x - curr.x;
+      const dy = target.y - curr.y;
+
+      if (Math.abs(dx) <= 0.18 && Math.abs(dy) <= 0.18) {
+        curr.x = target.x;
+        curr.y = target.y;
+        if (floatingCardRef.current) {
+          floatingCardRef.current.style.transform = `translate3d(${curr.x.toFixed(2)}px, ${curr.y.toFixed(2)}px, 0)`;
+        }
+        cardLerpRafRef.current = null;
+        cardLastFrameRef.current = 0;
+        return;
+      }
+
+      curr.x += dx * ease;
+      curr.y += dy * ease;
+
+      if (floatingCardRef.current) {
+        floatingCardRef.current.style.transform = `translate3d(${curr.x.toFixed(2)}px, ${curr.y.toFixed(2)}px, 0)`;
+      }
+
+      cardLerpRafRef.current = requestAnimationFrame(tick);
+    };
+    cardLerpRafRef.current = requestAnimationFrame(tick);
+  };
+
+  // Sync card transform synchronously on first hover mount so frame 1 never flashes at (0, 0)
+  useLayoutEffect(() => {
+    if (hoverData && floatingCardRef.current) {
+      const { x, y } = cardCurrentPosRef.current;
+      floatingCardRef.current.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
+    }
+  }, [Boolean(hoverData)]);
+
+  useEffect(() => {
+    return () => {
+      stopFloatingCardLerp();
+    };
+  }, []);
+
+  // Mouse Move for Dynamic Hover Crosshair, Drag Panning & Smooth Floating Details Card
   const handleMouseMove = (e) => {
     const container = containerRef.current;
     if (!container || !boundsRef.current || visibleCandlesRef.current.length === 0) return;
@@ -963,6 +1064,7 @@ export const StockChart = React.memo(function StockChart({
 
       // Strict boundary check: If mouse leaves container bounds, immediately clear hover
       if (mouseX < 0 || mouseX > rect.width || mouseY < 0 || mouseY > rect.height) {
+        stopFloatingCardLerp();
         if (lastHoverIndexRef.current !== null) {
           lastHoverIndexRef.current = null;
           setHoverData(null);
@@ -975,11 +1077,23 @@ export const StockChart = React.memo(function StockChart({
       if (currentVisibleCandles.length === 0) return;
 
       if (mouseX < padding.left || mouseX > padding.left + chartW) {
+        stopFloatingCardLerp();
         if (lastHoverIndexRef.current !== null) {
           lastHoverIndexRef.current = null;
           setHoverData(null);
         }
         return;
+      }
+
+      const containerW = boundsRef.current.width || rect.width;
+      const containerH = boundsRef.current.height || rect.height;
+      const nextCardPos = computeFloatingCardTarget(mouseX, mouseY, containerW, containerH, panOffsetRef.current);
+      const wasActive = cardTargetPosRef.current.active;
+      cardTargetPosRef.current = { ...nextCardPos, active: true };
+      if (!wasActive) {
+        cardCurrentPosRef.current = { x: nextCardPos.x, y: nextCardPos.y };
+      } else {
+        startFloatingCardLerp();
       }
 
       const ratio = Math.max(0, Math.min(1, (mouseX - (padding.left + plotInsetX)) / Math.max(1, plotW)));
@@ -1034,8 +1148,8 @@ export const StockChart = React.memo(function StockChart({
         changePercent,
         timeStr,
         volumeFormatted,
-        containerW: boundsRef.current.width || rect.width,
-        containerH: boundsRef.current.height || rect.height,
+        containerW,
+        containerH,
         isHistorical: globalIndex < allCandles.length - 1
       });
     });
@@ -1047,6 +1161,7 @@ export const StockChart = React.memo(function StockChart({
       cancelAnimationFrame(mouseMoveRaf.current);
       mouseMoveRaf.current = null;
     }
+    stopFloatingCardLerp();
     lastHoverIndexRef.current = null;
     setHoverData(null);
   };
@@ -1682,7 +1797,7 @@ export const StockChart = React.memo(function StockChart({
           </div>
         )}
 
-        {/* Floating Crosshair Details Card (OHLC, Vol, Change & vs Live floating cleanly beside reticle) */}
+        {/* Floating Crosshair Details Card (GPU-damped rAF glide beside cursor without jarring flips) */}
         {hoverData && (() => {
           const c = hoverData.candle;
           const prevC = hoverData.index > 0 ? candles[hoverData.index - 1] : null;
@@ -1693,32 +1808,13 @@ export const StockChart = React.memo(function StockChart({
           const rangeChg = c.close - (firstCandle?.open || c.open);
           const rangeChgPct = firstCandle?.open > 0 ? (rangeChg / firstCandle.open) * 100 : 0;
           const isInspectingHistory = hoverData.isHistorical || clampedPan > 0;
-
-          const containerW = hoverData.containerW || 640;
-          const containerH = hoverData.containerH || 380;
-          const cardW = containerW < 440 ? 196 : 216;
-          const cardH = 114;
-          const minLeft = 10;
-          const maxRight = Math.max(cardW + 20, containerW - 76);
-          const minTop = clampedPan > 0 ? 44 : 10;
-          const maxBottom = Math.max(minTop + cardH + 10, containerH - 34);
-
-          const canPlaceRight = hoverData.hX + 14 + cardW <= maxRight;
-          const rawLeft = canPlaceRight ? hoverData.hX + 14 : hoverData.hX - cardW - 14;
-          const clampedLeft = Math.max(minLeft, Math.min(maxRight - cardW, rawLeft));
-
-          const canPlaceAbove = hoverData.hY - cardH - 12 >= minTop;
-          const rawTop = canPlaceAbove ? hoverData.hY - cardH - 12 : hoverData.hY + 14;
-          const clampedTop = Math.max(minTop, Math.min(maxBottom - cardH, rawTop));
+          const cardW = (hoverData.containerW || 640) < 440 ? 196 : 216;
 
           return (
             <div
+              ref={floatingCardRef}
               className={`chart-floating-cursor-card ${hoverData.isHistorical ? 'historical' : 'live'}`}
-              style={{
-                left: `${clampedLeft}px`,
-                top: `${clampedTop}px`,
-                width: `${cardW}px`
-              }}
+              style={{ width: `${cardW}px` }}
             >
               <div className="chart-floating-card-head">
                 <span className="chart-floating-card-time">{hoverData.timeStr}</span>
