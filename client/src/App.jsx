@@ -445,7 +445,10 @@ export function App() {
   return (
     <div className="app-container">
       {/* Top Navigation */}
-      <Header onToggleSidebar={handleToggleMobileSidebar} />
+      <Header
+        onToggleSidebar={handleToggleMobileSidebar}
+        onSelectSymbol={handleSelectSymbolAndGoDashboard}
+      />
 
       {/* Institutional Shell Body: Fixed Auto-Expanding Hover Sidebar + Full-Width Workspace Column */}
       <div className="desk-shell-layout">

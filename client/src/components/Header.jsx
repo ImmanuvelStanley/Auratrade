@@ -5,12 +5,23 @@ import { NotificationCenter } from './NotificationCenter';
 import { BrandLogo } from './BrandLogo';
 
 export const Header = React.memo(function Header({
-  onToggleSidebar
+  onToggleSidebar,
+  onSelectSymbol
 }) {
-  const { notifications } = useSocketNotifications();
+  const { notifications, markAllNotificationsRead } = useSocketNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
 
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  const handleToggleNotifications = () => {
+    setShowNotifications((prev) => {
+      const next = !prev;
+      if (next && unreadCount > 0 && markAllNotificationsRead) {
+        markAllNotificationsRead();
+      }
+      return next;
+    });
+  };
 
   return (
     <header className="navbar">
@@ -26,8 +37,8 @@ export const Header = React.memo(function Header({
             <button
               type="button"
               className="btn-icon"
-              title="Triggered Alerts & Notifications"
-              onClick={() => setShowNotifications(prev => !prev)}
+              title="Market Intelligence, News & Triggered Alerts"
+              onClick={handleToggleNotifications}
               id="header-notification-bell-btn"
             >
               <Bell size={17} />
@@ -49,7 +60,10 @@ export const Header = React.memo(function Header({
                     cursor: 'default'
                   }}
                 />
-                <NotificationCenter onClose={() => setShowNotifications(false)} />
+                <NotificationCenter
+                  onClose={() => setShowNotifications(false)}
+                  onSelectSymbol={onSelectSymbol}
+                />
               </>
             )}
           </div>

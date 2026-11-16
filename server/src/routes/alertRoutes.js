@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const store = require('../models/store');
 const cacheService = require('../services/cacheService');
+const marketNotificationService = require('../services/marketNotificationService');
 const { requireAuth, optionalAuth } = require('../middleware/authMiddleware');
 
 // Get all alerts for current user (supports guest/demo)
@@ -45,14 +46,48 @@ router.post('/', requireAuth, async (req, res) => {
 });
 
 // --- Notification Routes (Must be before /:id routes) ---
-// Get user notifications (triggered alerts history)
+// Get live market + related notifications alongside user's triggered alerts & orders
 router.get('/notifications', optionalAuth, async (req, res) => {
   try {
-    if (!req.user) {
-      return res.json({ success: true, notifications: [] });
+    const includeMarket = req.query.includeMarket !== '0';
+    const rawFocus = typeof req.query.focus === 'string' ? req.query.focus.split(',') : [];
+    const focusSet = new Set(rawFocus.map((s) => String(s || '').trim().toUpperCase()).filter(Boolean));
+
+    let personalNotifs = [];
+    if (req.user) {
+      const userId = req.user.id;
+      const [savedNotifs, portfolio, watchlist] = await Promise.all([
+        store.getNotifications(userId),
+        store.getPortfolio(userId).catch(() => null),
+        store.getWatchlist(userId).catch(() => [])
+      ]);
+
+      personalNotifs = (savedNotifs || []).map((n) => ({
+        ...n,
+        kind: n.kind || (n.orderId ? 'order' : 'alert'),
+        category: n.category || (n.orderId ? 'ORDER' : 'TRIGGERED')
+      }));
+
+      (portfolio?.holdings || []).forEach((h) => h?.symbol && focusSet.add(h.symbol.toUpperCase()));
+      (watchlist || []).forEach((sym) => sym && focusSet.add(String(sym).toUpperCase()));
     }
-    const userId = req.user.id;
-    const notifications = await store.getNotifications(userId);
+
+    const marketNotifs = includeMarket
+      ? await marketNotificationService.getLiveMarketNotifications(Array.from(focusSet))
+      : [];
+
+    const combined = [...personalNotifs, ...marketNotifs].slice(0, 25);
+    res.json({ success: true, notifications: combined });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Explicit endpoint for live market pulse, movers, & financial headlines
+router.get('/market-feed', async (req, res) => {
+  try {
+    const rawFocus = typeof req.query.focus === 'string' ? req.query.focus.split(',') : [];
+    const notifications = await marketNotificationService.getLiveMarketNotifications(rawFocus);
     res.json({ success: true, notifications });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });

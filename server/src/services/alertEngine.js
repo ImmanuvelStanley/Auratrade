@@ -1,5 +1,6 @@
 const store = require('../models/store');
 const cacheService = require('./cacheService');
+const marketNotificationService = require('./marketNotificationService');
 
 class AlertEngine {
   constructor() {
@@ -28,6 +29,14 @@ class AlertEngine {
     } catch (err) {
       console.error('[AlertEngine] Pending order evaluation error:', err.message);
     }
+
+    // 1b. Emit live market surge / webhook move notifications to connected clients
+    try {
+      const mktNotif = marketNotificationService.detectLiveSurgeNotification(quote, lastPrice);
+      if (mktNotif && this.io) {
+        this.io.emit('market-notification', mktNotif);
+      }
+    } catch (_) {}
 
     const activeAlerts = await store.getAllActiveAlerts();
     const symbolAlerts = activeAlerts.filter(a => a.symbol === symbol);

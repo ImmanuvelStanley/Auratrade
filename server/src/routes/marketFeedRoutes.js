@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const marketFeedManager = require('../services/marketFeedManager');
 const marketDataService = require('../services/marketDataService');
+const alertEngine = require('../services/alertEngine');
 const { requireAuth } = require('../middleware/authMiddleware');
 
 // Public status (secrets & API keys are strictly masked)
@@ -80,6 +81,9 @@ router.post('/webhook', async (req, res) => {
       ticks,
       (t) => marketDataService.ingestExternalTick(t)
     );
+    for (const q of ingested) {
+      await alertEngine.evaluateTick(q).catch(() => {});
+    }
     return res.json({
       success: true,
       verificationMode: authResult.mode,

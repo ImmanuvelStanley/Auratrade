@@ -275,4 +275,21 @@ describe('AuraTrade Backend API & Webhook Smoke Suite', () => {
       assert.ok(typeof body.data.reply === 'string' && body.data.reply.length > 40, 'AI reply must be populated');
     }
   });
+
+  it('serves live market, macro, bullion, NSE, and related notifications from /api/alerts/notifications', async () => {
+    const res = await fetch(`${baseUrl}/api/alerts/notifications?focus=AAPL,NVDA`);
+    assert.equal(res.status, 200);
+    const body = await res.json();
+    assert.equal(body.success, true);
+    assert.ok(Array.isArray(body.notifications) && body.notifications.length >= 4, 'expected live market notifications even for guests');
+    const cats = new Set(body.notifications.map((n) => n.category));
+    assert.ok(cats.has('RELATED'), 'expected RELATED focus stock notification for AAPL/NVDA');
+    assert.ok(cats.has('MACRO') || cats.has('BULLION') || cats.has('NSE') || cats.has('MOVER'), 'expected live market pulse categories');
+
+    const feedRes = await fetch(`${baseUrl}/api/alerts/market-feed?focus=TSLA`);
+    assert.equal(feedRes.status, 200);
+    const feedBody = await feedRes.json();
+    assert.equal(feedBody.success, true);
+    assert.ok(feedBody.notifications.length >= 4);
+  });
 });

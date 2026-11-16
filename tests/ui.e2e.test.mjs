@@ -171,6 +171,28 @@ const run = async () => {
     };
 
     const tabs = ['All Companies Market', 'Workstation', 'NSE Indian Market', 'Global Major Indices', 'Gold & Silver Market'];
+
+    // Verify Notification Bell shows live market & related notifications even before sign-in
+    await evalJs(`(() => {
+      const bell = document.getElementById('header-notification-bell-btn');
+      if (bell) bell.click();
+    })()`);
+    await sleep(450);
+    const notifCheck = await evalJs(`(() => {
+      const menu = document.querySelector('.notification-menu');
+      const txt = menu ? menu.innerText : '';
+      return {
+        open: !!menu,
+        hasEmptyPrompt: /No alerts triggered yet/i.test(txt),
+        hasLiveFeed: /Market & Alert Feed/i.test(txt) && (/MOVER|MACRO|BULLION|NSE|NEWS|RELATED/i.test(txt))
+      };
+    })()`);
+    assert.equal(notifCheck.open, true, 'Notification Center must open cleanly');
+    assert.equal(notifCheck.hasEmptyPrompt, false, 'Guest notifications must not be stuck empty when live market feed exists');
+    assert.equal(notifCheck.hasLiveFeed, true, 'Notification Center must render real market & related notification cards');
+    await evalJs(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))`);
+    await sleep(150);
+
     for (const tab of tabs) {
       await evalJs(`(() => {
         const btn = Array.from(document.querySelectorAll('.sidebar-topic-btn')).find((b) => b.innerText.includes(${JSON.stringify(tab)}));

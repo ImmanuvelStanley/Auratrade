@@ -246,7 +246,23 @@ export function SocketProvider({ children }) {
               icon: '/favicon.ico'
             });
           }
-          setNotifications(prev => [notification, ...prev]);
+          setNotifications(prev => {
+            const nid = notification.id || notification._id;
+            const filtered = nid ? prev.filter((item) => (item.id || item._id) !== nid) : prev;
+            return [{ ...notification, read: false }, ...filtered].slice(0, 30);
+          });
+        });
+
+        socket.on('market-notification', (mktNotif) => {
+          if (!mktNotif || !mktNotif.id) return;
+          try {
+            const dismissed = JSON.parse(sessionStorage.getItem('auratrade_dismissed_mkt_ids') || '[]');
+            if (dismissed.includes(mktNotif.id)) return;
+          } catch (_) {}
+          setNotifications(prev => {
+            const filtered = prev.filter((item) => (item.id || item._id) !== mktNotif.id);
+            return [{ ...mktNotif, read: false }, ...filtered].slice(0, 30);
+          });
         });
       } catch (err) {
         isSocketAlive = false;
@@ -368,6 +384,7 @@ export function SocketProvider({ children }) {
         socket.off('connect_error');
         socket.off('price-update');
         socket.off('alert-triggered');
+        socket.off('market-notification');
         try {
           socket.disconnect();
         } catch (_) {}
@@ -392,29 +409,59 @@ export function SocketProvider({ children }) {
     }
   }, []);
 
-  // Fetch initial notifications when user is authenticated
-  useEffect(() => {
-    if (!token) {
-      setNotifications([]);
-      return;
+  const getSessionIdSet = (key) => {
+    try {
+      const parsed = JSON.parse(sessionStorage.getItem(key) || '[]');
+      return new Set(Array.isArray(parsed) ? parsed : []);
+    } catch (_) {
+      return new Set();
     }
-    let isCurrent = true;
-    async function fetchNotifications() {
-      try {
-        const res = await fetch('/api/alerts/notifications', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await res.json();
-        if (isCurrent && data.success && Array.isArray(data.notifications)) {
-          setNotifications(data.notifications);
-        }
-      } catch (err) {
-        console.error('Failed to load initial notifications:', err);
+  };
+
+  const saveSessionIdSet = (key, idSet) => {
+    try {
+      sessionStorage.setItem(key, JSON.stringify(Array.from(idSet).slice(-120)));
+    } catch (_) {}
+  };
+
+  const fetchNotificationsFeed = useCallback(async ({ resetDismissed = false } = {}) => {
+    try {
+      if (resetDismissed) {
+        try { sessionStorage.removeItem('auratrade_dismissed_mkt_ids'); } catch (_) {}
       }
+      const focusList = Array.from(activeSubscriptionsRef.current).slice(0, 5);
+      const focusQuery = focusList.length > 0 ? `?focus=${encodeURIComponent(focusList.join(','))}` : '';
+      const headers = tokenRef.current ? { Authorization: `Bearer ${tokenRef.current}` } : {};
+      const res = await fetch(`/api/alerts/notifications${focusQuery}`, { headers });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.notifications)) {
+        const dismissed = getSessionIdSet('auratrade_dismissed_mkt_ids');
+        const readSet = getSessionIdSet('auratrade_read_mkt_ids');
+        const prepared = data.notifications
+          .filter((n) => !dismissed.has(n.id || n._id))
+          .map((n) => {
+            const nid = n.id || n._id;
+            const isMarketFeed = n.kind === 'market' || n.kind === 'news' || String(nid || '').startsWith('mkt_');
+            return {
+              ...n,
+              read: n.read || (isMarketFeed && readSet.has(nid))
+            };
+          });
+        setNotifications(prepared);
+      }
+    } catch (err) {
+      console.error('Failed to load market notifications:', err);
     }
-    fetchNotifications();
-    return () => { isCurrent = false; };
-  }, [token]);
+  }, []);
+
+  // Fetch initial & periodic real Market + Alert notifications (for BOTH guest & authenticated users)
+  useEffect(() => {
+    fetchNotificationsFeed();
+    const interval = setInterval(() => {
+      fetchNotificationsFeed();
+    }, 45000);
+    return () => clearInterval(interval);
+  }, [token, fetchNotificationsFeed]);
 
   const subscribe = useCallback((symbol) => {
     if (!symbol) return;
@@ -471,8 +518,38 @@ export function SocketProvider({ children }) {
     }
   }, []);
 
+  const markAllNotificationsRead = useCallback(async () => {
+    const readSet = getSessionIdSet('auratrade_read_mkt_ids');
+    setNotifications((prev) =>
+      prev.map((n) => {
+        const nid = n.id || n._id;
+        if (nid) readSet.add(nid);
+        return { ...n, read: true };
+      })
+    );
+    saveSessionIdSet('auratrade_read_mkt_ids', readSet);
+    try {
+      if (token) {
+        await fetch('/api/alerts/notifications/read', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
+    } catch (_) {}
+  }, [token]);
+
   const clearNotifications = useCallback(async () => {
-    setNotifications([]);
+    const dismissed = getSessionIdSet('auratrade_dismissed_mkt_ids');
+    setNotifications((prev) => {
+      prev.forEach((n) => {
+        const nid = n.id || n._id;
+        if (nid && (n.kind === 'market' || n.kind === 'news' || String(nid).startsWith('mkt_'))) {
+          dismissed.add(nid);
+        }
+      });
+      saveSessionIdSet('auratrade_dismissed_mkt_ids', dismissed);
+      return [];
+    });
     try {
       if (token) {
         await fetch('/api/alerts/notifications', {
@@ -486,9 +563,14 @@ export function SocketProvider({ children }) {
   }, [token]);
 
   const dismissNotification = useCallback(async (id) => {
+    if (id && String(id).startsWith('mkt_')) {
+      const dismissed = getSessionIdSet('auratrade_dismissed_mkt_ids');
+      dismissed.add(id);
+      saveSessionIdSet('auratrade_dismissed_mkt_ids', dismissed);
+    }
     setNotifications((prev) => prev.filter(n => (n.id || n._id) !== id));
     try {
-      if (token && id) {
+      if (token && id && !String(id).startsWith('mkt_')) {
         await fetch(`/api/alerts/notifications/${id}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${token}` }
@@ -507,6 +589,8 @@ export function SocketProvider({ children }) {
     subscribeBatch,
     clearNotifications,
     dismissNotification,
+    markAllNotificationsRead,
+    refreshMarketNotifications: () => fetchNotificationsFeed({ resetDismissed: true }),
     publishTicks
   }), [
     getQuote,
@@ -516,6 +600,8 @@ export function SocketProvider({ children }) {
     subscribeBatch,
     clearNotifications,
     dismissNotification,
+    markAllNotificationsRead,
+    fetchNotificationsFeed,
     publishTicks
   ]);
 
@@ -523,8 +609,10 @@ export function SocketProvider({ children }) {
     notifications,
     setNotifications,
     clearNotifications,
-    dismissNotification
-  }), [notifications, clearNotifications, dismissNotification]);
+    dismissNotification,
+    markAllNotificationsRead,
+    refreshMarketNotifications: () => fetchNotificationsFeed({ resetDismissed: true })
+  }), [notifications, clearNotifications, dismissNotification, markAllNotificationsRead, fetchNotificationsFeed]);
 
   const contextValue = useMemo(() => ({
     socket: socketRef.current,
@@ -540,6 +628,8 @@ export function SocketProvider({ children }) {
     subscribeBatch,
     clearNotifications,
     dismissNotification,
+    markAllNotificationsRead,
+    refreshMarketNotifications: () => fetchNotificationsFeed({ resetDismissed: true }),
     publishTicks
   }), [
     connectionStatus,
@@ -553,6 +643,8 @@ export function SocketProvider({ children }) {
     subscribeBatch,
     clearNotifications,
     dismissNotification,
+    markAllNotificationsRead,
+    fetchNotificationsFeed,
     publishTicks
   ]);
 
