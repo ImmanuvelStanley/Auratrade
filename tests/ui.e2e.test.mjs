@@ -679,6 +679,34 @@ const run = async () => {
       })()`);
       await sleep(600);
       await assertViewHealthy(`mobile390:${tab}`);
+      if (tab === 'All Companies Market') {
+        const mobileAlign = await evalJs(`(() => {
+          const strat = document.querySelector('.screener-strategy-segment');
+          const reg = document.querySelector('.screener-region-rail');
+          const bar = document.querySelector('.screener-pagination-bar');
+          const vm = document.querySelector('.screener-pagination-viewmode');
+          const sz = document.querySelector('.screener-pagination-size');
+          if (!strat || !reg || !bar || !vm || !sz) return { found: false };
+          const br = bar.getBoundingClientRect();
+          const vmr = vm.getBoundingClientRect();
+          const szr = sz.getBoundingClientRect();
+          const barCx = (br.left + br.right) / 2;
+          const vmCx = (vmr.left + vmr.right) / 2;
+          const szCx = (szr.left + szr.right) / 2;
+          return {
+            found: true,
+            stratNoOverflow: strat.scrollWidth <= strat.clientWidth + 2,
+            regNoOverflow: reg.scrollWidth <= reg.clientWidth + 2,
+            viewmodeCentered: Math.abs(vmCx - barCx) <= 8,
+            sizeCentered: Math.abs(szCx - barCx) <= 8
+          };
+        })()`);
+        assert.equal(mobileAlign.found, true, 'Mobile 390px All Companies Market controls must be rendered');
+        assert.equal(mobileAlign.stratNoOverflow, true, 'Mobile 390px Strategy segment must wrap without horizontal cutoff');
+        assert.equal(mobileAlign.regNoOverflow, true, 'Mobile 390px Markets rail must wrap without horizontal cutoff');
+        assert.equal(mobileAlign.viewmodeCentered, true, 'Mobile 390px Table/Cards switcher must align centered');
+        assert.equal(mobileAlign.sizeCentered, true, 'Mobile 390px View page-size bar must align centered');
+      }
     }
 
     assert.deepEqual(failedNetwork, [], `Failed HTTP requests detected: ${JSON.stringify(failedNetwork)}`);

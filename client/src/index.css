@@ -4733,6 +4733,53 @@ select option:checked {
     width: auto;
   }
 
+  .screener-strategy-segment {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    overflow: visible;
+    gap: 0.3rem;
+    padding: 0.3rem;
+    box-sizing: border-box;
+  }
+
+  .screener-strategy-pill {
+    width: 100%;
+    justify-content: center;
+    height: 30px;
+    padding: 0 0.45rem;
+    font-size: 0.72rem;
+    box-sizing: border-box;
+  }
+
+  .screener-strategy-pill:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .screener-region-rail {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    overflow: visible;
+    gap: 0.32rem;
+    box-sizing: border-box;
+  }
+
+  .screener-region-tab {
+    width: 100%;
+    justify-content: center;
+    height: 30px;
+    padding: 0 0.45rem;
+    font-size: 0.71rem;
+    background: rgba(148, 163, 184, 0.08);
+    border-color: rgba(148, 163, 184, 0.16);
+    box-sizing: border-box;
+  }
+
+  .screener-region-tab:first-child {
+    grid-column: 1 / -1;
+  }
+
   .screener-select-group {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -9773,12 +9820,13 @@ canvas {
 @media (max-width: 680px) {
   .screener-pagination-bar {
     flex-direction: column;
-    align-items: stretch;
-    padding: 0.65rem 0.75rem;
-    gap: 0.55rem;
+    align-items: center;
+    padding: 0.72rem 0.78rem;
+    gap: 0.58rem;
   }
 
   .screener-pagination-count {
+    width: 100%;
     text-align: center;
     font-size: 0.76rem;
   }
@@ -9786,14 +9834,30 @@ canvas {
   .screener-pagination-pages {
     justify-content: center;
     width: 100%;
+    gap: 0.3rem;
   }
 
   .screener-pagination-right {
     width: 100%;
-    justify-content: space-between;
-    gap: 0.5rem;
-    padding-top: 0.45rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.52rem;
+    padding-top: 0.55rem;
     border-top: 1px solid var(--border-subtle);
+  }
+
+  .screener-pagination-viewmode {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    box-sizing: border-box;
+  }
+
+  .screener-viewmode-btn {
+    width: 100%;
+    justify-content: center;
+    height: 30px;
   }
 
   .screener-pagination-divider {
@@ -9801,8 +9865,10 @@ canvas {
   }
 
   .screener-pagination-size {
-    justify-content: flex-end;
-    margin-left: auto;
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+    gap: 0.35rem;
   }
 }
 
