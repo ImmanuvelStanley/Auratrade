@@ -1440,30 +1440,17 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
 
       {/* Top Banner: Bullion & Metals Header */}
       <div className="glass-card bullion-hero-banner">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap', minWidth: 0, flex: '1 1 auto' }}>
-          <div
-            style={{
-              width: '48px',
-              height: '48px',
-              borderRadius: 'var(--radius-md)',
-              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.25) 0%, rgba(217, 119, 6, 0.15) 100%)',
-              border: '1px solid rgba(245, 158, 11, 0.4)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 0 24px rgba(245, 158, 11, 0.25)',
-              flexShrink: 0
-            }}
-          >
-            <GoldBarIcon size={32} />
+        <div className="bullion-hero-main">
+          <div className="bullion-hero-icon-box">
+            <GoldBarIcon size={30} />
           </div>
-          <div style={{ minWidth: 0, flex: '1 1 auto' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
-              <h2 style={{ fontSize: 'clamp(1.15rem, 3.5vw, 1.45rem)', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--text-primary)', margin: 0 }}>
+          <div className="bullion-hero-content">
+            <div className="bullion-hero-title-row">
+              <h2 className="bullion-hero-title">
                 Gold & Silver <span style={{ color: 'var(--warning-amber)' }}>Live Market Hub</span>
               </h2>
               <span
-                className="status-pill"
+                className="status-pill bullion-hero-status-pill"
                 style={{
                   background: isMcxOpen ? 'rgba(16, 185, 129, 0.18)' : 'rgba(239, 68, 68, 0.18)',
                   borderColor: isMcxOpen ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.35)',
@@ -1487,7 +1474,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                 {mcxStatus || 'MCX TRADING'}
               </span>
             </div>
-            <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+            <p className="bullion-hero-subtext">
               Real-time LBMA Spot, MCX India Futures, City-Wise Hub Rates, BIS Hallmark Jeweller Billing, and SGBs.
             </p>
           </div>
@@ -1505,7 +1492,8 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
             className="btn btn-secondary bullion-refresh-btn"
             title="Download Official Bullion Market Brief PDF"
           >
-            Market Brief <FileDown size={13} />
+            <span>Market Brief</span>
+            <FileDown size={13} />
           </button>
 
           <a
@@ -1516,7 +1504,8 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
             style={{ textDecoration: 'none' }}
             title="Verify live gold & silver rates on Official MCX India Portal"
           >
-            Official Portal <ExternalLink size={13} />
+            <span>Official Portal</span>
+            <ExternalLink size={13} />
           </a>
         </div>
       </div>

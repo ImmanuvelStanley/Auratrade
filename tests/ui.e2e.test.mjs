@@ -807,12 +807,18 @@ const run = async () => {
           const barCx = (br.left + br.right) / 2;
           const vmCx = (vmr.left + vmr.right) / 2;
           const szCx = (szr.left + szr.right) / 2;
+          const stratPills = Array.from(document.querySelectorAll('.screener-strategy-pill'));
+          const allPillsBordered = stratPills.length >= 5 && stratPills.every((el) => {
+            const cs = window.getComputedStyle(el);
+            return parseFloat(cs.borderTopWidth) >= 1 && cs.borderTopColor !== 'transparent' && cs.borderTopColor !== 'rgba(0, 0, 0, 0)';
+          });
           return {
             found: true,
             stratNoOverflow: strat.scrollWidth <= strat.clientWidth + 2,
             regNoOverflow: reg.scrollWidth <= reg.clientWidth + 2,
             viewmodeCentered: Math.abs(vmCx - barCx) <= 8,
-            sizeCentered: Math.abs(szCx - barCx) <= 8
+            sizeCentered: Math.abs(szCx - barCx) <= 8,
+            allPillsBordered
           };
         })()`);
         assert.equal(mobileAlign.found, true, 'Mobile 390px All Companies Market controls must be rendered');
@@ -820,6 +826,34 @@ const run = async () => {
         assert.equal(mobileAlign.regNoOverflow, true, 'Mobile 390px Markets rail must wrap without horizontal cutoff');
         assert.equal(mobileAlign.viewmodeCentered, true, 'Mobile 390px Table/Cards switcher must align centered');
         assert.equal(mobileAlign.sizeCentered, true, 'Mobile 390px View page-size bar must align centered');
+        assert.equal(mobileAlign.allPillsBordered, true, 'Mobile 390px Strategy pills must all have visible tactile borders');
+      }
+      if (tab === 'Gold & Silver Market') {
+        const bullionMobile = await evalJs(`(() => {
+          const hero = document.querySelector('.bullion-hero-banner');
+          const actions = document.querySelector('.bullion-hero-actions');
+          const ist = document.querySelector('.bullion-ist-pill');
+          const btns = Array.from(document.querySelectorAll('.bullion-hero-actions .bullion-refresh-btn'));
+          if (!hero || !actions || !ist || btns.length < 2) return { found: false };
+          const ar = actions.getBoundingClientRect();
+          const ir = ist.getBoundingClientRect();
+          const b0 = btns[0].getBoundingClientRect();
+          const b1 = btns[1].getBoundingClientRect();
+          return {
+            found: true,
+            istFullWidth: Math.abs(ir.width - ar.width) <= 4,
+            istNoOverflow: ist.scrollWidth <= ist.clientWidth + 2,
+            btnPairWidth: Math.abs(b0.width - b1.width) <= 4,
+            btnPairTop: Math.abs(b0.top - b1.top) <= 2,
+            btnPairHeight: Math.abs(b0.height - b1.height) <= 2
+          };
+        })()`);
+        assert.equal(bullionMobile.found, true, 'Mobile 390px Gold & Silver Market hero banner controls must be rendered');
+        assert.equal(bullionMobile.istFullWidth, true, 'Mobile 390px bullion IST clock pill must span full width of action card');
+        assert.equal(bullionMobile.istNoOverflow, true, 'Mobile 390px bullion IST clock pill must not clip or overflow text');
+        assert.equal(bullionMobile.btnPairWidth, true, 'Mobile 390px bullion Market Brief and Official Portal buttons must have balanced equal width');
+        assert.equal(bullionMobile.btnPairTop, true, 'Mobile 390px bullion action buttons must be aligned horizontally');
+        assert.equal(bullionMobile.btnPairHeight, true, 'Mobile 390px bullion action buttons must match in height');
       }
     }
 
