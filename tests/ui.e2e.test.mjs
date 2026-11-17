@@ -672,13 +672,101 @@ const run = async () => {
     assert.equal(revealCheck.emblemOnHorizon, true, 'Mobile 390px emblem square must sit centered across the horizon beam');
     await sleep(1100);
 
-    for (const tab of ['All Companies Market', 'Paper Trading', 'Gold & Silver Market']) {
+    for (const tab of ['All Companies Market', 'Workstation', 'Paper Trading', 'Gold & Silver Market']) {
       await evalJs(`(() => {
         const btn = Array.from(document.querySelectorAll('.sidebar-topic-btn')).find((b) => b.innerText.includes(${JSON.stringify(tab)}));
         if (btn) btn.click();
       })()`);
       await sleep(600);
       await assertViewHealthy(`mobile390:${tab}`);
+      if (tab === 'Workstation') {
+        await cdp('Emulation.setTouchEmulationEnabled', { enabled: true });
+        const touchBox = await evalJs(`(() => {
+          const el = document.querySelector('.chart-canvas-container');
+          if (!el) return null;
+          el.scrollIntoView({ block: 'center' });
+          const r = el.getBoundingClientRect();
+          return {
+            left: r.left,
+            right: r.right,
+            top: r.top,
+            bottom: r.bottom,
+            width: r.width,
+            height: r.height,
+            scrollY: window.scrollY
+          };
+        })()`);
+        assert.ok(touchBox, 'Mobile 390px Workstation chart container must be present');
+
+        const yMid = Math.round(touchBox.top + touchBox.height * 0.55);
+        const xStart = Math.round(touchBox.left + touchBox.width * 0.25);
+        await cdp('Input.dispatchTouchEvent', {
+          type: 'touchStart',
+          touchPoints: [{ x: xStart, y: yMid, radiusX: 8, radiusY: 8, force: 1, id: 1 }]
+        });
+        await sleep(90);
+        const touchFirst = await evalJs(`(() => {
+          const card = document.querySelector('.chart-floating-cursor-card');
+          const container = document.querySelector('.chart-canvas-container');
+          if (!card || !container) return { present: false };
+          const cr = card.getBoundingClientRect();
+          const pr = container.getBoundingClientRect();
+          const timeEl = card.querySelector('.chart-floating-card-time');
+          return {
+            present: true,
+            left: cr.left,
+            time: timeEl ? timeEl.innerText : '',
+            insideContainer: cr.left >= pr.left && cr.right <= pr.right && cr.top >= pr.top && cr.bottom <= pr.bottom
+          };
+        })()`);
+        assert.equal(touchFirst.present, true, 'Mobile 390px chart touchStart must open floating details card');
+        assert.equal(touchFirst.insideContainer, true, 'Mobile 390px floating card must stay inside chart container');
+
+        for (const frac of [0.42, 0.58, 0.76]) {
+          await cdp('Input.dispatchTouchEvent', {
+            type: 'touchMove',
+            touchPoints: [{
+              x: Math.round(touchBox.left + touchBox.width * frac),
+              y: yMid + 4,
+              radiusX: 8,
+              radiusY: 8,
+              force: 1,
+              id: 1
+            }]
+          });
+          await sleep(45);
+        }
+        await sleep(60);
+        const touchAfter = await evalJs(`(() => {
+          const card = document.querySelector('.chart-floating-cursor-card');
+          const container = document.querySelector('.chart-canvas-container');
+          if (!card || !container) return { present: false };
+          const cr = card.getBoundingClientRect();
+          const pr = container.getBoundingClientRect();
+          const timeEl = card.querySelector('.chart-floating-card-time');
+          const hasHistBanner = !!document.querySelector('.chart-floating-history-banner');
+          return {
+            present: true,
+            left: cr.left,
+            time: timeEl ? timeEl.innerText : '',
+            insideContainer: cr.left >= pr.left && cr.right <= pr.right && cr.top >= pr.top && cr.bottom <= pr.bottom,
+            scrollDelta: Math.abs(window.scrollY - ${touchBox.scrollY}),
+            hasHistBanner
+          };
+        })()`);
+        assert.equal(touchAfter.present, true, 'Mobile 390px chart floating card must remain active during horizontal scrub');
+        assert.equal(touchAfter.insideContainer, true, 'Mobile 390px chart floating card must stay inside bounds on sweep');
+        assert.notEqual(touchAfter.time, touchFirst.time, 'Mobile 390px chart scrub must advance smoothly to new bar details');
+        assert.notEqual(Math.round(touchAfter.left), Math.round(touchFirst.left), 'Mobile card must dodge finger smoothly across sweep');
+        assert.ok(touchAfter.scrollDelta <= 2, `Mobile horizontal chart inspect must lock scroll cleanly (delta=${touchAfter.scrollDelta})`);
+        assert.equal(touchAfter.hasHistBanner, false, '1-finger detail scrub must not shift historical pan mid-inspection');
+
+        await cdp('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await sleep(80);
+        const touchClosed = await evalJs(`!document.querySelector('.chart-floating-cursor-card')`);
+        assert.equal(touchClosed, true, 'Mobile chart floating card must dismiss cleanly on touchEnd');
+        await cdp('Emulation.setTouchEmulationEnabled', { enabled: false });
+      }
       if (tab === 'All Companies Market') {
         const mobileAlign = await evalJs(`(() => {
           const strat = document.querySelector('.screener-strategy-segment');

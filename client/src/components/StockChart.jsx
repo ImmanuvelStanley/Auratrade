@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState, useMemo, useImperativeHandle, useCallback } from 'react';
 import { useSocketQuote } from '../context/SocketContext';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
@@ -134,6 +134,235 @@ function normalizeAndAnchorCandles(rawCandles, targetPrice, activeRange, sym) {
   return cleaned;
 }
 
+// Isolated chart inspection overlay: keeps reticle, axis pills, and floating details card at 60/120fps
+// without re-rendering StockChart on cursor or touch movement.
+const ChartInspectorOverlay = React.memo(
+  React.forwardRef(function ChartInspectorOverlay(
+    { chartCurr, chartType, range, clampedPan, firstOpen, latestClose },
+    ref
+  ) {
+    const [hoverData, setHoverData] = useState(null);
+    const cardRef = useRef(null);
+    const reticleRef = useRef(null);
+    const yBadgeRef = useRef(null);
+    const xBadgeRef = useRef(null);
+    const latestPosRef = useRef({ hX: 0, hY: 0 });
+    const cardTargetPosRef = useRef({ x: 0, y: 0, active: false, side: 'right' });
+    const cardCurrentPosRef = useRef({ x: 0, y: 0 });
+    const cardLerpRafRef = useRef(0);
+    const cardLastFrameRef = useRef(0);
+
+    const stopLerp = useCallback(() => {
+      if (cardLerpRafRef.current) {
+        cancelAnimationFrame(cardLerpRafRef.current);
+        cardLerpRafRef.current = 0;
+      }
+      cardLastFrameRef.current = 0;
+    }, []);
+
+    const applyCardTransform = useCallback((x, y) => {
+      if (cardRef.current) {
+        cardRef.current.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
+      }
+    }, []);
+
+    const applyMarkerTransforms = useCallback((hX, hY) => {
+      if (reticleRef.current) {
+        reticleRef.current.style.transform = `translate3d(${hX.toFixed(2)}px, ${hY.toFixed(2)}px, 0)`;
+      }
+      if (yBadgeRef.current) {
+        yBadgeRef.current.style.transform = `translate3d(0, ${hY.toFixed(2)}px, 0) translateY(-50%)`;
+      }
+      if (xBadgeRef.current) {
+        xBadgeRef.current.style.transform = `translate3d(${hX.toFixed(2)}px, 0, 0) translateX(-50%)`;
+      }
+    }, []);
+
+    const startLerp = useCallback(() => {
+      if (cardLerpRafRef.current) return;
+      const tick = (now) => {
+        if (!cardTargetPosRef.current.active) {
+          cardLerpRafRef.current = 0;
+          cardLastFrameRef.current = 0;
+          return;
+        }
+        const dt = cardLastFrameRef.current
+          ? Math.min(0.05, Math.max(0.001, (now - cardLastFrameRef.current) / 1000))
+          : 1 / 60;
+        cardLastFrameRef.current = now;
+
+        const ease = 1 - Math.exp(-20 * dt);
+        const curr = cardCurrentPosRef.current;
+        const target = cardTargetPosRef.current;
+        const dx = target.x - curr.x;
+        const dy = target.y - curr.y;
+
+        if (Math.abs(dx) <= 0.2 && Math.abs(dy) <= 0.2) {
+          curr.x = target.x;
+          curr.y = target.y;
+          applyCardTransform(curr.x, curr.y);
+          cardLerpRafRef.current = 0;
+          cardLastFrameRef.current = 0;
+          return;
+        }
+
+        curr.x += dx * ease;
+        curr.y += dy * ease;
+        applyCardTransform(curr.x, curr.y);
+        cardLerpRafRef.current = requestAnimationFrame(tick);
+      };
+      cardLerpRafRef.current = requestAnimationFrame(tick);
+    }, [applyCardTransform]);
+
+    useLayoutEffect(() => {
+      if (hoverData) {
+        applyMarkerTransforms(latestPosRef.current.hX, latestPosRef.current.hY);
+        applyCardTransform(cardCurrentPosRef.current.x, cardCurrentPosRef.current.y);
+      }
+    }, [Boolean(hoverData), applyMarkerTransforms, applyCardTransform]);
+
+    useEffect(() => () => stopLerp(), [stopLerp]);
+
+    useImperativeHandle(ref, () => ({
+      getSide: () => cardTargetPosRef.current.side || 'right',
+      update: (payload, nextCardPos, instant = false) => {
+        latestPosRef.current = { hX: payload.hX, hY: payload.hY };
+        const wasActive = cardTargetPosRef.current.active;
+        cardTargetPosRef.current = { ...nextCardPos, active: true };
+
+        if (!wasActive || instant) {
+          stopLerp();
+          cardCurrentPosRef.current = { x: nextCardPos.x, y: nextCardPos.y };
+          applyCardTransform(nextCardPos.x, nextCardPos.y);
+        } else {
+          startLerp();
+        }
+
+        applyMarkerTransforms(payload.hX, payload.hY);
+
+        setHoverData((prev) => {
+          if (
+            prev &&
+            prev.index === payload.index &&
+            prev.hX === payload.hX &&
+            prev.hY === payload.hY &&
+            prev.candle.close === payload.candle.close
+          ) {
+            return prev;
+          }
+          return payload;
+        });
+      },
+      clear: () => {
+        stopLerp();
+        cardTargetPosRef.current.active = false;
+        setHoverData((prev) => (prev === null ? prev : null));
+      }
+    }), [stopLerp, startLerp, applyCardTransform, applyMarkerTransforms]);
+
+    if (!hoverData) return null;
+
+    const c = hoverData.candle;
+    const prevClose = hoverData.prevClose;
+    const chg = prevClose !== null && prevClose !== undefined ? c.close - prevClose : hoverData.change;
+    const chgPct = prevClose && prevClose > 0 ? (chg / prevClose) * 100 : hoverData.changePercent;
+    const isPos = chg >= 0;
+    const chgSign = isPos ? '+' : '-';
+    const barSpread = Math.max(0, c.high - c.low);
+    const barSpreadPct = c.low > 0 ? (barSpread / c.low) * 100 : 0;
+
+    const baseOpen = firstOpen || c.open;
+    const rangeChg = c.close - baseOpen;
+    const rangeChgPct = baseOpen > 0 ? (rangeChg / baseOpen) * 100 : 0;
+    const isInspectingHistory = hoverData.isHistorical || clampedPan > 0;
+
+    const toLiveDiff = latestClose !== undefined && latestClose !== null ? latestClose - c.close : 0;
+    const toLivePct = c.close > 0 ? (toLiveDiff / c.close) * 100 : 0;
+    const toLiveSign = toLiveDiff >= 0 ? '+' : '-';
+    const cardW = hoverData.cardW || 238;
+
+    return (
+      <>
+        <div ref={reticleRef} className="chart-floating-reticle">
+          <div className="chart-floating-reticle-ping" />
+          <div className="chart-floating-reticle-core" />
+        </div>
+
+        <div
+          ref={cardRef}
+          className={`chart-floating-cursor-card ${hoverData.isHistorical ? 'historical' : 'live'}`}
+          style={{ width: `${cardW}px` }}
+        >
+          <div className="chart-floating-card-head">
+            <span className="chart-floating-card-time">{hoverData.timeStr}</span>
+            <span className={`chart-floating-card-tag ${hoverData.isHistorical ? 'hist' : 'curr'}`}>
+              {hoverData.isHistorical ? 'HIST' : (chartType === 'candle' ? 'BAR' : 'TICK')}
+            </span>
+          </div>
+
+          <div className="chart-floating-card-price-row">
+            <span className="chart-floating-card-price">{chartCurr}{c.close.toFixed(2)}</span>
+            <span className={`chart-floating-card-pct ${isPos ? 'bull' : 'bear'}`}>
+              {chgSign}{chartCurr}{Math.abs(chg).toFixed(2)} ({chgSign}{Math.abs(chgPct).toFixed(2)}%)
+            </span>
+          </div>
+
+          <div className="chart-floating-card-ohlc">
+            <span><strong>O:</strong> {chartCurr}{c.open.toFixed(2)}</span>
+            <span><strong>H:</strong> <em className="bull">{chartCurr}{c.high.toFixed(2)}</em></span>
+            <span><strong>L:</strong> <em className="bear">{chartCurr}{c.low.toFixed(2)}</em></span>
+            <span><strong>C:</strong> <em className="cyan">{chartCurr}{c.close.toFixed(2)}</em></span>
+          </div>
+
+          <div className="chart-floating-card-meta">
+            <span><strong>Vol:</strong> {hoverData.volumeFormatted}</span>
+            <span><strong>Rng:</strong> {chartCurr}{barSpread.toFixed(2)} ({barSpreadPct.toFixed(2)}%)</span>
+          </div>
+
+          <div className="chart-floating-card-foot">
+            {isInspectingHistory && latestClose !== undefined && latestClose !== null ? (
+              <>
+                <span><strong>To Live:</strong></span>
+                <span className={toLiveDiff >= 0 ? 'bull' : 'bear'}>
+                  Now {toLiveSign}{chartCurr}{Math.abs(toLiveDiff).toFixed(2)} ({toLiveSign}{Math.abs(toLivePct).toFixed(2)}%)
+                </span>
+              </>
+            ) : (
+              <>
+                <span><strong>{range} Return:</strong></span>
+                <span className={rangeChg >= 0 ? 'bull' : 'bear'}>
+                  {rangeChg >= 0 ? '+' : '-'}{chartCurr}{Math.abs(rangeChg).toFixed(2)} ({rangeChg >= 0 ? '+' : ''}{rangeChgPct.toFixed(2)}%)
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+
+        <div
+          ref={yBadgeRef}
+          className="chart-floating-y-badge"
+          style={{
+            background: hoverData.isHistorical ? 'linear-gradient(135deg, #d97706, #b45309)' : undefined,
+            borderColor: hoverData.isHistorical ? '#f59e0b' : undefined
+          }}
+        >
+          {chartCurr}{c.close.toFixed(2)}
+        </div>
+
+        <div
+          ref={xBadgeRef}
+          className="chart-floating-x-badge"
+          style={{
+            borderColor: hoverData.isHistorical ? 'rgba(245, 158, 11, 0.5)' : undefined
+          }}
+        >
+          {hoverData.timeStr}
+        </div>
+      </>
+    );
+  })
+);
+
 export const StockChart = React.memo(function StockChart({
   symbol,
   liveQuote: propLiveQuote,
@@ -159,15 +388,21 @@ export const StockChart = React.memo(function StockChart({
   const baseCanvasRef = useRef(null);
   const overlayCanvasRef = useRef(null);
   const containerRef = useRef(null);
+  const containerRectRef = useRef(null);
   const boundsRef = useRef(null);
-  const mouseMoveRaf = useRef(null);
+  const pointerRafRef = useRef(null);
+  const pendingPointerRef = useRef(null);
   const lastHoverIndexRef = useRef(null);
-  const isMouseOverRef = useRef(false);
-  const floatingCardRef = useRef(null);
-  const cardTargetPosRef = useRef({ x: 0, y: 0, active: false, side: 'right' });
-  const cardCurrentPosRef = useRef({ x: 0, y: 0 });
-  const cardLerpRafRef = useRef(null);
-  const cardLastFrameRef = useRef(0);
+  const lastHoverPointRef = useRef(null);
+  const isPointerActiveRef = useRef(false);
+  const isTouchInspectingRef = useRef(false);
+  const pendingLiveQuoteRef = useRef(null);
+  const liveDataPosRef = useRef(null);
+  const liveBadgeRef = useRef(null);
+  const inspectorRef = useRef(null);
+  const tickerTagRef = useRef(null);
+  const tickerTimeRef = useRef(null);
+  const lastInspectMetaRef = useRef({ timeStr: '', isHistorical: false });
 
   const { user } = useAuth();
   const readWorkstationPrefs = () => {
@@ -199,7 +434,7 @@ export const StockChart = React.memo(function StockChart({
     candleHistoryCache.set(initialCacheKey, seeded);
     return seeded;
   });
-  const [hoverData, setHoverData] = useState(null);
+  const [isInspecting, setIsInspecting] = useState(false);
   const [liveDataPos, setLiveDataPos] = useState(null);
   const [canvasDimensions, setCanvasDimensions] = useState({ width: 0, height: 0 });
   const [loading, setLoading] = useState(false);
@@ -317,25 +552,24 @@ export const StockChart = React.memo(function StockChart({
     loadCandles();
     return () => {
       isMounted = false;
-      if (mouseMoveRaf.current) cancelAnimationFrame(mouseMoveRaf.current);
+      if (pointerRafRef.current) cancelAnimationFrame(pointerRafRef.current);
     };
   }, [symbol, range]);
 
-  // Seamlessly append or update latest live quote into the chart without creating a cliff bar
-  useEffect(() => {
-    if (!liveQuote || !liveQuote.price || candles.length === 0 || calendarDateState.mode !== 'live') return;
+  const applyLiveQuoteUpdate = useCallback((quote) => {
+    if (!quote || !quote.price) return;
     setCandles((prev) => {
       if (prev.length === 0) return prev;
       const last = prev[prev.length - 1];
-      if (last.close === liveQuote.price) return prev;
+      if (last.close === quote.price) return prev;
 
-      const diffPct = Math.abs(liveQuote.price - last.close) / Math.max(0.01, last.close);
+      const diffPct = Math.abs(quote.price - last.close) / Math.max(0.01, last.close);
       // If initial quote sync or baseline differs by >0.8%, proportionally scale the whole series so the final bar stays natural
       if (diffPct > 0.008) {
-        const scale = liveQuote.price / last.close;
+        const scale = quote.price / last.close;
         return prev.map((bar, idx) => {
           const sOpen = parseFloat((bar.open * scale).toFixed(2));
-          const sClose = idx === prev.length - 1 ? parseFloat(liveQuote.price.toFixed(2)) : parseFloat((bar.close * scale).toFixed(2));
+          const sClose = idx === prev.length - 1 ? parseFloat(quote.price.toFixed(2)) : parseFloat((bar.close * scale).toFixed(2));
           const sHigh = parseFloat(Math.max(sOpen, sClose, bar.high * scale).toFixed(2));
           const sLow = parseFloat(Math.min(sOpen, sClose, bar.low * scale).toFixed(2));
           return {
@@ -352,15 +586,25 @@ export const StockChart = React.memo(function StockChart({
       const updated = [...prev];
       const updatedLast = { ...last };
 
-      updatedLast.close = parseFloat(liveQuote.price.toFixed(2));
-      updatedLast.high = parseFloat(Math.max(updatedLast.high, updatedLast.open, liveQuote.price).toFixed(2));
-      updatedLast.low = parseFloat(Math.min(updatedLast.low, updatedLast.open, liveQuote.price).toFixed(2));
+      updatedLast.close = parseFloat(quote.price.toFixed(2));
+      updatedLast.high = parseFloat(Math.max(updatedLast.high, updatedLast.open, quote.price).toFixed(2));
+      updatedLast.low = parseFloat(Math.min(updatedLast.low, updatedLast.open, quote.price).toFixed(2));
       updatedLast.volume = Math.max(12000, (updatedLast.volume || 148000) + Math.floor(80 + Math.random() * 240));
 
       updated[updated.length - 1] = updatedLast;
       return updated;
     });
-  }, [liveQuote]);
+  }, []);
+
+  // Seamlessly append or update latest live quote into the chart without disrupting active touch scrubbing
+  useEffect(() => {
+    if (!liveQuote || !liveQuote.price || candles.length === 0 || calendarDateState.mode !== 'live') return;
+    if (isTouchInspectingRef.current) {
+      pendingLiveQuoteRef.current = liveQuote;
+      return;
+    }
+    applyLiveQuoteUpdate(liveQuote);
+  }, [liveQuote, candles.length, calendarDateState.mode, applyLiveQuoteUpdate]);
 
   // Container resize observer: handles sizing without re-creating canvas buffers on mouse moves
   useEffect(() => {
@@ -371,6 +615,7 @@ export const StockChart = React.memo(function StockChart({
     let lastH = 0;
 
     const ro = new ResizeObserver((entries) => {
+      containerRectRef.current = container.getBoundingClientRect();
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
         if (width > 0 && height > 0 && (Math.abs(width - lastW) > 4 || Math.abs(height - lastH) > 4)) {
@@ -381,8 +626,16 @@ export const StockChart = React.memo(function StockChart({
       }
     });
 
+    const invalidateRect = () => {
+      containerRectRef.current = null;
+    };
+
     ro.observe(container);
-    return () => ro.disconnect();
+    window.addEventListener('scroll', invalidateRect, { passive: true });
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('scroll', invalidateRect);
+    };
   }, []);
 
   // Calculate historical viewing window & visible candles
@@ -684,12 +937,22 @@ export const StockChart = React.memo(function StockChart({
     }
 
     // Update live badge coordinates for the animated DOM floating beacon
+    const nextLivePos = isLiveOnY
+      ? { y: liveY, price: liveCandle.close, isBullish, isHistorical: clampedPan > 0 }
+      : null;
+    liveDataPosRef.current = nextLivePos;
     setLiveDataPos((prev) => {
-      if (!isLiveOnY) return null;
-      if (prev && prev.y === liveY && prev.price === liveCandle.close && prev.isBullish === isBullish && prev.isHistorical === (clampedPan > 0)) {
+      if (!nextLivePos) return null;
+      if (
+        prev &&
+        prev.y === nextLivePos.y &&
+        prev.price === nextLivePos.price &&
+        prev.isBullish === nextLivePos.isBullish &&
+        prev.isHistorical === nextLivePos.isHistorical
+      ) {
         return prev;
       }
-      return { y: liveY, price: liveCandle.close, isBullish, isHistorical: clampedPan > 0 };
+      return nextLivePos;
     });
 
     if (chartType === 'area') {
@@ -848,81 +1111,78 @@ export const StockChart = React.memo(function StockChart({
     }
   }, [visibleCandles, chartType, lockedAsset, symbol, range, canvasDimensions.width, canvasDimensions.height, theme, clampedPan]);
 
-  // 2. OVERLAY CANVAS RENDER: Draws ONLY crosshairs on a transparent layer. Takes <0.05ms with ZERO base chart buffer resets!
-  useEffect(() => {
+  // Imperative overlay crosshair renderer: runs in <0.05ms directly inside pointer rAF with zero React delay
+  const drawOverlayCrosshair = useCallback((point) => {
     const overlayCanvas = overlayCanvasRef.current;
-    if (!overlayCanvas) return;
+    const b = boundsRef.current;
+    if (!overlayCanvas || !b) return;
 
     const ctx = overlayCanvas.getContext('2d');
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    const rect = overlayCanvas.getBoundingClientRect();
-    const width = rect.width;
-    const height = rect.height;
-    if (width === 0 || height === 0) return;
+    const width = b.width;
+    const height = b.height;
+    if (!width || !height) return;
 
     ctx.resetTransform ? ctx.resetTransform() : ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.scale(dpr, dpr);
     ctx.clearRect(0, 0, width, height);
 
-    if (!hoverData) return;
+    if (!point) return;
 
-    const { hX, hY, yOpen, yClose } = hoverData;
-    const padding = { top: 44, right: 70, bottom: 28, left: 16 };
-    const chartW = width - padding.left - padding.right;
-    const chartH = height - padding.top - padding.bottom;
-    const plotInsetX = Math.min(20, Math.max(12, chartW * 0.028));
-    const plotW = Math.max(1, chartW - plotInsetX * 2);
+    const { hX, hY, yOpen, yClose, isHistorical } = point;
+    const { padding, chartW, chartH, plotW = chartW } = b;
 
-    // Vertical crosshair
     ctx.save();
     ctx.setLineDash([4, 4]);
-    ctx.strokeStyle = hoverData.isHistorical ? 'rgba(245, 158, 11, 0.55)' : 'rgba(56, 189, 248, 0.45)';
+    ctx.strokeStyle = isHistorical ? 'rgba(245, 158, 11, 0.55)' : 'rgba(56, 189, 248, 0.45)';
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(hX, padding.top);
     ctx.lineTo(hX, padding.top + chartH);
     ctx.stroke();
 
-    // Horizontal crosshair
     ctx.beginPath();
     ctx.moveTo(padding.left, hY);
     ctx.lineTo(padding.left + chartW, hY);
     ctx.stroke();
     ctx.restore();
 
-    // Point illumination
     if (chartType === 'area') {
       ctx.beginPath();
       ctx.arc(hX, hY, 8, 0, Math.PI * 2);
-      ctx.fillStyle = hoverData.isHistorical ? 'rgba(245, 158, 11, 0.25)' : 'rgba(56, 189, 248, 0.25)';
+      ctx.fillStyle = isHistorical ? 'rgba(245, 158, 11, 0.25)' : 'rgba(56, 189, 248, 0.25)';
       ctx.fill();
 
       ctx.beginPath();
       ctx.arc(hX, hY, 4, 0, Math.PI * 2);
-      ctx.fillStyle = hoverData.isHistorical ? '#f59e0b' : '#38bdf8';
+      ctx.fillStyle = isHistorical ? '#f59e0b' : '#38bdf8';
       ctx.fill();
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 1.5;
       ctx.stroke();
     } else {
-      // Candlestick halo highlight
-      const candleW = Math.max(3, Math.min(22, (plotW / (visibleCandles.length || 1)) * 0.68));
+      const candleW = Math.max(3, Math.min(22, (plotW / (visibleCandlesRef.current.length || 1)) * 0.68));
       const top = Math.min(yOpen, yClose);
       const barH = Math.max(2, Math.abs(yClose - yOpen));
 
-      ctx.strokeStyle = hoverData.isHistorical ? 'rgba(245, 158, 11, 0.8)' : 'rgba(56, 189, 248, 0.75)';
+      ctx.strokeStyle = isHistorical ? 'rgba(245, 158, 11, 0.8)' : 'rgba(56, 189, 248, 0.75)';
       ctx.lineWidth = 1.5;
       ctx.strokeRect(hX - candleW / 2 - 2, top - 2, candleW + 4, barH + 4);
 
       ctx.beginPath();
       ctx.arc(hX, hY, 4, 0, Math.PI * 2);
-      ctx.fillStyle = hoverData.isHistorical ? '#f59e0b' : '#38bdf8';
+      ctx.fillStyle = isHistorical ? '#f59e0b' : '#38bdf8';
       ctx.fill();
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 1.5;
       ctx.stroke();
     }
-  }, [hoverData, chartType, visibleCandles.length, canvasDimensions.width, canvasDimensions.height]);
+  }, [chartType]);
+
+  // Redraw overlay crosshair if chart dimensions or candle view changes while inspecting
+  useEffect(() => {
+    drawOverlayCrosshair(lastHoverPointRef.current);
+  }, [drawOverlayCrosshair, visibleCandles.length, canvasDimensions.width, canvasDimensions.height]);
 
   // Mouse Down for Drag-to-Pan
   const handleMouseDown = (e) => {
@@ -938,17 +1198,31 @@ export const StockChart = React.memo(function StockChart({
     setIsDragging(false);
   };
 
-  const computeFloatingCardTarget = (cursorX, cursorY, containerW, containerH, panBars) => {
-    const cardW = containerW < 440 ? 214 : 238;
-    const cardH = 136;
-    const gapX = 18;
-    const minLeft = 10;
-    const maxRight = Math.max(cardW + 20, containerW - 78);
-    const minTop = panBars > 0 ? 44 : 10;
-    const maxBottom = Math.max(minTop + cardH + 10, containerH - 34);
+  const computeFloatingCardTarget = useCallback((cursorX, cursorY, containerW, containerH, panBars) => {
+    const isCompact = containerW < 460;
+    const cardW = isCompact ? Math.min(198, Math.max(168, containerW - 96)) : 238;
+    const cardH = isCompact ? 116 : 136;
+    const minLeft = 8;
+    const maxRight = Math.max(cardW + 16, containerW - 76);
+    const minTop = panBars > 0 ? 44 : 8;
+    const maxBottom = Math.max(minTop + cardH + 8, containerH - 32);
 
-    // Hysteresis horizontal side flip so cursor near boundary never shakes left <-> right
-    let side = cardTargetPosRef.current.side || 'right';
+    const prevSide = inspectorRef.current ? inspectorRef.current.getSide() : 'right';
+
+    if (isCompact) {
+      // On narrow mobile screens, park compact card in opposite corner away from thumb with center hysteresis
+      let side = prevSide;
+      if (cursorX < containerW * 0.42) side = 'right';
+      else if (cursorX > containerW * 0.58) side = 'left';
+      const x = side === 'right' ? maxRight - cardW : minLeft;
+      const y = cursorY < containerH * 0.48
+        ? Math.max(minTop, maxBottom - cardH)
+        : minTop;
+      return { x, y, side, cardW };
+    }
+
+    const gapX = 18;
+    let side = prevSide;
     if (side === 'right' && cursorX + gapX + cardW > maxRight) {
       side = 'left';
     } else if (side === 'left' && cursorX - gapX - cardW < minLeft) {
@@ -959,87 +1233,182 @@ export const StockChart = React.memo(function StockChart({
 
     const rawX = side === 'right' ? cursorX + gapX : cursorX - cardW - gapX;
     const x = Math.max(minLeft, Math.min(maxRight - cardW, rawX));
-
-    // Follow cursorY smoothly vertically instead of jumping +/-140px with jagged candle wicks
     const rawY = cursorY - cardH * 0.5;
     const y = Math.max(minTop, Math.min(maxBottom - cardH, rawY));
 
-    return { x, y, side };
-  };
-
-  const stopFloatingCardLerp = () => {
-    if (cardLerpRafRef.current) {
-      cancelAnimationFrame(cardLerpRafRef.current);
-      cardLerpRafRef.current = null;
-    }
-    cardTargetPosRef.current.active = false;
-    cardLastFrameRef.current = 0;
-  };
-
-  const startFloatingCardLerp = () => {
-    if (cardLerpRafRef.current) return;
-    const tick = (now) => {
-      if (!cardTargetPosRef.current.active) {
-        cardLerpRafRef.current = null;
-        cardLastFrameRef.current = 0;
-        return;
-      }
-
-      const dt = cardLastFrameRef.current
-        ? Math.min(0.05, Math.max(0.001, (now - cardLastFrameRef.current) / 1000))
-        : 1 / 60;
-      cardLastFrameRef.current = now;
-
-      // Time-normalized soft exponential smoothing (buttery across 60Hz-144Hz monitors)
-      const ease = 1 - Math.exp(-15 * dt);
-      const curr = cardCurrentPosRef.current;
-      const target = cardTargetPosRef.current;
-      const dx = target.x - curr.x;
-      const dy = target.y - curr.y;
-
-      if (Math.abs(dx) <= 0.18 && Math.abs(dy) <= 0.18) {
-        curr.x = target.x;
-        curr.y = target.y;
-        if (floatingCardRef.current) {
-          floatingCardRef.current.style.transform = `translate3d(${curr.x.toFixed(2)}px, ${curr.y.toFixed(2)}px, 0)`;
-        }
-        cardLerpRafRef.current = null;
-        cardLastFrameRef.current = 0;
-        return;
-      }
-
-      curr.x += dx * ease;
-      curr.y += dy * ease;
-
-      if (floatingCardRef.current) {
-        floatingCardRef.current.style.transform = `translate3d(${curr.x.toFixed(2)}px, ${curr.y.toFixed(2)}px, 0)`;
-      }
-
-      cardLerpRafRef.current = requestAnimationFrame(tick);
-    };
-    cardLerpRafRef.current = requestAnimationFrame(tick);
-  };
-
-  // Sync card transform synchronously on first hover mount so frame 1 never flashes at (0, 0)
-  useLayoutEffect(() => {
-    if (hoverData && floatingCardRef.current) {
-      const { x, y } = cardCurrentPosRef.current;
-      floatingCardRef.current.style.transform = `translate3d(${x.toFixed(2)}px, ${y.toFixed(2)}px, 0)`;
-    }
-  }, [Boolean(hoverData)]);
-
-  useEffect(() => {
-    return () => {
-      stopFloatingCardLerp();
-    };
+    return { x, y, side, cardW };
   }, []);
+
+  const clearInspect = useCallback(() => {
+    isPointerActiveRef.current = false;
+    pendingPointerRef.current = null;
+    if (pointerRafRef.current) {
+      cancelAnimationFrame(pointerRafRef.current);
+      pointerRafRef.current = 0;
+    }
+    lastHoverIndexRef.current = null;
+    lastHoverPointRef.current = null;
+    drawOverlayCrosshair(null);
+    inspectorRef.current?.clear();
+    if (liveBadgeRef.current) {
+      liveBadgeRef.current.style.opacity = '1';
+    }
+    setIsInspecting(false);
+  }, [drawOverlayCrosshair]);
+
+  const inspectAtClientPoint = useCallback((clientX, clientY, { instant = false } = {}) => {
+    const container = containerRef.current;
+    const bounds = boundsRef.current;
+    const currentVisibleCandles = visibleCandlesRef.current;
+    if (!container || !bounds || currentVisibleCandles.length === 0) return;
+
+    let rect = containerRectRef.current;
+    if (!rect) {
+      rect = container.getBoundingClientRect();
+      containerRectRef.current = rect;
+    }
+
+    const rawX = clientX - rect.left;
+    const rawY = clientY - rect.top;
+
+    if (!instant && (rawX < 0 || rawX > rect.width || rawY < 0 || rawY > rect.height)) {
+      clearInspect();
+      return;
+    }
+
+    const { padding, chartW, plotInsetX = 16, plotW = chartW, getY, getX } = bounds;
+    if (!instant && (rawX < padding.left || rawX > padding.left + chartW)) {
+      clearInspect();
+      return;
+    }
+
+    // Clamp touch edge coordinates smoothly so scrubbing near screen edges never drops out
+    const pointerX = Math.max(padding.left, Math.min(padding.left + chartW, rawX));
+    const pointerY = Math.max(padding.top, Math.min(rect.height - padding.bottom, rawY));
+
+    const containerW = bounds.width || rect.width;
+    const containerH = bounds.height || rect.height;
+    const nextCardPos = computeFloatingCardTarget(pointerX, pointerY, containerW, containerH, panOffsetRef.current);
+
+    const ratio = Math.max(0, Math.min(1, (pointerX - (padding.left + plotInsetX)) / Math.max(1, plotW)));
+    const visibleIndex = Math.round(ratio * (currentVisibleCandles.length - 1));
+    const candle = currentVisibleCandles[visibleIndex];
+    if (!candle) return;
+
+    const globalIndex = startIndexRef.current + visibleIndex;
+    const hX = getX(visibleIndex);
+    const hY = getY(candle.close);
+    const yOpen = getY(candle.open);
+    const yClose = getY(candle.close);
+    const allCandles = candlesRef.current;
+    const isHistorical = globalIndex < allCandles.length - 1;
+
+    if (lastHoverIndexRef.current !== globalIndex) {
+      lastHoverIndexRef.current = globalIndex;
+      const point = { hX, hY, yOpen, yClose, isHistorical };
+      lastHoverPointRef.current = point;
+      drawOverlayCrosshair(point);
+
+      if (liveBadgeRef.current && liveDataPosRef.current) {
+        liveBadgeRef.current.style.opacity = Math.abs(hY - liveDataPosRef.current.y) < 22 ? '0' : '1';
+      }
+    }
+
+    const prevCandle = globalIndex > 0
+      ? allCandles[globalIndex - 1]
+      : (visibleIndex > 0 ? currentVisibleCandles[visibleIndex - 1] : currentVisibleCandles[0]);
+    const change = candle.close - (prevCandle ? prevCandle.close : candle.open);
+    const changePercent = prevCandle && prevCandle.close > 0 ? (change / prevCandle.close) * 100 : 0;
+
+    const ts = candle.timestamp || candle.time * 1000;
+    const dateObj = new Date(ts);
+    let timeStr = '';
+    if (range === '1D') {
+      timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    } else if (range === '1W') {
+      timeStr = dateObj.toLocaleDateString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' });
+    } else if (range === '5Y' || range === '10Y') {
+      timeStr = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+    } else {
+      timeStr = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' });
+    }
+
+    const rawVol = candle.volume && candle.volume > 0 ? candle.volume : 148500;
+    const volumeFormatted = rawVol >= 1e6
+      ? `${(rawVol / 1e6).toFixed(2)}M`
+      : rawVol >= 1e3
+      ? `${(rawVol / 1e3).toFixed(1)}K`
+      : `${rawVol}`;
+
+    lastInspectMetaRef.current = { timeStr, isHistorical };
+
+    if (tickerTimeRef.current) {
+      tickerTimeRef.current.textContent = timeStr;
+    }
+    if (tickerTagRef.current) {
+      tickerTagRef.current.textContent = isHistorical
+        ? (chartType === 'candle' ? 'HISTORICAL PATTERN' : 'HISTORICAL TICK')
+        : (chartType === 'candle' ? 'INSPECTED BAR' : 'INSPECTED TICK');
+    }
+
+    setIsInspecting((prev) => (prev ? prev : true));
+
+    inspectorRef.current?.update(
+      {
+        index: globalIndex,
+        visibleIndex,
+        candle,
+        prevClose: prevCandle ? prevCandle.close : null,
+        hX,
+        hY,
+        change,
+        changePercent,
+        timeStr,
+        volumeFormatted,
+        containerW,
+        containerH,
+        cardW: nextCardPos.cardW,
+        isHistorical
+      },
+      nextCardPos,
+      instant
+    );
+  }, [range, chartType, computeFloatingCardTarget, clearInspect, drawOverlayCrosshair]);
+
+  useLayoutEffect(() => {
+    if (!isInspecting) return;
+    if (tickerTimeRef.current && lastInspectMetaRef.current.timeStr) {
+      tickerTimeRef.current.textContent = lastInspectMetaRef.current.timeStr;
+    }
+    if (tickerTagRef.current) {
+      tickerTagRef.current.textContent = lastInspectMetaRef.current.isHistorical
+        ? (chartType === 'candle' ? 'HISTORICAL PATTERN' : 'HISTORICAL TICK')
+        : (chartType === 'candle' ? 'INSPECTED BAR' : 'INSPECTED TICK');
+    }
+  }, [isInspecting, chartType]);
+
+  const schedulePointerInspect = useCallback((clientX, clientY, instant = false) => {
+    isPointerActiveRef.current = true;
+    pendingPointerRef.current = { clientX, clientY, instant };
+    if (pointerRafRef.current) return;
+    pointerRafRef.current = requestAnimationFrame(() => {
+      pointerRafRef.current = 0;
+      const pending = pendingPointerRef.current;
+      if (!pending || !isPointerActiveRef.current) return;
+      inspectAtClientPoint(pending.clientX, pending.clientY, { instant: pending.instant });
+    });
+  }, [inspectAtClientPoint]);
+
+  const handleMouseEnter = () => {
+    if (containerRef.current) {
+      containerRectRef.current = containerRef.current.getBoundingClientRect();
+    }
+  };
 
   // Mouse Move for Dynamic Hover Crosshair, Drag Panning & Smooth Floating Details Card
   const handleMouseMove = (e) => {
-    const container = containerRef.current;
-    if (!container || !boundsRef.current || visibleCandlesRef.current.length === 0) return;
+    if (!containerRef.current || !boundsRef.current || visibleCandlesRef.current.length === 0) return;
 
-    isMouseOverRef.current = true;
     const clientX = e.clientX;
     const clientY = e.clientY;
 
@@ -1053,8 +1422,6 @@ export const StockChart = React.memo(function StockChart({
       const visibleLen = visibleCandlesRef.current.length || 1;
       const pixelsPerBar = chartW / visibleLen;
 
-      // Dragging mouse to the RIGHT pulls older history from the left (+pan)
-      // Dragging mouse to the LEFT pushes towards newer/live candles (-pan)
       const barsDelta = Math.round(deltaX / pixelsPerBar);
       const newPan = Math.max(0, Math.min(maxPanRef.current, dragStartPanRef.current + barsDelta));
       if (newPan !== panOffsetRef.current) {
@@ -1063,150 +1430,120 @@ export const StockChart = React.memo(function StockChart({
       return;
     }
 
-    if (mouseMoveRaf.current) {
-      cancelAnimationFrame(mouseMoveRaf.current);
-    }
-
-    mouseMoveRaf.current = requestAnimationFrame(() => {
-      if (!isMouseOverRef.current || !container || !boundsRef.current) return;
-      const rect = container.getBoundingClientRect();
-      const mouseX = clientX - rect.left;
-      const mouseY = clientY - rect.top;
-
-      // Strict boundary check: If mouse leaves container bounds, immediately clear hover
-      if (mouseX < 0 || mouseX > rect.width || mouseY < 0 || mouseY > rect.height) {
-        stopFloatingCardLerp();
-        if (lastHoverIndexRef.current !== null) {
-          lastHoverIndexRef.current = null;
-          setHoverData(null);
-        }
-        return;
-      }
-
-      const { padding, chartW, plotInsetX = 16, plotW = chartW, getY, getX } = boundsRef.current;
-      const currentVisibleCandles = visibleCandlesRef.current;
-      if (currentVisibleCandles.length === 0) return;
-
-      if (mouseX < padding.left || mouseX > padding.left + chartW) {
-        stopFloatingCardLerp();
-        if (lastHoverIndexRef.current !== null) {
-          lastHoverIndexRef.current = null;
-          setHoverData(null);
-        }
-        return;
-      }
-
-      const containerW = boundsRef.current.width || rect.width;
-      const containerH = boundsRef.current.height || rect.height;
-      const nextCardPos = computeFloatingCardTarget(mouseX, mouseY, containerW, containerH, panOffsetRef.current);
-      const wasActive = cardTargetPosRef.current.active;
-      cardTargetPosRef.current = { ...nextCardPos, active: true };
-      if (!wasActive) {
-        cardCurrentPosRef.current = { x: nextCardPos.x, y: nextCardPos.y };
-      } else {
-        startFloatingCardLerp();
-      }
-
-      const ratio = Math.max(0, Math.min(1, (mouseX - (padding.left + plotInsetX)) / Math.max(1, plotW)));
-      const visibleIndex = Math.round(ratio * (currentVisibleCandles.length - 1));
-      const candle = currentVisibleCandles[visibleIndex];
-      if (!candle) return;
-
-      const globalIndex = startIndexRef.current + visibleIndex;
-      if (lastHoverIndexRef.current === globalIndex) return;
-      lastHoverIndexRef.current = globalIndex;
-
-      const hX = getX(visibleIndex);
-      const hY = getY(candle.close);
-      const yOpen = getY(candle.open);
-      const yClose = getY(candle.close);
-
-      const allCandles = candlesRef.current;
-      const prevCandle = globalIndex > 0 ? allCandles[globalIndex - 1] : (visibleIndex > 0 ? currentVisibleCandles[visibleIndex - 1] : currentVisibleCandles[0]);
-      const change = candle.close - (prevCandle ? prevCandle.close : candle.open);
-      const changePercent = prevCandle && prevCandle.close > 0 ? (change / prevCandle.close) * 100 : 0;
-
-      // Time formatting
-      const ts = candle.timestamp || candle.time * 1000;
-      const dateObj = new Date(ts);
-      let timeStr = '';
-      if (range === '1D') {
-        timeStr = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      } else if (range === '1W') {
-        timeStr = dateObj.toLocaleDateString([], { weekday: 'short', hour: '2-digit', minute: '2-digit' });
-      } else if (range === '5Y' || range === '10Y') {
-        timeStr = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
-      } else {
-        timeStr = dateObj.toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' });
-      }
-
-      const rawVol = candle.volume && candle.volume > 0 ? candle.volume : 148500;
-      const volumeFormatted = rawVol >= 1e6
-        ? `${(rawVol / 1e6).toFixed(2)}M`
-        : rawVol >= 1e3
-        ? `${(rawVol / 1e3).toFixed(1)}K`
-        : `${rawVol}`;
-
-      setHoverData({
-        index: globalIndex,
-        visibleIndex,
-        candle,
-        hX,
-        hY,
-        yOpen,
-        yClose,
-        change,
-        changePercent,
-        timeStr,
-        volumeFormatted,
-        containerW,
-        containerH,
-        isHistorical: globalIndex < allCandles.length - 1
-      });
-    });
+    schedulePointerInspect(clientX, clientY, false);
   };
 
   const handleMouseLeave = () => {
-    isMouseOverRef.current = false;
-    if (mouseMoveRaf.current) {
-      cancelAnimationFrame(mouseMoveRaf.current);
-      mouseMoveRaf.current = null;
-    }
-    stopFloatingCardLerp();
-    lastHoverIndexRef.current = null;
-    setHoverData(null);
+    clearInspect();
   };
 
-  // Mobile Touch Gestures for Crosshair Scrubbing & Panning
-  const handleTouchStart = (e) => {
-    if (e.touches && e.touches[0]) {
-      touchStartRef.current = {
-        x: e.touches[0].clientX,
-        pan: panOffsetRef.current
-      };
-      handleMouseMove(e.touches[0]);
-    }
-  };
+  // Native non-passive Mobile Touch Gestures: intent-disambiguated 1-finger crosshair scrubbing vs page scroll + 2-finger pan
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
 
-  const handleTouchMove = (e) => {
-    if (e.touches && e.touches[0]) {
-      if (touchStartRef.current && boundsRef.current) {
-        const deltaX = e.touches[0].clientX - touchStartRef.current.x;
-        const chartW = boundsRef.current.chartW || 400;
-        const visibleLen = visibleCandlesRef.current.length || 1;
-        const pixelsPerBar = chartW / visibleLen;
-        const barsDelta = Math.round(deltaX / pixelsPerBar);
-        const newPan = Math.max(0, Math.min(maxPanRef.current, touchStartRef.current.pan + barsDelta));
-        setPanOffset(newPan);
+    const flushPendingLiveQuote = () => {
+      if (pendingLiveQuoteRef.current) {
+        const queued = pendingLiveQuoteRef.current;
+        pendingLiveQuoteRef.current = null;
+        applyLiveQuoteUpdate(queued);
       }
-      handleMouseMove(e.touches[0]);
-    }
-  };
+    };
 
-  const handleTouchEnd = () => {
-    touchStartRef.current = null;
-    handleMouseLeave();
-  };
+    const onTouchStart = (e) => {
+      containerRectRef.current = container.getBoundingClientRect();
+      if (e.touches.length === 2) {
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        touchStartRef.current = {
+          mode: 'pinch-pan',
+          startX: midX,
+          startPan: panOffsetRef.current
+        };
+        isTouchInspectingRef.current = true;
+        clearInspect();
+        return;
+      }
+
+      if (e.touches.length === 1) {
+        const t = e.touches[0];
+        touchStartRef.current = {
+          mode: 'pending',
+          startX: t.clientX,
+          startY: t.clientY,
+          startTime: performance.now()
+        };
+        isTouchInspectingRef.current = true;
+        schedulePointerInspect(t.clientX, t.clientY, true);
+      }
+    };
+
+    const onTouchMove = (e) => {
+      if (e.touches.length === 2 && boundsRef.current) {
+        if (e.cancelable) e.preventDefault();
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        if (!touchStartRef.current || touchStartRef.current.mode !== 'pinch-pan') {
+          touchStartRef.current = { mode: 'pinch-pan', startX: midX, startPan: panOffsetRef.current };
+        }
+        const deltaX = midX - touchStartRef.current.startX;
+        const chartW = boundsRef.current.chartW || 320;
+        const visibleLen = visibleCandlesRef.current.length || 1;
+        const barsDelta = Math.round(deltaX / Math.max(1, chartW / visibleLen));
+        const newPan = Math.max(0, Math.min(maxPanRef.current, touchStartRef.current.startPan + barsDelta));
+        if (newPan !== panOffsetRef.current) {
+          setPanOffset(newPan);
+        }
+        return;
+      }
+
+      if (e.touches.length === 1) {
+        const st = touchStartRef.current;
+        const t = e.touches[0];
+        if (!st || st.mode === 'scroll') return;
+
+        const absDx = Math.abs(t.clientX - st.startX);
+        const absDy = Math.abs(t.clientY - st.startY);
+        const elapsed = performance.now() - st.startTime;
+
+        if (st.mode === 'pending' && absDx + absDy > 7) {
+          if (absDy > absDx * 1.45 && elapsed < 140) {
+            st.mode = 'scroll';
+            isTouchInspectingRef.current = false;
+            clearInspect();
+            flushPendingLiveQuote();
+            return;
+          }
+          st.mode = 'inspect';
+        }
+
+        if (st.mode === 'inspect' || absDx >= absDy || elapsed >= 140) {
+          st.mode = 'inspect';
+          if (e.cancelable) e.preventDefault();
+        }
+
+        schedulePointerInspect(t.clientX, t.clientY, true);
+      }
+    };
+
+    const onTouchEnd = (e) => {
+      if (e.touches && e.touches.length > 0) return;
+      touchStartRef.current = null;
+      isTouchInspectingRef.current = false;
+      clearInspect();
+      flushPendingLiveQuote();
+    };
+
+    container.addEventListener('touchstart', onTouchStart, { passive: true });
+    container.addEventListener('touchmove', onTouchMove, { passive: false });
+    container.addEventListener('touchend', onTouchEnd, { passive: true });
+    container.addEventListener('touchcancel', onTouchEnd, { passive: true });
+
+    return () => {
+      container.removeEventListener('touchstart', onTouchStart);
+      container.removeEventListener('touchmove', onTouchMove);
+      container.removeEventListener('touchend', onTouchEnd);
+      container.removeEventListener('touchcancel', onTouchEnd);
+    };
+  }, [applyLiveQuoteUpdate, clearInspect, schedulePointerInspect]);
 
   const latestCandle = candles.length > 0 ? candles[candles.length - 1] : null;
 
@@ -1361,7 +1698,7 @@ export const StockChart = React.memo(function StockChart({
           overflowY: 'hidden',
           scrollbarWidth: 'none',
           WebkitOverflowScrolling: 'touch',
-          background: hoverData ? 'rgba(6, 182, 212, 0.08)' : 'var(--bg-secondary)',
+          background: isInspecting ? 'rgba(6, 182, 212, 0.08)' : 'var(--bg-secondary)',
           borderBottom: '1px solid var(--border-subtle)',
           fontSize: '0.72rem',
           fontFamily: 'var(--font-mono)',
@@ -1376,6 +1713,7 @@ export const StockChart = React.memo(function StockChart({
         {/* Status Tag & Time */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexShrink: 0, whiteSpace: 'nowrap' }}>
           <span
+            ref={tickerTagRef}
             style={{
               padding: '0.12rem 0.45rem',
               borderRadius: '4px',
@@ -1383,23 +1721,21 @@ export const StockChart = React.memo(function StockChart({
               fontWeight: 800,
               letterSpacing: '0.04em',
               textTransform: 'uppercase',
-              background: hoverData
-                ? (hoverData.isHistorical ? 'rgba(245, 158, 11, 0.18)' : 'rgba(6, 182, 212, 0.18)')
+              background: isInspecting
+                ? 'rgba(6, 182, 212, 0.18)'
                 : (clampedPan > 0 ? 'rgba(245, 158, 11, 0.18)' : 'rgba(16, 185, 129, 0.14)'),
-              color: hoverData
-                ? (hoverData.isHistorical ? '#f59e0b' : 'var(--accent-cyan)')
+              color: isInspecting
+                ? 'var(--accent-cyan)'
                 : (clampedPan > 0 ? '#f59e0b' : 'var(--bull-green)'),
               border: `1px solid ${
-                hoverData
-                  ? (hoverData.isHistorical ? 'rgba(245, 158, 11, 0.4)' : 'rgba(6, 182, 212, 0.35)')
+                isInspecting
+                  ? 'rgba(6, 182, 212, 0.35)'
                   : (clampedPan > 0 ? 'rgba(245, 158, 11, 0.4)' : 'rgba(16, 185, 129, 0.3)')
               }`
             }}
           >
-            {hoverData
-              ? (hoverData.isHistorical
-                  ? (chartType === 'candle' ? 'HISTORICAL PATTERN' : 'HISTORICAL TICK')
-                  : (chartType === 'candle' ? 'INSPECTED BAR' : 'INSPECTED TICK'))
+            {isInspecting
+              ? (chartType === 'candle' ? 'INSPECTED BAR' : 'INSPECTED TICK')
               : calendarDateState.mode === 'past'
               ? `PAST DATE (${calendarDateState.daysDiff}D)`
               : calendarDateState.mode === 'future'
@@ -1449,16 +1785,14 @@ export const StockChart = React.memo(function StockChart({
                 }}
               >
                 <Clock size={11} />
-                <span>
-                  {hoverData
-                    ? hoverData.timeStr
-                    : (visibleCandles.length > 0
-                        ? (range === '5Y' || range === '10Y' || calendarDateState.mode !== 'live'
-                            ? new Date(visibleCandles[visibleCandles.length - 1].timestamp || visibleCandles[visibleCandles.length - 1].time * 1000).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
-                            : (range === '1D'
-                                ? new Date(visibleCandles[visibleCandles.length - 1].timestamp || visibleCandles[visibleCandles.length - 1].time * 1000).toLocaleTimeString()
-                                : new Date(visibleCandles[visibleCandles.length - 1].timestamp || visibleCandles[visibleCandles.length - 1].time * 1000).toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' })))
-                        : '--:--:--')}
+                <span ref={tickerTimeRef}>
+                  {visibleCandles.length > 0
+                    ? (range === '5Y' || range === '10Y' || calendarDateState.mode !== 'live'
+                        ? new Date(visibleCandles[visibleCandles.length - 1].timestamp || visibleCandles[visibleCandles.length - 1].time * 1000).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })
+                        : (range === '1D'
+                            ? new Date(visibleCandles[visibleCandles.length - 1].timestamp || visibleCandles[visibleCandles.length - 1].time * 1000).toLocaleTimeString()
+                            : new Date(visibleCandles[visibleCandles.length - 1].timestamp || visibleCandles[visibleCandles.length - 1].time * 1000).toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' })))
+                    : '--:--:--'}
                 </span>
                 <span style={{ fontSize: '0.6rem', opacity: 0.75, transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.18s ease', display: 'inline-block' }}>▾</span>
               </button>
@@ -1480,13 +1814,13 @@ export const StockChart = React.memo(function StockChart({
             fontWeight: 600
           }}
         >
-          {hoverData ? (
+          {isInspecting ? (
             <span
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '0.35rem',
-                color: hoverData.isHistorical ? '#f59e0b' : 'var(--accent-cyan)',
+                color: 'var(--accent-cyan)',
                 fontWeight: 700
               }}
             >
@@ -1496,7 +1830,7 @@ export const StockChart = React.memo(function StockChart({
           ) : (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
               <Crosshair size={11} style={{ color: 'var(--accent-cyan)', opacity: 0.85 }} />
-              <span>{range} • Hover chart for candle details</span>
+              <span>{range} • Hover or touch &amp; slide chart</span>
             </span>
           )}
         </div>
@@ -1639,16 +1973,13 @@ export const StockChart = React.memo(function StockChart({
         }}
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
+        onMouseEnter={handleMouseEnter}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onDoubleClick={() => {
           setZoomLevel(1.0);
           setPanOffset(0);
         }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onTouchCancel={handleTouchEnd}
       >
         {/* Dual Stacked Canvases: Base (Permanent Graphic) + Overlay (Zero-latency Crosshairs) */}
         <canvas
@@ -1773,10 +2104,10 @@ export const StockChart = React.memo(function StockChart({
         {/* Permanent Floating LIVE Price Badge & Radar Beacon on Right Y-Axis */}
         {liveDataPos && (
           <div
+            ref={liveBadgeRef}
             className={`chart-floating-live-badge ${liveDataPos.isBullish ? 'bull' : 'bear'}`}
             style={{
               top: `${liveDataPos.y}px`,
-              opacity: hoverData && Math.abs(hoverData.hY - liveDataPos.y) < 22 ? 0 : 1,
               transition: 'opacity 0.15s ease'
             }}
             title={liveDataPos.isHistorical ? `Current Live Market Price: ${chartCurr}${liveDataPos.price.toFixed(2)} (Click Return to Live)` : `Live Market Price: ${chartCurr}${liveDataPos.price.toFixed(2)}`}
@@ -1786,121 +2117,15 @@ export const StockChart = React.memo(function StockChart({
           </div>
         )}
 
-        {/* Interactive Floating Reticle Ring with Animated Ping */}
-        {hoverData && (
-          <div
-            className="chart-floating-reticle"
-            style={{
-              left: `${hoverData.hX}px`,
-              top: `${hoverData.hY}px`
-            }}
-          >
-            <div className="chart-floating-reticle-ping" />
-            <div className="chart-floating-reticle-core" />
-          </div>
-        )}
-
-        {/* Floating Crosshair Details Card (GPU-damped rAF glide beside cursor without jarring flips) */}
-        {hoverData && (() => {
-          const c = hoverData.candle;
-          const prevC = hoverData.index > 0 ? candles[hoverData.index - 1] : null;
-          const chg = prevC ? c.close - prevC.close : hoverData.change;
-          const chgPct = prevC && prevC.close > 0 ? (chg / prevC.close) * 100 : hoverData.changePercent;
-          const isPos = chg >= 0;
-          const chgSign = isPos ? '+' : '-';
-          const barSpread = Math.max(0, c.high - c.low);
-          const barSpreadPct = c.low > 0 ? (barSpread / c.low) * 100 : 0;
-
-          const firstCandle = candles.length > 0 ? candles[0] : c;
-          const rangeChg = c.close - (firstCandle?.open || c.open);
-          const rangeChgPct = firstCandle?.open > 0 ? (rangeChg / firstCandle.open) * 100 : 0;
-          const isInspectingHistory = hoverData.isHistorical || clampedPan > 0;
-
-          // Clear directional delta from inspected point -> current Live price
-          const toLiveDiff = latestCandle ? latestCandle.close - c.close : 0;
-          const toLivePct = c.close > 0 ? (toLiveDiff / c.close) * 100 : 0;
-          const toLiveSign = toLiveDiff >= 0 ? '+' : '-';
-          const cardW = (hoverData.containerW || 640) < 440 ? 214 : 238;
-
-          return (
-            <div
-              ref={floatingCardRef}
-              className={`chart-floating-cursor-card ${hoverData.isHistorical ? 'historical' : 'live'}`}
-              style={{ width: `${cardW}px` }}
-            >
-              <div className="chart-floating-card-head">
-                <span className="chart-floating-card-time">{hoverData.timeStr}</span>
-                <span className={`chart-floating-card-tag ${hoverData.isHistorical ? 'hist' : 'curr'}`}>
-                  {hoverData.isHistorical ? 'HIST' : (chartType === 'candle' ? 'BAR' : 'TICK')}
-                </span>
-              </div>
-
-              <div className="chart-floating-card-price-row">
-                <span className="chart-floating-card-price">{chartCurr}{c.close.toFixed(2)}</span>
-                <span className={`chart-floating-card-pct ${isPos ? 'bull' : 'bear'}`}>
-                  {chgSign}{chartCurr}{Math.abs(chg).toFixed(2)} ({chgSign}{Math.abs(chgPct).toFixed(2)}%)
-                </span>
-              </div>
-
-              <div className="chart-floating-card-ohlc">
-                <span><strong>O:</strong> {chartCurr}{c.open.toFixed(2)}</span>
-                <span><strong>H:</strong> <em className="bull">{chartCurr}{c.high.toFixed(2)}</em></span>
-                <span><strong>L:</strong> <em className="bear">{chartCurr}{c.low.toFixed(2)}</em></span>
-                <span><strong>C:</strong> <em className="cyan">{chartCurr}{c.close.toFixed(2)}</em></span>
-              </div>
-
-              <div className="chart-floating-card-meta">
-                <span><strong>Vol:</strong> {hoverData.volumeFormatted}</span>
-                <span><strong>Rng:</strong> {chartCurr}{barSpread.toFixed(2)} ({barSpreadPct.toFixed(2)}%)</span>
-              </div>
-
-              <div className="chart-floating-card-foot">
-                {isInspectingHistory && latestCandle ? (
-                  <>
-                    <span><strong>To Live:</strong></span>
-                    <span className={toLiveDiff >= 0 ? 'bull' : 'bear'}>
-                      Now {toLiveSign}{chartCurr}{Math.abs(toLiveDiff).toFixed(2)} ({toLiveSign}{Math.abs(toLivePct).toFixed(2)}%)
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span><strong>{range} Return:</strong></span>
-                    <span className={rangeChg >= 0 ? 'bull' : 'bear'}>
-                      {rangeChg >= 0 ? '+' : '-'}{chartCurr}{Math.abs(rangeChg).toFixed(2)} ({rangeChg >= 0 ? '+' : ''}{rangeChgPct.toFixed(2)}%)
-                    </span>
-                  </>
-                )}
-              </div>
-            </div>
-          );
-        })()}
-
-        {/* Interactive Floating Y-Axis Price Badge */}
-        {hoverData && (
-          <div
-            className="chart-floating-y-badge"
-            style={{
-              top: `${hoverData.hY}px`,
-              background: hoverData.isHistorical ? 'linear-gradient(135deg, #d97706, #b45309)' : undefined,
-              borderColor: hoverData.isHistorical ? '#f59e0b' : undefined
-            }}
-          >
-            {chartCurr}{hoverData.candle.close.toFixed(2)}
-          </div>
-        )}
-
-        {/* Interactive Floating X-Axis Time Badge */}
-        {hoverData && (
-          <div
-            className="chart-floating-x-badge"
-            style={{
-              left: `${hoverData.hX}px`,
-              borderColor: hoverData.isHistorical ? 'rgba(245, 158, 11, 0.5)' : undefined
-            }}
-          >
-            {hoverData.timeStr}
-          </div>
-        )}
+        <ChartInspectorOverlay
+          ref={inspectorRef}
+          chartCurr={chartCurr}
+          chartType={chartType}
+          range={range}
+          clampedPan={clampedPan}
+          firstOpen={candles.length > 0 ? candles[0].open : null}
+          latestClose={latestCandle ? latestCandle.close : null}
+        />
       </div>
 
       {/* Interactive Timeline Pattern Scrubber & History Range Controller */}
