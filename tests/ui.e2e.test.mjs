@@ -226,6 +226,7 @@ const run = async () => {
         controlChips,
         hasSortJoin: !!sortJoin,
         regionTabs,
+        nativeSelects: document.querySelectorAll('.screener-command-dock select').length,
         hasProFont: /Plus Jakarta Sans/i.test(headlineFont) && accentStyle === 'normal',
         hasRemovedAlphaBtn: !/AI 30D Alpha Picks/i.test(bodyTxt),
         hasRemovedRedundantPresets: !/Mega-Cap Club|Dividend Aristocrats/i.test(bodyTxt),
@@ -241,7 +242,30 @@ const run = async () => {
     assert.equal(openingHeroCheck.bandCount, 3, 'Screener command dock must organize controls into 3 clean bands');
     assert.equal(openingHeroCheck.controlChips, 2, 'Refine band must organize Cap & Sector into 2 clean control chips');
     assert.equal(openingHeroCheck.hasSortJoin, true, 'Unified Sort split control must render cleanly');
+    assert.equal(openingHeroCheck.nativeSelects, 0, 'Cap, Sector, and Sort must use custom ModernSelect instead of native OS select');
     assert.ok(openingHeroCheck.regionTabs >= 6, 'Clean region hairline selector strip must render global regions');
+
+    // Verify ModernSelect custom glass popover opens cleanly aligned inside viewport bounds
+    await evalJs(`(() => {
+      const trigger = document.querySelector('.screener-command-dock button[aria-label="Filter by Industry Sector"]');
+      if (trigger) trigger.click();
+    })()`);
+    await sleep(160);
+    const selectPopCheck = await evalJs(`(() => {
+      const pop = document.querySelector('.modern-select-popover');
+      const grid = pop ? pop.querySelector('.modern-select-list.is-grid-2') : null;
+      const r = pop ? pop.getBoundingClientRect() : null;
+      return {
+        open: !!pop,
+        isGrid2: !!grid,
+        fitsViewport: r ? r.left >= 0 && r.right <= window.innerWidth + 1 : false
+      };
+    })()`);
+    assert.equal(selectPopCheck.open, true, 'Custom ModernSelect popover must open cleanly on click');
+    assert.equal(selectPopCheck.isGrid2, true, 'Desktop Sector popover must render clean 2-column alignment');
+    assert.equal(selectPopCheck.fitsViewport, true, 'ModernSelect popover must stay inside viewport bounds');
+    await evalJs(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))`);
+    await sleep(120);
     assert.equal(openingHeroCheck.hasProFont, true, 'Opening hero headline must use unified Plus Jakarta Sans upright professional typography');
     assert.equal(openingHeroCheck.hasRemovedAlphaBtn, true, 'Redundant AI 30D Alpha Picks secondary CTA must be removed');
     assert.equal(openingHeroCheck.hasRemovedRedundantPresets, true, 'Redundant Mega-Cap Club and Dividend Aristocrats presets must be removed');

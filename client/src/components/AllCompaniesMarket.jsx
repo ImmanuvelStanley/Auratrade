@@ -32,6 +32,7 @@ import { CountryFlag } from './CountryFlag';
 import { getAllTimeReturnSummary } from '../utils/stockRecordEngine';
 import { floatingCardEvents } from '../utils/floatingCardEffect';
 import { MarketOpeningHero } from './MarketOpeningHero';
+import { ModernSelect } from './ModernSelect';
 
 // Helper to map country or asset to institutional ISO country/market code
 const getCountryCode = (country, symbol) => {
@@ -1743,10 +1744,10 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
   ];
 
   const tiers = [
-    { id: 'all', label: 'All Tiers' },
-    { id: 'mega', label: 'Mega-Cap ($1T+)' },
-    { id: 'large', label: 'Large-Cap ($200B-$1T)' },
-    { id: 'growth', label: 'Growth ($30B-$200B)' }
+    { value: 'all', label: 'All Tiers', shortLabel: 'All Tiers' },
+    { value: 'mega', label: 'Mega-Cap', shortLabel: 'Mega-Cap', badge: '$1T+' },
+    { value: 'large', label: 'Large-Cap', shortLabel: 'Large-Cap', badge: '$200B–$1T' },
+    { value: 'growth', label: 'Growth', shortLabel: 'Growth', badge: '$30B–$200B' }
   ];
 
   const presets = [
@@ -1779,6 +1780,23 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
     'Digital Asset',
     'Commodity',
     'Forex'
+  ];
+
+  const sectorOptions = sectors.map((sec) => ({
+    value: sec === 'All Sectors' ? 'all' : sec,
+    label: sec,
+    spanFull: sec === 'All Sectors'
+  }));
+
+  const sortOptions = [
+    { value: 'marketCap', label: 'Market Cap' },
+    { value: 'price', label: 'Current Price', shortLabel: 'Price' },
+    { value: 'changePercent', label: '24h Move (%)', shortLabel: '24h Move (%)' },
+    { value: 'volume', label: 'Trading Volume', shortLabel: 'Volume' },
+    { value: 'forecastGain', label: 'AI 30D Upside (%)', badge: '30D' },
+    { value: 'rating', label: 'Analyst Consensus', shortLabel: 'Consensus' },
+    { value: 'peRatio', label: 'P/E Ratio' },
+    { value: 'dividendYield', label: 'Dividend Yield' }
   ];
 
   return (
@@ -1898,37 +1916,28 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
           <div className="screener-utility-left">
             <span className="screener-band-kicker">Refine</span>
             <div className="screener-select-group">
-              <label className="screener-control-chip">
-                <span className="screener-chip-prefix">Cap</span>
-                <select
-                  className="screener-chip-select"
-                  value={selectedTier}
-                  onChange={(e) => setSelectedTier(e.target.value)}
-                  aria-label="Filter by Market Cap Tier"
-                >
-                  {tiers.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <ModernSelect
+                prefix="Cap"
+                ariaLabel="Filter by Market Cap Tier"
+                menuTitle="Market Cap Tier"
+                value={selectedTier}
+                onChange={setSelectedTier}
+                options={tiers}
+                menuWidth={236}
+                align="left"
+              />
 
-              <label className="screener-control-chip">
-                <span className="screener-chip-prefix">Sector</span>
-                <select
-                  className="screener-chip-select"
-                  value={selectedSector}
-                  onChange={(e) => setSelectedSector(e.target.value)}
-                  aria-label="Filter by Industry Sector"
-                >
-                  {sectors.map((sec) => (
-                    <option key={sec} value={sec === 'All Sectors' ? 'all' : sec}>
-                      {sec}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <ModernSelect
+                prefix="Sector"
+                ariaLabel="Filter by Industry Sector"
+                menuTitle="Industry & Asset Class"
+                value={selectedSector}
+                onChange={setSelectedSector}
+                options={sectorOptions}
+                columns={2}
+                menuWidth={392}
+                align="left"
+              />
             </div>
           </div>
 
@@ -1960,22 +1969,17 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
             )}
 
             <div className="screener-sort-join">
-              <span className="screener-chip-prefix">Sort</span>
-              <select
-                className="screener-chip-select screener-sort-select"
+              <ModernSelect
+                prefix="Sort"
+                ariaLabel="Sort companies by metric"
+                menuTitle="Sort Assets By"
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                aria-label="Sort companies by metric"
-              >
-                <option value="marketCap">Market Cap</option>
-                <option value="price">Price</option>
-                <option value="changePercent">24h Move (%)</option>
-                <option value="volume">Volume</option>
-                <option value="forecastGain">AI 30D Upside (%)</option>
-                <option value="rating">Consensus</option>
-                <option value="peRatio">P/E Ratio</option>
-                <option value="dividendYield">Dividend Yield</option>
-              </select>
+                onChange={setSortBy}
+                options={sortOptions}
+                menuWidth={228}
+                align="right"
+                variant="embedded"
+              />
               <button
                 type="button"
                 className="screener-sort-dir"
