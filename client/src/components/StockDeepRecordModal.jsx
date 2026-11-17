@@ -674,6 +674,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
 
       {/* Section Filter Navigation Bar */}
       <div
+        className="record-subtab-bar"
         style={{
           padding: '0.7rem 1.5rem',
           background: 'rgba(15, 23, 42, 0.78)',
@@ -685,7 +686,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
           gap: '0.65rem'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+        <div className="record-subtab-group" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
           {[
             { id: 'all', label: 'Complete Record (All-in-One)', icon: Layers },
             { id: 'trajectory', label: 'All-Time Trajectory & Eras', icon: TrendingUp },
@@ -699,6 +700,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
               <button
                 key={tab.id}
                 type="button"
+                className={`record-subtab-btn${active ? ' active' : ''}`}
                 onClick={() => setActiveSubTab(tab.id)}
                 style={{
                   height: '32px',
@@ -716,7 +718,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                   transition: 'all 0.15s ease'
                 }}
               >
-                <IconComp size={13} />
+                <IconComp size={13} style={{ flexShrink: 0 }} />
                 <span>{tab.label}</span>
               </button>
             );
@@ -728,6 +730,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
       <div className="record-dossier-body" style={{ padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1.35rem', minWidth: 0, boxSizing: 'border-box' }}>
         {/* 6-Card Genesis-to-Present Key Metrics Strip (Uniform Single-Row Grid on Desktop) */}
         <div
+          className="record-kpi-grid"
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 160px), 1fr))',
@@ -1323,6 +1326,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
         {/* SECTION B: INTERACTIVE "WHAT IF YOU INVESTED AT STARTING / IPO?" WEALTH CALCULATOR */}
         {(activeSubTab === 'all' || activeSubTab === 'calculator') && (
           <div
+            className="record-panel-card"
             style={{
               padding: '1.15rem 1.35rem',
               borderRadius: '12px',
@@ -1336,7 +1340,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
               <div>
                 <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                  <Calculator size={16} style={{ color: 'var(--bull-green)' }} />
+                  <Calculator size={16} style={{ color: 'var(--bull-green)', flexShrink: 0 }} />
                   <span>Interactive Historical Wealth Calculator — &ldquo;What If You Invested in {identity.symbol}?&rdquo;</span>
                 </div>
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
@@ -1345,7 +1349,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
               </div>
 
               {/* Horizon Selector Buttons */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+              <div className="record-horizon-grid" style={{ width: '100%' }}>
                 {Object.values(wealthHorizons).map((h) => {
                   const active = selectedHorizon === h.id;
                   return (
@@ -1361,7 +1365,9 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                         cursor: 'pointer',
                         background: active ? 'var(--bull-green)' : 'rgba(15, 23, 42, 0.75)',
                         color: active ? '#04130d' : 'var(--text-secondary)',
-                        border: active ? '1px solid var(--bull-green)' : '1px solid var(--border-subtle)'
+                        border: active ? '1px solid var(--bull-green)' : '1px solid var(--border-subtle)',
+                        textAlign: 'center',
+                        justifyContent: 'center'
                       }}
                     >
                       {h.label}
@@ -1419,7 +1425,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                     }}
                   />
                 </div>
-                <div style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
+                <div className="record-amount-presets" style={{ display: 'flex', gap: '0.3rem', flexWrap: 'wrap' }}>
                   {[100, 1000, 10000, 50000].map((amt) => (
                     <button
                       key={amt}
@@ -1524,6 +1530,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
         {/* SECTION C: DEEP VALUATION & INTRINSIC WORTH SCORECARD (Easy to Understand) */}
         {(activeSubTab === 'all' || activeSubTab === 'valuation') && (
           <div
+            className="record-panel-card"
             style={{
               padding: '1.15rem 1.35rem',
               borderRadius: '12px',
@@ -1646,6 +1653,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
         {/* SECTION D: YEAR-BY-YEAR HISTORICAL RECORD TABLE (FROM STARTING / IPO TILL NOW) */}
         {(activeSubTab === 'all' || activeSubTab === 'history') && (
           <div
+            className="record-panel-card"
             style={{
               padding: '1.15rem 1.35rem',
               borderRadius: '12px',

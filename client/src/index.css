@@ -6298,8 +6298,62 @@ select option:checked {
     gap: 0.95rem !important;
   }
 
+  .record-subtab-bar {
+    padding: 0.65rem 0.85rem !important;
+  }
+
+  .record-subtab-group {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    gap: 0.42rem !important;
+  }
+
+  .record-subtab-btn {
+    width: 100% !important;
+    min-height: 38px !important;
+    height: 100% !important;
+    padding: 0.38rem 0.48rem !important;
+    justify-content: center !important;
+    text-align: center !important;
+    font-size: 0.7rem !important;
+    line-height: 1.25 !important;
+    white-space: normal !important;
+    box-sizing: border-box !important;
+  }
+
+  .record-subtab-btn:first-child {
+    grid-column: 1 / -1 !important;
+    min-height: 36px !important;
+    font-size: 0.74rem !important;
+  }
+
+  .record-kpi-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.55rem !important;
+  }
+
+  .record-kpi-grid .stock-detail-float-card {
+    padding: 0.72rem 0.75rem !important;
+  }
+
+  .record-amount-presets {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    width: 100% !important;
+    gap: 0.35rem !important;
+  }
+
+  .record-amount-presets button {
+    width: 100% !important;
+    text-align: center !important;
+    padding: 0.28rem 0.2rem !important;
+  }
+
   .record-trajectory-card,
-  .record-milestones-card {
+  .record-milestones-card,
+  .record-panel-card {
     padding: 0.85rem !important;
   }
 }
@@ -6323,7 +6377,21 @@ select option:checked {
 
 @media (max-width: 768px) {
   .record-horizon-grid {
-    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.42rem;
+  }
+
+  .record-horizon-grid > button {
+    width: 100%;
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+  }
+
+  .record-horizon-grid > button:first-child {
+    grid-column: 1 / -1;
   }
 }
 

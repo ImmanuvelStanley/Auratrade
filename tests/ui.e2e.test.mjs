@@ -766,6 +766,32 @@ const run = async () => {
         const touchClosed = await evalJs(`!document.querySelector('.chart-floating-cursor-card')`);
         assert.equal(touchClosed, true, 'Mobile chart floating card must dismiss cleanly on touchEnd');
         await cdp('Emulation.setTouchEmulationEnabled', { enabled: false });
+
+        const recordAlign = await evalJs(`(() => {
+          const group = document.querySelector('.record-subtab-group');
+          const btns = Array.from(document.querySelectorAll('.record-subtab-btn'));
+          const kpiGrid = document.querySelector('.record-kpi-grid');
+          const kpiCards = Array.from(document.querySelectorAll('.record-kpi-grid .stock-detail-float-card'));
+          if (!group || btns.length < 5 || !kpiGrid || kpiCards.length < 6) return { found: false };
+          const gr = group.getBoundingClientRect();
+          const b0 = btns[0].getBoundingClientRect();
+          const b1 = btns[1].getBoundingClientRect();
+          const b2 = btns[2].getBoundingClientRect();
+          const c0 = kpiCards[0].getBoundingClientRect();
+          const c1 = kpiCards[1].getBoundingClientRect();
+          return {
+            found: true,
+            firstFullWidth: Math.abs(b0.width - gr.width) <= 4,
+            pairAligned: Math.abs(b1.width - b2.width) <= 4 && Math.abs(b1.top - b2.top) <= 2 && Math.abs(b1.height - b2.height) <= 2,
+            noSubtabOverflow: group.scrollWidth <= group.clientWidth + 2,
+            kpiTwoCols: Math.abs(c0.width - c1.width) <= 4 && Math.abs(c0.top - c1.top) <= 2
+          };
+        })()`);
+        assert.equal(recordAlign.found, true, 'Mobile 390px Workstation StockDeepRecord controls must render');
+        assert.equal(recordAlign.firstFullWidth, true, 'Mobile 390px primary record tab must span full container width');
+        assert.equal(recordAlign.pairAligned, true, 'Mobile 390px record tabs must align cleanly in symmetrical 2-col pairs');
+        assert.equal(recordAlign.noSubtabOverflow, true, 'Mobile 390px record tab group must not overflow');
+        assert.equal(recordAlign.kpiTwoCols, true, 'Mobile 390px stock record KPI cards must align in even 2-col grid');
       }
       if (tab === 'All Companies Market') {
         const mobileAlign = await evalJs(`(() => {
