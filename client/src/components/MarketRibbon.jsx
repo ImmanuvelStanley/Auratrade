@@ -205,7 +205,7 @@ const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }
   );
 });
 
-const RIBBON_SPEED_PX_PER_SEC = 42;
+const RIBBON_SPEED_PX_PER_SEC = 60;
 
 function getChunkSizeForViewport() {
   if (typeof window === 'undefined') return 8;
