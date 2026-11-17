@@ -209,7 +209,7 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
 
           <h1 className="opening-hero-headline">
             Global Capital, <br />
-            <span className="opening-serif-accent">decoded</span> cleanly in real time.
+            <span className="opening-headline-accent">decoded</span> cleanly in real time.
           </h1>
 
           <p className="opening-hero-subcopy">

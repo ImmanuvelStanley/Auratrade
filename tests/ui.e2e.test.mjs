@@ -206,6 +206,10 @@ const run = async () => {
       const dockCells = document.querySelectorAll('.opening-telemetry-cell').length;
       const strategyPills = document.querySelectorAll('.market-filter-bar .screener-strategy-pill').length;
       const bodyTxt = document.body.innerText || '';
+      const headlineEl = document.querySelector('.opening-hero-headline');
+      const accentEl = document.querySelector('.opening-headline-accent');
+      const headlineFont = headlineEl ? getComputedStyle(headlineEl).fontFamily : '';
+      const accentStyle = accentEl ? getComputedStyle(accentEl).fontStyle : '';
       const moverTab = Array.from(document.querySelectorAll('.opening-obs-tab')).find((b) => /24H Mover/i.test(b.innerText));
       if (moverTab) moverTab.click();
       return {
@@ -214,6 +218,7 @@ const run = async () => {
         hasCta: !!cta,
         dockCells,
         strategyPills,
+        hasProFont: /Plus Jakarta Sans/i.test(headlineFont) && accentStyle === 'normal',
         hasRemovedAlphaBtn: !/AI 30D Alpha Picks/i.test(bodyTxt),
         hasRemovedRedundantPresets: !/Mega-Cap Club|Dividend Aristocrats/i.test(bodyTxt),
         hasRemovedAssetsBadge: !document.querySelector('.screener-matched-badge'),
@@ -225,6 +230,7 @@ const run = async () => {
     assert.equal(openingHeroCheck.hasCta, true, 'Workstation primary CTA must render in opening stage');
     assert.equal(openingHeroCheck.dockCells, 4, 'Telemetry dock must render 4 metric slots');
     assert.equal(openingHeroCheck.strategyPills, 5, 'Clean strategy segmented bar must render 5 essential options');
+    assert.equal(openingHeroCheck.hasProFont, true, 'Opening hero headline must use unified Plus Jakarta Sans upright professional typography');
     assert.equal(openingHeroCheck.hasRemovedAlphaBtn, true, 'Redundant AI 30D Alpha Picks secondary CTA must be removed');
     assert.equal(openingHeroCheck.hasRemovedRedundantPresets, true, 'Redundant Mega-Cap Club and Dividend Aristocrats presets must be removed');
     assert.equal(openingHeroCheck.hasRemovedAssetsBadge, true, '309 Assets badge must be removed');
