@@ -1794,12 +1794,12 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
         onOpenDeepRecord={onOpenDeepRecord}
       />
 
-      {/* Interactive Filter & Strategy Control Bar (Unified 3-Row Grid Layout) */}
-      <div className="market-filter-bar glass-card" style={{ marginBottom: '0.85rem' }}>
-        {/* Row 1: Essential Strategy Views (Clean Segmented Rail) */}
-        <div className="market-filter-row">
-          <span className="market-filter-row-label">Strategy</span>
-          <div className="market-filter-row-content">
+      {/* Organized 3-Band Screener Command Bar (Strategy + Search | Regions | Refine + Display) */}
+      <div className="market-filter-bar screener-command-dock glass-card" style={{ marginBottom: '0.85rem' }}>
+        {/* Band 1: Quick Strategy Tabs + Prominent Instant Search */}
+        <div className="screener-band screener-band--discovery">
+          <div className="screener-band-left">
+            <span className="screener-band-kicker">Strategy</span>
             <div className="screener-strategy-segment" role="group" aria-label="Screener quick strategies">
               {presets.map((p) => {
                 const Icon = p.icon;
@@ -1819,298 +1819,172 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
               })}
             </div>
           </div>
-        </div>
 
-        {/* Row 2: Geographic Region Scope & Instant Search (Search pinned right on desktop) */}
-        <div className="market-filter-row market-filter-row--divided">
-          <span className="market-filter-row-label">Markets</span>
-          <div className="market-filter-row-content market-filter-row-content--markets">
-            {/* Region Tabs with National/Regional Flags */}
-            <div className="market-filter-pills-group market-filter-pills-group--scroll">
-              {regions.map((reg) => {
-                const isActive = selectedRegion === reg.id;
-                return (
-                  <button
-                    key={reg.id}
-                    type="button"
-                    className={`tier-filter-btn ${isActive ? 'active' : ''}`}
-                    style={{
-                      fontSize: '0.74rem',
-                      padding: '0 0.6rem',
-                      height: '32px',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.35rem',
-                      borderRadius: '8px',
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0,
-                      boxSizing: 'border-box'
-                    }}
-                    onClick={() => setSelectedRegion(reg.id)}
-                  >
-                    {reg.flagCode && (
-                      <CountryFlag countryCode={reg.flagCode} size="xs" />
-                    )}
-                    <span>{reg.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Search Input (Pinned cleanly on the right edge at 32px height) */}
-            <div className="market-filter-search-box" style={{ position: 'relative', flex: '0 0 245px', minWidth: '185px', maxWidth: '100%', height: '32px' }}>
-              <Search size={13} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <div className="screener-band-search">
+            <div className="market-filter-search-box screener-search-wrap">
+              <Search size={13} className="screener-search-icon" />
               <input
                 type="text"
-                className="custom-input"
-                style={{
-                  width: '100%',
-                  height: '32px',
-                  paddingLeft: '2rem',
-                  paddingRight: searchQuery ? '4.5rem' : '0.75rem',
-                  fontSize: '0.76rem',
-                  borderRadius: '8px',
-                  boxSizing: 'border-box'
-                }}
-                placeholder="Search ticker, name, or country..."
+                className="custom-input screener-search-input"
+                placeholder="Search ticker, name, or sector..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
               {searchQuery && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    right: '8px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.3rem'
-                  }}
-                >
-                  <span
-                    style={{
-                      fontSize: '0.65rem',
-                      color: 'var(--accent-cyan)',
-                      background: 'rgba(6, 182, 212, 0.15)',
-                      padding: '0.1rem 0.35rem',
-                      borderRadius: '4px',
-                      fontWeight: 700
-                    }}
-                    title="Matching Companies"
-                  >
+                <div className="screener-search-actions">
+                  <span className="screener-search-count" title="Matching Companies">
                     {filteredRawCompanies.length}
                   </span>
                   <button
                     type="button"
                     onClick={() => setSearchQuery('')}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'var(--text-muted)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '2px'
-                    }}
+                    className="screener-search-clear"
                     title="Clear search"
+                    aria-label="Clear search"
                   >
                     <X size={13} />
                   </button>
                 </div>
               )}
             </div>
-          </div>
-        </div>
 
-        {/* Row 2: Screener Filters (Cap Tiers + Sector + Reset) */}
-        <div className="market-filter-row market-filter-row--divided">
-          <span className="market-filter-row-label">Filters</span>
-          <div className="market-filter-row-content">
-            {/* Tier Buttons */}
-            <div className="market-filter-pills-group" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.32rem', flexWrap: 'wrap', minWidth: 0 }}>
-              {tiers.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  className={`tier-filter-btn ${selectedTier === t.id ? 'active' : ''}`}
-                  style={{
-                    fontSize: '0.74rem',
-                    padding: '0 0.65rem',
-                    height: '32px',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    borderRadius: '8px',
-                    boxSizing: 'border-box'
-                  }}
-                  onClick={() => setSelectedTier(t.id)}
-                >
-                  {t.label}
-                </button>
-              ))}
-            </div>
-
-            <span className="market-filter-vdivider" aria-hidden="true" />
-
-            {/* Sector Dropdown */}
-            <div className="market-filter-item" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', minWidth: 0 }}>
-              <span className="market-filter-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>Sector:</span>
-              <select
-                className="custom-input market-filter-select"
-                style={{
-                  height: '32px',
-                  padding: '0 1.8rem 0 0.68rem',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  width: 'auto',
-                  minWidth: '158px',
-                  borderRadius: '8px',
-                  boxSizing: 'border-box'
-                }}
-                value={selectedSector}
-                onChange={(e) => setSelectedSector(e.target.value)}
-              >
-                {sectors.map((sec) => (
-                  <option key={sec} value={sec === 'All Sectors' ? 'all' : sec}>
-                    {sec}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Quick Reset Button (Visible whenever filters differ from defaults) */}
             {(selectedRegion !== 'all' || selectedTier !== 'all' || selectedSector !== 'all' || activePreset !== 'all' || searchQuery || sortBy !== 'marketCap' || sortOrder !== 'desc') && (
-              <>
-                <span className="market-filter-vdivider" aria-hidden="true" />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedRegion('all');
-                    setSelectedTier('all');
-                    setSelectedSector('all');
-                    setActivePreset('all');
-                    setSearchQuery('');
-                    setSortBy('marketCap');
-                    setSortOrder('desc');
-                  }}
-                  style={{
-                    height: '32px',
-                    padding: '0 0.68rem',
-                    fontSize: '0.74rem',
-                    color: 'var(--text-muted)',
-                    background: 'transparent',
-                    border: '1px dashed var(--border-subtle)',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.3rem',
-                    transition: 'all 0.15s ease',
-                    boxSizing: 'border-box'
-                  }}
-                  title="Reset all filters to default"
-                >
-                  <RotateCcw size={12} />
-                  <span>Reset</span>
-                </button>
-              </>
+              <button
+                type="button"
+                className="screener-reset-btn"
+                onClick={() => {
+                  setSelectedRegion('all');
+                  setSelectedTier('all');
+                  setSelectedSector('all');
+                  setActivePreset('all');
+                  setSearchQuery('');
+                  setSortBy('marketCap');
+                  setSortOrder('desc');
+                }}
+                title="Reset all filters to default"
+              >
+                <RotateCcw size={12} />
+                <span>Reset</span>
+              </button>
             )}
           </div>
         </div>
 
-        {/* Row 3: Display & Ordering (Columns View + Sort Controls) */}
-        <div className="market-filter-row market-filter-row--divided">
-          <span className="market-filter-row-label">Display</span>
-          <div className="market-filter-row-content">
-            {/* Table View Column Selector */}
-            {viewMode === 'table' && (
-              <>
-                <div className="market-filter-item market-filter-item--columns" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, maxWidth: '100%' }}>
-                  <span className="market-filter-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>Columns:</span>
-                  <div
-                    className="column-view-segmented"
-                    style={{
-                      height: '32px',
-                      borderRadius: '8px',
-                      boxSizing: 'border-box',
-                      maxWidth: '100%'
-                    }}
-                  >
-                    <button
-                      type="button"
-                      className={`column-view-btn ${columnView === 'standard' ? 'active' : ''}`}
-                      onClick={() => setColumnView('standard')}
-                    >
-                      Standard
-                    </button>
-                    <button
-                      type="button"
-                      className={`column-view-btn ${columnView === 'valuation' ? 'active' : ''}`}
-                      onClick={() => setColumnView('valuation')}
-                    >
-                      Valuation & Income
-                    </button>
-                    <button
-                      type="button"
-                      className={`column-view-btn ${columnView === 'ai_quant' ? 'active' : ''}`}
-                      onClick={() => setColumnView('ai_quant')}
-                    >
-                      AI Forecast & Risk
-                    </button>
-                  </div>
-                </div>
+        {/* Band 2: Clean Hairline Global Region Selector */}
+        <div className="screener-band screener-band--regions">
+          <span className="screener-band-kicker">Markets</span>
+          <div className="screener-region-rail" role="tablist" aria-label="Filter by geographic market">
+            {regions.map((reg) => {
+              const isSelected = selectedRegion === reg.id;
+              return (
+                <button
+                  key={reg.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={isSelected}
+                  className={`screener-region-tab${isSelected ? ' active' : ''}`}
+                  onClick={() => setSelectedRegion(reg.id)}
+                >
+                  {reg.flagCode && <CountryFlag countryCode={reg.flagCode} size="xs" />}
+                  <span>{reg.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-                <span className="market-filter-vdivider" aria-hidden="true" />
-              </>
+        {/* Band 3: Unified Refine (Cap + Sector) & Display (Columns + Sort) */}
+        <div className="screener-band screener-band--utility">
+          <div className="screener-utility-left">
+            <span className="screener-band-kicker">Refine</span>
+            <div className="screener-select-group">
+              <label className="screener-control-chip">
+                <span className="screener-chip-prefix">Cap</span>
+                <select
+                  className="screener-chip-select"
+                  value={selectedTier}
+                  onChange={(e) => setSelectedTier(e.target.value)}
+                  aria-label="Filter by Market Cap Tier"
+                >
+                  {tiers.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="screener-control-chip">
+                <span className="screener-chip-prefix">Sector</span>
+                <select
+                  className="screener-chip-select"
+                  value={selectedSector}
+                  onChange={(e) => setSelectedSector(e.target.value)}
+                  aria-label="Filter by Industry Sector"
+                >
+                  {sectors.map((sec) => (
+                    <option key={sec} value={sec === 'All Sectors' ? 'all' : sec}>
+                      {sec}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div className="screener-utility-right">
+            {viewMode === 'table' && (
+              <div className="column-view-segmented screener-col-tabs" role="group" aria-label="Table column preset">
+                <button
+                  type="button"
+                  className={`column-view-btn ${columnView === 'standard' ? 'active' : ''}`}
+                  onClick={() => setColumnView('standard')}
+                >
+                  Standard
+                </button>
+                <button
+                  type="button"
+                  className={`column-view-btn ${columnView === 'valuation' ? 'active' : ''}`}
+                  onClick={() => setColumnView('valuation')}
+                >
+                  Valuation
+                </button>
+                <button
+                  type="button"
+                  className={`column-view-btn ${columnView === 'ai_quant' ? 'active' : ''}`}
+                  onClick={() => setColumnView('ai_quant')}
+                >
+                  AI &amp; Risk
+                </button>
+              </div>
             )}
 
-            {/* Sort Dropdown & Order Direction */}
-            <div className="market-filter-item" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, maxWidth: '100%' }}>
-              <span className="market-filter-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>Sort By:</span>
+            <div className="screener-sort-join">
+              <span className="screener-chip-prefix">Sort</span>
               <select
-                className="custom-input market-filter-sort-select"
-                style={{
-                  height: '32px',
-                  padding: '0 1.8rem 0 0.68rem',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
-                  width: 'auto',
-                  minWidth: '155px',
-                  borderRadius: '8px',
-                  boxSizing: 'border-box'
-                }}
+                className="screener-chip-select screener-sort-select"
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
+                aria-label="Sort companies by metric"
               >
                 <option value="marketCap">Market Cap</option>
-                <option value="price">Current Price</option>
-                <option value="changePercent">24h Gainers (%)</option>
-                <option value="volume">Trading Volume</option>
-                <option value="forecastGain">AI 30-Day Upside (%)</option>
-                <option value="rating">Analyst Consensus</option>
+                <option value="price">Price</option>
+                <option value="changePercent">24h Move (%)</option>
+                <option value="volume">Volume</option>
+                <option value="forecastGain">AI 30D Upside (%)</option>
+                <option value="rating">Consensus</option>
                 <option value="peRatio">P/E Ratio</option>
                 <option value="dividendYield">Dividend Yield</option>
               </select>
-
               <button
                 type="button"
-                className="btn btn-secondary market-filter-sort-dir-btn"
-                style={{
-                  height: '32px',
-                  padding: '0 0.68rem',
-                  fontSize: '0.74rem',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.32rem',
-                  borderRadius: '8px',
-                  whiteSpace: 'nowrap',
-                  boxSizing: 'border-box'
-                }}
+                className="screener-sort-dir"
                 onClick={() => setSortOrder(prev => (prev === 'desc' ? 'asc' : 'desc'))}
-                title={`Switch to ${sortOrder === 'desc' ? 'Ascending (Low to High)' : 'Descending (High to Low)'}`}
+                title={`Switch to ${sortOrder === 'desc' ? 'Low to High' : 'High to Low'}`}
+                aria-label="Toggle sort direction"
               >
-                <ArrowUpDown size={13} />
-                <span>{sortOrder === 'desc' ? 'High → Low' : 'Low → High'}</span>
+                <ArrowUpDown size={12} />
+                <span>{sortOrder === 'desc' ? 'High ↓' : 'Low ↑'}</span>
               </button>
             </div>
           </div>

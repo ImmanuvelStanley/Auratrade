@@ -204,7 +204,11 @@ const run = async () => {
       const wave = document.querySelector('.opening-pulse-svg');
       const cta = document.getElementById('opening-workstation-cta');
       const dockCells = document.querySelectorAll('.opening-telemetry-cell').length;
-      const strategyPills = document.querySelectorAll('.market-filter-bar .screener-strategy-pill').length;
+      const strategyPills = document.querySelectorAll('.screener-command-dock .screener-strategy-pill').length;
+      const bandCount = document.querySelectorAll('.screener-command-dock .screener-band').length;
+      const controlChips = document.querySelectorAll('.screener-command-dock .screener-control-chip').length;
+      const sortJoin = document.querySelector('.screener-command-dock .screener-sort-join');
+      const regionTabs = document.querySelectorAll('.screener-command-dock .screener-region-tab').length;
       const bodyTxt = document.body.innerText || '';
       const headlineEl = document.querySelector('.opening-hero-headline');
       const accentEl = document.querySelector('.opening-headline-accent');
@@ -218,6 +222,10 @@ const run = async () => {
         hasCta: !!cta,
         dockCells,
         strategyPills,
+        bandCount,
+        controlChips,
+        hasSortJoin: !!sortJoin,
+        regionTabs,
         hasProFont: /Plus Jakarta Sans/i.test(headlineFont) && accentStyle === 'normal',
         hasRemovedAlphaBtn: !/AI 30D Alpha Picks/i.test(bodyTxt),
         hasRemovedRedundantPresets: !/Mega-Cap Club|Dividend Aristocrats/i.test(bodyTxt),
@@ -230,6 +238,10 @@ const run = async () => {
     assert.equal(openingHeroCheck.hasCta, true, 'Workstation primary CTA must render in opening stage');
     assert.equal(openingHeroCheck.dockCells, 4, 'Telemetry dock must render 4 metric slots');
     assert.equal(openingHeroCheck.strategyPills, 5, 'Clean strategy segmented bar must render 5 essential options');
+    assert.equal(openingHeroCheck.bandCount, 3, 'Screener command dock must organize controls into 3 clean bands');
+    assert.equal(openingHeroCheck.controlChips, 2, 'Refine band must organize Cap & Sector into 2 clean control chips');
+    assert.equal(openingHeroCheck.hasSortJoin, true, 'Unified Sort split control must render cleanly');
+    assert.ok(openingHeroCheck.regionTabs >= 6, 'Clean region hairline selector strip must render global regions');
     assert.equal(openingHeroCheck.hasProFont, true, 'Opening hero headline must use unified Plus Jakarta Sans upright professional typography');
     assert.equal(openingHeroCheck.hasRemovedAlphaBtn, true, 'Redundant AI 30D Alpha Picks secondary CTA must be removed');
     assert.equal(openingHeroCheck.hasRemovedRedundantPresets, true, 'Redundant Mega-Cap Club and Dividend Aristocrats presets must be removed');
