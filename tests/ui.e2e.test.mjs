@@ -283,29 +283,42 @@ const run = async () => {
       if (!track) return resolve({ ok: false, reason: 'no track' });
       const prevMap = new Map();
       const prevInfo = new Map();
-      let prevTransform = '';
-      let prevSyms = [];
       let maxBackwardJump = 0;
       let jumpDetail = null;
       let totalAdvance = 0;
       let trackedSym = null;
       let firstLeft = null;
+      let sawCardPopup = false;
+      let maxHeightSpread = 0;
       let samples = 0;
       const sample = () => {
         const children = Array.from(track.children);
         const curMap = new Map();
         const curInfo = new Map();
         const curSyms = [];
-        const curTransform = track.style.transform || '';
+        let minH = Infinity;
+        let maxH = 0;
         children.forEach((el) => {
           const sym = el.dataset && el.dataset.symbol;
           if (sym) {
             const r = el.getBoundingClientRect();
+            minH = Math.min(minH, r.height);
+            maxH = Math.max(maxH, r.height);
+            if (el.classList.contains('tick-flash-up') || el.classList.contains('tick-flash-down')) {
+              sawCardPopup = true;
+            }
+            const cardTransform = getComputedStyle(el).transform;
+            if (cardTransform && cardTransform !== 'none') {
+              sawCardPopup = true;
+            }
             curMap.set(sym, r.left);
-            curInfo.set(sym, { w: Math.round(r.width * 10) / 10, txt: el.innerText.replace(/\s+/g, ' ').trim() });
+            curInfo.set(sym, { w: Math.round(r.width * 10) / 10, txt: el.innerText.replace(/\\s+/g, ' ').trim() });
             curSyms.push(sym);
           }
         });
+        if (maxH > 0) {
+          maxHeightSpread = Math.max(maxHeightSpread, maxH - minH);
+        }
         if (!trackedSym && children[3] && children[3].dataset && children[3].dataset.symbol) {
           trackedSym = children[3].dataset.symbol;
           firstLeft = curMap.get(trackedSym);
@@ -322,13 +335,11 @@ const run = async () => {
                   const c = curInfo.get(s);
                   if (!p || !c || Math.abs(p.w - c.w) > 0.5 || p.txt !== c.txt) widthChanges.push({ s, p, c });
                 });
-                jumpDetail = { sym, delta, prevX: prevMap.get(sym), curX: x, prevTransform, curTransform, widthChanges };
+                jumpDetail = { sym, delta, prevX: prevMap.get(sym), curX: x, widthChanges };
               }
             }
           });
         }
-        prevTransform = curTransform;
-        prevSyms = curSyms;
         curMap.forEach((x, sym) => prevMap.set(sym, x));
         curInfo.forEach((v, sym) => prevInfo.set(sym, v));
         samples += 1;
@@ -341,7 +352,9 @@ const run = async () => {
             ok: samples >= 14,
             maxBackwardJump,
             jumpDetail,
-            totalAdvance
+            totalAdvance,
+            sawCardPopup,
+            maxHeightSpread
           });
         }
       };
@@ -350,6 +363,8 @@ const run = async () => {
     assert.equal(ribbonMotion.ok, true, 'MarketRibbon sampler must run cleanly');
     assert.ok(ribbonMotion.totalAdvance > 18, `MarketRibbon must glide forward cleanly (advanced ${ribbonMotion.totalAdvance}px)`);
     assert.ok(ribbonMotion.maxBackwardJump <= 0.6, `MarketRibbon must never jump backward on updates (${JSON.stringify(ribbonMotion.jumpDetail)})`);
+    assert.equal(ribbonMotion.sawCardPopup, false, 'MarketRibbon cards must update quietly without flash/scale popups');
+    assert.ok(ribbonMotion.maxHeightSpread <= 0.5, `MarketRibbon cards must keep uniform height (spread=${ribbonMotion.maxHeightSpread})`);
     assert.equal(obsSwitched, true, 'Clicking 24H Mover tab inside Pulse Observatory must switch live spotlight card');
 
     // Verify Notification Bell shows live market & related notifications even before sign-in

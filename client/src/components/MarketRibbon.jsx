@@ -85,16 +85,18 @@ function formatPercentText(val) {
   return `${num >= 0 ? '+' : ''}${num.toFixed(2)}%`;
 }
 
-// Isolated zero-rerender ribbon ticker cell updated directly in DOM per symbol tick
+// Isolated zero-rerender ribbon ticker cell updated cleanly in-place per symbol tick (no popups)
 const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }) {
   const { getQuote, subscribeQuote } = useLiveTickerActions();
   const initialQuote = getQuote(item.symbol);
   const initialPrice = initialQuote?.price ?? item.price;
   const initialPct = initialQuote?.changePercent ?? item.changePercent ?? 0;
   const initialBull = initialPct >= 0;
+  const initialDir = initialQuote?.lastTickDirection === 'up' || initialQuote?.lastTickDirection === 'down'
+    ? initialQuote.lastTickDirection
+    : 'neutral';
   const currSymbol = getCurrencyPrefix(item.currency, item.symbol);
 
-  const itemRef = useRef(null);
   const priceRef = useRef(null);
   const badgeRef = useRef(null);
   const changeWrapRef = useRef(null);
@@ -102,8 +104,6 @@ const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }
   const changeTextRef = useRef(null);
 
   const prevPriceRef = useRef(initialPrice);
-  const flashTimerRef = useRef(null);
-  const rafRef = useRef(null);
 
   useEffect(() => {
     const sym = item.symbol;
@@ -134,34 +134,9 @@ const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }
       const prevPrice = prevPriceRef.current;
       if (prevPrice !== undefined && prevPrice !== null && newPrice !== prevPrice) {
         const dir = newPrice > prevPrice ? 'up' : 'down';
-
         if (badgeRef.current) {
           badgeRef.current.textContent = dir === 'up' ? '▲' : '▼';
           badgeRef.current.className = `ribbon-tick-badge ${dir}`;
-        }
-
-        if (itemRef.current) {
-          itemRef.current.classList.remove('tick-flash-up', 'tick-flash-down');
-          if (rafRef.current) cancelAnimationFrame(rafRef.current);
-          rafRef.current = requestAnimationFrame(() => {
-            if (!itemRef.current) return;
-            itemRef.current.classList.add(dir === 'up' ? 'tick-flash-up' : 'tick-flash-down');
-            if (priceRef.current) {
-              priceRef.current.classList.remove('up', 'down');
-              priceRef.current.classList.add('tick-text', dir);
-            }
-          });
-
-          if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
-          flashTimerRef.current = setTimeout(() => {
-            if (itemRef.current) {
-              itemRef.current.classList.remove('tick-flash-up', 'tick-flash-down');
-            }
-            if (priceRef.current) {
-              priceRef.current.classList.remove('tick-text', 'up', 'down');
-            }
-            flashTimerRef.current = null;
-          }, 650);
         }
       }
 
@@ -170,8 +145,6 @@ const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }
 
     return () => {
       unsubscribe();
-      if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [item.symbol, currSymbol, subscribeQuote]);
 
@@ -181,7 +154,6 @@ const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }
 
   return (
     <div
-      ref={itemRef}
       data-symbol={item.symbol}
       className="market-ribbon-item"
       onClick={() => onSelect(item)}
@@ -192,7 +164,7 @@ const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }
         {(item.countryCode || item.region) && (
           <span
             style={{
-              fontSize: '0.65rem',
+              fontSize: '0.62rem',
               fontFamily: 'var(--font-mono)',
               fontWeight: 800,
               padding: '1px 5px',
@@ -202,7 +174,7 @@ const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }
               border: '1px solid rgba(255, 255, 255, 0.1)',
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '4px',
+              gap: '3px',
               lineHeight: 1.2,
               flexShrink: 0
             }}
@@ -216,8 +188,9 @@ const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }
       </div>
 
       <div className="ribbon-item-right">
-        {/* Fixed-slot directional tick indicator (prevents horizontal reflow jitter) */}
-        <span ref={badgeRef} className="ribbon-tick-badge neutral" aria-hidden="true" />
+        <span ref={badgeRef} className={`ribbon-tick-badge ${initialDir}`} aria-hidden="true">
+          {initialDir === 'up' ? '▲' : initialDir === 'down' ? '▼' : ''}
+        </span>
 
         <span ref={priceRef} className="ribbon-price font-mono">
           {formatPriceText(currSymbol, initialPrice)}
@@ -232,32 +205,38 @@ const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }
   );
 });
 
-const RIBBON_TARGET_SPEED_PX_PER_SEC = 42;
+const RIBBON_SPEED_PX_PER_SEC = 42;
+
+function getChunkSizeForViewport() {
+  if (typeof window === 'undefined') return 8;
+  const w = window.innerWidth || 1280;
+  if (w <= 768) return 6;
+  if (w <= 1600) return 8;
+  return 10;
+}
 
 export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol }) {
   const [indices, setIndices] = useState(() => buildMergedRibbonItems(CORE_BENCHMARKS));
   const [headIndex, setHeadIndex] = useState(0);
-  const [slotCount, setSlotCount] = useState(() => {
-    if (typeof window === 'undefined') return 18;
-    return Math.max(10, Math.min(34, Math.ceil(window.innerWidth / 135) + 5));
-  });
+  const [chunkCount, setChunkCount] = useState(getChunkSizeForViewport);
 
   const { getQuote, publishTicks } = useLiveTickerActions();
 
   const containerRef = useRef(null);
   const trackRef = useRef(null);
-  const offsetPxRef = useRef(0);
-  const appliedOffsetRef = useRef(0);
-  const currentSpeedRef = useRef(0);
-  const stepWidthRef = useRef(210);
-  const pendingAnchorSymbolRef = useRef(null);
-  const pendingAnchorScreenXRef = useRef(null);
-  const lastTrackedSymbolRef = useRef(null);
-  const lastTrackedScreenXRef = useRef(null);
-  const isShiftingRef = useRef(false);
+  const animRef = useRef(null);
+  const rateRafRef = useRef(0);
+  const playbackRateRef = useRef(1);
   const isPausedRef = useRef(false);
+  const queuedAdditionsRef = useRef([]);
+
+  const effectiveChunk = Math.max(1, Math.min(chunkCount, Math.floor(indices.length / 2) || 1));
   const indicesLengthRef = useRef(indices.length);
+  const headIndexRef = useRef(headIndex);
+  const effectiveChunkRef = useRef(effectiveChunk);
   indicesLengthRef.current = indices.length;
+  headIndexRef.current = headIndex;
+  effectiveChunkRef.current = effectiveChunk;
 
   useEffect(() => {
     let isMounted = true;
@@ -287,9 +266,10 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
           // Push live price updates directly to item subscribers without disrupting marquee geometry
           publishTicks(combinedIncoming);
 
-          // Append ONLY truly unseen symbols at the end so existing slots never reorder or shift
+          // Append ONLY truly unseen symbols so active composited chunk never shifts mid-flight
           setIndices((prev) => {
             const known = new Set(prev.map((x) => x.symbol));
+            queuedAdditionsRef.current.forEach((q) => known.add(q.symbol));
             const additions = [];
             combinedIncoming.forEach((raw) => {
               if (!raw || !raw.symbol) return;
@@ -309,13 +289,9 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
               });
             });
             if (additions.length === 0) return prev;
-            const trackEl = trackRef.current;
-            if (trackEl && trackEl.children.length > 0 && !pendingAnchorSymbolRef.current) {
-              const firstVisible = trackEl.children[0];
-              if (firstVisible?.dataset?.symbol) {
-                pendingAnchorSymbolRef.current = firstVisible.dataset.symbol;
-                pendingAnchorScreenXRef.current = firstVisible.getBoundingClientRect().left;
-              }
+            if (headIndexRef.current + 2 * effectiveChunkRef.current > prev.length) {
+              queuedAdditionsRef.current.push(...additions);
+              return prev;
             }
             return [...prev, ...additions];
           });
@@ -331,167 +307,157 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
     };
   }, [publishTicks]);
 
-  // Size active marquee DOM window strictly to viewport width + buffer (eliminates GPU texture crashes)
+  // Adjust active chunk tier cleanly across viewport breakpoints
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-
-    const updateSlots = (width) => {
-      if (!width || width <= 0) return;
-      const needed = Math.max(10, Math.min(34, Math.ceil(width / 135) + 5));
-      setSlotCount((prev) => (prev === needed ? prev : needed));
+    const syncChunk = () => {
+      const next = getChunkSizeForViewport();
+      setChunkCount((prev) => (prev === next ? prev : next));
     };
-
-    updateSlots(el.clientWidth);
-
-    if (typeof ResizeObserver !== 'undefined') {
-      const ro = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          updateSlots(entry.contentRect.width);
-        }
-      });
-      ro.observe(el);
-      return () => ro.disconnect();
-    }
-
-    const onResize = () => updateSlots(el.clientWidth);
-    window.addEventListener('resize', onResize, { passive: true });
-    return () => window.removeEventListener('resize', onResize);
+    window.addEventListener('resize', syncChunk, { passive: true });
+    return () => window.removeEventListener('resize', syncChunk);
   }, []);
 
-  // Build compact sliding window of assets
+  // Build two contiguous chunks: [activeChunk (moves out), nextChunk (glides smoothly into slot 0)]
   const visibleEntries = useMemo(() => {
     const len = indices.length;
     if (!len) return [];
-    const count = Math.min(slotCount, len);
+    const total = Math.min(len, effectiveChunk * 2);
     const list = [];
-    for (let i = 0; i < count; i++) {
-      const item = indices[(headIndex + i) % len];
-      list.push(item);
+    for (let i = 0; i < total; i++) {
+      list.push(indices[(headIndex + i) % len]);
     }
     return list;
-  }, [indices, headIndex, slotCount]);
+  }, [indices, headIndex, effectiveChunk]);
 
-  // Sub-pixel viewport-anchor reconciliation before paint (eliminates ANY backward jump)
+  const visibleKey = useMemo(
+    () => visibleEntries.map((item) => item.symbol).join('|'),
+    [visibleEntries]
+  );
+
+  // GPU compositor-thread WAAPI conveyor (immune to React re-renders below)
   useLayoutEffect(() => {
     const trackEl = trackRef.current;
-    if (trackEl && pendingAnchorSymbolRef.current && pendingAnchorScreenXRef.current !== null) {
-      const anchorEl = Array.from(trackEl.children).find(
-        (child) => child.dataset?.symbol === pendingAnchorSymbolRef.current
-      );
-      if (anchorEl) {
-        const currentX = anchorEl.getBoundingClientRect().left;
-        const driftX = currentX - pendingAnchorScreenXRef.current;
-        if (Math.abs(driftX) > 0.001) {
-          offsetPxRef.current = Math.max(0, offsetPxRef.current + driftX);
-          trackEl.style.transform = `translate3d(-${offsetPxRef.current.toFixed(3)}px, 0, 0)`;
-          appliedOffsetRef.current = offsetPxRef.current;
+
+    if (animRef.current) {
+      animRef.current.onfinish = null;
+      animRef.current.cancel();
+      animRef.current = null;
+    }
+
+    if (!trackEl || trackEl.children.length <= effectiveChunk) return;
+
+    const prefersReduced =
+      typeof window !== 'undefined' &&
+      window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (prefersReduced) {
+      trackEl.style.transform = 'translate3d(0, 0, 0)';
+      return;
+    }
+
+    const r0 = trackEl.children[0].getBoundingClientRect();
+    const rChunk = trackEl.children[effectiveChunk].getBoundingClientRect();
+    const chunkPx = rChunk.left - r0.left;
+    if (!Number.isFinite(chunkPx) || chunkPx <= 0) return;
+
+    const durationMs = (chunkPx / RIBBON_SPEED_PX_PER_SEC) * 1000;
+
+    if (typeof trackEl.animate === 'function') {
+      const anim = trackEl.animate(
+        [
+          { transform: 'translate3d(0px, 0, 0)' },
+          { transform: `translate3d(-${chunkPx.toFixed(3)}px, 0, 0)` }
+        ],
+        {
+          duration: durationMs,
+          easing: 'linear',
+          fill: 'forwards'
         }
-        lastTrackedSymbolRef.current = pendingAnchorSymbolRef.current;
-        lastTrackedScreenXRef.current = pendingAnchorScreenXRef.current;
+      );
+
+      try {
+        anim.playbackRate = isPausedRef.current ? 0 : playbackRateRef.current;
+      } catch (_) {}
+
+      if (document.hidden) {
+        anim.pause();
       }
+
+      anim.onfinish = () => {
+        if (animRef.current !== anim) return;
+        if (queuedAdditionsRef.current.length > 0) {
+          const queued = queuedAdditionsRef.current;
+          queuedAdditionsRef.current = [];
+          setIndices((prev) => [...prev, ...queued]);
+        }
+        setHeadIndex((prev) => (prev + effectiveChunkRef.current) % (indicesLengthRef.current || 1));
+      };
+
+      animRef.current = anim;
     }
 
-    pendingAnchorSymbolRef.current = null;
-    pendingAnchorScreenXRef.current = null;
-    isShiftingRef.current = false;
-
-    if (trackEl && trackEl.children.length >= 2) {
-      const r0 = trackEl.children[0].getBoundingClientRect();
-      const r1 = trackEl.children[1].getBoundingClientRect();
-      const measuredStep = r1.left - r0.left;
-      if (measuredStep > 0) {
-        stepWidthRef.current = measuredStep;
+    return () => {
+      if (animRef.current) {
+        animRef.current.onfinish = null;
+        animRef.current.cancel();
+        animRef.current = null;
       }
-    }
-  }, [headIndex, visibleEntries]);
+    };
+  }, [visibleKey, effectiveChunk]);
 
-  // Smooth butter-soft 60/120fps conveyor with velocity easing & sub-pixel wrap trigger
   useEffect(() => {
-    let rafId = 0;
-    let lastTs = 0;
+    const onVisibilityChange = () => {
+      const anim = animRef.current;
+      if (!anim) return;
+      if (document.hidden) {
+        anim.pause();
+      } else {
+        anim.play();
+        try {
+          anim.playbackRate = isPausedRef.current ? 0 : playbackRateRef.current;
+        } catch (_) {}
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      if (rateRafRef.current) cancelAnimationFrame(rateRafRef.current);
+    };
+  }, []);
 
-    const frame = (ts) => {
+  const easePlaybackRate = useCallback((targetRate) => {
+    if (rateRafRef.current) {
+      cancelAnimationFrame(rateRafRef.current);
+      rateRafRef.current = 0;
+    }
+
+    let lastTs = 0;
+    const step = (ts) => {
       if (!lastTs) lastTs = ts;
       const dt = Math.min(0.05, Math.max(0, (ts - lastTs) / 1000));
       lastTs = ts;
 
-      const trackEl = trackRef.current;
-      if (trackEl && !document.hidden) {
-        const prevApplied = appliedOffsetRef.current;
+      const cur = playbackRateRef.current;
+      const alpha = 1 - Math.exp(-10 * dt);
+      let next = cur + (targetRate - cur) * alpha;
+      const done = Math.abs(targetRate - next) < 0.015;
+      if (done) next = targetRate;
 
-        // Monotonic screen-X guard: prevent any layout/tick width update from nudging cards backward (right)
-        if (!isShiftingRef.current && lastTrackedSymbolRef.current && lastTrackedScreenXRef.current !== null && trackEl.children.length >= 2) {
-          const trackedEl = Array.from(trackEl.children).find(
-            (el) => el.dataset?.symbol === lastTrackedSymbolRef.current
-          );
-          if (trackedEl) {
-            const screenNow = trackedEl.getBoundingClientRect().left;
-            if (screenNow > lastTrackedScreenXRef.current + 0.05) {
-              offsetPxRef.current += (screenNow - lastTrackedScreenXRef.current);
-            }
-          }
-        }
-
-        const prefersReduced =
-          typeof window !== 'undefined' &&
-          window.matchMedia &&
-          window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        const targetSpeed = (isPausedRef.current || prefersReduced) ? 0 : RIBBON_TARGET_SPEED_PX_PER_SEC;
-        // Soft exponential easing on start, hover pause, and resume
-        const ease = 1 - Math.exp(-6.5 * dt);
-        currentSpeedRef.current += (targetSpeed - currentSpeedRef.current) * ease;
-
-        const stepAdvance = currentSpeedRef.current > 0.05 ? currentSpeedRef.current * dt : 0;
-        offsetPxRef.current += stepAdvance;
-
-        let secondEl = null;
-        let secondRectBefore = null;
-        let exactStep = 0;
-        if (!isShiftingRef.current && trackEl.children.length >= 2) {
-          const first = trackEl.children[0];
-          secondEl = trackEl.children[1];
-          const r0 = first.getBoundingClientRect();
-          secondRectBefore = secondEl.getBoundingClientRect();
-          exactStep = secondRectBefore.left - r0.left;
-          if (exactStep > 0) {
-            stepWidthRef.current = exactStep;
-          }
-        }
-
-        const newApplied = offsetPxRef.current;
-        trackEl.style.transform = `translate3d(-${newApplied.toFixed(3)}px, 0, 0)`;
-        appliedOffsetRef.current = newApplied;
-
-        if (secondEl && secondRectBefore && exactStep > 0) {
-          const totalDelta = newApplied - prevApplied;
-          const newSecondScreenX = secondRectBefore.left - totalDelta;
-          lastTrackedSymbolRef.current = secondEl.dataset?.symbol || null;
-          lastTrackedScreenXRef.current = newSecondScreenX;
-
-          if (!isShiftingRef.current && newApplied >= exactStep) {
-            pendingAnchorSymbolRef.current = lastTrackedSymbolRef.current;
-            pendingAnchorScreenXRef.current = newSecondScreenX;
-            isShiftingRef.current = true;
-            setHeadIndex((prev) => {
-              const len = indicesLengthRef.current || 1;
-              return (prev + 1) % len;
-            });
-          }
-        }
-      } else if (document.hidden) {
-        currentSpeedRef.current = 0;
-        lastTrackedSymbolRef.current = null;
-        lastTrackedScreenXRef.current = null;
+      playbackRateRef.current = next;
+      if (animRef.current) {
+        try {
+          animRef.current.playbackRate = next;
+        } catch (_) {}
       }
 
-      rafId = requestAnimationFrame(frame);
+      if (!done) {
+        rateRafRef.current = requestAnimationFrame(step);
+      } else {
+        rateRafRef.current = 0;
+      }
     };
 
-    rafId = requestAnimationFrame(frame);
-    return () => {
-      if (rafId) cancelAnimationFrame(rafId);
-    };
+    rateRafRef.current = requestAnimationFrame(step);
   }, []);
 
   const handleMouseEnter = useCallback(() => {
@@ -499,11 +465,13 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
       return;
     }
     isPausedRef.current = true;
-  }, []);
+    easePlaybackRate(0);
+  }, [easePlaybackRate]);
 
   const handleMouseLeave = useCallback(() => {
     isPausedRef.current = false;
-  }, []);
+    easePlaybackRate(1);
+  }, [easePlaybackRate]);
 
   const handleItemClick = useCallback((idx) => {
     if (!onSelectSymbol) return;
