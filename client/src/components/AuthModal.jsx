@@ -724,15 +724,6 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                 </div>
               )}
 
-              {/* Dynamic Subtitle */}
-              {mode === 'signin' && (
-                <div style={{ textAlign: 'center', marginTop: '-0.2rem', marginBottom: '0.1rem' }}>
-                  <p style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', margin: 0 }}>
-                    Sign in to access your trading workstation & sandbox portfolio
-                  </p>
-                </div>
-              )}
-
               {/* Error Message Banner */}
               {error && (
                 <div
