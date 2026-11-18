@@ -680,6 +680,9 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
               <Search size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
               <input
                 type="text"
+                id="global-indices-filter-input"
+                name="globalIndicesFilter"
+                autoComplete="off"
                 placeholder="Filter index or country..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -689,6 +692,8 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
             </div>
 
             <select
+              id="global-indices-sort-select"
+              name="globalIndicesSort"
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
               className="btn btn-secondary"

@@ -958,12 +958,14 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                       <Mail size={15} className="auth-input-icon" />
                       <input
                         type="email"
+                        id="auth-oauth-custom-email-input"
+                        name="oauthEmail"
+                        autoComplete="email"
                         required
                         className="auth-input-field"
                         placeholder={oauthProvider === 'apple' ? 'e.g. name@icloud.com or email' : 'e.g. name@gmail.com'}
                         value={oauthCustomEmail}
                         onChange={(e) => setOauthCustomEmail(e.target.value)}
-                        id="auth-oauth-custom-email-input"
                         autoFocus
                       />
                     </div>
@@ -977,11 +979,13 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                       <User size={15} className="auth-input-icon" />
                       <input
                         type="text"
+                        id="auth-oauth-custom-name-input"
+                        name="oauthName"
+                        autoComplete="name"
                         className="auth-input-field"
                         placeholder="e.g. Alex Morgan"
                         value={oauthCustomName}
                         onChange={(e) => setOauthCustomName(e.target.value)}
-                        id="auth-oauth-custom-name-input"
                       />
                     </div>
                   </div>
@@ -1033,12 +1037,14 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                       )}
                       <input
                         type="text"
+                        id="auth-identifier-input"
+                        name="username"
+                        autoComplete="username"
                         required
                         className="auth-input-field"
                         placeholder="e.g. name@domain.com"
                         value={signInIdentifier}
                         onChange={(e) => setSignInIdentifier(e.target.value)}
-                        id="auth-identifier-input"
                         autoFocus
                       />
                     </div>
@@ -1070,13 +1076,15 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                       <Lock size={15} className="auth-input-icon" />
                       <input
                         type={showSignInPassword ? 'text' : 'password'}
+                        id="auth-password-input"
+                        name="password"
+                        autoComplete="current-password"
                         required
                         className="auth-input-field"
                         placeholder="Enter account password"
                         value={signInPassword}
                         onChange={(e) => setSignInPassword(e.target.value)}
                         style={{ paddingRight: '2.5rem' }}
-                        id="auth-password-input"
                       />
                       <button
                         type="button"
@@ -1279,12 +1287,14 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                           <User size={15} className="auth-input-icon" />
                           <input
                             type="text"
+                            id="auth-name-input"
+                            name="name"
+                            autoComplete="name"
                             required
                             className="auth-input-field"
                             placeholder="e.g. Alex Mercer"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            id="auth-name-input"
                             autoFocus
                           />
                         </div>
@@ -1303,6 +1313,9 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                             <Mail size={15} className="auth-input-icon" />
                             <input
                               type="email"
+                              id="auth-email-input"
+                              name="email"
+                              autoComplete="email"
                               required
                               className="auth-input-field"
                               placeholder="name@domain.com"
@@ -1317,7 +1330,6 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                                   setSuccessMsg('');
                                 }
                               }}
-                              id="auth-email-input"
                             />
                           </div>
                           {emailOtpSent && (
@@ -1368,12 +1380,14 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                                 key={idx}
                                 ref={(el) => (emailDigitRefs.current[idx] = el)}
                                 type="text"
+                                id={`reg-otp-box-${idx}`}
+                                name={`reg_otp_${idx}`}
+                                autoComplete="one-time-code"
                                 inputMode="numeric"
                                 maxLength={6}
                                 value={digit}
                                 onChange={(e) => handleEmailDigitChange(idx, e.target.value)}
                                 onKeyDown={(e) => handleEmailDigitKeyDown(idx, e)}
-                                id={`reg-otp-box-${idx}`}
                                 style={{
                                   width: '100%',
                                   height: '44px',
@@ -1557,6 +1571,9 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                           <Lock size={15} className="auth-input-icon" />
                           <input
                             type={showRegisterPassword ? 'text' : 'password'}
+                            id="auth-register-password-input"
+                            name="newPassword"
+                            autoComplete="new-password"
                             required
                             minLength={8}
                             className="auth-input-field"
@@ -1564,7 +1581,6 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                             value={registerPassword}
                             onChange={(e) => setRegisterPassword(e.target.value)}
                             style={{ paddingRight: '2.5rem' }}
-                            id="auth-register-password-input"
                             autoFocus
                           />
                           <button
@@ -1598,6 +1614,9 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                         </div>
                         <div style={{ display: 'flex', gap: '0.4rem' }}>
                           <select
+                            id="auth-country-code-select"
+                            name="phoneCountryCode"
+                            autoComplete="tel-country-code"
                             value={phoneCountryCode}
                             onChange={(e) => setPhoneCountryCode(e.target.value)}
                             style={{
@@ -1612,7 +1631,6 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                               outline: 'none',
                               minWidth: '85px'
                             }}
-                            id="auth-country-code-select"
                           >
                             {COUNTRY_CODES.map((c) => (
                               <option key={c.code} value={c.code} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
@@ -1625,11 +1643,13 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                             <Phone size={15} className="auth-input-icon" />
                             <input
                               type="tel"
+                              id="auth-phone-input"
+                              name="phone"
+                              autoComplete="tel-national"
                               className="auth-input-field"
                               placeholder="Phone number"
                               value={phoneNumber}
                               onChange={(e) => setPhoneNumber(e.target.value)}
-                              id="auth-phone-input"
                             />
                           </div>
                         </div>
@@ -1681,12 +1701,14 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                       <Mail size={15} className="auth-input-icon" />
                       <input
                         type="email"
+                        id="auth-forgot-email-input"
+                        name="email"
+                        autoComplete="email"
                         required
                         className="auth-input-field"
                         placeholder="name@domain.com"
                         value={forgotEmail}
                         onChange={(e) => setForgotEmail(e.target.value)}
-                        id="auth-forgot-email-input"
                         autoFocus
                       />
                     </div>
@@ -1872,12 +1894,14 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                           key={idx}
                           ref={(el) => (digitInputRefs.current[idx] = el)}
                           type="text"
+                          id={`otp-box-${idx}`}
+                          name={`otp_${idx}`}
+                          autoComplete="one-time-code"
                           inputMode="numeric"
                           maxLength={6}
                           value={digit}
                           onChange={(e) => handleDigitChange(idx, e.target.value)}
                           onKeyDown={(e) => handleKeyDown(idx, e)}
-                          id={`otp-box-${idx}`}
                           style={{
                             width: '100%',
                             height: '46px',
@@ -1909,6 +1933,9 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                         <Lock size={15} className="auth-input-icon" />
                         <input
                           type={showResetPassword ? 'text' : 'password'}
+                          id="auth-reset-password-input"
+                          name="newPassword"
+                          autoComplete="new-password"
                           required
                           minLength={8}
                           className="auth-input-field"
@@ -1916,7 +1943,6 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                           value={resetNewPassword}
                           onChange={(e) => setResetNewPassword(e.target.value)}
                           style={{ paddingRight: '2.5rem' }}
-                          id="auth-reset-password-input"
                         />
                         <button
                           type="button"
@@ -1948,13 +1974,15 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                         <ShieldCheck size={15} className="auth-input-icon" />
                         <input
                           type={showResetPassword ? 'text' : 'password'}
+                          id="auth-reset-confirm-password-input"
+                          name="confirmPassword"
+                          autoComplete="new-password"
                           required
                           minLength={8}
                           className="auth-input-field"
                           placeholder="Re-enter new password"
                           value={resetConfirmPassword}
                           onChange={(e) => setResetConfirmPassword(e.target.value)}
-                          id="auth-reset-confirm-password-input"
                         />
                       </div>
                     </div>

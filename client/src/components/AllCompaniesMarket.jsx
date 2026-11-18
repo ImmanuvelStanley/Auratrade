@@ -294,6 +294,8 @@ const MarketTableRow = React.memo(
         <td style={{ width: '38px', textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
           <input
             type="checkbox"
+            id={`screener-compare-${c.symbol}`}
+            name={`compare_${c.symbol}`}
             checked={isCompared}
             onChange={() => onToggleCompare(c.symbol)}
             title="Select to compare (max 4 assets)"
@@ -769,6 +771,8 @@ const MarketInvestorCard = React.memo(
               <label style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.68rem', color: 'var(--text-muted)', cursor: 'pointer', whiteSpace: 'nowrap' }}>
                 <input
                   type="checkbox"
+                  id={`screener-card-compare-${c.symbol}`}
+                  name={`compare_card_${c.symbol}`}
                   checked={isCompared}
                   onChange={() => onToggleCompare(c.symbol)}
                   style={{ cursor: 'pointer', accentColor: 'var(--accent-cyan)' }}
@@ -1843,6 +1847,9 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
               <Search size={13} className="screener-search-icon" />
               <input
                 type="text"
+                id="screener-search-input"
+                name="screenerSearch"
+                autoComplete="off"
                 className="custom-input screener-search-input"
                 placeholder="Search ticker, name, or sector..."
                 value={searchQuery}

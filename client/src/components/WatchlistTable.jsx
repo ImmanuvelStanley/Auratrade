@@ -279,6 +279,9 @@ export const WatchlistTable = React.memo(function WatchlistTable({
           <form onSubmit={handleAdd} style={{ display: 'flex', gap: '0.3rem' }}>
             <input
               type="text"
+              id="watchlist-add-ticker-input"
+              name="watchlistAddTicker"
+              autoComplete="off"
               className="input-field font-mono"
               placeholder="Ticker..."
               value={newSymbol}

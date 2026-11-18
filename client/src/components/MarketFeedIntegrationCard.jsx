@@ -253,6 +253,9 @@ export function MarketFeedIntegrationCard() {
           </div>
           <input
             type="password"
+            id="market-feed-finnhub-key-input"
+            name="finnhubApiKey"
+            autoComplete="off"
             value={finnhubKeyInput}
             onChange={(e) => setFinnhubKeyInput(e.target.value)}
             placeholder={providers.finnhub?.configured ? 'Enter new key to replace...' : 'Paste Finnhub token (finnhub.io)'}
@@ -282,6 +285,9 @@ export function MarketFeedIntegrationCard() {
           </div>
           <input
             type="password"
+            id="market-feed-alphavantage-key-input"
+            name="alphaVantageKey"
+            autoComplete="off"
             value={alphaVantageKeyInput}
             onChange={(e) => setAlphaVantageKeyInput(e.target.value)}
             placeholder={providers.alphavantage?.configured ? 'Enter new key to replace...' : 'Paste Alpha Vantage API key'}
@@ -311,6 +317,9 @@ export function MarketFeedIntegrationCard() {
           </div>
           <input
             type="password"
+            id="market-feed-webhook-secret-input"
+            name="webhookSecret"
+            autoComplete="off"
             value={webhookSecretInput}
             onChange={(e) => setWebhookSecretInput(e.target.value)}
             placeholder={providers.webhook?.hasSecret ? `Protected (${providers.webhook.secretHint})` : 'Optional HMAC / X-Webhook-Secret'}
@@ -333,6 +342,9 @@ export function MarketFeedIntegrationCard() {
           <label style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Test Symbol:</label>
           <input
             type="text"
+            id="market-feed-test-symbol-input"
+            name="testSymbol"
+            autoComplete="off"
             value={testSymbol}
             onChange={(e) => setTestSymbol(e.target.value.toUpperCase())}
             style={{ width: '92px', padding: '0.38rem 0.55rem', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-sm)', color: 'var(--text-primary)', fontSize: '0.8rem', fontFamily: 'var(--font-mono)', fontWeight: 700 }}

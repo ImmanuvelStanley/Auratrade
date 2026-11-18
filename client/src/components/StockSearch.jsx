@@ -88,6 +88,9 @@ export function StockSearch({ onSelectSymbol }) {
       <Search size={16} className="search-icon" />
       <input
         type="text"
+        id="header-global-stock-search-input"
+        name="headerGlobalStockSearch"
+        autoComplete="off"
         className="search-input font-mono"
         placeholder="Search ticker or company (e.g., AAPL, NVDA, TSLA)..."
         value={query}

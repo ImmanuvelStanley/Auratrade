@@ -1252,6 +1252,9 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
                   <div className="assistant-input-capsule">
                     <input
                       type="text"
+                      id="ai-assistant-command-input"
+                      name="assistantQuery"
+                      autoComplete="off"
                       className="assistant-command-input"
                       placeholder={`Ask about ${sym}, compare tickers, calculate $1K profit, or request a setup...`}
                       value={input}
@@ -1387,6 +1390,9 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
                   </div>
                   <input
                     type="password"
+                    id="ai-assistant-api-key-input"
+                    name="geminiApiKey"
+                    autoComplete="off"
                     className="custom-input"
                     placeholder="Optional: AIzaSy... (Auto-enhances complex Level 2 & 3 queries)"
                     value={tempKey}

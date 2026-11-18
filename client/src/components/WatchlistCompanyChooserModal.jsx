@@ -310,6 +310,9 @@ export function WatchlistCompanyChooserModal({
             <Search size={15} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
             <input
               type="text"
+              id="watchlist-chooser-search-input"
+              name="chooserSearch"
+              autoComplete="off"
               placeholder="Search ticker, company or country..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -341,6 +344,8 @@ export function WatchlistCompanyChooserModal({
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
               <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 600, whiteSpace: 'nowrap' }}>Sector:</span>
               <select
+                id="watchlist-chooser-sector-select"
+                name="chooserSector"
                 className="custom-input"
                 value={selectedSector}
                 onChange={(e) => setSelectedSector(e.target.value)}

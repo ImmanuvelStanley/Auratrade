@@ -73,6 +73,9 @@ export function AlertManager({
             <div style={{ position: 'relative' }}>
               <input
                 type="text"
+                id="alert-manager-filter-input"
+                name="alertFilter"
+                autoComplete="off"
                 className="input-field font-mono"
                 placeholder="Filter..."
                 value={searchFilter}

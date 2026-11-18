@@ -102,6 +102,8 @@ export function AlertModal({ symbol, currentPrice: propPrice, onClose, onAlertCr
             <label className="input-label">Target Price ($ USD)</label>
             <input
               type="number"
+              id="alert-target-price-input"
+              name="targetPrice"
               step="0.01"
               required
               className="input-field font-mono"
@@ -114,6 +116,8 @@ export function AlertModal({ symbol, currentPrice: propPrice, onClose, onAlertCr
           <div className="input-group">
             <label className="input-label">Anti-Spam Cooldown</label>
             <select
+              id="alert-cooldown-select"
+              name="cooldownMinutes"
               className="input-field font-mono"
               value={cooldownMinutes}
               onChange={(e) => setCooldownMinutes(e.target.value)}

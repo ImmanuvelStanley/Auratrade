@@ -329,6 +329,8 @@ export function DepositCashModal({ isOpen, onClose, currentCashBalance = 0, onDe
                   <DollarSign size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                   <input
                     type="number"
+                    id="deposit-cash-amount-input"
+                    name="depositAmount"
                     min="1"
                     step="any"
                     value={amount}
