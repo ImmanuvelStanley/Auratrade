@@ -1,6 +1,11 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import {
-  ArrowUpRight
+  ArrowUpRight,
+  Globe,
+  Activity,
+  Sparkles,
+  Award,
+  Zap
 } from 'lucide-react';
 import { formatAllTimePercent } from '../utils/stockRecordEngine';
 
@@ -197,14 +202,20 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
   return (
     <section className="opening-bento-stage" aria-label="AuraTrade Live Market Opening Overview">
       <div className="opening-bento-grid-bg" aria-hidden="true" />
+      <div className="opening-ambient-sheen" aria-hidden="true" />
       <div className="opening-aurora-glow opening-aurora-glow--emerald" aria-hidden="true" />
+      <div className="opening-aurora-glow opening-aurora-glow--cyan" aria-hidden="true" />
 
       <div className="opening-bento-main">
         {/* LEFT CHAMBER: Minimalist Editorial Command Canvas */}
         <div className="opening-command-deck">
           <div className="opening-eyebrow">
-            <span className="opening-sonar-dot" />
-            <span>LIVE EXCHANGE MATRIX · {totalCount}+ ASSETS</span>
+            <span className="opening-sonar-wrap">
+              <span className="opening-sonar-ring" />
+              <span className="opening-sonar-dot" />
+            </span>
+            <span className="opening-eyebrow-text">LIVE EXCHANGE MATRIX · {totalCount}+ ASSETS</span>
+            <span className="opening-eyebrow-live-pill">LIVE</span>
           </div>
 
           <h1 className="opening-hero-headline">
@@ -224,8 +235,12 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
               onClick={() => onSelectSymbol && onSelectSymbol(activeSpotlight.symbol)}
             >
               <span>Open {activeSpotlight.symbol} Workstation</span>
-              <ArrowUpRight size={15} strokeWidth={2.2} />
+              <ArrowUpRight size={15} strokeWidth={2.4} className="opening-cta-arrow" />
             </button>
+            <span className="opening-cta-hint">
+              <Zap size={12} className="opening-hint-icon" />
+              <span>Institutional execution · Zero lag</span>
+            </span>
           </div>
 
           {/* Unboxed Borderless Live Quick-Jump Strip */}
@@ -238,7 +253,7 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
                   <button
                     key={item.symbol}
                     type="button"
-                    className="opening-quick-link"
+                    className={`opening-quick-link ${pos ? 'is-bull' : 'is-bear'}`}
                     onClick={() => onSelectSymbol && onSelectSymbol(item.symbol)}
                     title={`Open live Workstation chart for ${item.symbol}`}
                   >
@@ -286,9 +301,10 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
             </div>
           </div>
 
-          {/* Typographic Spotlight Pair (Zero nested container boxes) */}
+          {/* Typographic Spotlight Pair */}
           <div
-            className="opening-obs-hero-readout"
+            key={spotlightTab}
+            className="opening-obs-hero-readout motion-spotlight"
             role="button"
             tabIndex={0}
             onClick={handleSelectSpotlightDossier}
@@ -305,6 +321,7 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
                 <div className="opening-obs-symbol-row">
                   <span className="opening-obs-symbol">{activeSpotlight.symbol}</span>
                   <span className={`opening-obs-badge ${activeSpotlight.isPositive ? 'is-bull' : 'is-bear'}`}>
+                    <span className="opening-badge-pulse" />
                     {activeSpotlight.badgeText}
                   </span>
                 </div>
@@ -314,7 +331,8 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
               <div className="opening-obs-price-col">
                 <span className="opening-obs-price font-mono tabular-nums">{activeSpotlight.priceText}</span>
                 <span className="opening-obs-inspect">
-                  Inspect Record <ArrowUpRight size={12} />
+                  <span>Inspect Record</span>
+                  <ArrowUpRight size={13} className="opening-inspect-arrow" />
                 </span>
               </div>
             </div>
@@ -322,23 +340,28 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
             <p className="opening-obs-desc">{activeSpotlight.subtitle}</p>
           </div>
 
-          {/* Crisp Monoline Gradient Curve SVG */}
+          {/* Crisp Monoline Gradient Curve SVG with Dynamic Glow */}
           <div className="opening-obs-wave-box" aria-hidden="true">
             <svg viewBox="0 0 360 88" className="opening-pulse-svg" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="obsCleanFill" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor={activeSpotlight.isPositive ? '#10b981' : '#f43f5e'} stopOpacity="0.22" />
+                  <stop offset="0%" stopColor={activeSpotlight.isPositive ? '#10b981' : '#f43f5e'} stopOpacity="0.25" />
                   <stop offset="100%" stopColor={activeSpotlight.isPositive ? '#10b981' : '#f43f5e'} stopOpacity="0" />
                 </linearGradient>
                 <linearGradient id="obsCleanStroke" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#94a3b8" stopOpacity="0.55" />
+                  <stop offset="0%" stopColor="#64748b" stopOpacity="0.4" />
                   <stop offset="45%" stopColor={activeSpotlight.isPositive ? '#10b981' : '#f43f5e'} />
                   <stop offset="100%" stopColor={activeSpotlight.isPositive ? '#34d399' : '#fb7185'} />
                 </linearGradient>
+                <filter id="obsGlow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="2" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
               </defs>
               <path d={pulsePaths.areaD} fill="url(#obsCleanFill)" />
-              <path d={pulsePaths.mainD} fill="none" stroke="url(#obsCleanStroke)" strokeWidth="2.1" strokeLinecap="round" />
-              <circle cx={pulsePaths.endX} cy={pulsePaths.endY} r="6" fill={activeSpotlight.isPositive ? 'rgba(16, 185, 129, 0.2)' : 'rgba(244, 63, 94, 0.2)'} className="opening-wave-halo" />
+              <path d={pulsePaths.mainD} fill="none" stroke="url(#obsCleanStroke)" strokeWidth="2.3" strokeLinecap="round" filter="url(#obsGlow)" />
+              <circle cx={pulsePaths.endX} cy={pulsePaths.endY} r="8" fill={activeSpotlight.isPositive ? 'rgba(16, 185, 129, 0.22)' : 'rgba(244, 63, 94, 0.22)'} className="opening-wave-halo-outer" />
+              <circle cx={pulsePaths.endX} cy={pulsePaths.endY} r="5" fill={activeSpotlight.isPositive ? 'rgba(16, 185, 129, 0.45)' : 'rgba(244, 63, 94, 0.45)'} className="opening-wave-halo" />
               <circle cx={pulsePaths.endX} cy={pulsePaths.endY} r="3" fill={activeSpotlight.isPositive ? '#34d399' : '#fb7185'} />
             </svg>
           </div>
@@ -346,11 +369,14 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
           {/* Quiet Slim Breadth Hairline Bar */}
           <div className="opening-breadth-meter">
             <div className="opening-breadth-labels">
-              <span>Session Breadth</span>
+              <span className="opening-breadth-title">
+                <Activity size={12} className="opening-breadth-icon" />
+                <span>Session Breadth</span>
+              </span>
               <span className="font-mono tabular-nums">
-                <strong className="is-bull">{advancingCount}↑</strong>
+                <strong className="is-bull">{advancingCount}↑ Advancing</strong>
                 <span className="opening-sep-dot"> · </span>
-                <strong className="is-bear">{decliningCount}↓</strong>
+                <strong className="is-bear">{decliningCount}↓ Declining</strong>
               </span>
             </div>
             <div className="opening-breadth-track">
@@ -360,16 +386,22 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
         </div>
       </div>
 
-      {/* BOTTOM CLEAN HAIRLINE TELEMETRY RAIL */}
+      {/* BOTTOM CLEAN HAIRLINE TELEMETRY RAIL - 4 Refined Glass KPI Slots */}
       <div className="opening-telemetry-dock">
         <div className="opening-telemetry-cell">
-          <div className="opening-tel-label">Global Market Cap</div>
+          <div className="opening-tel-header">
+            <Globe size={13} className="opening-tel-icon" />
+            <div className="opening-tel-label">Global Market Cap</div>
+          </div>
           <div className="opening-tel-value font-mono tabular-nums">{totalCapFormatted}</div>
           <div className="opening-tel-sub">Across {totalCount}+ Premier Assets</div>
         </div>
 
         <div className="opening-telemetry-cell">
-          <div className="opening-tel-label">Buy Consensus</div>
+          <div className="opening-tel-header">
+            <Activity size={13} className="opening-tel-icon" />
+            <div className="opening-tel-label">Buy Consensus</div>
+          </div>
           <div className="opening-tel-value font-mono tabular-nums is-bull">{bullishRatio}%</div>
           <div className="opening-tel-sub">{advancingCount} Advancing · {decliningCount} Declining</div>
         </div>
@@ -385,7 +417,11 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
           }}
           title="Open Top AI Conviction Pick complete record"
         >
-          <div className="opening-tel-label">30D AI Conviction</div>
+          <div className="opening-tel-header">
+            <Sparkles size={13} className="opening-tel-icon" />
+            <div className="opening-tel-label">30D AI Conviction</div>
+            <ArrowUpRight size={13} className="opening-tel-arrow" />
+          </div>
           <div className="opening-tel-value font-mono tabular-nums">
             <span>{aiPick.symbol || 'NVDA'}</span>
             <span className="opening-tel-inline-delta is-bull">+{Math.abs(Number(aiPick.forecastGain ?? 14.2)).toFixed(1)}%</span>
@@ -404,7 +440,11 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
           }}
           title="Open All-Time Best Equity Legend record"
         >
-          <div className="opening-tel-label">All-Time Legend · {allTimeHero.ipoYear || 1986}</div>
+          <div className="opening-tel-header">
+            <Award size={13} className="opening-tel-icon" />
+            <div className="opening-tel-label">All-Time Legend · {allTimeHero.ipoYear || 1986}</div>
+            <ArrowUpRight size={13} className="opening-tel-arrow" />
+          </div>
           <div className="opening-tel-value font-mono tabular-nums">
             <span>{allTimeHero.symbol || 'MSFT'}</span>
             <span className="opening-tel-inline-delta is-bull">{formatAllTimePercent(allTimeHero.allTimeReturnPercent || 708343)}</span>
