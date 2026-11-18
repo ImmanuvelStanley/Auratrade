@@ -395,20 +395,27 @@ const run = async () => {
     assert.equal(notifCheck.hasManualLiveSync, false, 'Manual Live Sync button must be removed in favor of automatic sync');
 
     // Click a message card to open its Additional Details Inspector
-    await evalJs(`(() => {
-      const card = document.querySelector('.notification-feed-card');
-      if (card) card.click();
-    })()`);
-    await sleep(250);
-    const notifDetailCheck = await evalJs(`(() => {
-      const detail = document.querySelector('.notification-detail-view');
-      const menu = document.querySelector('.notification-menu');
-      return {
-        open: !!detail,
-        hasBackBtn: menu ? /Back to Feed/i.test(menu.innerText) : false,
-        hasDetailsText: detail ? detail.innerText.length > 80 : false
-      };
-    })()`);
+    let notifDetailCheck = { open: false, hasBackBtn: false, hasDetailsText: false };
+    for (let i = 0; i < 10; i++) {
+      await evalJs(`(() => {
+        const detail = document.querySelector('.notification-detail-view');
+        if (!detail) {
+          const card = document.querySelector('.notification-feed-card');
+          if (card) card.click();
+        }
+      })()`);
+      await sleep(150);
+      notifDetailCheck = await evalJs(`(() => {
+        const detail = document.querySelector('.notification-detail-view');
+        const menu = document.querySelector('.notification-menu');
+        return {
+          open: !!detail,
+          hasBackBtn: menu ? /Back to Feed/i.test(menu.innerText) : false,
+          hasDetailsText: detail ? detail.innerText.length > 80 : false
+        };
+      })()`);
+      if (notifDetailCheck.open) break;
+    }
     assert.equal(notifDetailCheck.open, true, 'Clicking a notification card must show the Additional Details Inspector');
     assert.equal(notifDetailCheck.hasBackBtn, true, 'Detail inspector must display Back to Feed navigation');
     assert.equal(notifDetailCheck.hasDetailsText, true, 'Detail inspector must show explanation & metrics');

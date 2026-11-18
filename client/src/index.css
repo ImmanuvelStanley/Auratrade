@@ -11162,18 +11162,6 @@ canvas {
   transform: translate(2px, -2px);
 }
 
-.opening-cta-hint {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.38rem;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.opening-hint-icon {
-  color: var(--warning-amber);
-}
-
 /* Quick Dock & Interactive Tactile Chips */
 .opening-quick-dock {
   display: flex;

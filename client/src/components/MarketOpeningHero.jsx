@@ -4,8 +4,7 @@ import {
   Globe,
   Activity,
   Sparkles,
-  Award,
-  Zap
+  Award
 } from 'lucide-react';
 import { formatAllTimePercent } from '../utils/stockRecordEngine';
 
@@ -237,10 +236,6 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
               <span>Open {activeSpotlight.symbol} Workstation</span>
               <ArrowUpRight size={15} strokeWidth={2.4} className="opening-cta-arrow" />
             </button>
-            <span className="opening-cta-hint">
-              <Zap size={12} className="opening-hint-icon" />
-              <span>Institutional execution · Zero lag</span>
-            </span>
           </div>
 
           {/* Unboxed Borderless Live Quick-Jump Strip */}
