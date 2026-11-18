@@ -615,7 +615,7 @@ const run = async () => {
     assert.equal(regSocialCheck.hasApple, true, 'Create Account mode must render Apple registration button');
     assert.equal(regSocialCheck.divText, 'OR SIGN UP WITH', 'Divider in registration must be OR SIGN UP WITH');
 
-    // Verify OAuth Account Chooser & Confirmation Code flow
+    // Verify OAuth Email Input & Confirmation Code flow
     await evalJs(`(() => {
       const gBtn = document.getElementById('auth-social-google-reg-btn') || document.getElementById('auth-social-google-btn');
       if (gBtn) gBtn.click();
@@ -624,39 +624,23 @@ const run = async () => {
 
     const pickerCheck = await evalJs(`(() => {
       const pickerBack = document.getElementById('auth-oauth-back-btn');
-      const firstAcc = document.getElementById('auth-oauth-acc-0');
-      const useAnotherBtn = document.getElementById('auth-oauth-use-another-btn');
+      const emailInput = document.getElementById('auth-oauth-custom-email-input');
+      const nameInput = document.getElementById('auth-oauth-custom-name-input');
       const continueBtn = document.getElementById('auth-oauth-continue-btn');
+      const hasAccountCards = !!document.querySelector('.auth-oauth-account-list');
       return {
         hasBackBtn: !!pickerBack,
-        hasFirstAcc: !!firstAcc,
-        hasUseAnother: !!useAnotherBtn,
-        hasContinue: !!continueBtn
+        hasEmailInput: !!emailInput,
+        hasNameInput: !!nameInput,
+        hasContinue: !!continueBtn,
+        hasAccountCards
       };
     })()`);
-    assert.equal(pickerCheck.hasBackBtn, true, 'OAuth picker must have back button');
-    assert.equal(pickerCheck.hasFirstAcc, true, 'OAuth picker must render account items');
-    assert.equal(pickerCheck.hasUseAnother, true, 'OAuth picker must have Use Another Account option');
-    assert.equal(pickerCheck.hasContinue, true, 'OAuth picker must have Continue button');
-
-    // Click "Use another account" to verify custom email inputs appear
-    await evalJs(`(() => {
-      const btn = document.getElementById('auth-oauth-use-another-btn');
-      if (btn) btn.click();
-    })()`);
-    await sleep(200);
-    const customEmailCheck = await evalJs(`(() => {
-      const input = document.getElementById('auth-oauth-custom-email-input');
-      return !!input;
-    })()`);
-    assert.equal(customEmailCheck, true, 'Clicking Use Another Account must show custom email input');
-
-    // Switch back to account 0
-    await evalJs(`(() => {
-      const firstAcc = document.getElementById('auth-oauth-acc-0');
-      if (firstAcc) firstAcc.click();
-    })()`);
-    await sleep(150);
+    assert.equal(pickerCheck.hasBackBtn, true, 'OAuth flow must have back button');
+    assert.equal(pickerCheck.hasEmailInput, true, 'OAuth flow must directly provide email input');
+    assert.equal(pickerCheck.hasNameInput, true, 'OAuth flow must provide name input');
+    assert.equal(pickerCheck.hasContinue, true, 'OAuth flow must have Continue button');
+    assert.equal(pickerCheck.hasAccountCards, false, 'Preset account cards list must be removed');
 
     // Click "Back to Sign In"
     await evalJs(`(() => {

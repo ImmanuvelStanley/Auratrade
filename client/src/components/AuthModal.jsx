@@ -205,17 +205,12 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
     setError('');
     setSuccessMsg('');
     setOauthProvider(provider);
-    const accounts = getSavedOAuthAccounts(provider);
-    if (accounts.length > 0) {
-      setOauthSelectedEmail(accounts[0].email);
-      setOauthSelectedName(accounts[0].name || '');
-      setIsUsingCustomOAuthEmail(false);
+    if (signInIdentifier && signInIdentifier.includes('@')) {
+      setOauthCustomEmail(signInIdentifier.trim());
     } else {
-      const fallback = provider === 'apple' ? 'trader.aura@icloud.com' : 'trader.aura@gmail.com';
-      setOauthSelectedEmail(fallback);
-      setOauthSelectedName(provider === 'apple' ? 'Apple Trader' : 'Google Trader');
-      setIsUsingCustomOAuthEmail(false);
+      setOauthCustomEmail('');
     }
+    setOauthCustomName('');
     setMode('oauth_picker');
     setStep(1);
   };
@@ -231,15 +226,13 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
     setError('');
     setSuccessMsg('');
 
-    const targetEmail = (isUsingCustomOAuthEmail ? oauthCustomEmail : oauthSelectedEmail).trim();
+    const targetEmail = (oauthCustomEmail || '').trim();
     if (!targetEmail || !targetEmail.includes('@') || !targetEmail.includes('.')) {
-      setError('Please choose or enter a valid email address.');
+      setError('Please enter a valid email address.');
       return;
     }
 
-    const chosenName = isUsingCustomOAuthEmail
-      ? (oauthCustomName.trim() || targetEmail.split('@')[0])
-      : (oauthSelectedName || targetEmail.split('@')[0]);
+    const chosenName = oauthCustomName.trim() || targetEmail.split('@')[0];
 
     setLoading(true);
     try {
@@ -569,8 +562,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         setOtpDigits(['', '', '', '', '', '']);
         setEmailOtpDigits(['', '', '', '', '', '']);
       } else if (otpPurpose === 'oauth_verify') {
-        const targetEmail = (isUsingCustomOAuthEmail ? oauthCustomEmail : oauthSelectedEmail).trim() || maskedDestination;
-        const targetName = (isUsingCustomOAuthEmail ? oauthCustomName : oauthSelectedName).trim();
+        const targetEmail = (oauthCustomEmail || '').trim() || maskedDestination;
+        const targetName = (oauthCustomName || '').trim();
         const resp = await sendOtp({
           identifier: targetEmail,
           channel: 'email',
@@ -673,8 +666,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         });
         if (onClose) onClose();
       } else if (otpPurpose === 'oauth_verify') {
-        const targetEmail = (isUsingCustomOAuthEmail ? oauthCustomEmail : oauthSelectedEmail).trim() || maskedDestination;
-        const targetName = (isUsingCustomOAuthEmail ? oauthCustomName : oauthSelectedName).trim();
+        const targetEmail = (oauthCustomEmail || '').trim() || maskedDestination;
+        const targetName = (oauthCustomName || '').trim();
         await verifyOtp({
           identifier: targetEmail,
           code: fullCode,
@@ -943,180 +936,66 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                 </div>
               )}
 
-              {/* MODE 0: OAUTH ACCOUNT PICKER (Google & Apple ID Selector) */}
+              {/* MODE 0: OAUTH ACCOUNT SELECTION (Google & Apple) */}
               {mode === 'oauth_picker' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                <form onSubmit={handleProceedOAuthWithEmail} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                   <div style={{ textAlign: 'left', marginBottom: '0.15rem' }}>
                     <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
                       {oauthProvider === 'apple' ? 'Sign in with Apple' : 'Sign in with Google'}
                     </div>
                     <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '2px' }}>
-                      Choose an account or use a new address to continue to your AuraTrade dashboard.
+                      {oauthProvider === 'apple'
+                        ? 'Enter your Apple ID to continue to your AuraTrade workspace.'
+                        : 'Enter your Google Account email to continue to your AuraTrade workspace.'}
                     </div>
                   </div>
 
-                  {/* Account List */}
-                  <div className="auth-oauth-account-list" role="radiogroup" aria-label="Choose account">
-                    {getSavedOAuthAccounts(oauthProvider).map((acc, index) => {
-                      const isSelected = !isUsingCustomOAuthEmail && oauthSelectedEmail.toLowerCase() === acc.email.toLowerCase();
-                      return (
-                        <div
-                          key={acc.email}
-                          className={`auth-oauth-account-item ${isSelected ? 'is-selected' : ''}`}
-                          onClick={() => {
-                            setOauthSelectedEmail(acc.email);
-                            setOauthSelectedName(acc.name || '');
-                            setIsUsingCustomOAuthEmail(false);
-                            setError('');
-                          }}
-                          role="radio"
-                          aria-checked={isSelected}
-                          tabIndex={0}
-                          id={`auth-oauth-acc-${index}`}
-                        >
-                          <div className="auth-oauth-avatar">
-                            {(acc.name || acc.email).charAt(0).toUpperCase()}
-                          </div>
-                          <div className="auth-oauth-details">
-                            <span className="auth-oauth-name">{acc.name || acc.email.split('@')[0]}</span>
-                            <span className="auth-oauth-email">{acc.email}</span>
-                          </div>
-                          <div className={`auth-oauth-radio ${isSelected ? 'is-checked' : ''}`}>
-                            {isSelected && (
-                              <div
-                                style={{
-                                  width: '8px',
-                                  height: '8px',
-                                  borderRadius: '50%',
-                                  background: 'var(--accent-cyan)'
-                                }}
-                              />
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {/* Option to use another email / create new account with different mail */}
-                    <div
-                      className={`auth-oauth-account-item ${isUsingCustomOAuthEmail ? 'is-selected' : ''}`}
-                      onClick={() => {
-                        setIsUsingCustomOAuthEmail(true);
-                        setError('');
-                      }}
-                      role="radio"
-                      aria-checked={isUsingCustomOAuthEmail}
-                      tabIndex={0}
-                      id="auth-oauth-use-another-btn"
-                    >
-                      <div className="auth-oauth-avatar auth-oauth-avatar--add">
-                        <UserPlus size={15} />
-                      </div>
-                      <div className="auth-oauth-details">
-                        <span className="auth-oauth-name">Use another account</span>
-                        <span className="auth-oauth-email">Enter any new or different email address</span>
-                      </div>
-                      <div className={`auth-oauth-radio ${isUsingCustomOAuthEmail ? 'is-checked' : ''}`}>
-                        {isUsingCustomOAuthEmail && (
-                          <div
-                            style={{
-                              width: '8px',
-                              height: '8px',
-                              borderRadius: '50%',
-                              background: 'var(--accent-cyan)'
-                            }}
-                          />
-                        )}
-                      </div>
+                  <div className="input-group">
+                    <label className="input-label" style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+                      {oauthProvider === 'apple' ? 'Apple ID / Email Address' : 'Google Email Address'}
+                    </label>
+                    <div className="auth-input-wrapper">
+                      <Mail size={15} className="auth-input-icon" />
+                      <input
+                        type="email"
+                        required
+                        className="auth-input-field"
+                        placeholder={oauthProvider === 'apple' ? 'e.g. name@icloud.com or email' : 'e.g. name@gmail.com'}
+                        value={oauthCustomEmail}
+                        onChange={(e) => setOauthCustomEmail(e.target.value)}
+                        id="auth-oauth-custom-email-input"
+                        autoFocus
+                      />
                     </div>
                   </div>
 
-                  {/* Custom Email Input fields when "Use another account" is selected */}
-                  {isUsingCustomOAuthEmail && (
-                    <div
-                      style={{
-                        padding: '0.85rem',
-                        background: 'var(--bg-card-hover)',
-                        border: '1px solid rgba(6, 182, 212, 0.3)',
-                        borderRadius: '9px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '0.65rem'
-                      }}
-                    >
-                      <div className="input-group">
-                        <label className="input-label" style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
-                          Email Address
-                        </label>
-                        <div className="auth-input-wrapper">
-                          <Mail size={15} className="auth-input-icon" />
-                          <input
-                            type="email"
-                            required
-                            className="auth-input-field"
-                            placeholder="e.g. yourname@domain.com"
-                            value={oauthCustomEmail}
-                            onChange={(e) => setOauthCustomEmail(e.target.value)}
-                            id="auth-oauth-custom-email-input"
-                            autoFocus
-                          />
-                        </div>
-                      </div>
-
-                      <div className="input-group">
-                        <label className="input-label" style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
-                          Display Name (Optional)
-                        </label>
-                        <div className="auth-input-wrapper">
-                          <User size={15} className="auth-input-icon" />
-                          <input
-                            type="text"
-                            className="auth-input-field"
-                            placeholder="e.g. Alex Morgan"
-                            value={oauthCustomName}
-                            onChange={(e) => setOauthCustomName(e.target.value)}
-                            id="auth-oauth-custom-name-input"
-                          />
-                        </div>
-                      </div>
+                  <div className="input-group">
+                    <label className="input-label" style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+                      Full Name (Optional)
+                    </label>
+                    <div className="auth-input-wrapper">
+                      <User size={15} className="auth-input-icon" />
+                      <input
+                        type="text"
+                        className="auth-input-field"
+                        placeholder="e.g. Alex Morgan"
+                        value={oauthCustomName}
+                        onChange={(e) => setOauthCustomName(e.target.value)}
+                        id="auth-oauth-custom-name-input"
+                      />
                     </div>
-                  )}
-
-                  {/* Verification Notice */}
-                  <div
-                    style={{
-                      padding: '0.55rem 0.75rem',
-                      background: 'rgba(6, 182, 212, 0.06)',
-                      border: '1px solid rgba(6, 182, 212, 0.2)',
-                      borderRadius: '7px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.45rem',
-                      fontSize: '0.72rem',
-                      color: '#94a3b8'
-                    }}
-                  >
-                    <ShieldCheck size={14} color="var(--accent-cyan)" style={{ flexShrink: 0 }} />
-                    <span>A 6-digit confirmation code will be dispatched to verify your identity.</span>
                   </div>
 
-                  {/* Continue Button */}
                   <button
-                    type="button"
+                    type="submit"
                     className="btn btn-primary"
-                    disabled={
-                      loading ||
-                      (isUsingCustomOAuthEmail
-                        ? !oauthCustomEmail.trim() || !oauthCustomEmail.includes('@')
-                        : !oauthSelectedEmail.trim())
-                    }
-                    onClick={handleProceedOAuthWithEmail}
+                    disabled={loading || !oauthCustomEmail.trim() || !oauthCustomEmail.includes('@')}
                     style={{
                       width: '100%',
                       padding: '0.75rem',
                       fontSize: '0.85rem',
                       fontWeight: 700,
-                      marginTop: '0.1rem',
+                      marginTop: '0.2rem',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -1136,7 +1015,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                       </>
                     )}
                   </button>
-                </div>
+                </form>
               )}
 
               {/* MODE 1: SIGN IN FORM */}
