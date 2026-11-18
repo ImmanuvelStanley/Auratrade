@@ -7654,10 +7654,10 @@ const STOCK_CATALOG = {
     tier: 'Global Commodity ($/oz)',
     marketCap: 17500000000000,
     marketCapFormatted: '$17.5T',
-    basePrice: 4424.90,
+    basePrice: 3758.10,
     peRatio: 'N/A',
     dividendYield: '0.0%',
-    high52: 4485.00,
+    high52: 3820.00,
     low52: 2550.00,
     rating: 'STRONG BUY',
     ratingScore: 96,
@@ -7680,10 +7680,10 @@ const STOCK_CATALOG = {
     tier: 'Global Commodity ($/oz)',
     marketCap: 1850000000000,
     marketCapFormatted: '$1.85T',
-    basePrice: 67.15,
+    basePrice: 44.95,
     peRatio: 'N/A',
     dividendYield: '0.0%',
-    high52: 69.50,
+    high52: 48.50,
     low52: 28.20,
     rating: 'STRONG BUY',
     ratingScore: 92,
@@ -7706,10 +7706,10 @@ const STOCK_CATALOG = {
     tier: 'MCX Benchmark (₹/10g)',
     marketCap: 85000000000000,
     marketCapFormatted: '₹85T',
-    basePrice: 151300.00,
+    basePrice: 129379.00,
     peRatio: 'N/A',
     dividendYield: '0.0%',
-    high52: 155000.00,
+    high52: 135000.00,
     low52: 72000.00,
     rating: 'STRONG BUY',
     ratingScore: 95,
@@ -7732,10 +7732,10 @@ const STOCK_CATALOG = {
     tier: 'MCX Benchmark (₹/kg)',
     marketCap: 14500000000000,
     marketCapFormatted: '₹14.5T',
-    basePrice: 247500.00,
+    basePrice: 179612.00,
     peRatio: 'N/A',
     dividendYield: '0.0%',
-    high52: 260000.00,
+    high52: 195000.00,
     low52: 84000.00,
     rating: 'STRONG BUY',
     ratingScore: 91,
@@ -8510,12 +8510,12 @@ class MarketDataService {
       { symbol: 'NIKKEI 225', name: 'Nikkei Tokyo', region: 'Asia', countryCode: 'JP', countryFlag: '🇯🇵', price: 65142.78, change: -124.32, changePercent: -0.19, currency: 'JPY', type: 'index' },
       { symbol: 'HANG SENG', name: 'Hang Seng HK', region: 'Asia', countryCode: 'HK', countryFlag: '🇭🇰', price: 17450.60, change: +60.40, changePercent: +0.35, currency: 'HKD', type: 'index' },
       { symbol: 'ASX 200', name: 'ASX Australia', region: 'Asia-Pacific', countryCode: 'AU', countryFlag: '🇦🇺', price: 8560.40, change: -24.60, changePercent: -0.29, currency: 'AUD', type: 'index' },
-      { symbol: 'GOLD', name: 'Gold (XAU/USD)', region: 'Commodity', countryCode: 'METAL', countryFlag: 'XAU', price: 4314.50, change: +16.50, changePercent: +0.38, currency: 'USD', type: 'commodity' },
-      { symbol: 'SILVER', name: 'Silver (XAG/USD)', region: 'Commodity', countryCode: 'METAL', countryFlag: 'XAG', price: 64.26, change: +0.26, changePercent: +0.41, currency: 'USD', type: 'commodity' },
-      { symbol: 'GOLD.MCX', name: 'MCX Gold 10g', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 148390.00, change: +560.00, changePercent: +0.38, currency: 'INR', type: 'commodity' },
-      { symbol: 'SILVER.MCX', name: 'MCX Silver 1kg', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 237890.00, change: +980.00, changePercent: +0.41, currency: 'INR', type: 'commodity' },
+      { symbol: 'GOLD', name: 'Gold (XAU/USD)', region: 'Commodity', countryCode: 'METAL', countryFlag: 'XAU', price: 3758.10, change: +12.40, changePercent: +0.33, currency: 'USD', type: 'commodity' },
+      { symbol: 'SILVER', name: 'Silver (XAG/USD)', region: 'Commodity', countryCode: 'METAL', countryFlag: 'XAG', price: 44.95, change: +0.35, changePercent: +0.78, currency: 'USD', type: 'commodity' },
+      { symbol: 'GOLD.MCX', name: 'MCX Gold 10g', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 129379.00, change: +420.00, changePercent: +0.33, currency: 'INR', type: 'commodity' },
+      { symbol: 'SILVER.MCX', name: 'MCX Silver 1kg', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 179612.00, change: +850.00, changePercent: +0.47, currency: 'INR', type: 'commodity' },
       { symbol: 'BTC/USD', name: 'Bitcoin', region: 'Crypto', countryCode: 'CRYPTO', countryFlag: '🌐', price: 64250.00, change: +1350.00, changePercent: +2.14, currency: 'USD', type: 'crypto' },
-      { symbol: 'USD/INR', name: 'USD/INR Forex', region: 'Forex', countryCode: 'FX', countryFlag: '💱', price: 95.82, change: -0.13, changePercent: -0.14, currency: 'INR', type: 'forex' }
+      { symbol: 'USD/INR', name: 'USD/INR Forex', region: 'Forex', countryCode: 'FX', countryFlag: '💱', price: 93.43, change: -0.04, changePercent: -0.04, currency: 'INR', type: 'forex' }
     ];
 
     // Read real-time live market state for dynamic updates
@@ -8666,12 +8666,12 @@ class MarketDataService {
   async getGlobalIndices(filterRegion = 'major') {
     const rawIndices = [
       // --- Commodities & Precious Metals ---
-      { symbol: 'GOLD', name: 'Gold Spot (XAU/USD)', region: 'commodities', country: 'Global', countryFlag: 'XAU', last: 4314.50, high: 4325.80, low: 4298.00, high52: 4460.00, low52: 2680.00, chg: +16.50, chgPercent: +0.38, currency: 'USD', unit: '$/oz', category: 'Precious Metal', isMajor: true, volume: '24.5M oz', turnover: '$42.1B', volumeVal: 24.5, turnoverVal: 42.1 },
-      { symbol: 'SILVER', name: 'Silver Spot (XAG/USD)', region: 'commodities', country: 'Global', countryFlag: 'XAG', last: 64.26, high: 64.85, low: 63.90, high52: 68.50, low52: 28.50, chg: +0.26, chgPercent: +0.41, currency: 'USD', unit: '$/oz', category: 'Precious Metal', isMajor: true, volume: '58.2M oz', turnover: '$22.8B', volumeVal: 58.2, turnoverVal: 22.8 },
-      { symbol: 'GOLD.MCX', name: 'MCX Gold 10g', region: 'commodities', country: 'India', countryFlag: '🇮🇳', last: 148390.00, high: 149200.00, low: 147800.00, high52: 153000.00, low52: 98000.00, chg: +560.00, chgPercent: +0.38, currency: 'INR', unit: '₹/10g', category: 'MCX Futures', isMajor: true, volume: '18.2K lots', turnover: '₹1,840 Cr ($2.2B)', volumeVal: 18.2, turnoverVal: 2.2 },
-      { symbol: 'SILVER.MCX', name: 'MCX Silver 1kg', region: 'commodities', country: 'India', countryFlag: '🇮🇳', last: 237890.00, high: 239500.00, low: 236400.00, high52: 252000.00, low52: 140000.00, chg: +980.00, chgPercent: +0.41, currency: 'INR', unit: '₹/kg', category: 'MCX Futures', isMajor: true, volume: '34.6K lots', turnover: '₹3,210 Cr ($3.8B)', volumeVal: 34.6, turnoverVal: 3.8 },
-      { symbol: 'GOLDBEES.NS', name: 'Nippon Gold ETF', region: 'commodities', country: 'India', countryFlag: '🇮🇳', last: 126.48, high: 127.10, low: 125.80, high52: 130.50, low52: 78.40, chg: +0.48, chgPercent: +0.38, currency: 'INR', unit: '₹/unit', category: 'NSE ETF', isMajor: false, volume: '6.4M units', turnover: '₹810 Cr ($970M)', volumeVal: 6.4, turnoverVal: 0.97 },
-      { symbol: 'SILVERBEES.NS', name: 'Nippon Silver ETF', region: 'commodities', country: 'India', countryFlag: '🇮🇳', last: 224.07, high: 226.50, low: 221.20, high52: 232.00, low52: 95.00, chg: +0.92, chgPercent: +0.41, currency: 'INR', unit: '₹/unit', category: 'NSE ETF', isMajor: false, volume: '8.8M units', turnover: '₹1,970 Cr ($2.4B)', volumeVal: 8.8, turnoverVal: 2.4 },
+      { symbol: 'GOLD', name: 'Gold Spot (XAU/USD)', region: 'commodities', country: 'Global', countryFlag: 'XAU', last: 3758.10, high: 3775.50, low: 3740.00, high52: 3820.00, low52: 2550.00, chg: +12.40, chgPercent: +0.33, currency: 'USD', unit: '$/oz', category: 'Precious Metal', isMajor: true, volume: '24.5M oz', turnover: '$42.1B', volumeVal: 24.5, turnoverVal: 42.1 },
+      { symbol: 'SILVER', name: 'Silver Spot (XAG/USD)', region: 'commodities', country: 'Global', countryFlag: 'XAG', last: 44.95, high: 45.40, low: 44.50, high52: 48.50, low52: 28.20, chg: +0.35, chgPercent: +0.78, currency: 'USD', unit: '$/oz', category: 'Precious Metal', isMajor: true, volume: '58.2M oz', turnover: '$22.8B', volumeVal: 58.2, turnoverVal: 22.8 },
+      { symbol: 'GOLD.MCX', name: 'MCX Gold 10g', region: 'commodities', country: 'India', countryFlag: '🇮🇳', last: 129379.00, high: 130200.00, low: 128900.00, high52: 135000.00, low52: 72000.00, chg: +420.00, chgPercent: +0.33, currency: 'INR', unit: '₹/10g', category: 'MCX Futures', isMajor: true, volume: '18.2K lots', turnover: '₹1,840 Cr ($2.2B)', volumeVal: 18.2, turnoverVal: 2.2 },
+      { symbol: 'SILVER.MCX', name: 'MCX Silver 1kg', region: 'commodities', country: 'India', countryFlag: '🇮🇳', last: 179612.00, high: 181200.00, low: 178500.00, high52: 195000.00, low52: 84000.00, chg: +850.00, chgPercent: +0.47, currency: 'INR', unit: '₹/kg', category: 'MCX Futures', isMajor: true, volume: '34.6K lots', turnover: '₹3,210 Cr ($3.8B)', volumeVal: 34.6, turnoverVal: 3.8 },
+      { symbol: 'GOLDBEES.NS', name: 'Nippon Gold ETF', region: 'commodities', country: 'India', countryFlag: '🇮🇳', last: 118.40, high: 119.20, low: 117.80, high52: 124.50, low52: 78.40, chg: +0.42, chgPercent: +0.36, currency: 'INR', unit: '₹/unit', category: 'NSE ETF', isMajor: false, volume: '6.4M units', turnover: '₹810 Cr ($970M)', volumeVal: 6.4, turnoverVal: 0.97 },
+      { symbol: 'SILVERBEES.NS', name: 'Nippon Silver ETF', region: 'commodities', country: 'India', countryFlag: '🇮🇳', last: 184.20, high: 186.10, low: 182.50, high52: 196.00, low52: 95.00, chg: +1.15, chgPercent: +0.63, currency: 'INR', unit: '₹/unit', category: 'NSE ETF', isMajor: false, volume: '8.8M units', turnover: '₹1,970 Cr ($2.4B)', volumeVal: 8.8, turnoverVal: 2.4 },
       { symbol: 'BRENT', name: 'Brent Crude Oil', region: 'commodities', country: 'Global', countryFlag: '🛢️', last: 74.20, high: 75.10, low: 73.80, high52: 89.20, low52: 68.40, chg: -0.45, chgPercent: -0.60, currency: 'USD', unit: '$/bbl', category: 'Energy', isMajor: false, volume: '14.2M bbl', turnover: '$12.4B', volumeVal: 14.2, turnoverVal: 12.4 },
       { symbol: 'CRUDEOIL', name: 'WTI Crude Oil', region: 'commodities', country: 'United States', countryFlag: '🇺🇸', last: 70.85, high: 71.70, low: 70.40, high52: 85.50, low52: 65.20, chg: -0.52, chgPercent: -0.73, currency: 'USD', unit: '$/bbl', category: 'Energy', isMajor: false, volume: '18.9M bbl', turnover: '$15.8B', volumeVal: 18.9, turnoverVal: 15.8 },
       { symbol: 'COPPER', name: 'Copper COMEX', region: 'commodities', country: 'Global', countryFlag: '🧱', last: 4.38, high: 4.42, low: 4.34, high52: 5.10, low52: 3.80, chg: +0.03, chgPercent: +0.69, currency: 'USD', unit: '$/lb', category: 'Industrial Metal', isMajor: false, volume: '4.5M lbs', turnover: '$4.2B', volumeVal: 4.5, turnoverVal: 4.2 },
@@ -8857,11 +8857,11 @@ class MarketDataService {
     const isMcxOpen = isWeekday && ((hours >= 9 && hours < 23) || (hours === 23 && minutes <= 30));
     const mcxStatus = isMcxOpen ? 'MCX TRADING - OPEN' : 'MCX TRADING - CLOSED';
 
-    const usdInrRate = bullionData.usdInrRate || 95.88;
-    const goldPriceUsd = bullionData.goldPriceUsd || 4424.90;
-    const silverPriceUsd = bullionData.silverPriceUsd || 67.15;
-    const goldMcxPrice = bullionData.mcxGoldPrice || 151300;
-    const silverMcxPrice = bullionData.mcxSilverPrice || 247500;
+    const usdInrRate = bullionData.usdInrRate || 93.43;
+    const goldPriceUsd = bullionData.goldPriceUsd || 3758.10;
+    const silverPriceUsd = bullionData.silverPriceUsd || 44.95;
+    const goldMcxPrice = bullionData.mcxGoldPrice || 129379;
+    const silverMcxPrice = bullionData.mcxSilverPrice || 179612;
 
     // Gold / Silver Valuation Ratio
     const goldSilverRatio = parseFloat((goldPriceUsd / silverPriceUsd).toFixed(2));
@@ -8874,23 +8874,23 @@ class MarketDataService {
         : 'Fair Value Range';
 
     // Indian Physical Retail Jewellery Rates derived from exact live daily benchmarks
-    const rate24k10g = bullionData.rate24k10g || 155840;
-    const rate24k1g = bullionData.rate24k1g || 15584;
+    const rate24k10g = bullionData.rate24k10g || 133260;
+    const rate24k1g = bullionData.rate24k1g || 13326;
     const rate24k8g = rate24k1g * 8; // 1 Pavan / Sovereign
     const rate24k100g = rate24k10g * 10;
 
-    const rate22k10g = bullionData.rate22k10g || 142850;
-    const rate22k1g = bullionData.rate22k1g || 14285;
+    const rate22k10g = bullionData.rate22k10g || 122150;
+    const rate22k1g = bullionData.rate22k1g || 12215;
     const rate22k8g = rate22k1g * 8;
     const rate22k100g = rate22k10g * 10;
 
-    const rate18k10g = bullionData.rate18k10g || 116880;
-    const rate18k1g = bullionData.rate18k1g || 11688;
+    const rate18k10g = bullionData.rate18k10g || 99940;
+    const rate18k1g = bullionData.rate18k1g || 9994;
 
-    const silverPerKg = bullionData.silver1kg || 255000;
+    const silverPerKg = bullionData.silver1kg || 185000;
     const silverPer100g = Math.round(silverPerKg / 10);
     const silverPer10g = Math.round(silverPerKg / 100);
-    const silverPer1g = bullionData.silver1g || 255.00;
+    const silverPer1g = bullionData.silver1g || 185.00;
 
     const jewelleryRates = {
       gold24k: {
@@ -8900,8 +8900,8 @@ class MarketDataService {
         per8gPavan: rate24k8g,
         per10g: rate24k10g,
         per100g: rate24k100g,
-        changeToday: bullionData.mcxGoldChange || +860,
-        changePercent: bullionData.goldChangePctUsd || +0.57
+        changeToday: bullionData.mcxGoldChange || -278,
+        changePercent: bullionData.goldChangePctUsd || -0.21
       },
       gold22k: {
         karat: '22K (91.6% Hallmark Jewellery)',
@@ -8910,8 +8910,8 @@ class MarketDataService {
         per8gPavan: rate22k8g,
         per10g: rate22k10g,
         per100g: rate22k100g,
-        changeToday: Math.round((bullionData.mcxGoldChange || 860) * 0.916),
-        changePercent: bullionData.goldChangePctUsd || +0.57
+        changeToday: Math.round((bullionData.mcxGoldChange || -278) * 0.916),
+        changePercent: bullionData.goldChangePctUsd || -0.21
       },
       gold18k: {
         karat: '18K (75.0% Diamond Jewellery)',
@@ -8919,8 +8919,8 @@ class MarketDataService {
         perGram: rate18k1g,
         per8gPavan: Math.round(rate18k1g * 8),
         per10g: rate18k10g,
-        changeToday: Math.round((bullionData.mcxGoldChange || 860) * 0.75),
-        changePercent: bullionData.goldChangePctUsd || +0.57
+        changeToday: Math.round((bullionData.mcxGoldChange || -278) * 0.75),
+        changePercent: bullionData.goldChangePctUsd || -0.21
       },
       silverFine: {
         name: 'Fine Silver (999 Purity)',
@@ -8929,8 +8929,8 @@ class MarketDataService {
         per10g: silverPer10g,
         per100g: silverPer100g,
         per1kg: silverPerKg,
-        changeToday: bullionData.mcxSilverChange || +3880,
-        changePercent: bullionData.silverChangePctUsd || +1.59
+        changeToday: bullionData.mcxSilverChange || -500,
+        changePercent: bullionData.silverChangePctUsd || -0.27
       }
     };
 
@@ -8948,7 +8948,7 @@ class MarketDataService {
         changePercent: bullionData.goldChangePctUsd,
         dayHigh: bullionData.goldDayHigh,
         dayLow: bullionData.goldDayLow,
-        high52: 4485.00,
+        high52: 3820.00,
         low52: 2550.00,
         badge: 'XAU',
         category: 'International Spot',
@@ -8967,7 +8967,7 @@ class MarketDataService {
         changePercent: bullionData.silverChangePctUsd,
         dayHigh: bullionData.silverDayHigh,
         dayLow: bullionData.silverDayLow,
-        high52: 69.50,
+        high52: 48.50,
         low52: 28.20,
         badge: 'XAG',
         category: 'International Spot',
@@ -8986,7 +8986,7 @@ class MarketDataService {
         changePercent: bullionData.goldChangePctUsd,
         dayHigh: bullionData.mcxGoldDayHigh,
         dayLow: bullionData.mcxGoldDayLow,
-        high52: 155000.00,
+        high52: 135000.00,
         low52: 72000.00,
         badge: 'MCX',
         category: 'Indian Domestic Futures',
@@ -9005,7 +9005,7 @@ class MarketDataService {
         changePercent: bullionData.silverChangePctUsd,
         dayHigh: bullionData.mcxSilverDayHigh,
         dayLow: bullionData.mcxSilverDayLow,
-        high52: 260000.00,
+        high52: 195000.00,
         low52: 84000.00,
         badge: 'MCX',
         category: 'Indian Domestic Futures',
@@ -9062,7 +9062,7 @@ class MarketDataService {
         changePercent: bullionData.goldChangePctUsd,
         dayHigh: Math.round(rate24k1g * 0.99),
         dayLow: Math.round(rate24k1g * 0.98),
-        high52: 15500.00,
+        high52: 13500.00,
         low52: 7100.00,
         badge: 'SGB',
         category: 'Sovereign Bond',

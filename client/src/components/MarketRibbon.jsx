@@ -18,12 +18,12 @@ const CORE_BENCHMARKS = [
   { symbol: 'HANG SENG', name: 'Hang Seng HK', region: 'Asia', countryCode: 'HK', countryFlag: '🇭🇰', price: 17450.60, changePercent: +0.35, currency: 'HKD' },
   { symbol: 'ASX 200', name: 'ASX Australia', region: 'Asia-Pacific', countryCode: 'AU', countryFlag: '🇦🇺', price: 8560.40, changePercent: -0.29, currency: 'AUD' },
   { symbol: 'INDIA VIX', name: 'India VIX', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 11.77, changePercent: +3.70, currency: '' },
-  { symbol: 'GOLD', name: 'Gold (XAU/USD)', region: 'Commodity', countryCode: 'METAL', countryFlag: 'XAU', price: 4314.50, changePercent: +0.38, currency: 'USD' },
-  { symbol: 'SILVER', name: 'Silver (XAG/USD)', region: 'Commodity', countryCode: 'METAL', countryFlag: 'XAG', price: 64.26, changePercent: +0.41, currency: 'USD' },
-  { symbol: 'GOLD.MCX', name: 'MCX Gold 10g', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 148390.00, changePercent: +0.38, currency: 'INR' },
-  { symbol: 'SILVER.MCX', name: 'MCX Silver 1kg', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 237890.00, changePercent: +0.41, currency: 'INR' },
+  { symbol: 'GOLD', name: 'Gold (XAU/USD)', region: 'Commodity', countryCode: 'METAL', countryFlag: 'XAU', price: 3758.10, changePercent: +0.33, currency: 'USD' },
+  { symbol: 'SILVER', name: 'Silver (XAG/USD)', region: 'Commodity', countryCode: 'METAL', countryFlag: 'XAG', price: 44.95, changePercent: +0.78, currency: 'USD' },
+  { symbol: 'GOLD.MCX', name: 'MCX Gold 10g', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 129379.00, changePercent: +0.33, currency: 'INR' },
+  { symbol: 'SILVER.MCX', name: 'MCX Silver 1kg', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 179612.00, changePercent: +0.47, currency: 'INR' },
   { symbol: 'BTC/USD', name: 'Bitcoin', region: 'Crypto', countryCode: 'CRYPTO', countryFlag: 'CRYPTO', price: 64250.00, changePercent: +2.14, currency: 'USD' },
-  { symbol: 'USD/INR', name: 'USD/INR Forex', region: 'Forex', countryCode: 'FX', countryFlag: 'FX', price: 95.82, changePercent: -0.14, currency: 'INR' }
+  { symbol: 'USD/INR', name: 'USD/INR Forex', region: 'Forex', countryCode: 'FX', countryFlag: 'FX', price: 93.43, changePercent: -0.04, currency: 'INR' }
 ];
 
 function buildMergedRibbonItems(baseList, incomingList = []) {

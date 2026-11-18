@@ -1316,11 +1316,11 @@ export function downloadBullionMarketPdf(metalsData, options = {}) {
   const silverObj = metalsData?.spotSilver || metalsData?.silverSpot;
   const ratioObj = metalsData?.ratio;
 
-  const goldPriceStr = goldObj?.price ? `$${Number(goldObj.price).toFixed(2)}/oz` : '$4,424.90/oz';
-  const goldChgStr = goldObj?.changePercent != null ? `${goldObj.changePercent >= 0 ? '+' : ''}${Number(goldObj.changePercent).toFixed(2)}% ($${goldObj.change >= 0 ? '+' : ''}${Number(goldObj.change || 0).toFixed(2)})` : '+0.57% ($+25.20)';
+  const goldPriceStr = goldObj?.price ? `$${Number(goldObj.price).toFixed(2)}/oz` : '$3,758.10/oz';
+  const goldChgStr = goldObj?.changePercent != null ? `${goldObj.changePercent >= 0 ? '+' : ''}${Number(goldObj.changePercent).toFixed(2)}% ($${goldObj.change >= 0 ? '+' : ''}${Number(goldObj.change || 0).toFixed(2)})` : '+0.33% ($+12.40)';
 
-  const silverPriceStr = silverObj?.price ? `$${Number(silverObj.price).toFixed(2)}/oz` : '$67.15/oz';
-  const silverChgStr = silverObj?.changePercent != null ? `${silverObj.changePercent >= 0 ? '+' : ''}${Number(silverObj.changePercent).toFixed(2)}% ($${silverObj.change >= 0 ? '+' : ''}${Number(silverObj.change || 0).toFixed(2)})` : '+1.59% ($+1.05)';
+  const silverPriceStr = silverObj?.price ? `$${Number(silverObj.price).toFixed(2)}/oz` : '$44.95/oz';
+  const silverChgStr = silverObj?.changePercent != null ? `${silverObj.changePercent >= 0 ? '+' : ''}${Number(silverObj.changePercent).toFixed(2)}% ($${silverObj.change >= 0 ? '+' : ''}${Number(silverObj.change || 0).toFixed(2)})` : '+0.78% ($+0.35)';
 
   const ratioStr = ratioObj?.ratio ? `${Number(ratioObj.ratio).toFixed(1)}:1` : '65.9:1';
   const ratioSignal = ratioObj?.signal || 'Silver Industrial Demand Outperforming';
@@ -1372,16 +1372,16 @@ export function downloadBullionMarketPdf(metalsData, options = {}) {
   y += 6.8;
 
   const cityRates = metalsData?.cityWiseRates || metalsData?.cityRates || [
-    { city: 'Mumbai', tag: 'Zaveri Bazaar', gold24kPer10g: 155840, gold22kPer10g: 142850, silverPerKg: 255000 },
-    { city: 'Delhi', tag: 'Kucha Mahajani', gold24kPer10g: 156040, gold22kPer10g: 143050, silverPerKg: 255000 },
-    { city: 'Chennai', tag: 'Sowcarpet', gold24kPer10g: 156290, gold22kPer10g: 143300, silverPerKg: 256000 },
-    { city: 'Kolkata', tag: 'Bowbazar', gold24kPer10g: 155840, gold22kPer10g: 142850, silverPerKg: 255000 },
-    { city: 'Ahmedabad', tag: 'Manek Chowk', gold24kPer10g: 155940, gold22kPer10g: 142950, silverPerKg: 255000 },
-    { city: 'Bangalore', tag: 'Avenue Road', gold24kPer10g: 155940, gold22kPer10g: 142950, silverPerKg: 255000 },
-    { city: 'Hyderabad', tag: 'Pot Market', gold24kPer10g: 155940, gold22kPer10g: 142950, silverPerKg: 255000 },
-    { city: 'Jaipur', tag: 'Johari Bazaar', gold24kPer10g: 156040, gold22kPer10g: 143050, silverPerKg: 255000 },
-    { city: 'Surat', tag: 'Diamond Capital', gold24kPer10g: 155940, gold22kPer10g: 142950, silverPerKg: 255000 },
-    { city: 'Kerala', tag: 'Thrissur Hub', gold24kPer10g: 155840, gold22kPer10g: 142850, silverPerKg: 255000 }
+    { city: 'Mumbai', tag: 'Zaveri Bazaar', gold24kPer10g: 133260, gold22kPer10g: 122150, silverPerKg: 185000 },
+    { city: 'Delhi', tag: 'Kucha Mahajani', gold24kPer10g: 133410, gold22kPer10g: 122300, silverPerKg: 185000 },
+    { city: 'Chennai', tag: 'Sowcarpet', gold24kPer10g: 133260, gold22kPer10g: 122150, silverPerKg: 185500 },
+    { city: 'Kolkata', tag: 'Bowbazar', gold24kPer10g: 133260, gold22kPer10g: 122150, silverPerKg: 185000 },
+    { city: 'Ahmedabad', tag: 'Manek Chowk', gold24kPer10g: 133310, gold22kPer10g: 122200, silverPerKg: 185000 },
+    { city: 'Bangalore', tag: 'Avenue Road', gold24kPer10g: 133260, gold22kPer10g: 122150, silverPerKg: 185000 },
+    { city: 'Hyderabad', tag: 'Pot Market', gold24kPer10g: 133260, gold22kPer10g: 122150, silverPerKg: 185000 },
+    { city: 'Jaipur', tag: 'Johari Bazaar', gold24kPer10g: 133410, gold22kPer10g: 122300, silverPerKg: 185000 },
+    { city: 'Surat', tag: 'Diamond Capital', gold24kPer10g: 133310, gold22kPer10g: 122200, silverPerKg: 185000 },
+    { city: 'Kerala', tag: 'Thrissur Hub', gold24kPer10g: 133260, gold22kPer10g: 122150, silverPerKg: 185000 }
   ];
 
   cityRates.slice(0, 10).forEach((c, idx) => {

@@ -116,12 +116,12 @@ const CITY_METADATA_LIST = [
 ];
 
 const DEFAULT_CITY_WISE_RATES = CITY_METADATA_LIST.map((cd) => {
-  const g24k10g = 155840 + cd.spread;
+  const g24k10g = 133260 + cd.spread;
   const g24k1g = Math.round(g24k10g / 10);
   const g22k10g = Math.round(g24k10g * 0.916);
   const g22k1g = Math.round(g22k10g / 10);
   const g22k8g = g22k1g * 8;
-  const sKg = cd.region === 'South' ? 260000 : 255000;
+  const sKg = cd.region === 'South' ? 185500 : 185000;
   const s10g = Math.round(sKg / 100);
   const spreadText = cd.spread === 0 ? 'Benchmark' : `+₹${cd.spread}/10g`;
   return {
@@ -136,8 +136,8 @@ const DEFAULT_CITY_WISE_RATES = CITY_METADATA_LIST.map((cd) => {
     gold22kPer8g: g22k8g,
     silverPerKg: sKg,
     silverPer10g: s10g,
-    changeToday: 860,
-    changePercent: 0.57,
+    changeToday: -278,
+    changePercent: -0.21,
     spreadVsBenchmark: spreadText
   };
 });
@@ -360,78 +360,78 @@ const DEFAULT_PRECIOUS_METALS_DATA = {
   spotGold: {
     symbol: 'GOLD',
     name: 'Spot Gold (XAU/USD)',
-    price: 4424.90,
-    change: 25.20,
-    changePercent: 0.57,
-    dayHigh: 4439.80,
-    dayLow: 4372.20
+    price: 3758.10,
+    change: 12.40,
+    changePercent: 0.33,
+    dayHigh: 3775.50,
+    dayLow: 3740.00
   },
   spotSilver: {
     symbol: 'SILVER',
     name: 'Spot Silver (XAG/USD)',
-    price: 67.15,
-    change: 1.05,
-    changePercent: 1.59,
-    dayHigh: 67.89,
-    dayLow: 65.74
+    price: 44.95,
+    change: 0.35,
+    changePercent: 0.78,
+    dayHigh: 45.40,
+    dayLow: 44.50
   },
   mcxGold: {
     symbol: 'GOLD.MCX',
     name: 'MCX Gold (10g)',
-    price: 151300,
-    change: 860,
-    changePercent: 0.57,
-    dayHigh: 152200,
-    dayLow: 150400
+    price: 129379,
+    change: 420,
+    changePercent: 0.33,
+    dayHigh: 130200,
+    dayLow: 128900
   },
   mcxSilver: {
     symbol: 'SILVER.MCX',
     name: 'MCX Silver (1kg)',
-    price: 247500,
-    change: 3880,
-    changePercent: 1.59,
-    dayHigh: 249500,
-    dayLow: 245600
+    price: 179612,
+    change: 850,
+    changePercent: 0.47,
+    dayHigh: 181200,
+    dayLow: 178500
   },
   jewelleryRates: {
     gold24k: {
       karat: '24K (99.9% Pure Bullion)',
       purity: '99.9%',
-      perGram: 15584,
-      per8gPavan: 124672,
-      per10g: 155840,
-      per100g: 1558400,
-      changeToday: 860,
-      changePercent: 0.57
+      perGram: 13326,
+      per8gPavan: 106608,
+      per10g: 133260,
+      per100g: 1332600,
+      changeToday: -278,
+      changePercent: -0.21
     },
     gold22k: {
       karat: '22K (91.6% Hallmark Jewellery)',
       purity: '91.6%',
-      perGram: 14285,
-      per8gPavan: 114280,
-      per10g: 142850,
-      per100g: 1428500,
-      changeToday: 788,
-      changePercent: 0.57
+      perGram: 12215,
+      per8gPavan: 97720,
+      per10g: 122150,
+      per100g: 1221500,
+      changeToday: -255,
+      changePercent: -0.21
     },
     gold18k: {
       karat: '18K (75.0% Diamond Jewellery)',
       purity: '75.0%',
-      perGram: 11688,
-      per8gPavan: 93504,
-      per10g: 116880,
-      changeToday: 645,
-      changePercent: 0.57
+      perGram: 9994,
+      per8gPavan: 79952,
+      per10g: 99940,
+      changeToday: -209,
+      changePercent: -0.21
     },
     silverFine: {
       name: 'Fine Silver (999 Purity)',
       purity: '99.9%',
-      perGram: 255.00,
-      per10g: 2550,
-      per100g: 25500,
-      per1kg: 255000,
-      changeToday: 3880,
-      changePercent: 1.59
+      perGram: 185.00,
+      per10g: 1850,
+      per100g: 18500,
+      per1kg: 185000,
+      changeToday: -500,
+      changePercent: -0.27
     }
   },
   metalsCatalog: [
@@ -440,14 +440,14 @@ const DEFAULT_PRECIOUS_METALS_DATA = {
       commonName: 'Gold (XAU/USD)',
       fullName: 'International Spot Gold',
       exchange: 'COMEX / LBMA',
-      price: 4424.90,
+      price: 3758.10,
       currency: 'USD',
       unit: '$/oz',
-      change: 25.20,
-      changePercent: 0.57,
-      dayHigh: 4439.80,
-      dayLow: 4372.20,
-      high52: 4485.00,
+      change: 12.40,
+      changePercent: 0.33,
+      dayHigh: 3775.50,
+      dayLow: 3740.00,
+      high52: 3820.00,
       low52: 2550.00,
       badge: 'XAU',
       category: 'International Spot',
@@ -459,14 +459,14 @@ const DEFAULT_PRECIOUS_METALS_DATA = {
       commonName: 'Silver (XAG/USD)',
       fullName: 'International Spot Silver',
       exchange: 'COMEX / LBMA',
-      price: 67.15,
+      price: 44.95,
       currency: 'USD',
       unit: '$/oz',
-      change: 1.05,
-      changePercent: 1.59,
-      dayHigh: 67.89,
-      dayLow: 65.74,
-      high52: 69.50,
+      change: 0.35,
+      changePercent: 0.78,
+      dayHigh: 45.40,
+      dayLow: 44.50,
+      high52: 48.50,
       low52: 28.20,
       badge: 'XAG',
       category: 'International Spot',
@@ -478,14 +478,14 @@ const DEFAULT_PRECIOUS_METALS_DATA = {
       commonName: 'MCX Gold (10g)',
       fullName: 'Multi Commodity Exchange Gold Futures',
       exchange: 'MCX India',
-      price: 151300,
+      price: 129379,
       currency: 'INR',
       unit: '₹/10g',
-      change: 860,
-      changePercent: 0.57,
-      dayHigh: 152200,
-      dayLow: 150400,
-      high52: 155000,
+      change: 420,
+      changePercent: 0.33,
+      dayHigh: 130200,
+      dayLow: 128900,
+      high52: 135000,
       low52: 72000,
       badge: 'MCX',
       category: 'Indian Domestic Futures',
@@ -497,14 +497,14 @@ const DEFAULT_PRECIOUS_METALS_DATA = {
       commonName: 'MCX Silver (1kg)',
       fullName: 'Multi Commodity Exchange Silver Futures',
       exchange: 'MCX India',
-      price: 247500,
+      price: 179612,
       currency: 'INR',
       unit: '₹/kg',
-      change: 3880,
-      changePercent: 1.59,
-      dayHigh: 249500,
-      dayLow: 245600,
-      high52: 260000,
+      change: 850,
+      changePercent: 0.47,
+      dayHigh: 181200,
+      dayLow: 178500,
+      high52: 195000,
       low52: 84000,
       badge: 'MCX',
       category: 'Indian Domestic Futures',
@@ -516,15 +516,15 @@ const DEFAULT_PRECIOUS_METALS_DATA = {
       commonName: 'Gold BeES (NSE)',
       fullName: 'Nippon India ETF Gold BeES',
       exchange: 'NSE India',
-      price: 126.48,
+      price: 118.40,
       currency: 'INR',
       unit: '₹/unit',
-      change: 2.05,
-      changePercent: 1.65,
-      dayHigh: 127.10,
-      dayLow: 125.80,
-      high52: 128.50,
-      low52: 65.00,
+      change: 0.42,
+      changePercent: 0.36,
+      dayHigh: 119.20,
+      dayLow: 117.80,
+      high52: 124.50,
+      low52: 78.40,
       badge: 'ETF',
       category: 'NSE Commodity ETF',
       contractSize: '1 Unit (~0.01g Gold)',
@@ -535,15 +535,15 @@ const DEFAULT_PRECIOUS_METALS_DATA = {
       commonName: 'Silver BeES (NSE)',
       fullName: 'Nippon India ETF Silver BeES',
       exchange: 'NSE India',
-      price: 224.07,
+      price: 184.20,
       currency: 'INR',
       unit: '₹/unit',
-      change: 7.43,
-      changePercent: 3.43,
-      dayHigh: 226.50,
-      dayLow: 221.20,
-      high52: 228.00,
-      low52: 88.00,
+      change: 1.15,
+      changePercent: 0.63,
+      dayHigh: 186.10,
+      dayLow: 182.50,
+      high52: 196.00,
+      low52: 95.00,
       badge: 'ETF',
       category: 'NSE Commodity ETF',
       contractSize: '1 Unit (~1g Silver)',
@@ -554,14 +554,14 @@ const DEFAULT_PRECIOUS_METALS_DATA = {
       commonName: 'Sovereign Gold (SGB)',
       fullName: 'RBI Sovereign Gold Bond 2.5% Benchmark',
       exchange: 'RBI / NSE Secondary',
-      price: 15350,
+      price: 13125,
       currency: 'INR',
       unit: '₹/g',
-      change: 85,
-      changePercent: 0.57,
-      dayHigh: 15450,
-      dayLow: 15250,
-      high52: 15500.00,
+      change: 70,
+      changePercent: 0.33,
+      dayHigh: 13200,
+      dayLow: 13050,
+      high52: 13500.00,
       low52: 7100.00,
       badge: 'SGB',
       category: 'Sovereign Bond',
@@ -642,8 +642,15 @@ let preciousMetalsCache = (() => {
     const local = localStorage.getItem('auratrade_precious_metals_cache');
     if (local) {
       const parsed = JSON.parse(local);
-      // Validate freshness and ensure it is not stale legacy data (gold 24k must be > 100000)
-      if (parsed && parsed.metalsCatalog && parsed.metalsCatalog.length > 0 && (parsed.jewelleryRates?.gold24k?.per10g > 100000)) {
+      // Validate freshness and reject stale inflated legacy data (> 145000 for 24k 10g or > 210000 for silver kg)
+      if (
+        parsed &&
+        parsed.metalsCatalog &&
+        parsed.metalsCatalog.length > 0 &&
+        parsed.jewelleryRates?.gold24k?.per10g >= 100000 &&
+        parsed.jewelleryRates?.gold24k?.per10g <= 145000 &&
+        parsed.jewelleryRates?.silverFine?.per1kg <= 210000
+      ) {
         return parsed;
       } else {
         localStorage.removeItem('auratrade_precious_metals_cache');
@@ -869,7 +876,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
   };
   const prevPricesRef = useRef({});
   const [flashingSymbols, setFlashingSymbols] = useState({});
-  const { quotes } = useSocket();
+  const { quotes, subscribeQuote } = useSocket();
 
   // City-Wise Filter States
   const [citySearch, setCitySearch] = useState('');
@@ -1096,7 +1103,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
     if (isFetchingMetalsRef.current) return;
     isFetchingMetalsRef.current = true;
     try {
-      const res = await fetch('/api/stocks/precious-metals', { cache: 'no-store' });
+      const res = await fetch(`/api/stocks/precious-metals?_t=${Date.now()}`, { cache: 'no-store' });
       const json = await res.json();
       if (json.success && json.data) {
         preciousMetalsCache = json.data;
@@ -1136,7 +1143,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
       if (document.visibilityState === 'visible') {
         fetchPreciousMetals();
       }
-    }, 3000);
+    }, 2500);
     const clockInterval = setInterval(() => {
       setLiveClock(getIstClockSnapshot());
     }, 1000);
@@ -1148,13 +1155,40 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
     };
     document.addEventListener('visibilitychange', handleResumeSync);
     window.addEventListener('online', handleResumeSync);
+
+    // Live WebSocket Subscription for real-time precious metals streaming
+    const handleLiveTick = (sym, q) => {
+      if (!q || !q.price) return;
+      setData((prev) => {
+        if (!prev) return prev;
+        const catalog = (prev.metalsCatalog || []).map((m) =>
+          m.symbol === sym ? { ...m, price: q.price, change: q.change, changePercent: q.changePercent } : m
+        );
+        const next = { ...prev, metalsCatalog: catalog };
+        if (sym === 'GOLD') next.spotGold = { ...(prev.spotGold || {}), price: q.price, change: q.change, changePercent: q.changePercent };
+        if (sym === 'SILVER') next.spotSilver = { ...(prev.spotSilver || {}), price: q.price, change: q.change, changePercent: q.changePercent };
+        if (sym === 'GOLD.MCX') next.mcxGold = { ...(prev.mcxGold || {}), price: q.price, change: q.change, changePercent: q.changePercent };
+        if (sym === 'SILVER.MCX') next.mcxSilver = { ...(prev.mcxSilver || {}), price: q.price, change: q.change, changePercent: q.changePercent };
+        return next;
+      });
+    };
+
+    const unsubGold = subscribeQuote ? subscribeQuote('GOLD', (q) => handleLiveTick('GOLD', q)) : null;
+    const unsubSilver = subscribeQuote ? subscribeQuote('SILVER', (q) => handleLiveTick('SILVER', q)) : null;
+    const unsubMcxGold = subscribeQuote ? subscribeQuote('GOLD.MCX', (q) => handleLiveTick('GOLD.MCX', q)) : null;
+    const unsubMcxSilver = subscribeQuote ? subscribeQuote('SILVER.MCX', (q) => handleLiveTick('SILVER.MCX', q)) : null;
+
     return () => {
       clearInterval(dataInterval);
       clearInterval(clockInterval);
       document.removeEventListener('visibilitychange', handleResumeSync);
       window.removeEventListener('online', handleResumeSync);
+      if (unsubGold) unsubGold();
+      if (unsubSilver) unsubSilver();
+      if (unsubMcxGold) unsubMcxGold();
+      if (unsubMcxSilver) unsubMcxSilver();
     };
-  }, []);
+  }, [subscribeQuote]);
 
   const {
     istTime,
@@ -1177,16 +1211,16 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
   } = data || {};
 
   // Live overrides from WebSocket if available
-  const liveGoldPrice = quotes['GOLD']?.price || spotGold?.price || 4424.90;
-  const liveGoldChg = quotes['GOLD']?.change || spotGold?.change || 25.20;
-  const liveGoldPct = quotes['GOLD']?.changePercent || spotGold?.changePercent || 0.57;
+  const liveGoldPrice = quotes['GOLD']?.price || spotGold?.price || 3758.10;
+  const liveGoldChg = quotes['GOLD']?.change || spotGold?.change || 12.40;
+  const liveGoldPct = quotes['GOLD']?.changePercent || spotGold?.changePercent || 0.33;
 
-  const liveSilverPrice = quotes['SILVER']?.price || spotSilver?.price || 67.15;
-  const liveSilverChg = quotes['SILVER']?.change || spotSilver?.change || 1.05;
-  const liveSilverPct = quotes['SILVER']?.changePercent || spotSilver?.changePercent || 1.59;
+  const liveSilverPrice = quotes['SILVER']?.price || spotSilver?.price || 44.95;
+  const liveSilverChg = quotes['SILVER']?.change || spotSilver?.change || 0.35;
+  const liveSilverPct = quotes['SILVER']?.changePercent || spotSilver?.changePercent || 0.78;
 
-  const liveGoldMcxPrice = quotes['GOLD.MCX']?.price || mcxGold?.price || 151300;
-  const liveSilverMcxPrice = quotes['SILVER.MCX']?.price || mcxSilver?.price || 247500;
+  const liveGoldMcxPrice = quotes['GOLD.MCX']?.price || mcxGold?.price || 129379;
+  const liveSilverMcxPrice = quotes['SILVER.MCX']?.price || mcxSilver?.price || 179612;
 
   // Filtered Cities for City-Wise Table
   const filteredCities = useMemo(() => {
@@ -2170,7 +2204,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                     Lowest 24K Gold Rate
                   </div>
                   <div className="font-mono" style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--warning-amber)', margin: '0.2rem 0' }}>
-                    {formatPriceFromInr(cheapestGoldCity?.gold24kPer10g || 155840, 0)}<span style={{ fontSize: '0.75rem', fontWeight: 600 }}>/10g</span>
+                    {formatPriceFromInr(cheapestGoldCity?.gold24kPer10g || 133260, 0)}<span style={{ fontSize: '0.75rem', fontWeight: 600 }}>/10g</span>
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--bull-green)', fontWeight: 700 }}>
                     {cheapestGoldCity?.city || 'Mumbai'} & Western/Southern Hubs
@@ -2182,7 +2216,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                     Lowest Silver 1kg Rate
                   </div>
                   <div className="font-mono" style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--accent-cyan)', margin: '0.2rem 0' }}>
-                    {formatPriceFromInr(cheapestSilverCity?.silverPerKg || 255000, 0)}<span style={{ fontSize: '0.75rem', fontWeight: 600 }}>/kg</span>
+                    {formatPriceFromInr(cheapestSilverCity?.silverPerKg || 185000, 0)}<span style={{ fontSize: '0.75rem', fontWeight: 600 }}>/kg</span>
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>
                     {cheapestSilverCity?.city || 'Mumbai'}, Delhi, Ahmedabad, Kolkata
@@ -3519,10 +3553,10 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                   {BIS_HALLMARK_DETAILS.map((item) => {
                     const rate = jewelleryRates?.[item.key] || {};
                     const fallbackMap = {
-                      gold24k: { perGram: 15584, per8gPavan: 124672, per10g: 155840, per100g: 1558400, changeToday: 860, changePercent: 0.57 },
-                      gold22k: { perGram: 14285, per8gPavan: 114280, per10g: 142850, per100g: 1428500, changeToday: 788, changePercent: 0.57 },
-                      gold18k: { perGram: 11688, per8gPavan: 93504, per10g: 116880, per100g: 1168800, changeToday: 645, changePercent: 0.57 },
-                      silverFine: { perGram: 255, per8gPavan: 2040, per10g: 2550, per100g: 25500, changeToday: 3880, changePercent: 1.59 }
+                      gold24k: { perGram: 13326, per8gPavan: 106608, per10g: 133260, per100g: 1332600, changeToday: -278, changePercent: -0.21 },
+                      gold22k: { perGram: 12215, per8gPavan: 97720, per10g: 122150, per100g: 1221500, changeToday: -255, changePercent: -0.21 },
+                      gold18k: { perGram: 9994, per8gPavan: 79952, per10g: 99940, per100g: 999400, changeToday: -209, changePercent: -0.21 },
+                      silverFine: { perGram: 185, per8gPavan: 1480, per10g: 1850, per100g: 18500, changeToday: -500, changePercent: -0.27 }
                     };
                     const fb = fallbackMap[item.key];
                     const perGram = rate.perGram ?? fb.perGram;
@@ -4062,7 +4096,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                   Nippon India Gold ETF
                 </h4>
                 <div className="font-mono text-bull" style={{ fontSize: '1.6rem', fontWeight: 900, margin: '0.4rem 0' }}>
-                  {formatPriceFromInr(quotes['GOLDBEES.NS']?.price || 126.48, 2)}
+                  {formatPriceFromInr(quotes['GOLDBEES.NS']?.price || 118.40, 2)}
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.85rem' }}>
                   Liquid fractional gold units (~0.01g per unit). Trade instantly during NSE market hours.
@@ -4093,7 +4127,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                   Nippon India Silver ETF
                 </h4>
                 <div className="font-mono text-bull" style={{ fontSize: '1.6rem', fontWeight: 900, margin: '0.4rem 0' }}>
-                  {formatPriceFromInr(quotes['SILVERBEES.NS']?.price || 224.07, 2)}
+                  {formatPriceFromInr(quotes['SILVERBEES.NS']?.price || 184.20, 2)}
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.85rem' }}>
                   Direct physical-backed silver units (~1g per unit). Highly liquid ETF tracking domestic silver.

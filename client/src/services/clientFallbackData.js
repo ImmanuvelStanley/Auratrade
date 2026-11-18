@@ -35,10 +35,10 @@ const liveQuotes = {};
 
 // Ensure core assets and major ribbon indices always exist with valid quotes
 const ensureQuotes = {
-  'GOLD.MCX': { symbol: 'GOLD.MCX', name: 'MCX Gold (10g)', price: 149709, change: -1961, changePercent: -1.29, currency: 'INR', previousClose: 151670, dayHigh: 150607, dayLow: 148811, volume: 185000, lastTickDirection: 'up' },
-  'SILVER.MCX': { symbol: 'SILVER.MCX', name: 'MCX Silver (1kg)', price: 247500, change: 2150, changePercent: 0.88, currency: 'INR', previousClose: 245350, dayHigh: 248900, dayLow: 244500, volume: 450000, lastTickDirection: 'up' },
-  'GOLD': { symbol: 'GOLD', name: 'Gold Spot (XAU/USD)', price: 4314.50, change: 16.50, changePercent: 0.38, currency: 'USD', previousClose: 4298.00, dayHigh: 4325.80, dayLow: 4298.00, volume: 24500000, lastTickDirection: 'up' },
-  'SILVER': { symbol: 'SILVER', name: 'Silver Spot (XAG/USD)', price: 64.26, change: 0.26, changePercent: 0.41, currency: 'USD', previousClose: 64.00, dayHigh: 64.85, dayLow: 63.90, volume: 58200000, lastTickDirection: 'up' },
+  'GOLD.MCX': { symbol: 'GOLD.MCX', name: 'MCX Gold (10g)', price: 129379, change: 420, changePercent: 0.33, currency: 'INR', previousClose: 128959, dayHigh: 130200, dayLow: 128900, volume: 185000, lastTickDirection: 'up' },
+  'SILVER.MCX': { symbol: 'SILVER.MCX', name: 'MCX Silver (1kg)', price: 179612, change: 850, changePercent: 0.47, currency: 'INR', previousClose: 178762, dayHigh: 181200, dayLow: 178500, volume: 450000, lastTickDirection: 'up' },
+  'GOLD': { symbol: 'GOLD', name: 'Gold Spot (XAU/USD)', price: 3758.10, change: 12.40, changePercent: 0.33, currency: 'USD', previousClose: 3745.70, dayHigh: 3775.50, dayLow: 3740.00, volume: 24500000, lastTickDirection: 'up' },
+  'SILVER': { symbol: 'SILVER', name: 'Silver Spot (XAG/USD)', price: 44.95, change: 0.35, changePercent: 0.78, currency: 'USD', previousClose: 44.60, dayHigh: 45.40, dayLow: 44.50, volume: 58200000, lastTickDirection: 'up' },
   'NIFTY 50': { symbol: 'NIFTY 50', name: 'NIFTY 50 Index', price: 23044.60, change: -402.20, changePercent: -1.72, currency: 'INR', previousClose: 23446.80, dayHigh: 23545.80, dayLow: 23010.20, volume: 14200000, lastTickDirection: 'down' },
   'BANK NIFTY': { symbol: 'BANK NIFTY', name: 'Bank Nifty', price: 56295.55, change: -234.45, changePercent: -0.41, currency: 'INR', previousClose: 56530.00, dayHigh: 56750.00, dayLow: 56120.00, volume: 9200000, lastTickDirection: 'down' },
   'SENSEX': { symbol: 'SENSEX', name: 'BSE SENSEX 30', price: 75312.40, change: -1245.80, changePercent: -1.63, currency: 'INR', previousClose: 76558.20, dayHigh: 76800.00, dayLow: 75200.00, volume: 9800000, lastTickDirection: 'down' },
@@ -497,12 +497,12 @@ export function getPreciousMetalsFallbackData() {
     istDate,
     mcxStatus: 'MCX TRADING - LIVE',
     isMcxOpen: true,
-    usdInrRate: 83.54,
-    goldPriceUsd: 2642.80,
-    silverPriceUsd: 31.85,
-    goldMcxPrice: 149709,
-    silverMcxPrice: 247500,
-    goldSilverRatio: 82.98,
+    usdInrRate: 93.43,
+    goldPriceUsd: 3758.10,
+    silverPriceUsd: 44.95,
+    goldMcxPrice: 129379,
+    silverMcxPrice: 179612,
+    goldSilverRatio: 83.61,
     ratioSignal: 'Silver Undervalued (Bullish Relative Momentum)',
     status: {
       isLive: true,
@@ -511,32 +511,32 @@ export function getPreciousMetalsFallbackData() {
       mcxStatusText: 'MCX TRADING - LIVE'
     },
     heroQuotes: {
-      mcxGold: { symbol: 'GOLD.MCX', name: 'MCX Gold (10g)', price: 149709, change: -1961, changePercent: -1.29, currency: 'INR', unit: '₹ / 10 Grams' },
-      mcxSilver: { symbol: 'SILVER.MCX', name: 'MCX Silver (1kg)', price: 247500, change: 2150, changePercent: 0.88, currency: 'INR', unit: '₹ / 1 Kilogram' },
-      spotGoldUsd: { symbol: 'XAU/USD', name: 'Spot Gold International', price: 2642.80, change: 14.50, changePercent: 0.55, currency: 'USD', unit: '$ / Troy Ounce' },
-      spotSilverUsd: { symbol: 'XAG/USD', name: 'Spot Silver International', price: 31.85, change: 0.28, changePercent: 0.89, currency: 'USD', unit: '$ / Troy Ounce' },
-      goldSilverRatio: 82.98,
+      mcxGold: { symbol: 'GOLD.MCX', name: 'MCX Gold (10g)', price: 129379, change: 420, changePercent: 0.33, currency: 'INR', unit: '₹ / 10 Grams' },
+      mcxSilver: { symbol: 'SILVER.MCX', name: 'MCX Silver (1kg)', price: 179612, change: 850, changePercent: 0.47, currency: 'INR', unit: '₹ / 1 Kilogram' },
+      spotGoldUsd: { symbol: 'XAU/USD', name: 'Spot Gold International', price: 3758.10, change: 12.40, changePercent: 0.33, currency: 'USD', unit: '$ / Troy Ounce' },
+      spotSilverUsd: { symbol: 'XAG/USD', name: 'Spot Silver International', price: 44.95, change: 0.35, changePercent: 0.78, currency: 'USD', unit: '$ / Troy Ounce' },
+      goldSilverRatio: 83.61,
       ratioSignal: 'Silver Undervalued (Bullish Relative Momentum)'
     },
     jewelleryRates: {
-      gold24k: { karat: '24K (99.9% Pure Bullion)', perGram: 15584, per8gPavan: 124672, per10g: 155840, per100g: 1558400, changeToday: 860, changePercent: 0.57 },
-      gold22k: { karat: '22K (91.6% Hallmark Jewellery)', perGram: 14285, per8gPavan: 114280, per10g: 142850, per100g: 1428500, changeToday: 788, changePercent: 0.57 },
-      gold18k: { karat: '18K (75.0% Diamond Jewellery)', perGram: 11688, per8gPavan: 93504, per10g: 116880, per100g: 1168800, changeToday: 645, changePercent: 0.57 },
-      silverPhysical: { perGram: 255.00, per10g: 2550, per100g: 25500, perKg: 255000, changeToday: 2150, changePercent: 0.85 }
+      gold24k: { karat: '24K (99.9% Pure Bullion)', perGram: 13326, per8gPavan: 106608, per10g: 133260, per100g: 1332600, changeToday: -278, changePercent: -0.21 },
+      gold22k: { karat: '22K (91.6% Hallmark Jewellery)', perGram: 12215, per8gPavan: 97720, per10g: 122150, per100g: 1221500, changeToday: -255, changePercent: -0.21 },
+      gold18k: { karat: '18K (75.0% Diamond Jewellery)', perGram: 9994, per8gPavan: 79952, per10g: 99940, per100g: 999400, changeToday: -209, changePercent: -0.21 },
+      silverPhysical: { perGram: 185.00, per10g: 1850, per100g: 18500, perKg: 185000, changeToday: -500, changePercent: -0.27 }
     },
     cityRates: [
-      { city: 'Mumbai', state: 'Maharashtra', gold24k: 155840, gold22k: 142850, silverKg: 255000 },
-      { city: 'Delhi NCR', state: 'Delhi', gold24k: 155990, gold22k: 143000, silverKg: 255150 },
-      { city: 'Chennai', state: 'Tamil Nadu', gold24k: 156100, gold22k: 143100, silverKg: 256000 },
-      { city: 'Bengaluru', state: 'Karnataka', gold24k: 155890, gold22k: 142900, silverKg: 255200 },
-      { city: 'Kolkata', state: 'West Bengal', gold24k: 155840, gold22k: 142850, silverKg: 255000 },
-      { city: 'Hyderabad', state: 'Telangana', gold24k: 155890, gold22k: 142900, silverKg: 255200 }
+      { city: 'Mumbai', state: 'Maharashtra', gold24k: 133260, gold22k: 122150, silverKg: 185000 },
+      { city: 'Delhi NCR', state: 'Delhi', gold24k: 133410, gold22k: 122300, silverKg: 185000 },
+      { city: 'Chennai', state: 'Tamil Nadu', gold24k: 133260, gold22k: 122150, silverKg: 185500 },
+      { city: 'Bengaluru', state: 'Karnataka', gold24k: 133260, gold22k: 122150, silverKg: 185000 },
+      { city: 'Kolkata', state: 'West Bengal', gold24k: 133260, gold22k: 122150, silverKg: 185000 },
+      { city: 'Hyderabad', state: 'Telangana', gold24k: 133260, gold22k: 122150, silverKg: 185000 }
     ],
     metalsCatalog: [
-      { symbol: 'GOLD.MCX', name: 'MCX Gold Futures (10g)', price: 149709, change: -1961, changePercent: -1.29, currency: 'INR' },
-      { symbol: 'SILVER.MCX', name: 'MCX Silver Futures (1kg)', price: 247500, change: 2150, changePercent: 0.88, currency: 'INR' },
-      { symbol: 'XAU/USD', name: 'Spot Gold International', price: 2642.80, change: 14.50, changePercent: 0.55, currency: 'USD' },
-      { symbol: 'XAG/USD', name: 'Spot Silver International', price: 31.85, change: 0.28, changePercent: 0.89, currency: 'USD' }
+      { symbol: 'GOLD.MCX', name: 'MCX Gold Futures (10g)', price: 129379, change: 420, changePercent: 0.33, currency: 'INR' },
+      { symbol: 'SILVER.MCX', name: 'MCX Silver Futures (1kg)', price: 179612, change: 850, changePercent: 0.47, currency: 'INR' },
+      { symbol: 'XAU/USD', name: 'Spot Gold International', price: 3758.10, change: 12.40, changePercent: 0.33, currency: 'USD' },
+      { symbol: 'XAG/USD', name: 'Spot Silver International', price: 44.95, change: 0.35, changePercent: 0.78, currency: 'USD' }
     ]
   };
 }
@@ -563,7 +563,7 @@ export function handleFallbackRequest(url, options = {}) {
         { symbol: 'SENSEX', name: 'BSE SENSEX 30', price: 75312.40, change: -1245.80, changePercent: -1.63 },
         { symbol: 'FTSE 100', name: 'FTSE 100 London', price: 8243.65, change: 18.42, changePercent: 0.22 },
         { symbol: 'NIKKEI 225', name: 'Nikkei 225 Tokyo', price: 38981.75, change: 215.40, changePercent: 0.56 },
-        { symbol: 'GOLD.MCX', name: 'MCX Gold (10g)', price: 149709, change: -1961, changePercent: -1.29 },
+        { symbol: 'GOLD.MCX', name: 'MCX Gold (10g)', price: 129379, change: 420, changePercent: 0.33 },
         { symbol: 'BITCOIN', name: 'BTC / USD', price: 68420.00, change: 1420.00, changePercent: 2.12 }
       ]
     };
@@ -739,7 +739,7 @@ export function handleFallbackRequest(url, options = {}) {
         holdings: [
           { symbol: 'AAPL', shares: 25, avgPrice: 198.50, currentPrice: 228.40, pnl: 747.50, pnlPercent: 15.06 },
           { symbol: 'NVDA', shares: 50, avgPrice: 105.00, currentPrice: 124.60, pnl: 980.00, pnlPercent: 18.67 },
-          { symbol: 'GOLD.MCX', shares: 1, avgPrice: 145000, currentPrice: 149709, pnl: 4709.00, pnlPercent: 3.25 }
+          { symbol: 'GOLD.MCX', shares: 1, avgPrice: 125000, currentPrice: 129379, pnl: 4379.00, pnlPercent: 3.50 }
         ]
       }
     };
