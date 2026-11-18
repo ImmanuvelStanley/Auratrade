@@ -10,5 +10,7 @@ module.exports = {
   cacheTtlSec: parseInt(process.env.CACHE_TTL_SEC, 10) || 4,
   finnhubApiKey: process.env.FINNHUB_API_KEY || '',
   alphaVantageKey: process.env.ALPHA_VANTAGE_KEY || '',
+  googleClientId: process.env.GOOGLE_CLIENT_ID || '',
+  appleClientId: process.env.APPLE_CLIENT_ID || '',
   defaultSymbols: ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'TSLA', 'META', 'SPY', 'QQQ', 'GOLD', 'SILVER', 'GOLD.MCX', 'SILVER.MCX']
 };

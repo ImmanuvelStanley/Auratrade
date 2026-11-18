@@ -545,6 +545,83 @@ const run = async () => {
       }
     }
 
+    // Verify AuthModal Google & Apple OAuth buttons render cleanly
+    await evalJs(`(() => {
+      const signInBtn = document.querySelector('.sidebar-signin-btn') || Array.from(document.querySelectorAll('button')).find((b) => b.innerText.trim() === 'Sign In');
+      if (signInBtn) signInBtn.click();
+    })()`);
+    await sleep(400);
+
+    const authModalCheck = await evalJs(`(() => {
+      const googleBtn = document.getElementById('auth-social-google-btn');
+      const appleBtn = document.getElementById('auth-social-apple-btn');
+      const divider = document.querySelector('.auth-social-divider');
+      const dividerText = document.querySelector('.auth-social-divider-text');
+      const directBtn = document.getElementById('auth-submit-direct-login-btn');
+      const googleSvg = googleBtn ? googleBtn.querySelector('svg.auth-social-icon--google') : null;
+      const appleSvg = appleBtn ? appleBtn.querySelector('svg.auth-social-icon--apple') : null;
+
+      if (!googleBtn || !appleBtn || !divider || !directBtn) {
+        return { present: false, reason: 'missing elements' };
+      }
+
+      const gr = googleBtn.getBoundingClientRect();
+      const ar = appleBtn.getBoundingClientRect();
+      const dr = directBtn.getBoundingClientRect();
+      const divr = divider.getBoundingClientRect();
+
+      return {
+        present: true,
+        dividerText: dividerText ? dividerText.innerText.trim() : '',
+        hasGoogleSvg: !!googleSvg,
+        hasAppleSvg: !!appleSvg,
+        googleLabel: googleBtn.innerText.trim(),
+        appleLabel: appleBtn.innerText.trim(),
+        dividerBelowDirectBtn: divr.top >= dr.bottom,
+        buttonsBelowDivider: gr.top >= divr.bottom && ar.top >= divr.bottom,
+        buttonsSideBySide: Math.abs(gr.top - ar.top) < 6 && ar.left >= gr.right - 2,
+        heightOk: gr.height >= 38 && ar.height >= 38
+      };
+    })()`);
+
+    assert.equal(authModalCheck.present, true, 'AuthModal must open with social login controls');
+    assert.equal(authModalCheck.dividerText, 'OR CONTINUE WITH', 'Divider text must be OR CONTINUE WITH');
+    assert.equal(authModalCheck.hasGoogleSvg, true, 'Google button must render official Google G SVG');
+    assert.equal(authModalCheck.hasAppleSvg, true, 'Apple button must render official Apple silhouette SVG');
+    assert.equal(authModalCheck.googleLabel, 'Google', 'Google button text must be Google');
+    assert.equal(authModalCheck.appleLabel, 'Apple', 'Apple button text must be Apple');
+    assert.equal(authModalCheck.dividerBelowDirectBtn, true, 'Social divider must sit below the direct Sign In button');
+    assert.equal(authModalCheck.buttonsBelowDivider, true, 'Social grid must sit below the divider');
+    assert.equal(authModalCheck.buttonsSideBySide, true, 'Google & Apple buttons must sit in balanced 2-column grid');
+    assert.equal(authModalCheck.heightOk, true, 'Social buttons must have accessible height >= 38px');
+
+    // Test switching to Create Account tab to verify register social buttons
+    await evalJs(`(() => {
+      const regTab = document.getElementById('auth-tab-register');
+      if (regTab) regTab.click();
+    })()`);
+    await sleep(300);
+    const regSocialCheck = await evalJs(`(() => {
+      const googleRegBtn = document.getElementById('auth-social-google-reg-btn');
+      const appleRegBtn = document.getElementById('auth-social-apple-reg-btn');
+      const divText = document.querySelector('.auth-social-divider-text');
+      return {
+        hasGoogle: !!googleRegBtn,
+        hasApple: !!appleRegBtn,
+        divText: divText ? divText.innerText.trim() : ''
+      };
+    })()`);
+    assert.equal(regSocialCheck.hasGoogle, true, 'Create Account mode must render Google registration button');
+    assert.equal(regSocialCheck.hasApple, true, 'Create Account mode must render Apple registration button');
+    assert.equal(regSocialCheck.divText, 'OR SIGN UP WITH', 'Divider in registration must be OR SIGN UP WITH');
+
+    // Close AuthModal before moving to authenticated testing
+    await evalJs(`(() => {
+      const closeBtn = document.getElementById('auth-close-btn');
+      if (closeBtn) closeBtn.click();
+    })()`);
+    await sleep(300);
+
     // Authenticated sign-in + Paper Trading + Trader Profile Settings (Webhook UI)
     const reg = await fetch(`${baseUrl}/api/auth/register`, {
       method: 'POST',

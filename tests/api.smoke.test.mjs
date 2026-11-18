@@ -294,4 +294,85 @@ describe('AuraTrade Backend API & Webhook Smoke Suite', () => {
     assert.equal(feedBody.success, true);
     assert.ok(feedBody.notifications.length >= 4);
   });
+
+  it('authenticates with Google and Apple OAuth endpoints, links accounts, and provisions portfolio', async () => {
+    // 1. Google OAuth sign-in
+    const googleEmail = `google_trader_${Date.now()}@gmail.com`;
+    const googleRes = await fetch(`${baseUrl}/api/auth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: googleEmail,
+        name: 'Google Verified Trader',
+        sub: 'g_sub_123456789'
+      })
+    });
+    assert.equal(googleRes.status, 200, 'Google OAuth should return 200');
+    const googleBody = await googleRes.json();
+    assert.equal(googleBody.success, true);
+    assert.equal(googleBody.provider, 'google');
+    assert.equal(googleBody.isNewUser, true);
+    assert.ok(googleBody.token, 'OAuth response must contain JWT session token');
+    assert.equal(googleBody.user.email, googleEmail);
+    assert.equal(googleBody.user.cashBalance, 1000);
+
+    // Verify /api/auth/me accepts the OAuth token
+    const meRes = await fetch(`${baseUrl}/api/auth/me`, {
+      headers: { Authorization: `Bearer ${googleBody.token}` }
+    });
+    assert.equal(meRes.status, 200);
+    const meBody = await meRes.json();
+    assert.equal(meBody.success, true);
+    assert.equal(meBody.user.email, googleEmail);
+    assert.equal(meBody.user.authProvider, 'google');
+
+    // 2. Apple OAuth sign-in
+    const appleEmail = `apple_trader_${Date.now()}@icloud.com`;
+    const appleRes = await fetch(`${baseUrl}/api/auth/apple`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: appleEmail,
+        name: 'Apple Trader',
+        sub: 'apple_sub_987654321'
+      })
+    });
+    assert.equal(appleRes.status, 200, 'Apple OAuth should return 200');
+    const appleBody = await appleRes.json();
+    assert.equal(appleBody.success, true);
+    assert.equal(appleBody.provider, 'apple');
+    assert.equal(appleBody.isNewUser, true);
+    assert.ok(appleBody.token);
+
+    // 3. Account Linking: register an email first, then sign in with Google using that email
+    const linkEmail = `link_test_${Date.now()}@auratrade.test`;
+    const origReg = await fetch(`${baseUrl}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: linkEmail,
+        password: 'Password123!',
+        name: 'Original Account'
+      })
+    }).then(r => r.json());
+    assert.ok(origReg.token);
+    const originalUserId = origReg.user.id;
+
+    // Now sign in with Google using the same email
+    const linkRes = await fetch(`${baseUrl}/api/auth/oauth`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider: 'google',
+        email: linkEmail,
+        name: 'Original Account',
+        sub: 'google_linked_sub_456'
+      })
+    });
+    assert.equal(linkRes.status, 200);
+    const linkBody = await linkRes.json();
+    assert.equal(linkBody.success, true);
+    assert.equal(linkBody.isNewUser, false, 'Linking to existing email must not create a duplicate user');
+    assert.equal(linkBody.user.id, originalUserId, 'User ID must match the existing account');
+  });
 });

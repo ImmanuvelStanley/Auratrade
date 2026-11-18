@@ -278,6 +278,61 @@ export function AuthProvider({ children }) {
     return data;
   };
 
+  // OAuth 2.0 / Social Authentication (Google & Apple)
+  const signInWithOAuth = async ({ provider = 'google', idToken, credential, identityToken, profile, email, name, avatar, sub } = {}) => {
+    const res = await fetch('/api/auth/oauth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        provider,
+        idToken,
+        credential,
+        identityToken,
+        profile,
+        email,
+        name,
+        avatar,
+        sub
+      })
+    });
+    const data = await res.json();
+    if (!data.success) {
+      throw new Error(data.error || `Failed to authenticate with ${provider}.`);
+    }
+
+    const cleanEmail = (data.user?.email || '').trim().toLowerCase();
+    if (data.vaultToken && cleanEmail) {
+      localStorage.setItem('auratrade_vault_' + cleanEmail, data.vaultToken);
+    }
+
+    // Save metadata locally for seamless serverless cold-start resilience
+    try {
+      if (cleanEmail && cleanEmail.includes('@')) {
+        const savedAccounts = JSON.parse(localStorage.getItem('auratrade_local_accounts') || '{}');
+        savedAccounts[cleanEmail] = {
+          name: data.user?.name || cleanEmail.split('@')[0],
+          phone: data.user?.phone || '',
+          provider
+        };
+        localStorage.setItem('auratrade_local_accounts', JSON.stringify(savedAccounts));
+      }
+    } catch (e) {}
+
+    setUser(data.user);
+    setToken(data.token);
+    localStorage.setItem('auratrade_token', data.token);
+    localStorage.removeItem('auratrade_logged_out');
+    return data.user;
+  };
+
+  const signInWithGoogle = async (extraPayload = {}) => {
+    return signInWithOAuth({ provider: 'google', ...extraPayload });
+  };
+
+  const signInWithApple = async (extraPayload = {}) => {
+    return signInWithOAuth({ provider: 'apple', ...extraPayload });
+  };
+
   const logout = () => {
     setUser(null);
     setToken(null);
@@ -297,6 +352,9 @@ export function AuthProvider({ children }) {
         verifyEmailOnly,
         login,
         register,
+        signInWithOAuth,
+        signInWithGoogle,
+        signInWithApple,
         logout,
         updateProfile,
         forgotPassword,

@@ -7,6 +7,10 @@ const UserSchema = new mongoose.Schema({
   phone: { type: String, default: '' },
   passwordHash: { type: String, default: '' },
   name: { type: String, default: '' },
+  authProvider: { type: String, default: null },
+  googleId: { type: String, default: null },
+  appleSub: { type: String, default: null },
+  avatar: { type: String, default: null },
   minBalance: { type: Number, default: 100 },
   traderProfile: { type: mongoose.Schema.Types.Mixed, default: null },
   createdAt: { type: String, default: () => new Date().toISOString() }

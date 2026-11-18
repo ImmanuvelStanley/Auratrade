@@ -577,6 +577,89 @@ class DataStore {
     return user;
   }
 
+  async findOrCreateOAuthUser({ provider, providerId, email, name, avatar }) {
+    if (!email) throw new Error('Email is required for social authentication.');
+    const cleanEmail = email.trim().toLowerCase();
+    let user = await this.findUserByEmail(cleanEmail);
+
+    if (user) {
+      let changed = false;
+      if (provider === 'google' && (!user.googleId || user.googleId !== providerId)) {
+        user.googleId = providerId || user.googleId;
+        changed = true;
+      }
+      if (provider === 'apple' && (!user.appleSub || user.appleSub !== providerId)) {
+        user.appleSub = providerId || user.appleSub;
+        changed = true;
+      }
+      if (!user.authProvider) {
+        user.authProvider = provider;
+        changed = true;
+      }
+      if (avatar && !user.avatar) {
+        user.avatar = avatar;
+        changed = true;
+      }
+      if (name && (!user.name || user.name === cleanEmail.split('@')[0])) {
+        user.name = name;
+        changed = true;
+      }
+      if (changed) {
+        this.save(true);
+        if (this.isMongoConnected) {
+          User.updateOne({ id: user.id }, { $set: user }).catch(() => {});
+        }
+      }
+      return { user, isNewUser: false };
+    }
+
+    // Provision new user with default $1,000 cash balance & default watchlist
+    const id = 'usr_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
+    const salt = await bcrypt.genSalt(10);
+    const dummyPass = 'OAuthPass_' + Math.random().toString(36).slice(-8) + Date.now();
+    const hash = await bcrypt.hash(dummyPass, salt);
+
+    user = {
+      id,
+      email: cleanEmail,
+      phone: '',
+      passwordHash: hash,
+      name: name || (provider === 'google' ? 'Google Trader' : 'Apple Trader'),
+      authProvider: provider,
+      googleId: provider === 'google' ? (providerId || `g_${Date.now()}`) : null,
+      appleSub: provider === 'apple' ? (providerId || `a_${Date.now()}`) : null,
+      avatar: avatar || null,
+      minBalance: 100,
+      traderProfile: null,
+      createdAt: new Date().toISOString()
+    };
+
+    const portfolio = {
+      userId: id,
+      cashBalance: 1000.00,
+      realizedPnL: 0.00,
+      holdings: [],
+      orders: [],
+      transactions: []
+    };
+
+    const defaultWatchlist = new Set(['AAPL', 'MSFT', 'NVDA', 'TSLA']);
+
+    this.users.set(id, user);
+    this.watchlists.set(id, defaultWatchlist);
+    this.portfolios.set(id, portfolio);
+
+    this.save(true);
+
+    if (this.isMongoConnected) {
+      User.create(user).catch(e => console.error('[DataStore] Mongo User.create error:', e.message));
+      Portfolio.create(portfolio).catch(e => console.error('[DataStore] Mongo Portfolio.create error:', e.message));
+      Watchlist.create({ userId: id, symbols: Array.from(defaultWatchlist) }).catch(e => console.error('[DataStore] Mongo Watchlist.create error:', e.message));
+    }
+
+    return { user, isNewUser: true };
+  }
+
   // --- Multi-Channel OTP Operations (SMS & Email) ---
   async createOtp({ identifier, channel = 'email', purpose = 'login', name, email, phone, password }) {
     if (!identifier) throw new Error('Email or Mobile Number is required.');
