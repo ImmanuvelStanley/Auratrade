@@ -191,7 +191,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
 
     const identifier = signInIdentifier.trim();
     if (!identifier) {
-      setError('Please enter your registered email address or mobile number.');
+      setError('Please enter your registered email address.');
       return;
     }
     if (!signInPassword) {
@@ -802,7 +802,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                 <form onSubmit={handlePasswordSignIn} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                   <div className="input-group">
                     <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                      Email Address or Mobile Number
+                      Email Address
                     </label>
                     <div className="auth-input-wrapper">
                       {signInIdentifier.replace(/\s+/g, '').match(/^\+?\d+$/) ? (
