@@ -11940,6 +11940,11 @@ canvas {
   height: 17px;
 }
 
+.auth-social-icon--apple {
+  position: relative;
+  top: -1px;
+}
+
 /* Light Theme Overrides */
 [data-theme="light"] .auth-social-btn--google {
   background: #ffffff;
