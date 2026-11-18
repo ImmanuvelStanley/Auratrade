@@ -375,4 +375,76 @@ describe('AuraTrade Backend API & Webhook Smoke Suite', () => {
     assert.equal(linkBody.isNewUser, false, 'Linking to existing email must not create a duplicate user');
     assert.equal(linkBody.user.id, originalUserId, 'User ID must match the existing account');
   });
+
+  it('handles OAuth account selection and 6-digit email confirmation code verification flow', async () => {
+    // 1. Send confirmation code for a chosen Google ID
+    const chosenGoogleEmail = `user_selected_${Date.now()}@gmail.com`;
+    const sendRes = await fetch(`${baseUrl}/api/auth/send-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        identifier: chosenGoogleEmail,
+        channel: 'email',
+        purpose: 'oauth_verify',
+        provider: 'google',
+        name: 'Selected Google Trader'
+      })
+    });
+    assert.equal(sendRes.status, 200, 'send-otp with purpose oauth_verify should succeed');
+    const sendBody = await sendRes.json();
+    assert.equal(sendBody.success, true);
+    assert.ok(sendBody.otpToken, 'send-otp must return signed otpToken');
+    assert.ok(sendBody.debugCode, 'debugCode should be provided in test environment');
+
+    // 2. Verify 6-digit confirmation code and assert user account provisioned
+    const verifyRes = await fetch(`${baseUrl}/api/auth/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        identifier: chosenGoogleEmail,
+        code: sendBody.debugCode,
+        otpToken: sendBody.otpToken,
+        provider: 'google',
+        name: 'Selected Google Trader'
+      })
+    });
+    assert.equal(verifyRes.status, 200, 'verify-otp for oauth_verify should succeed');
+    const verifyBody = await verifyRes.json();
+    assert.equal(verifyBody.success, true);
+    assert.ok(verifyBody.token, 'must return auth JWT token');
+    assert.equal(verifyBody.user.email, chosenGoogleEmail);
+    assert.equal(verifyBody.user.name, 'Selected Google Trader');
+    assert.equal(verifyBody.user.authProvider, 'google');
+    assert.equal(verifyBody.user.cashBalance, 1000, 'New OAuth verified user must receive $1000 portfolio');
+
+    // 3. Verify user can authenticate again with Apple provider and same/different mail
+    const newAppleEmail = `custom_apple_${Date.now()}@icloud.com`;
+    const appleSend = await fetch(`${baseUrl}/api/auth/send-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        identifier: newAppleEmail,
+        channel: 'email',
+        purpose: 'oauth_verify',
+        provider: 'apple',
+        name: 'Custom Apple Trader'
+      })
+    }).then(r => r.json());
+    assert.equal(appleSend.success, true);
+
+    const appleVerify = await fetch(`${baseUrl}/api/auth/verify-otp`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        identifier: newAppleEmail,
+        code: appleSend.debugCode,
+        otpToken: appleSend.otpToken,
+        provider: 'apple',
+        name: 'Custom Apple Trader'
+      })
+    }).then(r => r.json());
+    assert.equal(appleVerify.success, true);
+    assert.equal(appleVerify.user.authProvider, 'apple');
+    assert.equal(appleVerify.user.cashBalance, 1000);
+  });
 });

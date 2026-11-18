@@ -57,10 +57,18 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
   const [mode, setMode] = useState('signin');
   // Step: 1 = Details / Form, 2 = 6-digit OTP verification
   const [step, setStep] = useState(1);
-  // Purpose for OTP step: 'register' | 'login' | 'reset'
+  // Purpose for OTP step: 'register' | 'login' | 'reset' | 'oauth_verify'
   const [otpPurpose, setOtpPurpose] = useState('register');
   const [resetToken, setResetToken] = useState(initialResetData?.token || '');
   const [socialLoading, setSocialLoading] = useState(null); // 'google' | 'apple' | null
+
+  // OAuth Account Selection & Verification State
+  const [oauthProvider, setOauthProvider] = useState('google'); // 'google' | 'apple'
+  const [oauthSelectedEmail, setOauthSelectedEmail] = useState('');
+  const [oauthSelectedName, setOauthSelectedName] = useState('');
+  const [oauthCustomEmail, setOauthCustomEmail] = useState('');
+  const [oauthCustomName, setOauthCustomName] = useState('');
+  const [isUsingCustomOAuthEmail, setIsUsingCustomOAuthEmail] = useState(false);
 
   // Sign In State
   const [signInIdentifier, setSignInIdentifier] = useState('');
@@ -158,27 +166,108 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
     setSuccessMsg('');
     setUserNotFound(false);
     setCanOtpVerify(false);
+    setIsUsingCustomOAuthEmail(false);
     if (newMode === 'forgot' && signInIdentifier.includes('@')) {
       setForgotEmail(signInIdentifier.trim());
     }
   };
 
-  // Social OAuth Sign In (Google & Apple)
-  const handleSocialSignIn = async (provider) => {
+  const getSavedOAuthAccounts = (provider = oauthProvider) => {
+    const list = [];
+    try {
+      const saved = JSON.parse(localStorage.getItem('auratrade_local_accounts') || '{}');
+      for (const [em, details] of Object.entries(saved)) {
+        if (em && em.includes('@')) {
+          list.push({
+            email: em,
+            name: details?.name || em.split('@')[0],
+            isSaved: true
+          });
+        }
+      }
+    } catch (e) {}
+
+    // Default account suggested for the provider
+    const defaultEmail = provider === 'apple' ? 'trader.aura@icloud.com' : 'trader.aura@gmail.com';
+    const defaultName = provider === 'apple' ? 'Apple Trader' : 'Google Trader';
+    if (!list.some((a) => a.email.toLowerCase() === defaultEmail.toLowerCase())) {
+      list.push({
+        email: defaultEmail,
+        name: defaultName,
+        isDefault: true
+      });
+    }
+
+    return list;
+  };
+
+  const handleOpenOAuthPicker = (provider) => {
     setError('');
     setSuccessMsg('');
-    setSocialLoading(provider);
+    setOauthProvider(provider);
+    const accounts = getSavedOAuthAccounts(provider);
+    if (accounts.length > 0) {
+      setOauthSelectedEmail(accounts[0].email);
+      setOauthSelectedName(accounts[0].name || '');
+      setIsUsingCustomOAuthEmail(false);
+    } else {
+      const fallback = provider === 'apple' ? 'trader.aura@icloud.com' : 'trader.aura@gmail.com';
+      setOauthSelectedEmail(fallback);
+      setOauthSelectedName(provider === 'apple' ? 'Apple Trader' : 'Google Trader');
+      setIsUsingCustomOAuthEmail(false);
+    }
+    setMode('oauth_picker');
+    setStep(1);
+  };
+
+  // Social OAuth Sign In (Google & Apple) — Opens account selector dialog
+  const handleSocialSignIn = (provider) => {
+    handleOpenOAuthPicker(provider);
+  };
+
+  // Dispatch 6-digit confirmation code to chosen Google / Apple ID
+  const handleProceedOAuthWithEmail = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+
+    const targetEmail = (isUsingCustomOAuthEmail ? oauthCustomEmail : oauthSelectedEmail).trim();
+    if (!targetEmail || !targetEmail.includes('@') || !targetEmail.includes('.')) {
+      setError('Please choose or enter a valid email address.');
+      return;
+    }
+
+    const chosenName = isUsingCustomOAuthEmail
+      ? (oauthCustomName.trim() || targetEmail.split('@')[0])
+      : (oauthSelectedName || targetEmail.split('@')[0]);
+
+    setLoading(true);
     try {
-      if (provider === 'google') {
-        await signInWithGoogle();
-      } else if (provider === 'apple') {
-        await signInWithApple();
-      }
-      if (onClose) onClose();
+      const resp = await sendOtp({
+        identifier: targetEmail,
+        channel: 'email',
+        purpose: 'oauth_verify',
+        provider: oauthProvider,
+        name: chosenName
+      });
+
+      if (resp.otpToken) setOtpToken(resp.otpToken);
+      setOtpPurpose('oauth_verify');
+      setMaskedDestination(resp.maskedDestination || targetEmail);
+      setDeliveryInfo(resp.deliveryStatus || {});
+      setCooldown(resp.resendCooldown || 30);
+      setOtpDigits(['', '', '', '', '', '']);
+      setStep(2);
+      setSuccessMsg(`Confirmation code sent to ${resp.maskedDestination || targetEmail}`);
+      setTimeout(() => {
+        if (digitInputRefs.current[0]) {
+          digitInputRefs.current[0].focus();
+        }
+      }, 100);
     } catch (err) {
-      setError(err.message || `Failed to sign in with ${provider}.`);
+      setError(err.message || 'Failed to dispatch confirmation code.');
     } finally {
-      setSocialLoading(null);
+      setLoading(false);
     }
   };
 
@@ -479,6 +568,23 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         setCooldown(resp.resendCooldown || 30);
         setOtpDigits(['', '', '', '', '', '']);
         setEmailOtpDigits(['', '', '', '', '', '']);
+      } else if (otpPurpose === 'oauth_verify') {
+        const targetEmail = (isUsingCustomOAuthEmail ? oauthCustomEmail : oauthSelectedEmail).trim() || maskedDestination;
+        const targetName = (isUsingCustomOAuthEmail ? oauthCustomName : oauthSelectedName).trim();
+        const resp = await sendOtp({
+          identifier: targetEmail,
+          channel: 'email',
+          purpose: 'oauth_verify',
+          provider: oauthProvider,
+          name: targetName
+        });
+        if (resp.otpToken) setOtpToken(resp.otpToken);
+        setMaskedDestination(resp.maskedDestination || targetEmail);
+        setDeliveryInfo(resp.deliveryStatus || {});
+        setCooldown(resp.resendCooldown || 30);
+        setOtpDigits(['', '', '', '', '', '']);
+        setEmailOtpDigits(['', '', '', '', '', '']);
+        setSuccessMsg(`New confirmation code sent to ${resp.maskedDestination || targetEmail}`);
       }
     } catch (err) {
       setError(err.message || 'Failed to resend code.');
@@ -566,6 +672,20 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
           password: signInPassword || ''
         });
         if (onClose) onClose();
+      } else if (otpPurpose === 'oauth_verify') {
+        const targetEmail = (isUsingCustomOAuthEmail ? oauthCustomEmail : oauthSelectedEmail).trim() || maskedDestination;
+        const targetName = (isUsingCustomOAuthEmail ? oauthCustomName : oauthSelectedName).trim();
+        await verifyOtp({
+          identifier: targetEmail,
+          code: fullCode,
+          otpToken,
+          provider: oauthProvider,
+          name: targetName
+        });
+        setSuccessMsg(`Verified with ${oauthProvider === 'apple' ? 'Apple ID' : 'Google Account'}! Accessing workstation...`);
+        setTimeout(() => {
+          if (onClose) onClose();
+        }, 500);
       } else if (otpPurpose === 'reset') {
         if (!resetNewPassword || resetNewPassword.length < 8) {
           setError('New password must be at least 8 characters long.');
@@ -676,8 +796,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
           {/* Step 1: Input Credentials / Selection */}
           {step === 1 && (
             <>
-              {/* Segmented Mode Switcher (Visible when not in forgot password mode) */}
-              {mode !== 'forgot' ? (
+              {/* Segmented Mode Switcher (Visible when not in forgot password or oauth picker mode) */}
+              {mode !== 'forgot' && mode !== 'oauth_picker' ? (
                 <div
                   style={{
                     display: 'grid',
@@ -737,6 +857,32 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                     <span>Create Account</span>
                   </button>
                 </div>
+              ) : mode === 'oauth_picker' ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.2rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchMode('signin')}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#94a3b8',
+                      fontSize: '0.78rem',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      padding: 0
+                    }}
+                    id="auth-oauth-back-btn"
+                  >
+                    <ArrowLeft size={13} />
+                    <span>Back to Sign In</span>
+                  </button>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                    {oauthProvider === 'apple' ? <AppleSvg /> : <GoogleSvg />}
+                    <span>{oauthProvider === 'apple' ? 'Sign in with Apple' : 'Sign in with Google'}</span>
+                  </span>
+                </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <button
@@ -794,6 +940,202 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                   }}
                 >
                   {successMsg}
+                </div>
+              )}
+
+              {/* MODE 0: OAUTH ACCOUNT PICKER (Google & Apple ID Selector) */}
+              {mode === 'oauth_picker' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                  <div style={{ textAlign: 'left', marginBottom: '0.15rem' }}>
+                    <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      {oauthProvider === 'apple' ? 'Sign in with Apple' : 'Sign in with Google'}
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '2px' }}>
+                      Choose an account or use a new address to continue to your AuraTrade dashboard.
+                    </div>
+                  </div>
+
+                  {/* Account List */}
+                  <div className="auth-oauth-account-list" role="radiogroup" aria-label="Choose account">
+                    {getSavedOAuthAccounts(oauthProvider).map((acc, index) => {
+                      const isSelected = !isUsingCustomOAuthEmail && oauthSelectedEmail.toLowerCase() === acc.email.toLowerCase();
+                      return (
+                        <div
+                          key={acc.email}
+                          className={`auth-oauth-account-item ${isSelected ? 'is-selected' : ''}`}
+                          onClick={() => {
+                            setOauthSelectedEmail(acc.email);
+                            setOauthSelectedName(acc.name || '');
+                            setIsUsingCustomOAuthEmail(false);
+                            setError('');
+                          }}
+                          role="radio"
+                          aria-checked={isSelected}
+                          tabIndex={0}
+                          id={`auth-oauth-acc-${index}`}
+                        >
+                          <div className="auth-oauth-avatar">
+                            {(acc.name || acc.email).charAt(0).toUpperCase()}
+                          </div>
+                          <div className="auth-oauth-details">
+                            <span className="auth-oauth-name">{acc.name || acc.email.split('@')[0]}</span>
+                            <span className="auth-oauth-email">{acc.email}</span>
+                          </div>
+                          <div className={`auth-oauth-radio ${isSelected ? 'is-checked' : ''}`}>
+                            {isSelected && (
+                              <div
+                                style={{
+                                  width: '8px',
+                                  height: '8px',
+                                  borderRadius: '50%',
+                                  background: 'var(--accent-cyan)'
+                                }}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+
+                    {/* Option to use another email / create new account with different mail */}
+                    <div
+                      className={`auth-oauth-account-item ${isUsingCustomOAuthEmail ? 'is-selected' : ''}`}
+                      onClick={() => {
+                        setIsUsingCustomOAuthEmail(true);
+                        setError('');
+                      }}
+                      role="radio"
+                      aria-checked={isUsingCustomOAuthEmail}
+                      tabIndex={0}
+                      id="auth-oauth-use-another-btn"
+                    >
+                      <div className="auth-oauth-avatar auth-oauth-avatar--add">
+                        <UserPlus size={15} />
+                      </div>
+                      <div className="auth-oauth-details">
+                        <span className="auth-oauth-name">Use another account</span>
+                        <span className="auth-oauth-email">Enter any new or different email address</span>
+                      </div>
+                      <div className={`auth-oauth-radio ${isUsingCustomOAuthEmail ? 'is-checked' : ''}`}>
+                        {isUsingCustomOAuthEmail && (
+                          <div
+                            style={{
+                              width: '8px',
+                              height: '8px',
+                              borderRadius: '50%',
+                              background: 'var(--accent-cyan)'
+                            }}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Custom Email Input fields when "Use another account" is selected */}
+                  {isUsingCustomOAuthEmail && (
+                    <div
+                      style={{
+                        padding: '0.85rem',
+                        background: 'var(--bg-card-hover)',
+                        border: '1px solid rgba(6, 182, 212, 0.3)',
+                        borderRadius: '9px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.65rem'
+                      }}
+                    >
+                      <div className="input-group">
+                        <label className="input-label" style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+                          Email Address
+                        </label>
+                        <div className="auth-input-wrapper">
+                          <Mail size={15} className="auth-input-icon" />
+                          <input
+                            type="email"
+                            required
+                            className="auth-input-field"
+                            placeholder="e.g. yourname@domain.com"
+                            value={oauthCustomEmail}
+                            onChange={(e) => setOauthCustomEmail(e.target.value)}
+                            id="auth-oauth-custom-email-input"
+                            autoFocus
+                          />
+                        </div>
+                      </div>
+
+                      <div className="input-group">
+                        <label className="input-label" style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
+                          Display Name (Optional)
+                        </label>
+                        <div className="auth-input-wrapper">
+                          <User size={15} className="auth-input-icon" />
+                          <input
+                            type="text"
+                            className="auth-input-field"
+                            placeholder="e.g. Alex Morgan"
+                            value={oauthCustomName}
+                            onChange={(e) => setOauthCustomName(e.target.value)}
+                            id="auth-oauth-custom-name-input"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Verification Notice */}
+                  <div
+                    style={{
+                      padding: '0.55rem 0.75rem',
+                      background: 'rgba(6, 182, 212, 0.06)',
+                      border: '1px solid rgba(6, 182, 212, 0.2)',
+                      borderRadius: '7px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      fontSize: '0.72rem',
+                      color: '#94a3b8'
+                    }}
+                  >
+                    <ShieldCheck size={14} color="var(--accent-cyan)" style={{ flexShrink: 0 }} />
+                    <span>A 6-digit confirmation code will be dispatched to verify your identity.</span>
+                  </div>
+
+                  {/* Continue Button */}
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    disabled={
+                      loading ||
+                      (isUsingCustomOAuthEmail
+                        ? !oauthCustomEmail.trim() || !oauthCustomEmail.includes('@')
+                        : !oauthSelectedEmail.trim())
+                    }
+                    onClick={handleProceedOAuthWithEmail}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      fontSize: '0.85rem',
+                      fontWeight: 700,
+                      marginTop: '0.1rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.45rem'
+                    }}
+                    id="auth-oauth-continue-btn"
+                  >
+                    {loading ? (
+                      <>
+                        <RefreshCw size={14} className="spin" />
+                        <span>Sending Confirmation Code...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Send Confirmation Code & Continue</span>
+                        <ArrowRight size={14} />
+                      </>
+                    )}
+                  </button>
                 </div>
               )}
 
@@ -1514,6 +1856,9 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
               <button
                 type="button"
                 onClick={() => {
+                  if (otpPurpose === 'oauth_verify') {
+                    setMode('oauth_picker');
+                  }
                   setStep(1);
                   setError('');
                 }}
@@ -1532,7 +1877,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                 id="auth-back-to-step1-btn"
               >
                 <ArrowLeft size={13} />
-                <span>Change destination</span>
+                <span>{otpPurpose === 'oauth_verify' ? 'Choose another account' : 'Change destination'}</span>
               </button>
 
               {/* Delivery Status Info */}
@@ -1549,15 +1894,29 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                    <Mail size={14} color="var(--accent-cyan)" />
+                    {otpPurpose === 'oauth_verify' ? (
+                      oauthProvider === 'apple' ? <AppleSvg /> : <GoogleSvg />
+                    ) : (
+                      <Mail size={14} color="var(--accent-cyan)" />
+                    )}
                     <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                      Verification code sent to <strong style={{ color: 'var(--text-primary)' }}>{maskedDestination}</strong>
+                      {otpPurpose === 'oauth_verify' ? (
+                        <>
+                          Confirmation code sent to <strong style={{ color: 'var(--text-primary)' }}>{maskedDestination}</strong>
+                        </>
+                      ) : (
+                        <>
+                          Verification code sent to <strong style={{ color: 'var(--text-primary)' }}>{maskedDestination}</strong>
+                        </>
+                      )}
                     </span>
                   </div>
                 </div>
 
                 <span style={{ fontSize: '0.73rem', color: '#94a3b8', lineHeight: 1.4 }}>
-                  Please check your email inbox (and spam or junk folder) for your 6-digit verification code.
+                  {otpPurpose === 'oauth_verify'
+                    ? `Please enter the 6-digit confirmation code dispatched to verify this ${oauthProvider === 'apple' ? 'Apple ID' : 'Google Account'} and unlock your trading dashboard.`
+                    : 'Please check your email inbox (and spam or junk folder) for your 6-digit verification code.'}
                 </span>
               </div>
 
@@ -1780,6 +2139,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                           ? 'Save New Password & Enter'
                           : otpPurpose === 'login'
                           ? 'Verify & Sign In'
+                          : otpPurpose === 'oauth_verify'
+                          ? `Verify ${oauthProvider === 'apple' ? 'Apple ID' : 'Google Account'} & Enter`
                           : 'Verify & Complete Registration'}
                       </span>
                     </>

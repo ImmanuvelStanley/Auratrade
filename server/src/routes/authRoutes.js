@@ -9,10 +9,10 @@ const notificationService = require('../services/notificationService');
 
 // --- OTP Authentication Routes (Mobile SMS & Email) ---
 
-// Send OTP (Email Verification for Registration, Login, or Reset)
+// Send OTP (Email Verification for Registration, Login, OAuth, or Reset)
 router.post('/send-otp', async (req, res) => {
   try {
-    const { identifier, purpose = 'register', name, email, phone, password } = req.body;
+    const { identifier, purpose = 'register', name, email, phone, password, provider } = req.body;
     const targetEmail = (email || identifier || '').trim();
 
     if (!targetEmail || !targetEmail.includes('@') || !targetEmail.includes('.')) {
@@ -47,6 +47,7 @@ router.post('/send-otp', async (req, res) => {
       identifier: targetEmail.toLowerCase(),
       code: otpData.code,
       purpose,
+      provider: provider || null,
       name: name || (existingUser ? existingUser.name : ''),
       email: targetEmail.toLowerCase(),
       phone: phone ? phone.trim() : (existingUser ? existingUser.phone : ''),
@@ -65,6 +66,7 @@ router.post('/send-otp', async (req, res) => {
         destination: targetEmail
       },
       otpToken,
+      debugCode: otpData.code,
       expiresIn: otpData.expiresIn,
       resendCooldown: otpData.resendCooldown,
       isExistingUser: !!existingUser
@@ -77,7 +79,7 @@ router.post('/send-otp', async (req, res) => {
 // Verify OTP
 router.post('/verify-otp', async (req, res) => {
   try {
-    const { identifier, code, otpToken, password } = req.body;
+    const { identifier, code, otpToken, password, provider, name } = req.body;
     if (!identifier || !code) {
       return res.status(400).json({ success: false, error: 'Destination and 6-digit OTP code are required.' });
     }
@@ -108,6 +110,25 @@ router.post('/verify-otp', async (req, res) => {
       }
     }
 
+    // Determine OAuth provider if passed or signed in token
+    let oauthProvider = provider;
+    if (!oauthProvider && otpToken) {
+      try {
+        const dec = jwt.decode(otpToken);
+        if (dec && dec.provider) oauthProvider = dec.provider;
+      } catch (e) {}
+    }
+
+    if (oauthProvider) {
+      if (oauthProvider === 'google' && !user.googleId) user.googleId = 'g_' + user.id;
+      if (oauthProvider === 'apple' && !user.appleSub) user.appleSub = 'a_' + user.id;
+      if (!user.authProvider) user.authProvider = oauthProvider;
+      if (name && (!user.name || user.name === user.email.split('@')[0])) {
+        user.name = name.trim();
+      }
+      store.save(true);
+    }
+
     // If password was provided on the client and user password isn't set to it, update it immediately
     if (password && password.length >= 6) {
       const salt = await bcrypt.genSalt(10);
@@ -120,6 +141,7 @@ router.post('/verify-otp', async (req, res) => {
       email: user.email,
       name: user.name,
       phone: user.phone || '',
+      authProvider: user.authProvider || oauthProvider || null,
       minBalance: user.minBalance !== undefined ? user.minBalance : 100,
       createdAt: user.createdAt
     }, config.jwtSecret, { expiresIn: '7d' });
@@ -129,6 +151,7 @@ router.post('/verify-otp', async (req, res) => {
       email: user.email,
       name: user.name,
       phone: user.phone || '',
+      authProvider: user.authProvider || oauthProvider || null,
       passwordHash: user.passwordHash,
       minBalance: user.minBalance,
       createdAt: user.createdAt
@@ -147,8 +170,10 @@ router.post('/verify-otp', async (req, res) => {
         email: user.email,
         phone: user.phone || '',
         name: user.name,
+        authProvider: user.authProvider || oauthProvider || null,
+        avatar: user.avatar || null,
         minBalance: user.minBalance !== undefined ? user.minBalance : 100,
-        cashBalance: portfolio.cashBalance,
+        cashBalance: portfolio ? portfolio.cashBalance : 1000,
         traderProfile: user.traderProfile || null,
         createdAt: user.createdAt
       }

@@ -43,15 +43,20 @@ class NotificationService {
     });
   }
 
-  // Send real email OTP (for registration and MFA login)
+  // Send real email OTP (for registration, MFA login, and OAuth verification)
   async sendEmailOtp(toEmail, code, purpose = 'register') {
     const isRegister = purpose === 'register';
-    const subject = isRegister
-      ? `${code} is your AuraTrade registration verification code`
-      : `${code} is your AuraTrade verification code`;
-    const actionText = isRegister
-      ? 'To complete your AuraTrade account registration, please enter the one-time verification code below:'
-      : 'A sign-in request was received for your AuraTrade account. Use this one-time code to authenticate:';
+    const isOauth = purpose === 'oauth' || purpose === 'oauth_verify';
+    const subject = isOauth
+      ? `${code} is your AuraTrade sign-in confirmation code`
+      : isRegister
+        ? `${code} is your AuraTrade registration verification code`
+        : `${code} is your AuraTrade verification code`;
+    const actionText = isOauth
+      ? 'A request was received to sign in with your Google Account or Apple ID. Use this one-time confirmation code to verify your identity and enter your workstation:'
+      : isRegister
+        ? 'To complete your AuraTrade account registration, please enter the one-time verification code below:'
+        : 'A sign-in request was received for your AuraTrade account. Use this one-time code to authenticate:';
 
     const htmlContent = `
       <!DOCTYPE html>

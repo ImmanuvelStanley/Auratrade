@@ -50,12 +50,12 @@ export function AuthProvider({ children }) {
   };
 
   // Verify 6-Digit OTP and Establish Authenticated Session
-  const verifyOtp = async ({ identifier, code, otpToken, name, phone, password }) => {
+  const verifyOtp = async ({ identifier, code, otpToken, name, phone, password, provider }) => {
     const cleanId = identifier ? identifier.trim().toLowerCase() : '';
     const res = await fetch('/api/auth/verify-otp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ identifier: cleanId, code, otpToken, password })
+      body: JSON.stringify({ identifier: cleanId, code, otpToken, password, provider, name })
     });
     const data = await res.json();
     if (!data.success) {
@@ -72,7 +72,8 @@ export function AuthProvider({ children }) {
         const savedAccounts = JSON.parse(localStorage.getItem('auratrade_local_accounts') || '{}');
         savedAccounts[cleanId] = {
           name: name || data.user?.name || cleanId.split('@')[0],
-          phone: phone || data.user?.phone || ''
+          phone: phone || data.user?.phone || '',
+          provider: provider || data.user?.authProvider || null
         };
         localStorage.setItem('auratrade_local_accounts', JSON.stringify(savedAccounts));
       }
