@@ -6,7 +6,8 @@ import { BrandLogo } from './BrandLogo';
 
 export const Header = React.memo(function Header({
   onToggleSidebar,
-  onSelectSymbol
+  onSelectSymbol,
+  onGoHome
 }) {
   const { notifications, markAllNotificationsRead } = useSocketNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -26,7 +27,7 @@ export const Header = React.memo(function Header({
   return (
     <header className="navbar">
       {/* Brand Modern Geometric Logo (Always cleanly anchored top-left) */}
-      <BrandLogo />
+      <BrandLogo onClick={onGoHome} title="Return to homepage" />
 
       {/* Navigation Actions */}
       <div className="nav-actions">

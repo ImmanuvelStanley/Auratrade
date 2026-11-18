@@ -441,6 +441,13 @@ export function App() {
     setDeepRecordModal((prev) => ({ ...prev, isOpen: false }));
   }, []);
 
+  const handleGoHome = useCallback(() => {
+    setActiveTab('all-markets');
+    setIsMobileSidebarOpen(false);
+    setDeepRecordModal((prev) => ({ ...prev, isOpen: false }));
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
+
   const isInWatchlist = watchlistSymbols.includes(activeSymbol);
 
   return (
@@ -452,6 +459,7 @@ export function App() {
       <Header
         onToggleSidebar={handleToggleMobileSidebar}
         onSelectSymbol={handleSelectSymbolAndGoDashboard}
+        onGoHome={handleGoHome}
       />
 
       {/* Institutional Shell Body: Fixed Auto-Expanding Hover Sidebar + Full-Width Workspace Column */}
@@ -463,6 +471,7 @@ export function App() {
           onCloseMobile={() => setIsMobileSidebarOpen(false)}
           onOpenAuthModal={handleOpenAuthModal}
           onOpenProfile={handleOpenProfile}
+          onGoHome={handleGoHome}
           watchlistCount={watchlistSymbols.length}
         />
 

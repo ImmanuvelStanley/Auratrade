@@ -43,7 +43,13 @@ export function Footer({
       <div className="footer-container">
         {/* Brand Header */}
         <div className="footer-brand-header">
-          <BrandLogo size="normal" layout="horizontal" subtitle="Institutional Workstation" />
+          <BrandLogo
+            size="normal"
+            layout="horizontal"
+            subtitle="Institutional Workstation"
+            onClick={() => onNavigateTab && onNavigateTab('all-markets')}
+            title="Return to homepage"
+          />
         </div>
 
         {/* 3-Column Institutional Directory */}

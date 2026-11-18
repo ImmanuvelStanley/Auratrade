@@ -95,6 +95,7 @@ export function TopicSidebar({
   onCloseMobile,
   onOpenAuthModal,
   onOpenProfile,
+  onGoHome,
   watchlistCount = 0
 }) {
   const { user, logout } = useAuth();
@@ -141,7 +142,11 @@ export function TopicSidebar({
       >
         {/* Mobile & Drawer Header */}
         <div className="sidebar-drawer-header">
-          <BrandLogo size="normal" />
+          <BrandLogo
+            size="normal"
+            onClick={onGoHome || (() => { onSelectTopic('all-markets'); onCloseMobile?.(); })}
+            title="Return to homepage"
+          />
           <button
             type="button"
             className="sidebar-drawer-close-btn record-close-btn"

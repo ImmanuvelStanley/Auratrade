@@ -5,7 +5,9 @@ export function BrandLogo({
   showBadge = true,
   layout = 'horizontal',
   subtitle,
-  className = ''
+  className = '',
+  onClick,
+  title
 }) {
   const isLarge = size === 'large' || size === 'portal';
   const isVertical = layout === 'vertical';
@@ -15,9 +17,24 @@ export function BrandLogo({
   const wordmarkSize = isLarge ? '1.85rem' : '1.58rem';
   const subtextSize = isLarge ? '0.72rem' : '0.66rem';
 
+  const isClickable = Boolean(onClick);
+
+  const handleKeyDown = (e) => {
+    if (isClickable && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      onClick(e);
+    }
+  };
+
   return (
     <div
-      className={`stealth-logo-wrapper ${className}`}
+      className={`stealth-logo-wrapper ${className}${isClickable ? ' is-clickable' : ''}`}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
+      role={isClickable ? 'button' : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      aria-label={isClickable ? 'AuraTrade Home - Return to homepage' : undefined}
+      title={title || (isClickable ? 'Return to homepage' : undefined)}
       style={{
         display: isVertical ? 'flex' : 'inline-flex',
         flexDirection: isVertical ? 'column' : 'row',
@@ -25,7 +42,7 @@ export function BrandLogo({
         justifyContent: isVertical ? 'center' : 'flex-start',
         gap: isVertical ? '0.65rem' : '0.8rem',
         textAlign: isVertical ? 'center' : 'left',
-        cursor: 'default',
+        cursor: isClickable ? 'pointer' : 'default',
         flexShrink: 0
       }}
     >
