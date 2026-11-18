@@ -1250,23 +1250,23 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
   let ratePerGram = 0;
   let metalLabel = '';
   if (calcPurity === '24k') {
-    ratePerGram = activeCityData ? activeCityData.gold24kPer1g : (jewelleryRates?.gold24k?.perGram || Math.round(liveGoldMcxPrice / 10) || 15584);
+    ratePerGram = activeCityData ? activeCityData.gold24kPer1g : (jewelleryRates?.gold24k?.perGram || 13326);
     metalLabel = `24 Karat Pure Bullion Gold (99.9%)${activeCityData ? ` • ${activeCityData.city}` : ''}`;
   } else if (calcPurity === '22k') {
-    ratePerGram = activeCityData ? activeCityData.gold22kPer1g : (jewelleryRates?.gold22k?.perGram || Math.round((liveGoldMcxPrice * 0.916) / 10) || 14285);
+    ratePerGram = activeCityData ? activeCityData.gold22kPer1g : (jewelleryRates?.gold22k?.perGram || 12215);
     metalLabel = `22 Karat BIS Hallmark Gold Jewellery (91.6%)${activeCityData ? ` • ${activeCityData.city}` : ''}`;
   } else if (calcPurity === '18k') {
-    ratePerGram = activeCityData ? Math.round(activeCityData.gold24kPer1g * 0.75) : (jewelleryRates?.gold18k?.perGram || Math.round((liveGoldMcxPrice * 0.75) / 10) || 11688);
+    ratePerGram = activeCityData ? Math.round(activeCityData.gold24kPer1g * 0.75) : (jewelleryRates?.gold18k?.perGram || 9994);
     metalLabel = `18 Karat Diamond & Stone Gold Jewellery (75.0%)${activeCityData ? ` • ${activeCityData.city}` : ''}`;
   } else if (calcPurity === '14k') {
-    const gold24kBase = activeCityData ? activeCityData.gold24kPer1g : (jewelleryRates?.gold24k?.perGram || Math.round(liveGoldMcxPrice / 10) || 15584);
+    const gold24kBase = activeCityData ? activeCityData.gold24kPer1g : (jewelleryRates?.gold24k?.perGram || 13326);
     ratePerGram = Math.round(gold24kBase * 0.585);
     metalLabel = `14 Karat Modern Lightweight Gold Jewellery (58.5%)${activeCityData ? ` • ${activeCityData.city}` : ''}`;
   } else if (calcPurity === 'silver') {
-    ratePerGram = activeCityData ? parseFloat((activeCityData.silverPerKg / 1000).toFixed(2)) : (jewelleryRates?.silverFine?.perGram || parseFloat((liveSilverMcxPrice / 1000).toFixed(2)) || 255.00);
+    ratePerGram = activeCityData ? parseFloat((activeCityData.silverPerKg / 1000).toFixed(2)) : (jewelleryRates?.silverFine?.perGram || 185.00);
     metalLabel = `Fine Silver Bullion 999 Purity (99.9%)${activeCityData ? ` • ${activeCityData.city}` : ''}`;
   } else if (calcPurity === 'silver925') {
-    const fineSilverRate = activeCityData ? parseFloat((activeCityData.silverPerKg / 1000).toFixed(2)) : (jewelleryRates?.silverFine?.perGram || parseFloat((liveSilverMcxPrice / 1000).toFixed(2)) || 255.00);
+    const fineSilverRate = activeCityData ? parseFloat((activeCityData.silverPerKg / 1000).toFixed(2)) : (jewelleryRates?.silverFine?.perGram || 185.00);
     ratePerGram = parseFloat((fineSilverRate * 0.925).toFixed(2));
     metalLabel = `925 Sterling Silver Ornaments & Jewellery (92.5%)${activeCityData ? ` • ${activeCityData.city}` : ''}`;
   }
@@ -1618,15 +1618,21 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
           <div className="bullion-spotlight-breakdown">
             <div>
               <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>24K (1g)</div>
-              <strong className="font-mono" style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatPriceFromInr(Math.round(liveGoldMcxPrice / 10), 0)}</strong>
+              <strong className="font-mono" style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                {formatPriceFromInr(jewelleryRates?.gold24k?.perGram || 13326, 0)}
+              </strong>
             </div>
             <div>
               <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>22K (1g)</div>
-              <strong className="font-mono" style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatPriceFromInr(Math.round((liveGoldMcxPrice * 0.916) / 10), 0)}</strong>
+              <strong className="font-mono" style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                {formatPriceFromInr(jewelleryRates?.gold22k?.perGram || 12215, 0)}
+              </strong>
             </div>
             <div>
               <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>1 Pavan (8g)</div>
-              <strong className="font-mono text-bull" style={{ fontSize: '0.82rem', fontVariantNumeric: 'tabular-nums' }}>{formatPriceFromInr(Math.round((liveGoldMcxPrice * 0.916 * 8) / 10), 0)}</strong>
+              <strong className="font-mono text-bull" style={{ fontSize: '0.82rem', fontVariantNumeric: 'tabular-nums' }}>
+                {formatPriceFromInr(jewelleryRates?.gold22k?.per8gPavan || ((jewelleryRates?.gold22k?.perGram || 12215) * 8), 0)}
+              </strong>
             </div>
           </div>
 
@@ -1732,15 +1738,21 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
           <div className="bullion-spotlight-breakdown">
             <div>
               <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Silver 1g</div>
-              <strong className="font-mono" style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatPriceFromInr(liveSilverMcxPrice / 1000, 2)}</strong>
+              <strong className="font-mono" style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                {formatPriceFromInr(jewelleryRates?.silverFine?.perGram || 185.00, 2)}
+              </strong>
             </div>
             <div>
               <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Silver 10g</div>
-              <strong className="font-mono" style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{formatPriceFromInr(Math.round(liveSilverMcxPrice / 100), 0)}</strong>
+              <strong className="font-mono" style={{ fontSize: '0.82rem', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
+                {formatPriceFromInr(jewelleryRates?.silverFine?.per10g || 1850, 0)}
+              </strong>
             </div>
             <div>
               <div style={{ fontSize: '0.66rem', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase' }}>Silver 100g</div>
-              <strong className="font-mono text-bull" style={{ fontSize: '0.82rem', fontVariantNumeric: 'tabular-nums' }}>{formatPriceFromInr(Math.round(liveSilverMcxPrice / 10), 0)}</strong>
+              <strong className="font-mono text-bull" style={{ fontSize: '0.82rem', fontVariantNumeric: 'tabular-nums' }}>
+                {formatPriceFromInr(jewelleryRates?.silverFine?.per100g || 18500, 0)}
+              </strong>
             </div>
           </div>
 
@@ -2868,7 +2880,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                   >
                     <div style={{ fontWeight: 800, fontSize: '0.82rem' }}>22K (91.6% Hallmark)</div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                      {formatPriceFromInr(jewelleryRates?.gold22k?.perGram || 14285, 0)}/g
+                      {formatPriceFromInr(jewelleryRates?.gold22k?.perGram || 12215, 0)}/g
                     </div>
                   </button>
 
@@ -2887,7 +2899,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                   >
                     <div style={{ fontWeight: 800, fontSize: '0.82rem' }}>24K (99.9% Pure Gold)</div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                      {formatPriceFromInr(jewelleryRates?.gold24k?.perGram || 15584, 0)}/g
+                      {formatPriceFromInr(jewelleryRates?.gold24k?.perGram || 13326, 0)}/g
                     </div>
                   </button>
 
@@ -2906,7 +2918,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                   >
                     <div style={{ fontWeight: 800, fontSize: '0.82rem' }}>18K (75.0% Diamond)</div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                      {formatPriceFromInr(jewelleryRates?.gold18k?.perGram || 11688, 0)}/g
+                      {formatPriceFromInr(jewelleryRates?.gold18k?.perGram || 9994, 0)}/g
                     </div>
                   </button>
 
@@ -2925,7 +2937,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                   >
                     <div style={{ fontWeight: 800, fontSize: '0.82rem' }}>14K (58.5% Modern)</div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                      {formatPriceFromInr(Math.round((jewelleryRates?.gold24k?.perGram || 15584) * 0.585), 0)}/g
+                      {formatPriceFromInr(Math.round((jewelleryRates?.gold24k?.perGram || 13326) * 0.585), 0)}/g
                     </div>
                   </button>
 
@@ -2944,7 +2956,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                   >
                     <div style={{ fontWeight: 800, fontSize: '0.82rem' }}>Fine Silver 999</div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                      {formatPriceFromInr(jewelleryRates?.silverFine?.perGram || 255, 1)}/g
+                      {formatPriceFromInr(jewelleryRates?.silverFine?.perGram || 185.00, 1)}/g
                     </div>
                   </button>
 
@@ -2963,7 +2975,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                   >
                     <div style={{ fontWeight: 800, fontSize: '0.82rem' }}>925 Sterling Silver</div>
                     <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
-                      {formatPriceFromInr(parseFloat(((jewelleryRates?.silverFine?.perGram || 255) * 0.925).toFixed(2)), 1)}/g
+                      {formatPriceFromInr(parseFloat(((jewelleryRates?.silverFine?.perGram || 185.00) * 0.925).toFixed(2)), 1)}/g
                     </div>
                   </button>
                 </div>
