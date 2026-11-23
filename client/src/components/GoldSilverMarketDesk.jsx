@@ -39,17 +39,11 @@ import {
   Printer,
   DollarSign,
   ChevronDown,
-  ChevronRight,
-  BookOpen
+  ChevronRight
 } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
-import {
-  downloadBullionInvoicePdf,
-  downloadBullionMarketPdf,
-  downloadBullionDeskBrochurePdf
-} from '../utils/statementPdfGenerator';
-import { BullionBrochureModal } from './BullionBrochureModal';
+import { downloadBullionInvoicePdf, downloadBullionMarketPdf } from '../utils/statementPdfGenerator';
 
 // 57 Major Indian Bullion Hubs across All States & Territories
 const CITY_METADATA_LIST = [
@@ -957,7 +951,6 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
   });
   const [showInvoiceClientModal, setShowInvoiceClientModal] = useState(false);
   const [invoiceModalPreview, setInvoiceModalPreview] = useState(false);
-  const [showBrochureModal, setShowBrochureModal] = useState(false);
 
   // Auto-switch profile and bullion invoice details whenever active authenticated user changes or logs out
   useEffect(() => {
@@ -1291,17 +1284,8 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
   }, [activeCurrency]);
 
   // Handlers for Official PDF Soft Copy Generation
-  const handleDownloadBrochurePdf = (preview = false) => {
-    downloadBullionDeskBrochurePdf(data, {
-      preview,
-      user,
-      traderProfile,
-      currency: activeCurrency
-    });
-  };
-
   const handleDownloadMarketBriefPdf = () => {
-    downloadBullionDeskBrochurePdf(data, {
+    downloadBullionMarketPdf(data, {
       user,
       traderProfile,
       currency: activeCurrency
@@ -1538,24 +1522,12 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
 
           <button
             type="button"
-            onClick={() => setShowBrochureModal(true)}
+            onClick={handleDownloadMarketBriefPdf}
             className="btn btn-secondary bullion-refresh-btn"
-            title="View Official Institutional Workstation Brochure & User Guide"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
+            title="Download Official Bullion Market Brief PDF"
           >
-            <BookOpen size={14} style={{ color: 'var(--accent-cyan)' }} />
-            <span>View Brochure</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => handleDownloadBrochurePdf(false)}
-            className="btn btn-primary bullion-refresh-btn"
-            title="Download Official 3-Page Bullion Workstation Brochure (PDF)"
-            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
-          >
-            <FileDown size={14} />
-            <span>Download Brochure</span>
+            <span>Market Brief</span>
+            <FileDown size={13} />
           </button>
 
           <a
@@ -3523,25 +3495,6 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                 >
                   <Printer size={15} /> Print / Preview
                 </button>
-
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowBrochureModal(true)}
-                  style={{
-                    padding: '0.75rem 1rem',
-                    fontSize: '0.82rem',
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.45rem',
-                    cursor: 'pointer'
-                  }}
-                  title="View Official Bullion Workstation Brochure & User Guide"
-                >
-                  <BookOpen size={15} style={{ color: 'var(--accent-cyan)' }} /> Workstation Guide
-                </button>
               </div>
 
               {/* Consumer Protection Notice */}
@@ -4527,14 +4480,6 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
             </div>
           </div>
         </div>
-      )}
-      {/* Modal Dialog: Comprehensive Institutional Bullion Workstation Brochure & User Guide */}
-      {showBrochureModal && (
-        <BullionBrochureModal
-          data={data}
-          onClose={() => setShowBrochureModal(false)}
-          onDownloadPdf={handleDownloadBrochurePdf}
-        />
       )}
     </div>
   );
