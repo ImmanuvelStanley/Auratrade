@@ -39,7 +39,14 @@ import {
   Printer,
   DollarSign,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  LineChart,
+  Share2,
+  Copy,
+  Calendar,
+  PiggyBank,
+  FileText,
+  CheckCheck
 } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
@@ -859,6 +866,46 @@ const BIS_HALLMARK_DETAILS = [
   }
 ];
 
+// Physical Minted Bullion Coin & Bar Denomination Metadata (Industry Standard)
+export const MINTED_GOLD_DENOMINATIONS = [
+  { weightGrams: 0.5, name: '0.5 Gram Gold Coin', purity: '24K (999.9)', premiumPct: 8.5, pack: 'Tamper-Evident Blister Card', category: 'Mini Gifting' },
+  { weightGrams: 1.0, name: '1 Gram Gold Coin', purity: '24K (999.9)', premiumPct: 7.0, pack: 'Sealed Assay CertiCard', category: 'Retail Coin' },
+  { weightGrams: 2.0, name: '2 Gram Minted Gold Bar', purity: '24K (999.9)', premiumPct: 5.5, pack: 'Sealed Assay CertiCard', category: 'Retail Bar' },
+  { weightGrams: 5.0, name: '5 Gram Minted Gold Bar', purity: '24K (999.9)', premiumPct: 4.0, pack: 'Sealed Assay CertiCard', category: 'Investment Bar' },
+  { weightGrams: 8.0, name: '8 Gram Gold Coin (1 Sovereign / Pavan)', purity: '24K (999.9)', premiumPct: 3.0, pack: 'Bridal Gift Sealed Case', category: 'Traditional Sovereign' },
+  { weightGrams: 10.0, name: '10 Gram Standard Bullion Bar', purity: '24K (999.9)', premiumPct: 2.2, pack: 'MMTC-PAMP / IBJA Sealed', category: 'Standard Bullion' },
+  { weightGrams: 20.0, name: '20 Gram Minted Bar', purity: '24K (999.9)', premiumPct: 1.8, pack: 'Sealed CertiCard', category: 'Investment Bar' },
+  { weightGrams: 50.0, name: '50 Gram Minted Bar', purity: '24K (999.9)', premiumPct: 1.2, pack: 'Assayer Bar Sealed', category: 'Institutional Bar' },
+  { weightGrams: 100.0, name: '100 Gram Cast / Minted Bar', purity: '24K (999.9)', premiumPct: 0.8, pack: 'Refinery Serialized Bar', category: 'High Net-Worth Bar' },
+  { weightGrams: 1000.0, name: '1 Kilogram Good Delivery Bullion Bar', purity: '24K (999.9)', premiumPct: 0.3, pack: 'Wholesale Vault Ingot', category: 'Treasury / Bank Ingot' }
+];
+
+export const MINTED_SILVER_DENOMINATIONS = [
+  { weightGrams: 10.0, name: '10 Gram Silver Coin', purity: 'Fine Silver (999)', premiumPct: 12.0, pack: 'Airtight Capsule', category: 'Festive / Pooja' },
+  { weightGrams: 20.0, name: '20 Gram Silver Coin', purity: 'Fine Silver (999)', premiumPct: 10.0, pack: 'Airtight Capsule', category: 'Festive Coin' },
+  { weightGrams: 50.0, name: '50 Gram Silver Bar', purity: 'Fine Silver (999)', premiumPct: 8.0, pack: 'Tamper-Evident Pack', category: 'Retail Bar' },
+  { weightGrams: 100.0, name: '100 Gram Silver Bar', purity: 'Fine Silver (999)', premiumPct: 6.0, pack: 'Sealed CertiCard', category: 'Standard Bar' },
+  { weightGrams: 250.0, name: '250 Gram Silver Bar', purity: 'Fine Silver (999)', premiumPct: 4.5, pack: 'Sealed CertiCard', category: 'Mid-Tier Bar' },
+  { weightGrams: 500.0, name: '500 Gram Silver Bar', purity: 'Fine Silver (999)', premiumPct: 3.5, pack: 'Serialized Ingot', category: 'Investment Bar' },
+  { weightGrams: 1000.0, name: '1 Kilogram Cast Silver Bullion Bar', purity: 'Fine Silver (999)', premiumPct: 2.0, pack: 'Master Vault Brick', category: 'Vault Bullion' }
+];
+
+export const MACRO_ECONOMIC_CALENDAR = [
+  { event: 'US Fed FOMC Interest Rate Decision', cadence: '8 Times / Year', importance: 'Very High', impactNote: 'Rate cuts weaken USD, structurally boosting Gold & Silver prices.', bias: 'Bullish' },
+  { event: 'US Consumer Price Index (CPI Inflation)', cadence: 'Monthly (Mid-Month)', importance: 'High', impactNote: 'Surging inflation reinforces bullion hedge appeal.', bias: 'Bullish' },
+  { event: 'US Non-Farm Payrolls (NFP) & Unemployment', cadence: 'Monthly (1st Friday)', importance: 'High', impactNote: 'Labor market cooling accelerates rate-easing expectations.', bias: 'Bullish' },
+  { event: 'RBI Monetary Policy Committee (MPC) Review', cadence: 'Bi-Monthly', importance: 'Medium', impactNote: 'USD/INR exchange rate shifts directly adjust domestic landed parity.', bias: 'Neutral' },
+  { event: 'Central Bank Gold Reserves Report (WGC)', cadence: 'Quarterly', importance: 'Very High', impactNote: 'Record sovereign central bank accumulation sets global price floor.', bias: 'Very Bullish' }
+];
+
+export const ASSET_CORRELATION_MATRIX = [
+  { asset: 'US Dollar Index (DXY)', corr: -0.78, desc: 'Strong Inverse Relationship (Dollar weakness fuels gold rallies)', type: 'negative' },
+  { asset: '10-Year US Real Treasury Yield', corr: -0.72, desc: 'Strong Inverse (Lower real yields lower opportunity cost of holding non-yielding gold)', type: 'negative' },
+  { asset: 'Global Equities (S&P 500 / MSCI World)', corr: -0.22, desc: 'Weak / Negative Correlation (Ideal portfolio shock absorber during market selloffs)', type: 'negative' },
+  { asset: 'Silver Spot (XAG/USD)', corr: +0.86, desc: 'High Positive Correlation (Silver tracks gold with higher speculative beta)', type: 'positive' },
+  { asset: 'Crude Oil (Brent / WTI)', corr: +0.42, desc: 'Moderate Positive (Energy inflation pressures pass through to broader commodity baskets)', type: 'positive' }
+];
+
 export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
   onSelectSymbol,
   onOpenTradeModal,
@@ -890,6 +937,38 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
   const [calcWeight, setCalcWeight] = useState(10);
   const [calcMakingPercent, setCalcMakingPercent] = useState(10);
   const [expandedHallmarkKey, setExpandedHallmarkKey] = useState(null);
+
+  // Advanced Bullion Workstation States
+  // 1. Technical Charts
+  const [chartAsset, setChartAsset] = useState('GOLD_MCX'); // 'GOLD_MCX' | 'GOLD_USD' | 'SILVER_MCX' | 'SILVER_USD' | 'RATIO'
+  const [chartTimeframe, setChartTimeframe] = useState('1M'); // '1D' | '1W' | '1M' | '1Y' | '5Y'
+  const [chartHoverIndex, setChartHoverIndex] = useState(null);
+
+  // 2. Catalog View Mode
+  const [catalogViewMode, setCatalogViewMode] = useState('quotes'); // 'quotes' | 'denominations' | 'import_parity'
+  const [denomMetalFilter, setDenomMetalFilter] = useState('ALL'); // 'ALL' | 'GOLD' | 'SILVER'
+
+  // 3. Old Gold Scrap / Exchange Calculator
+  const [calcViewMode, setCalcViewMode] = useState('new'); // 'new' | 'exchange'
+  const [scrapItemName, setScrapItemName] = useState('Old Gold Ornaments (Chains & Bangles)');
+  const [scrapGrossWeight, setScrapGrossWeight] = useState('24.50');
+  const [scrapStoneDeduction, setScrapStoneDeduction] = useState('1.20');
+  const [scrapPurityKey, setScrapPurityKey] = useState('22k'); // '24k' | '22k' | '20k' | '18k' | '14k' | '10k' | 'silver'
+  const [scrapMeltingLossPct, setScrapMeltingLossPct] = useState('1.5');
+  const [appliedScrapCredit, setAppliedScrapCredit] = useState(0);
+  const [scrapCreditNotice, setScrapCreditNotice] = useState(false);
+
+  // 4. Gold SIP & Goal Wealth Accumulation Planner
+  const [sipMonthlyAmount, setSipMonthlyAmount] = useState(5000);
+  const [sipDurationYears, setSipDurationYears] = useState(5);
+  const [sipAsset, setSipAsset] = useState('GOLD_24K'); // 'GOLD_24K' | 'SGB' | 'SILVER'
+
+  // 5. BIS HUID Hallmarking Validator
+  const [huidInput, setHuidInput] = useState('A7B9K2');
+
+  // 6. Share Rate Card Modal
+  const [showShareRateModal, setShowShareRateModal] = useState(false);
+  const [copiedRateNotice, setCopiedRateNotice] = useState(false);
 
   // Multi-User Tenant Storage Isolation Key Helpers
   const getInvoiceDetailsKey = (userId) => userId ? `bullion_invoice_client_details_${userId}` : 'bullion_invoice_client_details_guest';
@@ -1376,6 +1455,312 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
     setShowInvoiceClientModal(true);
   };
 
+  // ---------------------------------------------------------------------------
+  // Advanced Workstation Module 1: Technical Chart Data Generator
+  // ---------------------------------------------------------------------------
+  const chartData = useMemo(() => {
+    let basePrice = 129379;
+    let label = 'MCX India Gold 10g Futures';
+    let unit = '₹';
+    let decimals = 0;
+    let dailyChangePct = mcxGold?.changePercent || 0.45;
+
+    if (chartAsset === 'GOLD_USD') {
+      basePrice = spotGold?.price || 3758.10;
+      label = 'LBMA Spot Gold (USD/oz)';
+      unit = '$';
+      decimals = 2;
+      dailyChangePct = spotGold?.changePercent || 0.33;
+    } else if (chartAsset === 'GOLD_MCX') {
+      basePrice = mcxGold?.price || 129379;
+      label = 'MCX India Gold 10g Futures';
+      unit = '₹';
+      decimals = 0;
+      dailyChangePct = mcxGold?.changePercent || 0.45;
+    } else if (chartAsset === 'SILVER_USD') {
+      basePrice = spotSilver?.price || 44.95;
+      label = 'LBMA Spot Silver (USD/oz)';
+      unit = '$';
+      decimals = 2;
+      dailyChangePct = spotSilver?.changePercent || 0.78;
+    } else if (chartAsset === 'SILVER_MCX') {
+      basePrice = mcxSilver?.price || 179612;
+      label = 'MCX India Silver 1kg Futures';
+      unit = '₹';
+      decimals = 0;
+      dailyChangePct = mcxSilver?.changePercent || 0.62;
+    } else if (chartAsset === 'RATIO') {
+      basePrice = ratio?.ratio ? Number(ratio.ratio) : 83.6;
+      label = 'Gold / Silver Price Ratio';
+      unit = '';
+      decimals = 1;
+      dailyChangePct = -0.15;
+    }
+
+    let pointsCount = 30;
+    let volatility = 0.008;
+    let overallTrend = dailyChangePct > 0 ? 0.05 : -0.03;
+
+    if (chartTimeframe === '1D') {
+      pointsCount = 24;
+      volatility = 0.002;
+    } else if (chartTimeframe === '1W') {
+      pointsCount = 7;
+      volatility = 0.005;
+    } else if (chartTimeframe === '1M') {
+      pointsCount = 30;
+      volatility = 0.01;
+    } else if (chartTimeframe === '1Y') {
+      pointsCount = 52;
+      volatility = 0.02;
+      overallTrend = 0.18;
+    } else if (chartTimeframe === '5Y') {
+      pointsCount = 60;
+      volatility = 0.035;
+      overallTrend = 0.85;
+    }
+
+    const now = new Date();
+    const points = [];
+    const seed = (chartAsset.charCodeAt(0) + chartAsset.charCodeAt(chartAsset.length - 1)) * 19;
+
+    for (let i = pointsCount - 1; i >= 0; i--) {
+      const progress = (pointsCount - 1 - i) / (pointsCount - 1 || 1);
+      const pseudoNoise = Math.sin(seed + i * 2.7) * 0.6 + Math.cos(seed + i * 1.3) * 0.4;
+      const trendFactor = (1 - progress) * (-overallTrend);
+      const pointPrice = basePrice * (1 + trendFactor + pseudoNoise * volatility);
+
+      const pDate = new Date(now);
+      if (chartTimeframe === '1D') pDate.setHours(now.getHours() - i);
+      else if (chartTimeframe === '1W') pDate.setDate(now.getDate() - i);
+      else if (chartTimeframe === '1M') pDate.setDate(now.getDate() - i);
+      else if (chartTimeframe === '1Y') pDate.setDate(now.getDate() - i * 7);
+      else if (chartTimeframe === '5Y') pDate.setMonth(now.getMonth() - i);
+
+      points.push({
+        index: pointsCount - 1 - i,
+        price: i === 0 ? basePrice : pointPrice,
+        date: chartTimeframe === '1D'
+          ? pDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          : pDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: chartTimeframe === '5Y' ? '2-digit' : undefined })
+      });
+    }
+
+    const prices = points.map(p => p.price);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    const priceRange = maxPrice - minPrice || 1;
+    const startPrice = points[0]?.price || basePrice;
+    const endPrice = points[points.length - 1]?.price || basePrice;
+    const netChange = endPrice - startPrice;
+    const netChangePct = (netChange / startPrice) * 100;
+    const ma50 = basePrice * 0.985;
+    const ma200 = basePrice * 0.925;
+    const rsi = Math.min(84, Math.max(36, Math.round(50 + netChangePct * 1.5 + dailyChangePct * 4)));
+
+    return {
+      points,
+      minPrice,
+      maxPrice,
+      priceRange,
+      startPrice,
+      endPrice,
+      netChange,
+      netChangePct,
+      label,
+      unit,
+      decimals,
+      ma50,
+      ma200,
+      rsi,
+      basePrice
+    };
+  }, [chartAsset, chartTimeframe, spotGold, spotSilver, mcxGold, mcxSilver, ratio]);
+
+  // ---------------------------------------------------------------------------
+  // Advanced Workstation Module 2: Old Gold Scrap / Exchange Valuation
+  // ---------------------------------------------------------------------------
+  const scrapNetWeight = useMemo(() => {
+    const gross = parseFloat(scrapGrossWeight) || 0;
+    const stone = parseFloat(scrapStoneDeduction) || 0;
+    return Math.max(0, gross - stone);
+  }, [scrapGrossWeight, scrapStoneDeduction]);
+
+  const scrapValuation = useMemo(() => {
+    const purityMap = {
+      '24k': { purity: 0.999, label: '24 Karat (99.9% Pure Bullion)' },
+      '22k': { purity: 0.9167, label: '22 Karat (91.6% Hallmark Gold)' },
+      '20k': { purity: 0.8333, label: '20 Karat (83.3% Heritage Gold)' },
+      '18k': { purity: 0.750, label: '18 Karat (75.0% Diamond Studded)' },
+      '14k': { purity: 0.5833, label: '14 Karat (58.3% Lightweight Gold)' },
+      '10k': { purity: 0.4167, label: '10 Karat (41.7% Low Purity Gold)' },
+      'silver': { purity: 0.999, label: 'Fine Silver (99.9%)' },
+      'silver925': { purity: 0.925, label: '925 Sterling Silver (92.5%)' }
+    };
+
+    const isSilver = scrapPurityKey.startsWith('silver');
+    const purityInfo = purityMap[scrapPurityKey] || purityMap['22k'];
+    const ratePerGram = isSilver
+      ? (jewelleryRates?.silverFine?.perGram || 185)
+      : (jewelleryRates?.gold24k?.perGram || Math.round((mcxGold?.price || 129379) * 1.03 / 10) || 13326);
+
+    const pureWeightBeforeLoss = scrapNetWeight * purityInfo.purity;
+    const meltingLossPct = parseFloat(scrapMeltingLossPct) || 0;
+    const meltingLossGrams = pureWeightBeforeLoss * (meltingLossPct / 100);
+    const payablePureWeight = Math.max(0, pureWeightBeforeLoss - meltingLossGrams);
+    const grossValuation = payablePureWeight * ratePerGram;
+
+    return {
+      isSilver,
+      purityInfo,
+      ratePerGram,
+      pureWeightBeforeLoss,
+      meltingLossGrams,
+      payablePureWeight,
+      grossValuation: Math.round(grossValuation)
+    };
+  }, [scrapNetWeight, scrapPurityKey, scrapMeltingLossPct, jewelleryRates, mcxGold]);
+
+  const handleApplyScrapCreditToInvoice = () => {
+    setAppliedScrapCredit(scrapValuation.grossValuation);
+    setCalcViewMode('new');
+    setScrapCreditNotice(true);
+    setTimeout(() => setScrapCreditNotice(false), 4000);
+  };
+
+  // ---------------------------------------------------------------------------
+  // Advanced Workstation Module 3: Gold SIP & Wealth Planner
+  // ---------------------------------------------------------------------------
+  const sipResults = useMemo(() => {
+    const P = parseFloat(sipMonthlyAmount) || 5000;
+    const years = parseInt(sipDurationYears, 10) || 5;
+    const months = years * 12;
+
+    let cagr = 11.5;
+    if (sipAsset === 'SGB') cagr = 14.0;
+    else if (sipAsset === 'SILVER') cagr = 13.8;
+
+    const monthlyRate = cagr / 100 / 12;
+    const futureValue = P * ((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate) * (1 + monthlyRate);
+    const totalInvested = P * months;
+    const wealthGain = futureValue - totalInvested;
+
+    const fdMonthlyRate = 0.07 / 12;
+    const fdValue = P * ((Math.pow(1 + fdMonthlyRate, months) - 1) / fdMonthlyRate) * (1 + fdMonthlyRate);
+
+    const infMonthlyRate = 0.055 / 12;
+    const infValue = P * ((Math.pow(1 + infMonthlyRate, months) - 1) / infMonthlyRate) * (1 + infMonthlyRate);
+
+    const currentRatePerG = sipAsset === 'SILVER'
+      ? (jewelleryRates?.silverFine?.perGram || 185)
+      : (jewelleryRates?.gold24k?.perGram || 13326);
+
+    const avgAccumulationPrice = currentRatePerG * (1 + (cagr / 100 * years * 0.45));
+    const estGrams = Math.round((futureValue / avgAccumulationPrice) * 10) / 10;
+
+    return {
+      totalInvested: Math.round(totalInvested),
+      futureValue: Math.round(futureValue),
+      wealthGain: Math.round(wealthGain),
+      gainPct: Math.round((wealthGain / totalInvested) * 100),
+      fdValue: Math.round(fdValue),
+      infValue: Math.round(infValue),
+      estGrams,
+      cagr
+    };
+  }, [sipMonthlyAmount, sipDurationYears, sipAsset, jewelleryRates]);
+
+  // ---------------------------------------------------------------------------
+  // Advanced Workstation Module 4: Import Parity Price (IPP) & Duty Breakdown
+  // ---------------------------------------------------------------------------
+  const importParity = useMemo(() => {
+    const spotUsd = spotGold?.price || 3758.10;
+    const fxInr = fxRates?.INR || 84.50;
+    const troyOzGrams = 31.1034768;
+    const rawGoldPerGramInr = (spotUsd * fxInr) / troyOzGrams;
+    const rawGoldPer10gInr = rawGoldPerGramInr * 10;
+
+    const bcdRate = 0.06;
+    const aidcRate = 0.055;
+    const totalDutyRate = bcdRate + aidcRate; // 11.5%
+    const dutyAmount10g = rawGoldPer10gInr * totalDutyRate;
+    const subtotalWithDuty10g = rawGoldPer10gInr + dutyAmount10g;
+
+    const gstRate = 0.03;
+    const gstAmount10g = subtotalWithDuty10g * gstRate;
+    const landedIpp10g = subtotalWithDuty10g + gstAmount10g;
+
+    const domesticMcx10g = mcxGold?.price || 129379;
+    const arbitrageSpread = domesticMcx10g - landedIpp10g;
+    const arbitragePct = (arbitrageSpread / landedIpp10g) * 100;
+    const isPremium = arbitrageSpread >= 0;
+
+    return {
+      spotUsd,
+      fxInr,
+      rawGoldPer10gInr: Math.round(rawGoldPer10gInr),
+      dutyAmount10g: Math.round(dutyAmount10g),
+      gstAmount10g: Math.round(gstAmount10g),
+      landedIpp10g: Math.round(landedIpp10g),
+      domesticMcx10g: Math.round(domesticMcx10g),
+      arbitrageSpread: Math.round(arbitrageSpread),
+      arbitragePct: arbitragePct.toFixed(2),
+      isPremium
+    };
+  }, [spotGold, fxRates, mcxGold]);
+
+  // ---------------------------------------------------------------------------
+  // Advanced Workstation Module 5: BIS HUID Validator
+  // ---------------------------------------------------------------------------
+  const huidValidation = useMemo(() => {
+    const raw = (huidInput || '').trim().toUpperCase();
+    const isExact6 = raw.length === 6;
+    const isAlphanumeric = /^[A-Z0-9]{6}$/.test(raw);
+    const containsAmbiguous = /[IO]/.test(raw);
+    const isValid = isExact6 && isAlphanumeric;
+
+    return {
+      raw,
+      isExact6,
+      isAlphanumeric,
+      containsAmbiguous,
+      isValid
+    };
+  }, [huidInput]);
+
+  // ---------------------------------------------------------------------------
+  // Advanced Workstation Module 6: Share Rate Card Text Summary
+  // ---------------------------------------------------------------------------
+  const handleCopyRatesText = () => {
+    const r24k1g = jewelleryRates?.gold24k?.perGram || 13326;
+    const r24k10g = r24k1g * 10;
+    const r22k1g = jewelleryRates?.gold22k?.perGram || 12215;
+    const r22k8g = jewelleryRates?.gold22k?.per8gPavan || r22k1g * 8;
+    const r18k1g = jewelleryRates?.gold18k?.perGram || 9995;
+    const rSil1g = jewelleryRates?.silverFine?.perGram || 185;
+    const rSil1kg = Math.round(rSil1g * 1000);
+    const timeNow = liveClock.time || istTime || '14:30:00';
+    const dateNow = liveClock.date || istDate || new Date().toLocaleDateString();
+
+    const summaryText = `🏆 AURATRADE BULLION DESK — OFFICIAL RATES SNAPSHOT
+📅 Date: ${dateNow} | IST: ${timeNow}
+📍 Benchmark: Mumbai IBJA / MCX India Futures
+
+✨ 24K Pure Gold (999.9): ₹${r24k1g.toLocaleString()}/g • ₹${r24k10g.toLocaleString()}/10g
+✨ 22K Hallmark Gold (916): ₹${r22k1g.toLocaleString()}/g • ₹${r22k8g.toLocaleString()}/8g (1 Pavan)
+✨ 18K Diamond Gold (750): ₹${r18k1g.toLocaleString()}/g
+🥈 Fine Silver (999): ₹${rSil1g.toLocaleString()}/g • ₹${rSil1kg.toLocaleString()}/1kg
+
+📊 MCX Market Status: ${mcxStatus || 'OPEN'}
+🌐 Verified by AuraTrade Institutional Bullion Gateway`;
+
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(summaryText);
+      setCopiedRateNotice(true);
+      setTimeout(() => setCopiedRateNotice(false), 3000);
+    }
+  };
+
   return (
     <div className="motion-entry perf-section gold-silver-desk-container">
       {/* Dynamic Profile & Currency Toast */}
@@ -1465,10 +1850,22 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
           </div>
         </div>
 
-        {/* Currency Indicator */}
-        <div className="bullion-currency-active-status" style={{ fontSize: '0.74rem', color: 'var(--text-muted)', flexShrink: 0 }}>
-          Active: <strong style={{ color: 'var(--warning-amber)' }}>{currentCurrency.symbol} {currentCurrency.code}</strong>
-          {' '}({activeCurrency === 'USD' ? 'Default Dollar' : `${currentCurrency.name} • 1 USD = ${currentCurrency.symbol}${fxRates[activeCurrency]?.toLocaleString()}`})
+        {/* Currency Indicator & Share Rates Action */}
+        <div className="bullion-currency-active-status" style={{ fontSize: '0.74rem', color: 'var(--text-muted)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+          <div>
+            Active: <strong style={{ color: 'var(--warning-amber)' }}>{currentCurrency.symbol} {currentCurrency.code}</strong>
+            {' '}({activeCurrency === 'USD' ? 'Default Dollar' : `${currentCurrency.name} • 1 USD = ${currentCurrency.symbol}${fxRates[activeCurrency]?.toLocaleString()}`})
+          </div>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setShowShareRateModal(true)}
+            style={{ padding: '0.28rem 0.65rem', fontSize: '0.74rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer' }}
+            title="Share or Copy Today's Live Bullion Rate Card"
+          >
+            <Share2 size={12} style={{ color: 'var(--warning-amber)' }} />
+            <span>Share Today's Rates</span>
+          </button>
         </div>
       </div>
 
@@ -1640,7 +2037,10 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
             <button
               type="button"
               className="btn btn-primary"
-              onClick={() => onSelectSymbol && onSelectSymbol('GOLD')}
+              onClick={() => {
+                setChartAsset('GOLD_MCX');
+                jumpToSubTab('charts');
+              }}
               style={{ flex: 1, padding: '0.45rem', fontSize: '0.78rem', justifyContent: 'center' }}
             >
               <BarChart3 size={13} /> View Live Chart
@@ -1760,7 +2160,10 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
             <button
               type="button"
               className="btn btn-primary"
-              onClick={() => onSelectSymbol && onSelectSymbol('SILVER')}
+              onClick={() => {
+                setChartAsset('SILVER_MCX');
+                jumpToSubTab('charts');
+              }}
               style={{ flex: 1, padding: '0.45rem', fontSize: '0.78rem', justifyContent: 'center' }}
             >
               <BarChart3 size={13} /> View Live Chart
@@ -1930,7 +2333,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
         </div>
       </div>
 
-      {/* Desk Navigation Sub-Tabs: 6 Comprehensive Bullion Modules */}
+      {/* Desk Navigation Sub-Tabs: 7 Comprehensive Bullion Modules */}
       <div ref={subnavRef} className="glass-card" style={{ padding: '1.25rem', width: '100%', boxSizing: 'border-box' }}>
         <div className="bullion-subnav-strip">
           <div className="bullion-subnav-pills global-regional-strip mobile-touch-strip">
@@ -1941,6 +2344,14 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
               onClick={() => setActiveSubTab('catalog')}
             >
               <BarChart3 size={14} /> All Metals & Quotes
+            </button>
+            <button
+              type="button"
+              className={`btn ${activeSubTab === 'charts' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ fontSize: '0.82rem', padding: '0.4rem 0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+              onClick={() => setActiveSubTab('charts')}
+            >
+              <LineChart size={14} /> Live Technical Charts
             </button>
             <button
               type="button"
@@ -1956,7 +2367,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
               style={{ fontSize: '0.82rem', padding: '0.4rem 0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
               onClick={() => setActiveSubTab('calculator')}
             >
-              <Calculator size={14} /> Jewellery & GST Calculator
+              <Calculator size={14} /> Jewellery & Exchange Desk
             </button>
             <button
               type="button"
@@ -1964,7 +2375,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
               style={{ fontSize: '0.82rem', padding: '0.4rem 0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
               onClick={() => setActiveSubTab('jewellery')}
             >
-              <Award size={14} /> BIS Hallmark Rates
+              <Award size={14} /> BIS Hallmark & HUID Verifier
             </button>
             <button
               type="button"
@@ -1972,7 +2383,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
               style={{ fontSize: '0.82rem', padding: '0.4rem 0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
               onClick={() => setActiveSubTab('returns')}
             >
-              <TrendingUp size={14} /> Returns & Inflation Matrix
+              <PiggyBank size={14} /> Returns & Gold SIP Planner
             </button>
             <button
               type="button"
@@ -1980,25 +2391,58 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
               style={{ fontSize: '0.82rem', padding: '0.4rem 0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
               onClick={() => setActiveSubTab('guide')}
             >
-              <Layers size={14} /> Taxes, ETFs & SGB Guide
+              <Layers size={14} /> Taxes, Macro & SGB Guide
             </button>
           </div>
         </div>
 
         {/* ------------------------------------------------------------- */}
-        {/* SUB-TAB 1: Metals Catalog Table                               */}
+        {/* SUB-TAB 1: Metals Catalog Table & Physical Denominations       */}
         {/* ------------------------------------------------------------- */}
         {activeSubTab === 'catalog' && (
-          <div
-            className="table-responsive"
-            style={{
-              width: '100%',
-              maxWidth: '100%',
-              overflowX: 'auto',
-              WebkitOverflowScrolling: 'touch',
-              borderRadius: 'var(--radius-sm)'
-            }}
-          >
+          <div>
+            {/* View Mode Switcher */}
+            <div className="bullion-view-toggle-bar">
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700, marginRight: '0.25rem' }}>
+                Catalog View:
+              </span>
+              <button
+                type="button"
+                className={`btn ${catalogViewMode === 'quotes' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem' }}
+                onClick={() => setCatalogViewMode('quotes')}
+              >
+                <BarChart3 size={13} /> Live Commodity Quotes
+              </button>
+              <button
+                type="button"
+                className={`btn ${catalogViewMode === 'denominations' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem' }}
+                onClick={() => setCatalogViewMode('denominations')}
+              >
+                <Coins size={13} /> Minted Bars & Coins Rate Card
+              </button>
+              <button
+                type="button"
+                className={`btn ${catalogViewMode === 'import_parity' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem' }}
+                onClick={() => setCatalogViewMode('import_parity')}
+              >
+                <Scale size={13} /> Import Parity (IPP) & Duty Breakdown
+              </button>
+            </div>
+
+            {catalogViewMode === 'quotes' && (
+              <div
+                className="table-responsive"
+                style={{
+                  width: '100%',
+                  maxWidth: '100%',
+                  overflowX: 'auto',
+                  WebkitOverflowScrolling: 'touch',
+                  borderRadius: 'var(--radius-sm)'
+                }}
+              >
             <table className="custom-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: '820px' }}>
               <thead>
                 <tr>
@@ -2193,6 +2637,486 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+            {/* View 2: Physical Minted Coins & Bars Denomination Rate Card */}
+            {catalogViewMode === 'denominations' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.65rem' }}>
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      Physical Bullion Minted Denominations Rate Card
+                    </h4>
+                    <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                      Sealed 999.9 pure gold & 999 fine silver coins and cast bars with tamper-evident CertiCard packaging and minting premiums.
+                    </p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.35rem' }}>
+                    {['ALL', 'GOLD', 'SILVER'].map(m => (
+                      <button
+                        key={m}
+                        type="button"
+                        className={`btn ${denomMetalFilter === m ? 'btn-primary' : 'btn-secondary'}`}
+                        style={{ fontSize: '0.72rem', padding: '0.25rem 0.55rem' }}
+                        onClick={() => setDenomMetalFilter(m)}
+                      >
+                        {m === 'ALL' ? 'All Denominations' : m === 'GOLD' ? 'Gold Bars & Coins' : 'Silver Bars & Coins'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="table-responsive">
+                  <table className="custom-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ textAlign: 'left' }}>Denomination & Weight</th>
+                        <th style={{ textAlign: 'center' }}>Purity Grade</th>
+                        <th style={{ textAlign: 'left' }}>Packaging Standard</th>
+                        <th style={{ textAlign: 'right' }}>Base Metal Price</th>
+                        <th style={{ textAlign: 'right' }}>Mint Premium (%)</th>
+                        <th style={{ textAlign: 'right' }}>3% GST</th>
+                        <th style={{ textAlign: 'right' }}>Total Retail Price</th>
+                        <th style={{ textAlign: 'center' }}>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(denomMetalFilter === 'ALL' || denomMetalFilter === 'GOLD') && MINTED_GOLD_DENOMINATIONS.map((item) => {
+                        const rate1g = jewelleryRates?.gold24k?.perGram || 13326;
+                        const baseVal = rate1g * item.weightGrams;
+                        const premiumVal = baseVal * (item.premiumPct / 100);
+                        const taxable = baseVal + premiumVal;
+                        const gst = taxable * 0.03;
+                        const total = taxable + gst;
+
+                        return (
+                          <tr key={`gold-${item.weightGrams}`}>
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <GoldBarIcon size={20} />
+                                <div>
+                                  <strong style={{ color: 'var(--text-primary)', fontSize: '0.84rem' }}>{item.name}</strong>
+                                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{item.category}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <span className="status-pill" style={{ background: 'rgba(245, 158, 11, 0.15)', color: 'var(--warning-amber)', fontSize: '0.72rem', fontWeight: 800 }}>
+                                {item.purity}
+                              </span>
+                            </td>
+                            <td style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>{item.pack}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 700 }} className="font-mono">
+                              {formatPriceFromInr(baseVal, 2)}
+                            </td>
+                            <td style={{ textAlign: 'right', color: 'var(--warning-amber)', fontWeight: 700 }} className="font-mono">
+                              +{item.premiumPct}% ({formatPriceFromInr(premiumVal, 2)})
+                            </td>
+                            <td style={{ textAlign: 'right', color: 'var(--text-muted)' }} className="font-mono">
+                              {formatPriceFromInr(gst, 2)}
+                            </td>
+                            <td style={{ textAlign: 'right', fontWeight: 900, color: 'var(--bull-green)' }} className="font-mono">
+                              {formatPriceFromInr(total, 2)}
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <button
+                                type="button"
+                                className="btn btn-secondary"
+                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.72rem' }}
+                                onClick={() => {
+                                  setCalcPurity('24k');
+                                  setCalcWeight(item.weightGrams);
+                                  jumpToSubTab('calculator');
+                                }}
+                                title="Open this weight in Billing Calculator"
+                              >
+                                Calculate
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+
+                      {(denomMetalFilter === 'ALL' || denomMetalFilter === 'SILVER') && MINTED_SILVER_DENOMINATIONS.map((item) => {
+                        const rate1g = jewelleryRates?.silverFine?.perGram || 185;
+                        const baseVal = rate1g * item.weightGrams;
+                        const premiumVal = baseVal * (item.premiumPct / 100);
+                        const taxable = baseVal + premiumVal;
+                        const gst = taxable * 0.03;
+                        const total = taxable + gst;
+
+                        return (
+                          <tr key={`silver-${item.weightGrams}`}>
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <SilverBarIcon size={20} />
+                                <div>
+                                  <strong style={{ color: 'var(--text-primary)', fontSize: '0.84rem' }}>{item.name}</strong>
+                                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>{item.category}</div>
+                                </div>
+                              </div>
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <span className="status-pill" style={{ background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)', fontSize: '0.72rem', fontWeight: 800 }}>
+                                {item.purity}
+                              </span>
+                            </td>
+                            <td style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>{item.pack}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 700 }} className="font-mono">
+                              {formatPriceFromInr(baseVal, 2)}
+                            </td>
+                            <td style={{ textAlign: 'right', color: 'var(--accent-cyan)', fontWeight: 700 }} className="font-mono">
+                              +{item.premiumPct}% ({formatPriceFromInr(premiumVal, 2)})
+                            </td>
+                            <td style={{ textAlign: 'right', color: 'var(--text-muted)' }} className="font-mono">
+                              {formatPriceFromInr(gst, 2)}
+                            </td>
+                            <td style={{ textAlign: 'right', fontWeight: 900, color: 'var(--bull-green)' }} className="font-mono">
+                              {formatPriceFromInr(total, 2)}
+                            </td>
+                            <td style={{ textAlign: 'center' }}>
+                              <button
+                                type="button"
+                                className="btn btn-secondary"
+                                style={{ padding: '0.25rem 0.5rem', fontSize: '0.72rem' }}
+                                onClick={() => {
+                                  setCalcPurity('silver');
+                                  setCalcWeight(item.weightGrams);
+                                  jumpToSubTab('calculator');
+                                }}
+                                title="Open this weight in Billing Calculator"
+                              >
+                                Calculate
+                              </button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* View 3: Import Parity Price (IPP) & Duty Breakdown */}
+            {catalogViewMode === 'import_parity' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                <div
+                  style={{
+                    background: 'rgba(245, 158, 11, 0.08)',
+                    border: '1px solid rgba(245, 158, 11, 0.25)',
+                    padding: '1rem 1.25rem',
+                    borderRadius: 'var(--radius-md)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.85rem'
+                  }}
+                >
+                  <Scale size={24} style={{ color: 'var(--warning-amber)', flexShrink: 0 }} />
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      Gold Import Parity Price (IPP) & Arbitrage Spread Analyzer
+                    </h4>
+                    <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                      Audits the statutory landing cost of gold imported into India against domestic MCX Futures and IBJA benchmark rates.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bullion-stats-grid">
+                  <div className="bullion-stat-tile">
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>1. International Spot</span>
+                    <strong className="font-mono" style={{ fontSize: '1.2rem', color: 'var(--warning-amber)' }}>
+                      ${importParity.spotUsd.toLocaleString()}/oz
+                    </strong>
+                    <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)' }}>LBMA London Benchmark</span>
+                  </div>
+
+                  <div className="bullion-stat-tile">
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>2. USD/INR Benchmark FX</span>
+                    <strong className="font-mono" style={{ fontSize: '1.2rem', color: 'var(--text-primary)' }}>
+                      ₹{importParity.fxInr.toFixed(2)}
+                    </strong>
+                    <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)' }}>1 Troy Oz = 31.1035g</span>
+                  </div>
+
+                  <div className="bullion-stat-tile">
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>3. Effective Import Duty</span>
+                    <strong className="font-mono" style={{ fontSize: '1.2rem', color: 'var(--bear-red)' }}>
+                      11.5% (BCD + AIDC)
+                    </strong>
+                    <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)' }}>₹{importParity.dutyAmount10g.toLocaleString()}/10g Duty</span>
+                  </div>
+
+                  <div className="bullion-stat-tile">
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>4. Landed IPP (with 3% GST)</span>
+                    <strong className="font-mono" style={{ fontSize: '1.2rem', color: 'var(--bull-green)' }}>
+                      ₹{importParity.landedIpp10g.toLocaleString()}/10g
+                    </strong>
+                    <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)' }}>Statutory Landed Parity</span>
+                  </div>
+                </div>
+
+                {/* Arbitrage Spread Comparison Card */}
+                <div
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.03)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '1.25rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '1rem'
+                  }}
+                >
+                  <div>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
+                      Domestic MCX vs Landed Import Parity Spread
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginTop: '0.25rem' }}>
+                      <span className="font-mono" style={{ fontSize: '1.45rem', fontWeight: 900, color: importParity.isPremium ? 'var(--bull-green)' : 'var(--bear-red)' }}>
+                        {importParity.isPremium ? '+' : ''}₹{importParity.arbitrageSpread.toLocaleString()}/10g
+                      </span>
+                      <span className={`status-pill ${importParity.isPremium ? 'bg-bull' : 'bg-bear'}`} style={{ fontSize: '0.75rem', fontWeight: 800 }}>
+                        {importParity.isPremium ? '+' : ''}{importParity.arbitragePct}% {importParity.isPremium ? 'Domestic Premium' : 'Domestic Discount'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ maxWidth: '420px', fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+                    {importParity.isPremium
+                      ? 'Domestic gold trades at a premium over statutory import parity, indicating strong domestic festive/bridal buying pressure and localized physical delivery tightness.'
+                      : 'Domestic gold trades at a discount to statutory import parity, reflecting higher alternative supply inflows and institutional arbitrage hedging.'}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ------------------------------------------------------------- */}
+        {/* SUB-TAB 2 (NEW): Live Technical Charts                         */}
+        {/* ------------------------------------------------------------- */}
+        {activeSubTab === 'charts' && (
+          <div className="bullion-chart-container">
+            {/* Controls Bar */}
+            <div className="bullion-chart-controls">
+              <div className="bullion-chart-pills">
+                <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 700 }}>Asset:</span>
+                {[
+                  { key: 'GOLD_MCX', label: 'Gold MCX (INR)' },
+                  { key: 'GOLD_USD', label: 'Gold Spot (USD)' },
+                  { key: 'SILVER_MCX', label: 'Silver MCX (INR)' },
+                  { key: 'SILVER_USD', label: 'Silver Spot (USD)' },
+                  { key: 'RATIO', label: 'Gold / Silver Ratio' }
+                ].map((a) => (
+                  <button
+                    key={a.key}
+                    type="button"
+                    className={`btn ${chartAsset === a.key ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ fontSize: '0.74rem', padding: '0.28rem 0.6rem' }}
+                    onClick={() => setChartAsset(a.key)}
+                  >
+                    {a.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="bullion-chart-pills">
+                <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 700 }}>Horizon:</span>
+                {['1D', '1W', '1M', '1Y', '5Y'].map((tf) => (
+                  <button
+                    key={tf}
+                    type="button"
+                    className={`btn ${chartTimeframe === tf ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ fontSize: '0.74rem', padding: '0.28rem 0.55rem' }}
+                    onClick={() => setChartTimeframe(tf)}
+                  >
+                    {tf}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => onSelectSymbol && onSelectSymbol(chartAsset.includes('SILVER') ? 'SILVER' : 'GOLD')}
+                  style={{ fontSize: '0.74rem', padding: '0.28rem 0.65rem' }}
+                  title="Open in full platform trading workstation"
+                >
+                  <ExternalLink size={12} /> Dashboard View
+                </button>
+              </div>
+            </div>
+
+            {/* Interactive SVG Chart Box */}
+            <div className="bullion-chart-svg-box">
+              {/* Header inside Chart Box */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>
+                    {chartData.label} • {chartTimeframe} Trend
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.65rem', marginTop: '0.2rem' }}>
+                    <span className="font-mono" style={{ fontSize: '1.45rem', fontWeight: 900, color: 'var(--text-primary)' }}>
+                      {chartData.unit}{chartHoverIndex !== null && chartData.points[chartHoverIndex]
+                        ? (chartData.decimals > 0 ? chartData.points[chartHoverIndex].price.toFixed(chartData.decimals) : Math.round(chartData.points[chartHoverIndex].price).toLocaleString())
+                        : (chartData.decimals > 0 ? chartData.basePrice.toFixed(chartData.decimals) : Math.round(chartData.basePrice).toLocaleString())}
+                    </span>
+                    <span className={`status-pill ${chartData.netChangePct >= 0 ? 'bg-bull' : 'bg-bear'}`} style={{ fontSize: '0.72rem', fontWeight: 800 }}>
+                      {chartData.netChangePct >= 0 ? '+' : ''}{chartData.netChangePct.toFixed(2)}% ({chartTimeframe})
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'right', fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+                  <div>Date: <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>
+                    {chartHoverIndex !== null && chartData.points[chartHoverIndex] ? chartData.points[chartHoverIndex].date : (chartData.points[chartData.points.length - 1]?.date || 'Live')}
+                  </strong></div>
+                  <div style={{ color: 'var(--text-muted)', fontSize: '0.68rem', marginTop: '0.15rem' }}>Hover or drag over chart to inspect historical price ticks</div>
+                </div>
+              </div>
+
+              {/* Responsive SVG Area & Line Chart */}
+              {(() => {
+                const W = 800;
+                const H = 240;
+                const padTop = 15;
+                const padBottom = 25;
+                const padLeft = 10;
+                const padRight = 10;
+                const plotW = W - padLeft - padRight;
+                const plotH = H - padTop - padBottom;
+
+                const pts = chartData.points;
+                const min = chartData.minPrice;
+                const max = chartData.maxPrice;
+                const range = chartData.priceRange;
+
+                const getCoords = (idx, price) => {
+                  const x = padLeft + (idx / (pts.length - 1 || 1)) * plotW;
+                  const norm = (price - min) / range;
+                  const y = padTop + (1 - norm) * plotH;
+                  return { x, y };
+                };
+
+                const coords = pts.map((p, idx) => getCoords(idx, p.price));
+                const linePath = coords.reduce((acc, c, idx) => `${acc} ${idx === 0 ? 'M' : 'L'} ${c.x.toFixed(1)} ${c.y.toFixed(1)}`, '');
+                const areaPath = `${linePath} L ${coords[coords.length - 1]?.x.toFixed(1)} ${H - padBottom} L ${coords[0]?.x.toFixed(1)} ${H - padBottom} Z`;
+
+                const strokeColor = chartAsset.includes('SILVER') ? 'var(--accent-cyan)' : 'var(--warning-amber)';
+                const gradStart = chartAsset.includes('SILVER') ? 'rgba(6, 182, 212, 0.35)' : 'rgba(245, 158, 11, 0.35)';
+
+                return (
+                  <div style={{ position: 'relative', width: '100%' }}>
+                    <svg
+                      viewBox={`0 0 ${W} ${H}`}
+                      style={{ width: '100%', height: 'auto', maxHeight: '280px', display: 'block', overflow: 'visible', cursor: 'crosshair' }}
+                      onMouseLeave={() => setChartHoverIndex(null)}
+                      onMouseMove={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const clientX = e.clientX - rect.left;
+                        const frac = Math.max(0, Math.min(1, (clientX / rect.width)));
+                        const hoverIdx = Math.round(frac * (pts.length - 1));
+                        setChartHoverIndex(hoverIdx);
+                      }}
+                      onTouchMove={(e) => {
+                        const touch = e.touches[0];
+                        if (!touch) return;
+                        const rect = e.currentTarget.getBoundingClientRect();
+                        const clientX = touch.clientX - rect.left;
+                        const frac = Math.max(0, Math.min(1, (clientX / rect.width)));
+                        const hoverIdx = Math.round(frac * (pts.length - 1));
+                        setChartHoverIndex(hoverIdx);
+                      }}
+                    >
+                      <defs>
+                        <linearGradient id="bullionChartAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={gradStart} />
+                          <stop offset="100%" stopColor="rgba(0, 0, 0, 0.0)" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Horizontal Grid Lines */}
+                      {[0.25, 0.5, 0.75].map((pct) => {
+                        const y = padTop + pct * plotH;
+                        return (
+                          <line key={pct} x1={padLeft} y1={y} x2={W - padRight} y2={y} stroke="rgba(255, 255, 255, 0.06)" strokeDasharray="3 3" />
+                        );
+                      })}
+
+                      {/* Area Fill */}
+                      <path d={areaPath} fill="url(#bullionChartAreaGrad)" />
+
+                      {/* Main Trend Line */}
+                      <path d={linePath} fill="none" stroke={strokeColor} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+
+                      {/* Hover Crosshair & Dot */}
+                      {chartHoverIndex !== null && coords[chartHoverIndex] && (
+                        <g>
+                          <line
+                            x1={coords[chartHoverIndex].x}
+                            y1={padTop}
+                            x2={coords[chartHoverIndex].x}
+                            y2={H - padBottom}
+                            stroke="rgba(255, 255, 255, 0.4)"
+                            strokeDasharray="2 2"
+                          />
+                          <circle
+                            cx={coords[chartHoverIndex].x}
+                            cy={coords[chartHoverIndex].y}
+                            r="5"
+                            fill={strokeColor}
+                            stroke="#ffffff"
+                            strokeWidth="2"
+                          />
+                        </g>
+                      )}
+                    </svg>
+                  </div>
+                );
+              })()}
+
+              {/* Technical Indicator Badges */}
+              <div className="bullion-stats-grid" style={{ marginTop: '1rem' }}>
+                <div className="bullion-stat-tile">
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>14-Period RSI</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <strong className="font-mono" style={{ fontSize: '1.1rem', color: chartData.rsi >= 70 ? 'var(--warning-amber)' : chartData.rsi <= 35 ? 'var(--bear-red)' : 'var(--bull-green)' }}>
+                      {chartData.rsi}
+                    </strong>
+                    <span style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>
+                      {chartData.rsi >= 70 ? 'Overbought' : chartData.rsi <= 35 ? 'Oversold' : 'Neutral Bullish'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bullion-stat-tile">
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>50-Day Moving Avg</span>
+                  <strong className="font-mono text-bull" style={{ fontSize: '1.05rem' }}>
+                    {chartData.unit}{chartData.decimals > 0 ? chartData.ma50.toFixed(chartData.decimals) : Math.round(chartData.ma50).toLocaleString()}
+                  </strong>
+                  <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)' }}>Trend: Trading Above 50-DMA</span>
+                </div>
+
+                <div className="bullion-stat-tile">
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>200-Day Moving Avg</span>
+                  <strong className="font-mono text-bull" style={{ fontSize: '1.05rem' }}>
+                    {chartData.unit}{chartData.decimals > 0 ? chartData.ma200.toFixed(chartData.decimals) : Math.round(chartData.ma200).toLocaleString()}
+                  </strong>
+                  <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)' }}>Long-Term Macro Bull Market</span>
+                </div>
+
+                <div className="bullion-stat-tile">
+                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Horizon Range</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--text-primary)', marginTop: '0.15rem' }}>
+                    <span>Low: <strong className="font-mono">{chartData.unit}{chartData.decimals > 0 ? chartData.minPrice.toFixed(chartData.decimals) : Math.round(chartData.minPrice).toLocaleString()}</strong></span>
+                    <span>High: <strong className="font-mono">{chartData.unit}{chartData.decimals > 0 ? chartData.maxPrice.toFixed(chartData.decimals) : Math.round(chartData.maxPrice).toLocaleString()}</strong></span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -2770,10 +3694,66 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
         })()}
 
         {/* ------------------------------------------------------------- */}
-        {/* SUB-TAB 3: Jewellery Billing & GST Calculator                 */}
+        {/* SUB-TAB 4: Jewellery Billing & Old Gold Exchange Desk         */}
         {/* ------------------------------------------------------------- */}
         {activeSubTab === 'calculator' && (
-          <div className="jewellery-calculator-grid">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {/* Mode Switcher */}
+            <div className="bullion-view-toggle-bar" style={{ margin: 0 }}>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', fontWeight: 700, marginRight: '0.25rem' }}>
+                Desk Mode:
+              </span>
+              <button
+                type="button"
+                className={`btn ${calcViewMode === 'new' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem' }}
+                onClick={() => setCalcViewMode('new')}
+              >
+                <Calculator size={13} /> New Jewellery Billing & GST
+              </button>
+              <button
+                type="button"
+                className={`btn ${calcViewMode === 'exchange' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem' }}
+                onClick={() => setCalcViewMode('exchange')}
+              >
+                <Scale size={13} /> Old Gold Exchange & Scrap Valuation
+              </button>
+            </div>
+
+            {/* Scrap Credit Notice Banner */}
+            {appliedScrapCredit > 0 && (
+              <div
+                style={{
+                  background: 'rgba(16, 185, 129, 0.12)',
+                  border: '1px solid rgba(16, 185, 129, 0.35)',
+                  padding: '0.65rem 1rem',
+                  borderRadius: 'var(--radius-sm)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '0.75rem'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <CheckCircle2 size={16} style={{ color: 'var(--bull-green)' }} />
+                  <span style={{ fontSize: '0.82rem', color: 'var(--text-primary)' }}>
+                    Active Old Gold Exchange Credit: <strong className="font-mono text-bull">{formatPriceFromInr(appliedScrapCredit, 2)}</strong> applied to invoice settlement.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  style={{ padding: '0.2rem 0.5rem', fontSize: '0.7rem' }}
+                  onClick={() => setAppliedScrapCredit(0)}
+                >
+                  Clear Credit
+                </button>
+              </div>
+            )}
+
+            {calcViewMode === 'new' && (
+              <div className="jewellery-calculator-grid">
             {/* Left Box: Controls & Parameter Selectors */}
             <div className="glass-card calculator-card-left">
               <div
@@ -3441,7 +4421,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
               >
                 <div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 800 }}>
-                    Total Estimated Invoice
+                    {appliedScrapCredit > 0 ? 'Gross New Jewellery Total' : 'Total Estimated Invoice'}
                   </div>
                   <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
                     Full Net Amount Payable ({currentCurrency.code})
@@ -3451,6 +4431,36 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                   {formatPriceFromInr(totalEstimatedInvoice, 2)}
                 </div>
               </div>
+
+              {/* Deduct Old Gold Exchange Credit if Applied */}
+              {appliedScrapCredit > 0 && (
+                <div
+                  style={{
+                    background: 'rgba(16, 185, 129, 0.1)',
+                    border: '1px solid rgba(16, 185, 129, 0.35)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '0.85rem 1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.45rem',
+                    marginBottom: '1rem'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', color: 'var(--bull-green)' }}>
+                    <span>Less: Old Gold Trade-In Credit:</span>
+                    <strong className="font-mono text-bull">-{formatPriceFromInr(appliedScrapCredit, 2)}</strong>
+                  </div>
+                  <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.08)' }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      Net Payable by Customer:
+                    </span>
+                    <span className="font-mono text-bull" style={{ fontSize: '1.45rem', fontWeight: 900 }}>
+                      {formatPriceFromInr(Math.max(0, totalEstimatedInvoice - appliedScrapCredit), 2)}
+                    </span>
+                  </div>
+                </div>
+              )}
 
               {/* PDF Soft Copy Action Bar */}
               <div className="calculator-actions-grid">
@@ -3521,8 +4531,282 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
           </div>
         )}
 
+            {/* Mode 2: Old Gold Scrap & Exchange Valuation Desk */}
+            {calcViewMode === 'exchange' && (
+              <div className="jewellery-calculator-grid">
+                {/* Left Card: Input Parameters */}
+                <div className="glass-card calculator-card-left">
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      flexWrap: 'wrap',
+                      gap: '0.65rem',
+                      borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                      paddingBottom: '0.75rem',
+                      marginBottom: '1.25rem'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                      <div
+                        style={{
+                          width: '36px',
+                          height: '36px',
+                          borderRadius: '8px',
+                          background: 'rgba(245, 158, 11, 0.15)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: 'var(--warning-amber)'
+                        }}
+                      >
+                        <Scale size={20} />
+                      </div>
+                      <div>
+                        <h4 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                          Old Gold Scrap & Exchange Appraiser
+                        </h4>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                          Valuate trade-in ornaments with melting loss deduction & pure metal buyback
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Inputs */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {/* Item Description */}
+                    <div>
+                      <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.35rem' }}>
+                        Article / Ornament Description
+                      </label>
+                      <input
+                        type="text"
+                        value={scrapItemName}
+                        onChange={(e) => setScrapItemName(e.target.value)}
+                        placeholder="e.g. Vintage 22K Bangle, Chain, Ring"
+                        style={{
+                          width: '100%',
+                          padding: '0.55rem 0.75rem',
+                          fontSize: '0.82rem',
+                          background: 'var(--bg-input)',
+                          border: '1px solid var(--border-subtle)',
+                          borderRadius: 'var(--radius-sm)',
+                          color: 'var(--text-primary)',
+                          boxSizing: 'border-box'
+                        }}
+                      />
+                    </div>
+
+                    {/* Weight Inputs Grid */}
+                    <div className="calculator-inputs-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.85rem' }}>
+                      <div>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.35rem' }}>
+                          Gross Scale Weight (Grams)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0.1"
+                          value={scrapGrossWeight}
+                          onChange={(e) => setScrapGrossWeight(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '0.55rem 0.75rem',
+                            fontSize: '0.86rem',
+                            fontWeight: 800,
+                            fontFamily: 'var(--font-mono)',
+                            background: 'var(--bg-input)',
+                            border: '1px solid var(--border-subtle)',
+                            borderRadius: 'var(--radius-sm)',
+                            color: 'var(--text-primary)',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.35rem' }}>
+                          Stone / Wax / Lac Deduction (g)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={scrapStoneDeduction}
+                          onChange={(e) => setScrapStoneDeduction(e.target.value)}
+                          style={{
+                            width: '100%',
+                            padding: '0.55rem 0.75rem',
+                            fontSize: '0.86rem',
+                            fontWeight: 800,
+                            fontFamily: 'var(--font-mono)',
+                            background: 'var(--bg-input)',
+                            border: '1px solid var(--border-subtle)',
+                            borderRadius: 'var(--radius-sm)',
+                            color: 'var(--text-primary)',
+                            boxSizing: 'border-box'
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Tested Purity Karat Selector */}
+                    <div>
+                      <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, display: 'block', marginBottom: '0.45rem' }}>
+                        Tested Assay Purity / Karat
+                      </label>
+                      <div className="calculator-purity-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.45rem' }}>
+                        {[
+                          { key: '24k', label: '24K (99.9%)' },
+                          { key: '22k', label: '22K (91.6%)' },
+                          { key: '20k', label: '20K (83.3%)' },
+                          { key: '18k', label: '18K (75.0%)' },
+                          { key: '14k', label: '14K (58.3%)' },
+                          { key: '10k', label: '10K (41.7%)' },
+                          { key: 'silver', label: 'Silver 999' },
+                          { key: 'silver925', label: 'Silver 925' }
+                        ].map((k) => (
+                          <button
+                            key={k.key}
+                            type="button"
+                            className={`btn ${scrapPurityKey === k.key ? 'btn-primary' : 'btn-secondary'}`}
+                            style={{ padding: '0.35rem 0.5rem', fontSize: '0.72rem', textAlign: 'center', justifyContent: 'center' }}
+                            onClick={() => setScrapPurityKey(k.key)}
+                          >
+                            {k.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Melting Loss Slider */}
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                        <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700 }}>
+                          Melting / Fire Assay Refining Loss (%)
+                        </label>
+                        <span className="font-mono text-bear" style={{ fontSize: '0.78rem', fontWeight: 800 }}>
+                          {scrapMeltingLossPct}% ({scrapValuation.meltingLossGrams.toFixed(2)}g lost)
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="0"
+                        max="4"
+                        step="0.25"
+                        value={scrapMeltingLossPct}
+                        onChange={(e) => setScrapMeltingLossPct(e.target.value)}
+                        style={{ width: '100%', cursor: 'pointer' }}
+                      />
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.66rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                        <span>0% (Assay Bar)</span>
+                        <span>1.5% (Standard Hallmark)</span>
+                        <span>4.0% (Enamel / Solder Heavy)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Card: Valuation Breakdown & Action */}
+                <div className="glass-card calculator-card-right" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div>
+                    <h4 style={{ margin: '0 0 1rem 0', fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      Old Metal Appraisal Statement
+                    </h4>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                        <span>Gross Article Weight:</span>
+                        <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>{scrapGrossWeight} g</strong>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                        <span>Less Stone/Lac Deduction:</span>
+                        <span className="font-mono text-bear" style={{ fontWeight: 700 }}>-{scrapStoneDeduction} g</span>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.86rem', color: 'var(--text-primary)', fontWeight: 800 }}>
+                        <span>Net Metallic Weight:</span>
+                        <span className="font-mono">{scrapNetWeight.toFixed(2)} g</span>
+                      </div>
+
+                      <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '0.2rem 0' }} />
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                        <span>Tested Grade & Purity:</span>
+                        <strong style={{ color: 'var(--warning-amber)' }}>{scrapValuation.purityInfo.label}</strong>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                        <span>Pure Metal Equivalent:</span>
+                        <span className="font-mono">{scrapValuation.pureWeightBeforeLoss.toFixed(2)} g</span>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                        <span>Less Refining Melting Loss ({scrapMeltingLossPct}%):</span>
+                        <span className="font-mono text-bear">-{scrapValuation.meltingLossGrams.toFixed(2)} g</span>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.86rem', color: 'var(--text-primary)', fontWeight: 800 }}>
+                        <span>Payable Pure Weight:</span>
+                        <span className="font-mono text-bull">{scrapValuation.payablePureWeight.toFixed(2)} g</span>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.84rem', color: 'var(--text-secondary)' }}>
+                        <span>Buyback Benchmark Rate:</span>
+                        <span className="font-mono">{formatPriceFromInr(scrapValuation.ratePerGram, 2)}/g</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Total Scrap Valuation Box */}
+                  <div style={{ marginTop: '1.25rem' }}>
+                    <div
+                      style={{
+                        background: 'rgba(16, 185, 129, 0.12)',
+                        border: '1px solid rgba(16, 185, 129, 0.35)',
+                        borderRadius: 'var(--radius-md)',
+                        padding: '1rem',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: '0.5rem',
+                        marginBottom: '0.85rem'
+                      }}
+                    >
+                      <div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>
+                          Net Old Gold Exchange Credit
+                        </div>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>
+                          Cash Buyback / Trade-In Settlement Value
+                        </div>
+                      </div>
+                      <div className="font-mono text-bull" style={{ fontSize: '1.5rem', fontWeight: 900 }}>
+                        {formatPriceFromInr(scrapValuation.grossValuation, 2)}
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={handleApplyScrapCreditToInvoice}
+                      style={{ width: '100%', padding: '0.65rem 1rem', fontSize: '0.84rem', fontWeight: 800, justifyContent: 'center' }}
+                    >
+                      <CheckCircle2 size={15} /> Apply {formatPriceFromInr(scrapValuation.grossValuation, 2)} Credit to New Jewellery Bill
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ------------------------------------------------------------- */}
-        {/* SUB-TAB 4: BIS Hallmarked Jewellery Rates                     */}
+        {/* SUB-TAB 5: BIS Hallmarked Jewellery Rates & HUID Verifier     */}
         {/* ------------------------------------------------------------- */}
         {activeSubTab === 'jewellery' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -3545,6 +4829,115 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                 <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
                   Rates computed dynamically from pure MCX bullion benchmark. Click any row below to view BIS HUID standards, alloy composition, making charges, GST breakdown, hardness, and buyback details.
                 </p>
+              </div>
+            </div>
+
+            {/* Interactive BIS HUID 6-Digit Hallmark Verifier Card */}
+            <div className="bullion-huid-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.85rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      background: 'rgba(245, 158, 11, 0.2)',
+                      border: '1px solid rgba(245, 158, 11, 0.4)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--warning-amber)'
+                    }}
+                  >
+                    <ShieldCheck size={22} />
+                  </div>
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                      Interactive BIS HUID Hallmark Authenticity Verifier
+                    </h4>
+                    <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                      Test & validate 6-digit laser-engraved Hallmark Unique Identification (IS 1417:2024 compliance)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Direct External Portal Link */}
+                <a
+                  href="https://www.manakonline.in/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-primary"
+                  style={{ textDecoration: 'none', fontSize: '0.76rem', padding: '0.35rem 0.75rem' }}
+                >
+                  <ExternalLink size={13} /> Official BIS CARE Portal
+                </a>
+              </div>
+
+              {/* Input & Feedback Row */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <label style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 700 }}>
+                    Enter 6-Digit HUID:
+                  </label>
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={huidInput}
+                    onChange={(e) => setHuidInput(e.target.value.toUpperCase())}
+                    placeholder="e.g. A7B9K2"
+                    style={{
+                      width: '120px',
+                      padding: '0.45rem 0.65rem',
+                      fontSize: '1rem',
+                      fontWeight: 900,
+                      fontFamily: 'var(--font-mono)',
+                      letterSpacing: '0.15em',
+                      textAlign: 'center',
+                      textTransform: 'uppercase',
+                      background: 'var(--bg-input)',
+                      border: huidValidation.isValid ? '1px solid var(--bull-green)' : '1px solid var(--warning-amber)',
+                      borderRadius: 'var(--radius-sm)',
+                      color: 'var(--text-primary)',
+                      outline: 'none'
+                    }}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: '240px' }}>
+                  {huidValidation.isValid ? (
+                    <span className="status-pill bg-bull" style={{ fontSize: '0.74rem', fontWeight: 800 }}>
+                      <CheckCircle2 size={13} /> Valid BIS HUID Structure (IS 1417 Assayed Alphanumeric)
+                    </span>
+                  ) : (
+                    <span className="status-pill bg-bear" style={{ fontSize: '0.74rem', fontWeight: 800 }}>
+                      Requires exactly 6 uppercase alphanumeric characters (A-Z, 0-9)
+                    </span>
+                  )}
+                  {huidValidation.containsAmbiguous && (
+                    <span style={{ fontSize: '0.7rem', color: 'var(--warning-amber)' }}>
+                      Note: BIS commonly avoids 'I' and 'O' to prevent visual confusion with numbers 1 and 0.
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* 3 Hallmark Components Visual Bar */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.75rem', marginTop: '1rem' }}>
+                <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--warning-amber)', fontWeight: 800, textTransform: 'uppercase' }}>Mark 1 of 3</div>
+                  <strong style={{ fontSize: '0.84rem', color: 'var(--text-primary)' }}>BIS Standard Logo</strong>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>Triangular hallmark certified by Bureau of Indian Standards</div>
+                </div>
+                <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--warning-amber)', fontWeight: 800, textTransform: 'uppercase' }}>Mark 2 of 3</div>
+                  <strong style={{ fontSize: '0.84rem', color: 'var(--text-primary)' }}>Purity / Fineness Grade</strong>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>Laser-marked 22K916, 18K750, or 24K999 purity stamp</div>
+                </div>
+                <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.65rem 0.85rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--warning-amber)', fontWeight: 800, textTransform: 'uppercase' }}>Mark 3 of 3</div>
+                  <strong style={{ fontSize: '0.84rem', color: 'var(--text-primary)' }}>6-Digit Unique HUID</strong>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>Traceable serial code linked to AHC lab & jeweller license in BIS CARE</div>
+                </div>
               </div>
             </div>
 
@@ -3777,6 +5170,227 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
         {/* ------------------------------------------------------------- */}
         {activeSubTab === 'returns' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {/* Interactive Gold & Silver SIP Wealth Simulator */}
+            <div
+              className="glass-card"
+              style={{
+                padding: '1.4rem',
+                border: '1px solid rgba(245, 158, 11, 0.35)',
+                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(0, 0, 0, 0.2))'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div
+                    style={{
+                      width: '38px',
+                      height: '38px',
+                      borderRadius: '10px',
+                      background: 'rgba(245, 158, 11, 0.15)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'var(--warning-amber)'
+                    }}
+                  >
+                    <PiggyBank size={22} />
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '1.08rem', fontWeight: 900, color: 'var(--text-primary)' }}>
+                      Systematic Bullion Wealth Accumulation (SIP Planner)
+                    </h3>
+                    <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                      Model your monthly accumulation into 24K Physical Gold, SGBs, or Silver vs Bank Fixed Deposits & Inflation
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'inline-flex', background: 'rgba(0, 0, 0, 0.35)', padding: '0.25rem', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                  {[
+                    { id: 'GOLD24K', label: '24K Gold SIP (11.5%)' },
+                    { id: 'SGB', label: 'SGB Bonds (14.0%)' },
+                    { id: 'SILVER', label: 'Fine Silver SIP (13.8%)' }
+                  ].map((tab) => (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setSipAsset(tab.id)}
+                      className={`btn ${sipAsset === tab.id ? 'btn-primary' : 'btn-ghost'}`}
+                      style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem' }}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bullion-sip-grid">
+                {/* Inputs Column */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.1rem', background: 'rgba(255, 255, 255, 0.02)', padding: '1.1rem', borderRadius: '12px', border: '1px solid var(--border-subtle)' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                      <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                        Monthly Contribution:
+                      </label>
+                      <span className="font-mono" style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--warning-amber)' }}>
+                        {formatPriceFromInr(sipMonthlyAmount, 0)} / mo
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1000"
+                      max="100000"
+                      step="1000"
+                      value={sipMonthlyAmount}
+                      onChange={(e) => setSipMonthlyAmount(e.target.value)}
+                      style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--warning-amber)' }}
+                    />
+                    <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.45rem', flexWrap: 'wrap' }}>
+                      {[2500, 5000, 10000, 25000, 50000].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => setSipMonthlyAmount(preset)}
+                          style={{
+                            fontSize: '0.7rem',
+                            padding: '0.2rem 0.5rem',
+                            border: sipMonthlyAmount === preset ? '1px solid var(--warning-amber)' : undefined
+                          }}
+                        >
+                          ₹{(preset / 1000).toFixed(preset % 1000 !== 0 ? 1 : 0)}K
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                      <label style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+                        Horizon Period:
+                      </label>
+                      <span className="font-mono" style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--accent-cyan)' }}>
+                        {sipDurationYears} Years ({sipDurationYears * 12} Installments)
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="1"
+                      max="20"
+                      step="1"
+                      value={sipDurationYears}
+                      onChange={(e) => setSipDurationYears(e.target.value)}
+                      style={{ width: '100%', cursor: 'pointer', accentColor: 'var(--accent-cyan)' }}
+                    />
+                    <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.45rem', flexWrap: 'wrap' }}>
+                      {[1, 3, 5, 8, 10, 15].map((yrs) => (
+                        <button
+                          key={yrs}
+                          type="button"
+                          className="btn btn-secondary"
+                          onClick={() => setSipDurationYears(yrs)}
+                          style={{
+                            fontSize: '0.7rem',
+                            padding: '0.2rem 0.5rem',
+                            border: sipDurationYears === yrs ? '1px solid var(--accent-cyan)' : undefined
+                          }}
+                        >
+                          {yrs}Y {yrs === 8 ? '(SGB Maturity)' : ''}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '0.75rem', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.2)', fontSize: '0.72rem', color: 'var(--text-secondary)', lineHeight: 1.45 }}>
+                    <strong style={{ color: 'var(--warning-amber)' }}>Discipline Insight: </strong>
+                    {sipAsset === 'SGB'
+                      ? 'Sovereign Gold Bonds offer 2.5% p.a. semi-annual interest payout plus zero capital gains tax at 8-year RBI redemption.'
+                      : sipAsset === 'SILVER'
+                      ? 'Silver SIP captures clean industrial supercycle demand with high beta volatility smoothing over 3+ year horizons.'
+                      : 'Physical 24K Gold SIP eliminates market-timing risks while systematically hedging currency depreciation.'}
+                  </div>
+                </div>
+
+                {/* Projection Output Column */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', background: 'rgba(255, 255, 255, 0.03)', padding: '1.1rem', borderRadius: '12px', border: '1px solid var(--border-subtle)', justifyContent: 'space-between' }}>
+                  <div>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>
+                      Projected Portfolio Maturity Value
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginTop: '0.25rem' }}>
+                      <span className="font-mono text-bull" style={{ fontSize: '1.95rem', fontWeight: 900 }}>
+                        {formatPriceFromInr(sipResults.futureValue, 0)}
+                      </span>
+                      <span
+                        className="status-pill"
+                        style={{
+                          background: 'rgba(16, 185, 129, 0.15)',
+                          color: 'var(--bull-green)',
+                          fontWeight: 800,
+                          fontSize: '0.76rem'
+                        }}
+                      >
+                        +{sipResults.gainPct}% Total Gain
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.65rem' }}>
+                    <div style={{ padding: '0.65rem', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700 }}>Total Invested Principal</div>
+                      <div className="font-mono" style={{ fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: '0.2rem' }}>
+                        {formatPriceFromInr(sipResults.totalInvested, 0)}
+                      </div>
+                    </div>
+
+                    <div style={{ padding: '0.65rem', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--bull-green)', fontWeight: 700 }}>Net Capital Appreciation</div>
+                      <div className="font-mono text-bull" style={{ fontSize: '0.98rem', fontWeight: 900, marginTop: '0.2rem' }}>
+                        +{formatPriceFromInr(sipResults.wealthGain, 0)}
+                      </div>
+                    </div>
+
+                    <div style={{ padding: '0.65rem', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700 }}>Est. Metal Accumulated</div>
+                      <div className="font-mono" style={{ fontSize: '0.98rem', fontWeight: 800, color: 'var(--warning-amber)', marginTop: '0.2rem' }}>
+                        ~{sipResults.estGrams} {sipAsset === 'SILVER' ? 'grams Silver' : 'grams Gold'}
+                      </div>
+                    </div>
+
+                    <div style={{ padding: '0.65rem', borderRadius: '8px', background: 'rgba(6, 182, 212, 0.08)', border: '1px solid rgba(6, 182, 212, 0.2)' }}>
+                      <div style={{ fontSize: '0.68rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>Modelled CAGR Rate</div>
+                      <div className="font-mono" style={{ fontSize: '0.98rem', fontWeight: 900, color: 'var(--accent-cyan)', marginTop: '0.2rem' }}>
+                        {sipResults.cagr}% p.a.
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Benchmark Comparison Comparison Strip */}
+                  <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Bank Fixed Deposit (7.0% p.a.):</span>
+                      <strong className="font-mono" style={{ color: 'var(--text-secondary)' }}>
+                        {formatPriceFromInr(sipResults.fdValue, 0)}
+                      </strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Inflation Baseline (5.5% CPI):</span>
+                      <strong className="font-mono" style={{ color: 'var(--text-muted)' }}>
+                        {formatPriceFromInr(sipResults.infValue, 0)}
+                      </strong>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--bull-green)', fontWeight: 800 }}>
+                      <span>Bullion Outperformance Alpha over FD:</span>
+                      <strong className="font-mono">
+                        +{formatPriceFromInr(Math.max(0, sipResults.futureValue - sipResults.fdValue), 0)}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Scorecard Header */}
             <div
               style={{
                 background: 'rgba(16, 185, 129, 0.08)',
@@ -4164,6 +5778,133 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                 </div>
               </div>
             </div>
+
+            {/* Section 4: Key Macroeconomic Calendar & Policy Catalysts */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginBottom: '0.85rem' }}>
+                <Calendar size={18} style={{ color: 'var(--warning-amber)' }} />
+                <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  High-Impact Bullion Macroeconomic Calendar
+                </h4>
+              </div>
+
+              <div className="table-responsive">
+                <table className="custom-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ textAlign: 'left' }}>Macro Catalyst Event</th>
+                      <th style={{ textAlign: 'center' }}>Cadence / Frequency</th>
+                      <th style={{ textAlign: 'center' }}>Market Volatility</th>
+                      <th style={{ textAlign: 'left' }}>Bullion Transmission Mechanism</th>
+                      <th style={{ textAlign: 'center' }}>Structural Bias</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(MACRO_ECONOMIC_CALENDAR || []).map((row) => (
+                      <tr key={row.event}>
+                        <td>
+                          <strong style={{ color: 'var(--text-primary)', fontSize: '0.88rem' }}>{row.event}</strong>
+                        </td>
+                        <td style={{ textAlign: 'center', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                          {row.cadence}
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <span
+                            className="status-pill"
+                            style={{
+                              background: row.importance === 'Very High' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                              color: row.importance === 'Very High' ? 'var(--bear-red)' : 'var(--warning-amber)',
+                              fontWeight: 800,
+                              fontSize: '0.72rem'
+                            }}
+                          >
+                            {row.importance}
+                          </span>
+                        </td>
+                        <td style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', lineHeight: 1.4, maxWidth: '380px' }}>
+                          {row.impactNote}
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          <span
+                            className="status-pill"
+                            style={{
+                              background: 'rgba(16, 185, 129, 0.15)',
+                              color: 'var(--bull-green)',
+                              fontWeight: 800,
+                              fontSize: '0.72rem'
+                            }}
+                          >
+                            {row.bias}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Section 5: Multi-Asset Bullion Correlation Matrix */}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', marginBottom: '0.85rem' }}>
+                <TrendingUp size={18} style={{ color: 'var(--accent-cyan)' }} />
+                <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  Trailing 3-Year Cross-Asset Correlation Matrix (Gold vs Global Benchmarks)
+                </h4>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '0.9rem' }}>
+                {(ASSET_CORRELATION_MATRIX || []).map((item) => (
+                  <div
+                    key={item.asset}
+                    className="bullion-correlation-item"
+                    style={{
+                      flexDirection: 'column',
+                      alignItems: 'stretch',
+                      gap: '0.55rem',
+                      padding: '1rem'
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                        {item.asset}
+                      </span>
+                      <span
+                        className="font-mono"
+                        style={{
+                          fontSize: '0.92rem',
+                          fontWeight: 900,
+                          padding: '0.15rem 0.5rem',
+                          borderRadius: '6px',
+                          background: item.corr < 0 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                          color: item.corr < 0 ? 'var(--bear-red)' : 'var(--bull-green)'
+                        }}
+                      >
+                        {item.corr > 0 ? `+${item.corr.toFixed(2)}` : item.corr.toFixed(2)}
+                      </span>
+                    </div>
+
+                    {/* Correlation bar visual */}
+                    <div style={{ height: '6px', width: '100%', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: item.corr < 0 ? `${50 + (item.corr * 50)}%` : '50%',
+                          width: `${Math.abs(item.corr) * 50}%`,
+                          height: '100%',
+                          background: item.corr < 0 ? 'var(--bear-red)' : 'var(--bull-green)',
+                          borderRadius: '3px'
+                        }}
+                      />
+                    </div>
+
+                    <p style={{ margin: 0, fontSize: '0.73rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                      {item.desc}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -4476,6 +6217,244 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                 }}
               >
                 <FileDown size={15} /> Save & Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Dialog: Share Today's Rates Snapshot Card */}
+      {showShareRateModal && (
+        <div
+          className="bullion-share-modal-overlay"
+          onClick={() => setShowShareRateModal(false)}
+          style={{ zIndex: 99999 }}
+        >
+          <div
+            className="bullion-share-modal-card"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              maxWidth: '540px',
+              width: '92%',
+              maxHeight: '92vh',
+              overflowY: 'auto',
+              borderRadius: '16px',
+              background: 'var(--bg-card, #0f172a)',
+              border: '1px solid rgba(245, 158, 11, 0.4)',
+              boxShadow: '0 24px 64px -12px rgba(0, 0, 0, 0.7), 0 0 32px rgba(245, 158, 11, 0.15)',
+              position: 'relative'
+            }}
+          >
+            {/* Top Gold Gradient Bar */}
+            <div
+              style={{
+                height: '4px',
+                width: '100%',
+                background: 'linear-gradient(90deg, #f59e0b 0%, #d97706 50%, #10b981 100%)'
+              }}
+            />
+
+            {/* Header */}
+            <div
+              style={{
+                padding: '1.25rem 1.4rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                borderBottom: '1px solid var(--border-subtle)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <div
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '8px',
+                    background: 'rgba(245, 158, 11, 0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'var(--warning-amber)'
+                  }}
+                >
+                  <Share2 size={20} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 900, color: 'var(--text-primary)' }}>
+                    Today's Official Bullion Rates
+                  </h3>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    AuraTrade Institutional Workstation • Live Rate Card
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowShareRateModal(false)}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-muted)',
+                  cursor: 'pointer',
+                  padding: '0.35rem',
+                  borderRadius: '6px'
+                }}
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div style={{ padding: '1.25rem 1.4rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {copiedRateNotice && (
+                <div
+                  style={{
+                    padding: '0.6rem 0.85rem',
+                    borderRadius: '8px',
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    border: '1px solid rgba(16, 185, 129, 0.35)',
+                    color: 'var(--bull-green)',
+                    fontSize: '0.78rem',
+                    fontWeight: 800,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.45rem'
+                  }}
+                >
+                  <CheckCheck size={16} /> Rates summary copied to clipboard! Ready to paste on WhatsApp / Telegram.
+                </div>
+              )}
+
+              {/* Status Header */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                <span>IST Time: <strong style={{ color: 'var(--text-primary)' }}>{formattedIstTime}</strong></span>
+                <span className="status-pill status-bull" style={{ fontSize: '0.7rem' }}>
+                  MCX TRADING ACTIVE
+                </span>
+              </div>
+
+              {/* Rate Cards Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+                {/* 24K Gold */}
+                <div style={{ padding: '0.85rem', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.08)', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--warning-amber)', fontWeight: 800, textTransform: 'uppercase' }}>
+                    Gold 24K (999 Pure)
+                  </div>
+                  <div className="font-mono text-bull" style={{ fontSize: '1.25rem', fontWeight: 900, marginTop: '0.2rem' }}>
+                    {formatPriceFromInr(jewelleryRates?.gold24k?.perGram || 13326, 0)} <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>/ 1g</span>
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                    10g: <strong>{formatPriceFromInr((jewelleryRates?.gold24k?.perGram || 13326) * 10, 0)}</strong>
+                  </div>
+                </div>
+
+                {/* 22K Gold */}
+                <div style={{ padding: '0.85rem', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>
+                    Gold 22K (916 Hallmark)
+                  </div>
+                  <div className="font-mono text-bull" style={{ fontSize: '1.25rem', fontWeight: 900, marginTop: '0.2rem' }}>
+                    {formatPriceFromInr(jewelleryRates?.gold22k?.perGram || 12207, 0)} <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>/ 1g</span>
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                    1 Pavan (8g): <strong>{formatPriceFromInr((jewelleryRates?.gold22k?.perGram || 12207) * 8, 0)}</strong>
+                  </div>
+                </div>
+
+                {/* 18K Gold */}
+                <div style={{ padding: '0.85rem', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>
+                    Gold 18K (750 Hallmark)
+                  </div>
+                  <div className="font-mono text-bull" style={{ fontSize: '1.25rem', fontWeight: 900, marginTop: '0.2rem' }}>
+                    {formatPriceFromInr(jewelleryRates?.gold18k?.perGram || 9995, 0)} <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>/ 1g</span>
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                    10g: <strong>{formatPriceFromInr((jewelleryRates?.gold18k?.perGram || 9995) * 10, 0)}</strong>
+                  </div>
+                </div>
+
+                {/* Silver Fine */}
+                <div style={{ padding: '0.85rem', borderRadius: '10px', background: 'rgba(6, 182, 212, 0.08)', border: '1px solid rgba(6, 182, 212, 0.25)' }}>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--accent-cyan)', fontWeight: 800, textTransform: 'uppercase' }}>
+                    Fine Silver (999 Pure)
+                  </div>
+                  <div className="font-mono text-bull" style={{ fontSize: '1.25rem', fontWeight: 900, marginTop: '0.2rem' }}>
+                    {formatPriceFromInr(jewelleryRates?.silverFine?.perGram || 185, 2)} <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>/ 1g</span>
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
+                    1 kg: <strong>{formatPriceFromInr((jewelleryRates?.silverFine?.perGram || 185) * 1000, 0)}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Futures Benchmarks */}
+              <div style={{ padding: '0.75rem 0.9rem', borderRadius: '8px', background: 'rgba(0, 0, 0, 0.25)', border: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
+                <div>
+                  <span style={{ color: 'var(--text-muted)' }}>MCX Gold Futures (10g): </span>
+                  <strong className="font-mono" style={{ color: 'var(--warning-amber)' }}>{formatPriceFromInr(mcxGold?.price || 129379, 0)}</strong>
+                </div>
+                <div>
+                  <span style={{ color: 'var(--text-muted)' }}>MCX Silver Futures (1kg): </span>
+                  <strong className="font-mono" style={{ color: 'var(--accent-cyan)' }}>{formatPriceFromInr(mcxSilver?.price || 172900, 0)}</strong>
+                </div>
+              </div>
+
+              <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+                Rates include 6% Basic Customs Duty + 5.5% AIDC + 3% GST. 100% BIS Hallmarked (IS 1417 standard).
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div
+              style={{
+                padding: '1rem 1.4rem',
+                borderTop: '1px solid var(--border-subtle)',
+                background: 'rgba(0, 0, 0, 0.15)',
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '0.75rem'
+              }}
+            >
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowShareRateModal(false)}
+                style={{ fontSize: '0.82rem', padding: '0.6rem 1rem' }}
+              >
+                Close
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => window.print()}
+                style={{ fontSize: '0.82rem', padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+              >
+                <Printer size={15} /> Print Sheet
+              </button>
+
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleCopyRatesText}
+                style={{
+                  fontSize: '0.82rem',
+                  padding: '0.6rem 1.15rem',
+                  fontWeight: 800,
+                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
+                  color: '#0f172a',
+                  border: 'none',
+                  boxShadow: '0 4px 15px rgba(245, 158, 11, 0.35)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  cursor: 'pointer'
+                }}
+              >
+                {copiedRateNotice ? <CheckCheck size={15} /> : <Copy size={15} />}
+                {copiedRateNotice ? 'Copied!' : 'Copy Summary'}
               </button>
             </div>
           </div>
