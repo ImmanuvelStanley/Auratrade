@@ -3008,6 +3008,43 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                 const strokeColor = chartAsset.includes('SILVER') ? 'var(--accent-cyan)' : 'var(--warning-amber)';
                 const gradStart = chartAsset.includes('SILVER') ? 'rgba(6, 182, 212, 0.35)' : 'rgba(245, 158, 11, 0.35)';
 
+                const activeCoord = chartHoverIndex !== null ? coords[chartHoverIndex] : null;
+                const activePt = chartHoverIndex !== null ? pts[chartHoverIndex] : null;
+
+                let transformOrigin = 'bottom center';
+                let transformStyle = 'translate(-50%, calc(-100% - 16px))';
+                let xPercent = 50;
+                let yPercent = 50;
+
+                if (activeCoord) {
+                  xPercent = (activeCoord.x / W) * 100;
+                  yPercent = (activeCoord.y / H) * 100;
+
+                  if (xPercent > 68) {
+                    transformStyle = yPercent < 25 ? 'translate(calc(-100% - 16px), 0%)' : yPercent > 75 ? 'translate(calc(-100% - 16px), -100%)' : 'translate(calc(-100% - 16px), -50%)';
+                    transformOrigin = 'right center';
+                  } else if (xPercent < 32) {
+                    transformStyle = yPercent < 25 ? 'translate(16px, 0%)' : yPercent > 75 ? 'translate(16px, -100%)' : 'translate(16px, -50%)';
+                    transformOrigin = 'left center';
+                  } else if (yPercent < 45) {
+                    transformStyle = 'translate(-50%, 18px)';
+                    transformOrigin = 'top center';
+                  } else {
+                    transformStyle = 'translate(-50%, calc(-100% - 18px))';
+                    transformOrigin = 'bottom center';
+                  }
+                }
+
+                const activePrice = activePt ? activePt.price : chartData.basePrice;
+                const startPrice = pts[0]?.price || chartData.basePrice;
+                const netChg = activePrice - startPrice;
+                const netChgPct = startPrice > 0 ? (netChg / startPrice) * 100 : 0;
+                const formattedActivePrice = chartData.decimals > 0
+                  ? activePrice.toFixed(chartData.decimals)
+                  : Math.round(activePrice).toLocaleString();
+                const rangePercent = Math.min(100, Math.max(0, Math.round(((activePrice - min) / range) * 100)));
+                const vsMa50 = chartData.ma50 > 0 ? ((activePrice - chartData.ma50) / chartData.ma50) * 100 : 0;
+
                 return (
                   <div style={{ position: 'relative', width: '100%' }}>
                     <svg
@@ -3052,28 +3089,149 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                       {/* Main Trend Line */}
                       <path d={linePath} fill="none" stroke={strokeColor} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
 
-                      {/* Hover Crosshair & Dot */}
+                      {/* Hover Crosshair, Animated Ping Reticle & Axis Pill */}
                       {chartHoverIndex !== null && coords[chartHoverIndex] && (
                         <g>
+                          {/* Vertical guide line */}
                           <line
                             x1={coords[chartHoverIndex].x}
                             y1={padTop}
                             x2={coords[chartHoverIndex].x}
                             y2={H - padBottom}
-                            stroke="rgba(255, 255, 255, 0.4)"
-                            strokeDasharray="2 2"
+                            stroke={strokeColor}
+                            strokeOpacity="0.45"
+                            strokeDasharray="3 3"
+                            strokeWidth="1.5"
                           />
+                          {/* Horizontal guide line to left margin */}
+                          <line
+                            x1={padLeft}
+                            y1={coords[chartHoverIndex].y}
+                            x2={coords[chartHoverIndex].x}
+                            y2={coords[chartHoverIndex].y}
+                            stroke="rgba(255, 255, 255, 0.22)"
+                            strokeDasharray="2 2"
+                            strokeWidth="1"
+                          />
+                          {/* Animated Radar Ping Wave 1 */}
                           <circle
                             cx={coords[chartHoverIndex].x}
                             cy={coords[chartHoverIndex].y}
-                            r="5"
+                            className="bullion-chart-ping bullion-ping-1"
+                            stroke={strokeColor}
+                          />
+                          {/* Animated Radar Ping Wave 2 */}
+                          <circle
+                            cx={coords[chartHoverIndex].x}
+                            cy={coords[chartHoverIndex].y}
+                            className="bullion-chart-ping bullion-ping-2"
+                            stroke={strokeColor}
+                          />
+                          {/* Reticle Central Dot with Glow Aura */}
+                          <circle
+                            cx={coords[chartHoverIndex].x}
+                            cy={coords[chartHoverIndex].y}
+                            r="5.5"
                             fill={strokeColor}
                             stroke="#ffffff"
-                            strokeWidth="2"
+                            strokeWidth="2.5"
+                            style={{ filter: `drop-shadow(0 0 6px ${strokeColor})` }}
                           />
+                          {/* Floating X-Axis Date Pill */}
+                          <g transform={`translate(${coords[chartHoverIndex].x}, ${H - padBottom + 12})`}>
+                            <rect
+                              x="-38"
+                              y="-8"
+                              width="76"
+                              height="16"
+                              rx="8"
+                              fill="#0b1322"
+                              stroke={strokeColor}
+                              strokeWidth="1"
+                              strokeOpacity="0.75"
+                            />
+                            <text
+                              x="0"
+                              y="3.5"
+                              textAnchor="middle"
+                              fill="#f8fafc"
+                              fontSize="8.5"
+                              fontWeight="700"
+                              fontFamily="var(--font-mono)"
+                            >
+                              {chartData.points[chartHoverIndex].date}
+                            </text>
+                          </g>
                         </g>
                       )}
                     </svg>
+
+                    {/* Floating Animated Details Card */}
+                    {activeCoord && activePt && (
+                      <div
+                        className="bullion-floating-anchor"
+                        style={{
+                          position: 'absolute',
+                          left: `${xPercent}%`,
+                          top: `${yPercent}%`,
+                          transform: transformStyle,
+                          transformOrigin: transformOrigin,
+                          pointerEvents: 'none',
+                          zIndex: 25
+                        }}
+                      >
+                        <div
+                          className={`bullion-floating-card ${chartAsset.includes('SILVER') ? 'silver' : 'gold'}`}
+                        >
+                          {/* Header Bar */}
+                          <div className="bullion-floating-head">
+                            <div className="bullion-floating-date">
+                              <span className="bullion-floating-pulse" />
+                              <span className="font-mono">{activePt.date}</span>
+                            </div>
+                            <span className={`bullion-floating-tag ${chartHoverIndex === pts.length - 1 ? 'live' : 'hist'}`}>
+                              {chartHoverIndex === pts.length - 1 ? 'LIVE TICK' : 'HISTORICAL'}
+                            </span>
+                          </div>
+
+                          {/* Hero Price & Change */}
+                          <div className="bullion-floating-price-row">
+                            <div className="bullion-floating-price font-mono">
+                              <span className="bullion-floating-currency">{chartData.unit}</span>
+                              <span>{formattedActivePrice}</span>
+                            </div>
+                            <div className={`bullion-floating-pct font-mono ${netChg >= 0 ? 'bull' : 'bear'}`}>
+                              <span>{netChg >= 0 ? '▲ +' : '▼ '}{Math.abs(netChgPct).toFixed(2)}%</span>
+                            </div>
+                          </div>
+
+                          {/* Micro Context Analytics */}
+                          <div className="bullion-floating-meta">
+                            <div className="bullion-floating-meta-chip">
+                              <span className="meta-lbl">Range Pos</span>
+                              <span className="meta-val font-mono">{rangePercent}%</span>
+                            </div>
+                            <div className="bullion-floating-meta-chip">
+                              <span className="meta-lbl">vs 50-DMA</span>
+                              <span className={`meta-val font-mono ${vsMa50 >= 0 ? 'text-bull' : 'text-bear'}`}>
+                                {vsMa50 >= 0 ? '+' : ''}{vsMa50.toFixed(1)}%
+                              </span>
+                            </div>
+                            <div className="bullion-floating-meta-chip">
+                              <span className="meta-lbl">RSI(14)</span>
+                              <span
+                                className="meta-val font-mono"
+                                style={{
+                                  color: chartData.rsi >= 70 ? 'var(--warning-amber)' : chartData.rsi <= 35 ? 'var(--bear-red)' : 'var(--bull-green)'
+                                }}
+                              >
+                                {chartData.rsi}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 );
               })()}
