@@ -73,6 +73,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
   // Sign In State
   const [signInIdentifier, setSignInIdentifier] = useState('');
   const [signInPassword, setSignInPassword] = useState('');
+  const [signInMethod, setSignInMethod] = useState('password'); // 'password' | 'otp'
   const [showSignInPassword, setShowSignInPassword] = useState(false);
   const [userNotFound, setUserNotFound] = useState(false);
 
@@ -157,6 +158,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
   // Switch between main modes
   const handleSwitchMode = (newMode) => {
     setMode(newMode);
+    setSignInMethod('password');
     setStep(1);
     setRegisterStep(1);
     setEmailOtpSent(false);
@@ -299,18 +301,19 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
   };
 
   // 2. Request OTP for Passwordless Sign In
-  const handleRequestSignInOtp = async () => {
+  const handleRequestSignInOtp = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
     setError('');
     setSuccessMsg('');
     setUserNotFound(false);
 
     const identifier = signInIdentifier.trim();
     if (!identifier) {
-      setError('Please enter your registered email address first.');
+      setError('Please enter your email address first.');
       return;
     }
-    if (!identifier.includes('@')) {
-      setError('OTP sign-in currently requires your registered email address.');
+    if (!identifier.includes('@') || !identifier.includes('.')) {
+      setError('Please enter a valid email address.');
       return;
     }
 
@@ -330,7 +333,13 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
       setDeliveryInfo(resp.deliveryStatus || {});
       setCooldown(resp.resendCooldown || 30);
       setOtpDigits(['', '', '', '', '', '']);
+      setSuccessMsg(`Login code sent to ${resp.maskedDestination || identifier}`);
       setStep(2);
+      setTimeout(() => {
+        if (digitInputRefs.current[0]) {
+          digitInputRefs.current[0].focus();
+        }
+      }, 80);
     } catch (err) {
       setError(err.message || 'Failed to dispatch verification code.');
       if (err.userNotFound) {
@@ -1024,7 +1033,80 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
 
               {/* MODE 1: SIGN IN FORM */}
               {mode === 'signin' && (
-                <form onSubmit={handlePasswordSignIn} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                <form
+                  onSubmit={signInMethod === 'otp' ? handleRequestSignInOtp : handlePasswordSignIn}
+                  style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}
+                >
+                  {/* Clean Method Switcher: Password vs Email OTP */}
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '0.35rem',
+                      background: 'var(--bg-input)',
+                      padding: '0.22rem',
+                      borderRadius: '8px',
+                      border: '1px solid var(--border-subtle)'
+                    }}
+                  >
+                    <button
+                      type="button"
+                      id="auth-signin-tab-password"
+                      onClick={() => {
+                        setSignInMethod('password');
+                        setError('');
+                        setSuccessMsg('');
+                      }}
+                      style={{
+                        padding: '0.42rem',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: signInMethod === 'password' ? 'var(--bg-card)' : 'transparent',
+                        color: signInMethod === 'password' ? 'var(--text-primary)' : 'var(--text-muted)',
+                        fontWeight: signInMethod === 'password' ? 700 : 500,
+                        fontSize: '0.78rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.35rem',
+                        boxShadow: signInMethod === 'password' ? '0 1px 4px rgba(0,0,0,0.18)' : 'none',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <Lock size={12} color={signInMethod === 'password' ? 'var(--accent-cyan)' : 'currentColor'} />
+                      <span>Password</span>
+                    </button>
+                    <button
+                      type="button"
+                      id="auth-signin-tab-otp"
+                      onClick={() => {
+                        setSignInMethod('otp');
+                        setError('');
+                        setSuccessMsg('');
+                      }}
+                      style={{
+                        padding: '0.42rem',
+                        borderRadius: '6px',
+                        border: 'none',
+                        background: signInMethod === 'otp' ? 'var(--bg-card)' : 'transparent',
+                        color: signInMethod === 'otp' ? 'var(--text-primary)' : 'var(--text-muted)',
+                        fontWeight: signInMethod === 'otp' ? 700 : 500,
+                        fontSize: '0.78rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.35rem',
+                        boxShadow: signInMethod === 'otp' ? '0 1px 4px rgba(0,0,0,0.18)' : 'none',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <Mail size={12} color={signInMethod === 'otp' ? 'var(--accent-cyan)' : 'currentColor'} />
+                      <span>Email OTP</span>
+                    </button>
+                  </div>
+
                   <div className="input-group">
                     <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                       Email Address
@@ -1050,64 +1132,66 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                     </div>
                   </div>
 
-                  <div className="input-group">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                        Password
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => handleSwitchMode('forgot')}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#06b6d4',
-                          fontSize: '0.72rem',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          padding: 0
-                        }}
-                        id="auth-forgot-password-link"
-                      >
-                        Forgot password?
-                      </button>
+                  {signInMethod === 'password' && (
+                    <div className="input-group">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                          Password
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => handleSwitchMode('forgot')}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#06b6d4',
+                            fontSize: '0.72rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            padding: 0
+                          }}
+                          id="auth-forgot-password-link"
+                        >
+                          Forgot password?
+                        </button>
+                      </div>
+                      <div className="auth-input-wrapper">
+                        <Lock size={15} className="auth-input-icon" />
+                        <input
+                          type={showSignInPassword ? 'text' : 'password'}
+                          id="auth-password-input"
+                          name="password"
+                          autoComplete="current-password"
+                          required
+                          className="auth-input-field"
+                          placeholder="Enter account password"
+                          value={signInPassword}
+                          onChange={(e) => setSignInPassword(e.target.value)}
+                          style={{ paddingRight: '2.5rem' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowSignInPassword(!showSignInPassword)}
+                          style={{
+                            position: 'absolute',
+                            right: '0.75rem',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: 0
+                          }}
+                          title={showSignInPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showSignInPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                        </button>
+                      </div>
                     </div>
-                    <div className="auth-input-wrapper">
-                      <Lock size={15} className="auth-input-icon" />
-                      <input
-                        type={showSignInPassword ? 'text' : 'password'}
-                        id="auth-password-input"
-                        name="password"
-                        autoComplete="current-password"
-                        required
-                        className="auth-input-field"
-                        placeholder="Enter account password"
-                        value={signInPassword}
-                        onChange={(e) => setSignInPassword(e.target.value)}
-                        style={{ paddingRight: '2.5rem' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowSignInPassword(!showSignInPassword)}
-                        style={{
-                          position: 'absolute',
-                          right: '0.75rem',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'var(--text-muted)',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: 0
-                        }}
-                        title={showSignInPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showSignInPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                      </button>
-                    </div>
-                  </div>
+                  )}
 
                   {userNotFound && (
                     <div style={{ textAlign: 'center', marginTop: '-0.2rem' }}>
@@ -1167,7 +1251,13 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                     {loading ? (
                       <>
                         <RefreshCw size={14} className="spin" />
-                        <span>Signing In...</span>
+                        <span>{signInMethod === 'otp' ? 'Sending Code...' : 'Signing In...'}</span>
+                      </>
+                    ) : signInMethod === 'otp' ? (
+                      <>
+                        <Mail size={15} />
+                        <span>Send 6-Digit Login Code to Email</span>
+                        <ArrowRight size={14} />
                       </>
                     ) : (
                       <>
@@ -1805,6 +1895,14 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                         <>
                           Confirmation code sent to <strong style={{ color: 'var(--text-primary)' }}>{maskedDestination}</strong>
                         </>
+                      ) : otpPurpose === 'login' ? (
+                        <>
+                          Login code sent to <strong style={{ color: 'var(--text-primary)' }}>{maskedDestination}</strong>
+                        </>
+                      ) : otpPurpose === 'reset' ? (
+                        <>
+                          Password reset code sent to <strong style={{ color: 'var(--text-primary)' }}>{maskedDestination}</strong>
+                        </>
                       ) : (
                         <>
                           Verification code sent to <strong style={{ color: 'var(--text-primary)' }}>{maskedDestination}</strong>
@@ -1817,6 +1915,10 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                 <span style={{ fontSize: '0.73rem', color: '#94a3b8', lineHeight: 1.4 }}>
                   {otpPurpose === 'oauth_verify'
                     ? `Please enter the 6-digit confirmation code dispatched to verify this ${oauthProvider === 'apple' ? 'Apple ID' : 'Google Account'} and unlock your trading dashboard.`
+                    : otpPurpose === 'login'
+                    ? 'Please check your email inbox (and spam or junk folder) for your 6-digit login code. Enter it below to access your workstation directly.'
+                    : otpPurpose === 'reset'
+                    ? 'Please check your email inbox (and spam or junk folder) for your 6-digit verification code.'
                     : 'Please check your email inbox (and spam or junk folder) for your 6-digit verification code.'}
                 </span>
               </div>

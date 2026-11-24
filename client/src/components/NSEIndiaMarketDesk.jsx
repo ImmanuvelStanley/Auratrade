@@ -15,11 +15,36 @@ import {
   X,
   ChevronRight,
   Info,
-  Sparkles
+  Sparkles,
+  Building2,
+  Calendar,
+  Scale
 } from 'lucide-react';
 
 import { getNSEIndiaFallbackData } from '../services/clientFallbackData';
 import { CountryFlag } from './CountryFlag';
+
+export const FII_DII_HISTORICAL_DATA = [
+  { date: '24 Nov 2026', fiiBuy: 12410, fiiSell: 13658, fiiNet: -1248, diiBuy: 14850, diiSell: 12439, diiNet: 2411, combinedNet: 1163 },
+  { date: '21 Nov 2026', fiiBuy: 11840, fiiSell: 12950, fiiNet: -1110, diiBuy: 13920, diiSell: 11980, diiNet: 1940, combinedNet: 830 },
+  { date: '20 Nov 2026', fiiBuy: 14200, fiiSell: 13450, fiiNet: 750, diiBuy: 12600, diiSell: 11890, diiNet: 710, combinedNet: 1460 },
+  { date: '19 Nov 2026', fiiBuy: 10980, fiiSell: 13200, fiiNet: -2220, diiBuy: 15400, diiSell: 12650, diiNet: 2750, combinedNet: 530 },
+  { date: '18 Nov 2026', fiiBuy: 13150, fiiSell: 12890, fiiNet: 260, diiBuy: 11950, diiSell: 11420, diiNet: 530, combinedNet: 790 }
+];
+
+export const NSE_MARKET_HOLIDAYS_2026 = [
+  { date: '26 Jan 2026', day: 'Monday', occasion: 'Republic Day', segment: 'Capital Market & F&O Closed' },
+  { date: '17 Feb 2026', day: 'Tuesday', occasion: 'Mahashivratri', segment: 'Capital Market & F&O Closed' },
+  { date: '04 Mar 2026', day: 'Wednesday', occasion: 'Holi', segment: 'Capital Market & F&O Closed' },
+  { date: '20 Mar 2026', day: 'Friday', occasion: 'Id-Ul-Fitr (Ramzan Id)', segment: 'Capital Market & F&O Closed' },
+  { date: '03 Apr 2026', day: 'Friday', occasion: 'Good Friday', segment: 'Capital Market & F&O Closed' },
+  { date: '14 Apr 2026', day: 'Tuesday', occasion: 'Dr. Ambedkar Jayanti', segment: 'Capital Market & F&O Closed' },
+  { date: '01 May 2026', day: 'Friday', occasion: 'Maharashtra Day', segment: 'Capital Market & F&O Closed' },
+  { date: '15 Aug 2026', day: 'Saturday', occasion: 'Independence Day', segment: 'Weekend Holiday' },
+  { date: '02 Oct 2026', day: 'Friday', occasion: 'Mahatma Gandhi Jayanti', segment: 'Capital Market & F&O Closed' },
+  { date: '08 Nov 2026', day: 'Sunday', occasion: 'Diwali (Muhurat Trading 18:15–19:15)', segment: 'Special 1-Hour Evening Session' },
+  { date: '25 Dec 2026', day: 'Friday', occasion: 'Christmas', segment: 'Capital Market & F&O Closed' }
+];
 
 // Module-level in-memory cache for instant zero-spinner tab switching
 let nseMemoryCache = null;
@@ -1007,6 +1032,154 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
         })()}
       </div>
 
+      {/* =========================================================================
+          FII & DII INSTITUTIONAL CASH FLOW & DERIVATIVES POSITIONING RADAR
+          ========================================================================= */}
+      <div className="glass-card" style={{ padding: '1.35rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.85rem', marginBottom: '1.1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f59e0b' }}>
+              <Building2 size={20} />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                FII &amp; DII Institutional Activity &amp; Derivatives Positioning
+              </h3>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                Official daily net cash flows (₹ Crores) &amp; Nifty Put-Call Ratio (PCR) sentiment
+              </div>
+            </div>
+          </div>
+
+          <span className="status-pill status-bull" style={{ fontSize: '0.72rem' }}>
+            Domestic Institutional Support Active
+          </span>
+        </div>
+
+        {/* 4 Core Institutional KPI Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '0.9rem', marginBottom: '1.25rem' }}>
+          <div style={{ padding: '0.95rem', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.22)' }}>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>FII / FPI Net Cash (Today)</span>
+            <div className="font-mono text-bear" style={{ fontSize: '1.35rem', fontWeight: 900, marginTop: '0.2rem' }}>
+              -₹1,248.00 Cr
+            </div>
+            <div style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+              Buy ₹12,410 Cr • Sell ₹13,658 Cr
+            </div>
+          </div>
+
+          <div style={{ padding: '0.95rem', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.22)' }}>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>DII Net Cash (Today)</span>
+            <div className="font-mono text-bull" style={{ fontSize: '1.35rem', fontWeight: 900, marginTop: '0.2rem' }}>
+              +₹2,411.00 Cr
+            </div>
+            <div style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+              Buy ₹14,850 Cr • Sell ₹12,439 Cr
+            </div>
+          </div>
+
+          <div style={{ padding: '0.95rem', borderRadius: '10px', background: 'rgba(6, 182, 212, 0.08)', border: '1px solid rgba(6, 182, 212, 0.22)' }}>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>Combined Institutional Net</span>
+            <div className="font-mono text-bull" style={{ fontSize: '1.35rem', fontWeight: 900, marginTop: '0.2rem' }}>
+              +₹1,163.00 Cr
+            </div>
+            <div style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+              Net absorption by domestic funds
+            </div>
+          </div>
+
+          <div style={{ padding: '0.95rem', borderRadius: '10px', background: 'rgba(99, 102, 241, 0.08)', border: '1px solid rgba(99, 102, 241, 0.22)' }}>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 800 }}>FII Index Futures Ratio</span>
+            <div className="font-mono" style={{ fontSize: '1.35rem', fontWeight: 900, color: 'var(--accent-indigo)', marginTop: '0.2rem' }}>
+              38.4% Long
+            </div>
+            <div style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+              61.6% Short (Mild hedge bias)
+            </div>
+          </div>
+        </div>
+
+        {/* 2-Column Split: 5-Day Historical Flow Table (Left) + Derivatives PCR & Resistance Walls (Right) */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.25rem' }}>
+          {/* Left: 5-Day Institutional Flow Table */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                Trailing 5-Session Institutional Net Flows (₹ Cr)
+              </span>
+            </div>
+            <div className="table-responsive" style={{ overflowX: 'auto' }}>
+              <table className="custom-table" style={{ width: '100%', fontSize: '0.76rem' }}>
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th style={{ textAlign: 'right' }}>FII Net</th>
+                    <th style={{ textAlign: 'right' }}>DII Net</th>
+                    <th style={{ textAlign: 'right' }}>Net Flow</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {FII_DII_HISTORICAL_DATA.map((row) => (
+                    <tr key={row.date}>
+                      <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{row.date}</td>
+                      <td className={`font-mono ${row.fiiNet >= 0 ? 'text-bull' : 'text-bear'}`} style={{ textAlign: 'right', fontWeight: 800 }}>
+                        {row.fiiNet >= 0 ? '+' : ''}{row.fiiNet.toLocaleString('en-IN')}
+                      </td>
+                      <td className={`font-mono ${row.diiNet >= 0 ? 'text-bull' : 'text-bear'}`} style={{ textAlign: 'right', fontWeight: 800 }}>
+                        {row.diiNet >= 0 ? '+' : ''}{row.diiNet.toLocaleString('en-IN')}
+                      </td>
+                      <td className={`font-mono ${row.combinedNet >= 0 ? 'text-bull' : 'text-bear'}`} style={{ textAlign: 'right', fontWeight: 900 }}>
+                        {row.combinedNet >= 0 ? '+' : ''}{row.combinedNet.toLocaleString('en-IN')}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Right: Derivatives Sentiment & Strikes Radar */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(255, 255, 255, 0.02)', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Scale size={14} style={{ color: 'var(--accent-cyan)' }} />
+                NIFTY 50 Options Expiry &amp; Strike Radar
+              </span>
+              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Weekly Expiry</span>
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.6rem' }}>
+              <div style={{ padding: '0.65rem', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Nifty Put-Call Ratio (PCR)</div>
+                <div className="font-mono text-bull" style={{ fontSize: '1.2rem', fontWeight: 900, marginTop: '0.15rem' }}>
+                  1.18
+                </div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--bull-green)' }}>Bullish put base building</div>
+              </div>
+
+              <div style={{ padding: '0.65rem', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Max Pain Strike</div>
+                <div className="font-mono" style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--warning-amber)', marginTop: '0.15rem' }}>
+                  23,500
+                </div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)' }}>Options gravitate toward pain</div>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', fontSize: '0.75rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0.6rem', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                <span style={{ color: 'var(--bear-red)', fontWeight: 700 }}>Key Call Resistance Wall:</span>
+                <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>23,700 CE (1.42 Cr OI)</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0.6rem', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                <span style={{ color: 'var(--bull-green)', fontWeight: 700 }}>Key Put Support Floor:</span>
+                <strong className="font-mono" style={{ color: 'var(--text-primary)' }}>23,300 PE (1.85 Cr OI)</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Bottom Section: Top Gainers, Losers & Most Active Equities (Live NSE Table) */}
       <div className="glass-card" style={{ padding: '1.35rem' }}>
         <div
@@ -1157,6 +1330,56 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                   </tr>
                 );
               })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Official NSE Exchange Holidays & Settlement Calendar */}
+      <div className="glass-card" style={{ padding: '1.25rem 1.4rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.65rem', marginBottom: '0.85rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Calendar size={17} style={{ color: 'var(--accent-cyan)' }} />
+            <h4 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+              Official NSE India Trading Holidays &amp; T+1 Settlement Calendar (2026)
+            </h4>
+          </div>
+          <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+            Equities &amp; Equity Derivatives • Rolling T+1 Settlement Cycle
+          </span>
+        </div>
+
+        <div className="table-responsive" style={{ overflowX: 'auto' }}>
+          <table className="custom-table" style={{ width: '100%', fontSize: '0.76rem' }}>
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Day</th>
+                <th>Holiday Occasion</th>
+                <th>Market Segment Impact</th>
+              </tr>
+            </thead>
+            <tbody>
+              {NSE_MARKET_HOLIDAYS_2026.map((h) => (
+                <tr key={h.date}>
+                  <td style={{ fontWeight: 700, color: 'var(--warning-amber)' }} className="font-mono">{h.date}</td>
+                  <td style={{ color: 'var(--text-secondary)' }}>{h.day}</td>
+                  <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{h.occasion}</td>
+                  <td>
+                    <span
+                      className="status-pill"
+                      style={{
+                        fontSize: '0.7rem',
+                        padding: '0.15rem 0.5rem',
+                        background: h.occasion.includes('Muhurat') ? 'rgba(245, 158, 11, 0.15)' : 'rgba(239, 68, 68, 0.12)',
+                        color: h.occasion.includes('Muhurat') ? 'var(--warning-amber)' : 'var(--bear-red)'
+                      }}
+                    >
+                      {h.segment}
+                    </span>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

@@ -1175,6 +1175,13 @@ function PaginationControls({
               >
                 <LayoutGrid size={14} /> Cards
               </button>
+              <button
+                type="button"
+                className={`screener-viewmode-btn ${viewMode === 'heatmap' ? 'active' : ''}`}
+                onClick={() => onViewModeChange('heatmap')}
+              >
+                <PieChart size={14} /> Heatmap
+              </button>
             </div>
             <span className="screener-pagination-divider" aria-hidden="true" />
           </>
@@ -1194,6 +1201,141 @@ function PaginationControls({
             </button>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// INSTITUTIONAL SECTOR HEATMAP MATRIX COMPONENT
+// ============================================================================
+function SectorHeatmapMatrix({
+  companies = [],
+  onSelectSymbol,
+  watchlistSet
+}) {
+  const sectorGroups = useMemo(() => {
+    const groups = {};
+    (companies || []).forEach(c => {
+      const sector = c.sector || 'Diversified';
+      if (!groups[sector]) groups[sector] = [];
+      groups[sector].push(c);
+    });
+    return Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
+  }, [companies]);
+
+  if (!companies || companies.length === 0) return null;
+
+  return (
+    <div className="glass-card sector-heatmap-wrapper" style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
+      {/* Heatmap Legend Bar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem', paddingBottom: '0.85rem', borderBottom: '1px solid var(--border-subtle)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <PieChart size={16} style={{ color: 'var(--accent-cyan)' }} />
+          <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+            Institutional Sector Heatmap Matrix
+          </span>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+            (Live 24h Performance &amp; Sector Breadth)
+          </span>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+          <span>-3% (Oversold)</span>
+          <div style={{ display: 'flex', borderRadius: '4px', overflow: 'hidden', height: '14px' }}>
+            <span style={{ width: '18px', background: 'rgba(239, 68, 68, 0.75)' }} title="&lt; -3%" />
+            <span style={{ width: '18px', background: 'rgba(239, 68, 68, 0.45)' }} title="-1% to -3%" />
+            <span style={{ width: '18px', background: 'rgba(239, 68, 68, 0.22)' }} title="0% to -1%" />
+            <span style={{ width: '18px', background: 'rgba(255, 255, 255, 0.08)' }} title="0% Neutral" />
+            <span style={{ width: '18px', background: 'rgba(16, 185, 129, 0.22)' }} title="0% to +1%" />
+            <span style={{ width: '18px', background: 'rgba(16, 185, 129, 0.45)' }} title="+1% to +3%" />
+            <span style={{ width: '18px', background: 'rgba(16, 185, 129, 0.75)' }} title="&gt; +3%" />
+          </div>
+          <span>+3% (Overbought)</span>
+        </div>
+      </div>
+
+      {/* Heatmap Grid of Sectors */}
+      <div className="heatmap-sectors-masonry">
+        {sectorGroups.map(([sectorName, items]) => {
+          const avgPerf = items.reduce((acc, it) => acc + (Number(it.changePercent) || 0), 0) / (items.length || 1);
+          const isPos = avgPerf >= 0;
+
+          return (
+            <div key={sectorName} className="heatmap-sector-cluster">
+              <div className="heatmap-cluster-header">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)' }}>{sectorName}</span>
+                  <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>({items.length})</span>
+                </div>
+                <span className={`cluster-perf-badge ${isPos ? 'pos' : 'neg'}`}>
+                  {isPos ? '+' : ''}{avgPerf.toFixed(2)}%
+                </span>
+              </div>
+
+              <div className="heatmap-cluster-tiles">
+                {items.map(c => {
+                  const chgPct = Number(c.changePercent) || 0;
+                  const price = Number(c.price) || 0;
+                  const currPrefix = getCurrencyPrefix(c.currency, c.symbol);
+                  const isTilePos = chgPct >= 0;
+                  const isInWatch = watchlistSet?.has(c.symbol);
+
+                  let bg = 'rgba(255, 255, 255, 0.04)';
+                  let border = 'rgba(255, 255, 255, 0.1)';
+                  let textColor = 'var(--text-primary)';
+
+                  if (chgPct >= 3.0) {
+                    bg = 'rgba(16, 185, 129, 0.35)';
+                    border = 'rgba(16, 185, 129, 0.6)';
+                    textColor = '#34d399';
+                  } else if (chgPct >= 1.0) {
+                    bg = 'rgba(16, 185, 129, 0.22)';
+                    border = 'rgba(16, 185, 129, 0.4)';
+                    textColor = '#6ee7b7';
+                  } else if (chgPct > 0) {
+                    bg = 'rgba(16, 185, 129, 0.12)';
+                    border = 'rgba(16, 185, 129, 0.25)';
+                    textColor = '#a7f3d0';
+                  } else if (chgPct <= -3.0) {
+                    bg = 'rgba(239, 68, 68, 0.35)';
+                    border = 'rgba(239, 68, 68, 0.6)';
+                    textColor = '#f87171';
+                  } else if (chgPct <= -1.0) {
+                    bg = 'rgba(239, 68, 68, 0.22)';
+                    border = 'rgba(239, 68, 68, 0.4)';
+                    textColor = '#fca5a5';
+                  } else if (chgPct < 0) {
+                    bg = 'rgba(239, 68, 68, 0.12)';
+                    border = 'rgba(239, 68, 68, 0.25)';
+                    textColor = '#fecaca';
+                  }
+
+                  return (
+                    <div
+                      key={c.symbol}
+                      className="heatmap-tile"
+                      style={{ background: bg, border: `1px solid ${border}` }}
+                      onClick={() => onSelectSymbol && onSelectSymbol(c.symbol)}
+                      title={`${c.name} (${c.symbol})\nPrice: ${currPrefix}${price.toLocaleString()}\n24h Change: ${isTilePos ? '+' : ''}${chgPct.toFixed(2)}%\nSector: ${sectorName}`}
+                    >
+                      <div className="heatmap-tile-sym-row">
+                        <span className="heatmap-tile-sym">{c.symbol}</span>
+                        {isInWatch && <Bookmark size={10} style={{ color: 'var(--accent-amber)', fill: 'currentColor' }} />}
+                      </div>
+                      <div className="heatmap-tile-price-val">
+                        {currPrefix}{price >= 1000 ? price.toLocaleString(undefined, { maximumFractionDigits: 1 }) : price.toFixed(2)}
+                      </div>
+                      <div className="heatmap-tile-pct-val" style={{ color: textColor }}>
+                        {isTilePos ? '+' : ''}{chgPct.toFixed(2)}%
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -1469,6 +1611,24 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
           return (Number(c?.forecastGainPercent) || 0) >= 10;
         case 'top_gainers':
           return (Number(c?.changePercent) || 0) >= 1.0;
+        case 'breakouts_52w': {
+          const high = Number(c?.high52) || 0;
+          const price = Number(c?.price) || 0;
+          if (high <= 0 || price <= 0) return false;
+          return price >= high * 0.95;
+        }
+        case 'high_dividend': {
+          const div = Number(c?.dividendYield || c?.dividend) || 0;
+          return div >= 2.0;
+        }
+        case 'mega_caps': {
+          const cap = Number(c?.marketCap) || 0;
+          return cap >= 200_000_000_000 || c?.tier === 'mega_cap';
+        }
+        case 'undervalued': {
+          const pe = Number(c?.peRatio || c?.pe) || 0;
+          return pe > 0 && pe <= 20;
+        }
         case 'strong_buy':
           return c?.rating === 'STRONG BUY';
         case 'near_52w_low': {
@@ -2057,6 +2217,13 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
             </div>
           )}
         </div>
+      ) : viewMode === 'heatmap' ? (
+        /* ================= INSTITUTIONAL SECTOR HEATMAP MATRIX ================= */
+        <SectorHeatmapMatrix
+          companies={isAll ? companies : displayedCompanies}
+          onSelectSymbol={handleSelectSymbol}
+          watchlistSet={watchlistSet}
+        />
       ) : viewMode === 'table' ? (
         /* ================= INSTITUTIONAL TABLE VIEW ================= */
         <div className="glass-card" style={{ overflowX: 'auto' }}>

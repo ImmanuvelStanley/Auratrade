@@ -460,6 +460,7 @@ export function App() {
         onToggleSidebar={handleToggleMobileSidebar}
         onSelectSymbol={handleSelectSymbolAndGoDashboard}
         onGoHome={handleGoHome}
+        onNavigateTab={setActiveTab}
       />
 
       {/* Institutional Shell Body: Fixed Auto-Expanding Hover Sidebar + Full-Width Workspace Column */}

@@ -63,7 +63,8 @@ import {
   Landmark,
   Cpu,
   Clock,
-  PlusCircle
+  PlusCircle,
+  Copy
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
@@ -151,6 +152,20 @@ export const DEFAULT_WORKSTATION_PREFS = {
   hallmarkStandard: 'bis_huid' // 'bis_huid' | 'lbma' | 'comex'
 };
 
+export const cleanProfileData = (data) => {
+  if (!data || typeof data !== 'object') return data;
+  const cleaned = { ...data };
+  if (cleaned.legalName === 'Alexander Vance') cleaned.legalName = '';
+  if (cleaned.idNumber === 'P89201452') cleaned.idNumber = '';
+  if (cleaned.taxId === 'US-942-88-1920' || cleaned.taxId === 'US••••20') cleaned.taxId = '';
+  if (cleaned.phone === '+91 72007 59491' || cleaned.phone === '+91 7200759491') cleaned.phone = '';
+  if (cleaned.idType === 'PASSPORT' && !cleaned.idNumber) cleaned.idType = '';
+  if (!cleaned.idNumber && !cleaned.idDocumentUploaded) {
+    if (cleaned.kycStatus === 'VERIFIED') cleaned.kycStatus = 'NOT_SUBMITTED';
+  }
+  return cleaned;
+};
+
 const DEFAULT_TRADER_PROFILE = {
   traderName: 'Trader Pro',
   name: 'Trader Pro',
@@ -171,49 +186,49 @@ const DEFAULT_TRADER_PROFILE = {
   targetGoldAlloc: 40,
   targetSilverAlloc: 25,
   targetCashAlloc: 35,
-  notes: 'Physical & paper precious metals arbitrage with multi-currency risk management.',
-  strategyNotes: 'Physical & paper precious metals arbitrage with multi-currency risk management.',
+  notes: '',
+  strategyNotes: '',
 
-  // Mandatory Regulatory KYC & Legal Identity Details
-  legalName: 'Alexander Vance',
-  dob: '1992-06-15',
+  // User manual KYC Details - empty until user submits them
+  legalName: '',
+  dob: '',
   gender: 'Male',
-  nationality: 'United States',
-  parentSpouseName: 'Robert Vance',
+  nationality: '',
+  parentSpouseName: '',
 
-  // Mandatory Government ID Proof
-  idType: 'PASSPORT', // 'PASSPORT' | 'PAN' | 'NATIONAL_ID' | 'DRIVING_LICENSE' | 'SSN' | 'STATE_ID'
-  idNumber: 'P89201452',
-  idExpiry: '2031-10-24',
-  idDocumentName: 'passport_scan_verified.pdf',
-  idDocumentSize: '1.8 MB',
-  idDocumentUploaded: true,
+  // Government ID Proof - empty until user submits them
+  idType: '',
+  idNumber: '',
+  idExpiry: '',
+  idDocumentName: '',
+  idDocumentSize: '',
+  idDocumentUploaded: false,
   idDocumentPreview: null,
-  kycStatus: 'VERIFIED',
+  kycStatus: 'NOT_SUBMITTED', // 'NOT_SUBMITTED' | 'PENDING' | 'VERIFIED'
 
-  // Mandatory Residential Address & Proof of Residence
-  streetAddress: '742 Evergreen Financial Way, Suite 1800',
-  city: 'New York',
-  stateProvince: 'New York (NY)',
-  postalCode: '10005',
-  addressProofType: 'UTILITY_BILL',
-  addressDocumentName: 'proof_of_residence_statement.pdf',
-  addressDocumentSize: '1.2 MB',
-  addressDocumentUploaded: true,
+  // Residential Address & Proof of Residence - empty until user submits them
+  streetAddress: '',
+  city: '',
+  stateProvince: '',
+  postalCode: '',
+  addressProofType: '',
+  addressDocumentName: '',
+  addressDocumentSize: '',
+  addressDocumentUploaded: false,
 
-  // Mandatory Taxation & Financial Compliance Declarations
-  taxId: 'US-942-88-1920',
-  pan: 'AAACT4821K',
-  taxCountry: 'United States',
-  annualIncome: '$100,000 - $250,000',
-  sourceOfWealth: 'Salary & Professional Trading',
-  pepDeclaration: false, // confirmed NOT a Politically Exposed Person
-  fatcaAccepted: true,
+  // Taxation & Compliance Declarations - empty until user submits them
+  taxId: '',
+  pan: '',
+  taxCountry: '',
+  annualIncome: '',
+  sourceOfWealth: '',
+  pepDeclaration: false,
+  fatcaAccepted: false,
 
-  // Mandatory Trading Nominee Mandate
-  nomineeName: 'Eleanor Vance',
-  nomineeRelationship: 'Spouse',
-  nomineeDob: '1994-08-22',
+  // Trading Nominee Mandate
+  nomineeName: '',
+  nomineeRelationship: '',
+  nomineeDob: '',
   nomineeShare: 100
 };
 
@@ -237,6 +252,37 @@ export function UserProfile({
   const [nameError, setNameError] = useState('');
   const [resetting, setResetting] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
+  const [copiedUid, setCopiedUid] = useState(false);
+
+  // Contact Phone Inline Editing State
+  const [isEditingPhone, setIsEditingPhone] = useState(false);
+  const [phoneInput, setPhoneInput] = useState(user?.phone || '');
+  const [updatingPhone, setUpdatingPhone] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
+
+  const handleSavePhone = async () => {
+    const val = phoneInput.trim();
+    setUpdatingPhone(true);
+    setPhoneError('');
+    try {
+      await updateProfile({ phone: val });
+      setIsEditingPhone(false);
+    } catch (err) {
+      setPhoneError(err.message || 'Failed to update phone');
+    } finally {
+      setUpdatingPhone(false);
+    }
+  };
+
+  const handleCopyUid = (e) => {
+    if (e) e.stopPropagation();
+    const uid = (user?.id || 'usr_demo').toUpperCase();
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(uid);
+    }
+    setCopiedUid(true);
+    setTimeout(() => setCopiedUid(false), 1800);
+  };
 
   // Security Center State
   const [changePwForm, setChangePwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
@@ -337,7 +383,7 @@ export function UserProfile({
       const userKey = getProfileStorageKey(user?.id);
       const saved = localStorage.getItem(userKey);
       if (saved) {
-        const parsed = JSON.parse(saved);
+        const parsed = cleanProfileData(JSON.parse(saved));
         return {
           ...DEFAULT_TRADER_PROFILE,
           minBalance: user?.minBalance !== undefined ? Number(user.minBalance) : (parsed.minBalance !== undefined ? Number(parsed.minBalance) : 100),
@@ -367,8 +413,9 @@ export function UserProfile({
 
   // Mask ID Number for secure institutional display (e.g. P8••••52)
   const maskIdNumber = (id) => {
-    if (!id) return 'NOT PROVIDED';
+    if (!id || typeof id !== 'string') return '';
     const str = String(id).trim();
+    if (!str || str === 'P89201452') return '';
     if (str.length <= 4) return str;
     return str.slice(0, 2) + '••••' + str.slice(-2);
   };
@@ -457,12 +504,12 @@ export function UserProfile({
       try {
         const userKey = getProfileStorageKey(user.id);
         const saved = localStorage.getItem(userKey);
-        const parsed = saved ? JSON.parse(saved) : {};
+        const parsed = saved ? cleanProfileData(JSON.parse(saved)) : {};
         const merged = {
           ...DEFAULT_TRADER_PROFILE,
           ...parsed,
-          ...(user.traderProfile || {}),
-          minBalance: user.minBalance !== undefined ? Number(user.minBalance) : (parsed.minBalance !== undefined ? Number(parsed.minBalance) : 2500),
+          ...cleanProfileData(user.traderProfile || {}),
+          minBalance: user.minBalance !== undefined ? Number(user.minBalance) : (parsed.minBalance !== undefined ? Number(parsed.minBalance) : 100),
           name: user.name || parsed.name || DEFAULT_TRADER_PROFILE.name,
           traderName: user.name || parsed.traderName || DEFAULT_TRADER_PROFILE.traderName
         };
@@ -640,12 +687,52 @@ export function UserProfile({
     }));
   };
 
-  const handleSaveProfileForm = (e) => {
+  const handleSaveProfileForm = async (e) => {
+    if (e) e.preventDefault();
+    setKycErrors({});
+    setKycAlert('');
+
+    // Check if user is attempting to submit KYC
+    const isSubmittingKyc = Boolean(profileForm.legalName || profileForm.idNumber || profileForm.taxId);
+    let kycStatus = traderProfile.kycStatus || 'NOT_SUBMITTED';
+
+    if (isSubmittingKyc) {
+      const errs = validateKycForm(profileForm);
+      if (Object.keys(errs).length > 0) {
+        setKycErrors(errs);
+        setKycAlert('Please complete all required verification fields marked with * before saving KYC.');
+        const kycElem = document.getElementById('mandatory-kyc-section');
+        if (kycElem) kycElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return;
+      }
+      kycStatus = 'VERIFIED';
+    }
+
+    const updated = {
+      ...profileForm,
+      kycStatus
+    };
+    updateTraderProfile(updated);
+
+    const phoneVal = profileForm.phone !== undefined ? profileForm.phone.trim() : (user?.phone || '');
+    if (token) {
+      try {
+        await updateProfile({
+          name: profileForm.name || user?.name,
+          phone: phoneVal,
+          minBalance: profileForm.minBalance !== undefined ? parseFloat(profileForm.minBalance) : (user?.minBalance || 100),
+          traderProfile: updated
+        });
+      } catch (err) { }
+    }
+  };
+
+  const handleSubmitKyc = async (e) => {
     if (e) e.preventDefault();
     const errs = validateKycForm(profileForm);
     if (Object.keys(errs).length > 0) {
       setKycErrors(errs);
-      setKycAlert('Mandatory Regulatory Requirement: Please complete all required KYC fields marked with * before saving.');
+      setKycAlert('Please complete all required fields marked with * to submit verification.');
       const kycElem = document.getElementById('mandatory-kyc-section');
       if (kycElem) kycElem.scrollIntoView({ behavior: 'smooth', block: 'start' });
       return;
@@ -657,8 +744,12 @@ export function UserProfile({
       kycStatus: 'VERIFIED'
     };
     updateTraderProfile(updated);
-    if (profileForm.name && profileForm.name !== user?.name) {
-      updateProfile(profileForm.name).catch(() => { });
+    if (token) {
+      try {
+        await updateProfile({
+          traderProfile: updated
+        });
+      } catch (err) { }
     }
   };
 
@@ -830,58 +921,31 @@ export function UserProfile({
   const silverOzPurchasable = cashBalance > 0 ? (cashBalance / silverSpotUsd) : 0;
   const silverKgPurchasable = (silverOzPurchasable * 31.1035) / 1000;
 
+  // Dynamic KYC Verification status based on actual user-entered data
+  const isKycVerified = traderProfile.kycStatus === 'VERIFIED' && Boolean(traderProfile.idNumber || traderProfile.idDocumentUploaded);
+  const isKycPending = traderProfile.kycStatus === 'PENDING';
+
   return (
     <div className="motion-entry" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
       {/* =========================================================================
-          1. EXECUTIVE TRADER HERO IDENTITY BANNER
+          1. TRADER PROFILE & ACCOUNT SUMMARY HERO
           ========================================================================= */}
-      {/* =========================================================================
-          1. EXECUTIVE INSTITUTIONAL TRADER HERO PASSPORT
-          ========================================================================= */}
-      <div
-        className="glass-card profile-hero-card"
-        style={{
-          background: 'var(--profile-hero-bg)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-lg)',
-          padding: '1.4rem 1.65rem',
-          position: 'relative',
-          overflow: 'hidden',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)'
-        }}
-      >
-        {/* Ambient background glow */}
-        <div
-          style={{
-            position: 'absolute',
-            right: '-8%',
-            top: '-35%',
-            width: '420px',
-            height: '320px',
-            background: 'radial-gradient(circle, rgba(6, 182, 212, 0.12) 0%, rgba(99, 102, 241, 0.06) 50%, transparent 80%)',
-            pointerEvents: 'none',
-            filter: 'blur(25px)'
-          }}
-        />
+      <div className="profile-hero-modern">
+        {/* Top Account Header Row */}
+        <div className="profile-hero-top-row">
+          <div className="profile-hero-user-cluster">
+            {/* Clean Avatar Badge */}
+            <div className="profile-avatar-circle">
+              {user.name ? user.name[0].toUpperCase() : 'T'}
+              <span
+                className="profile-online-dot"
+                title="Active Session • Connected to Live Feeds"
+              />
+            </div>
 
-        <div className="profile-hero-grid">
-          {/* LEFT COLUMN: Unified Trader Identity & Institutional Account Specifications */}
-          <div className="profile-trader-identity-col">
-            {/* 1. Top Executive Account Holder Header (Avatar + Name/Badges + Desk Mandate) */}
-            <div className="profile-identity-header">
-              {/* Avatar Badge with Online Status Ring */}
-              <div className="profile-avatar-wrap">
-                <div className="profile-avatar-box">
-                  {user.name ? user.name[0].toUpperCase() : 'T'}
-                </div>
-                <span
-                  className="profile-online-dot"
-                  title="Active Session • Connected to Real-Time Feed"
-                />
-              </div>
-
-              {/* Line 1: Trader Name + Verification & Safe Zone Badges */}
-              <div className="profile-name-badges-wrap">
+            {/* Trader Identity, Status Badges & Subtitle */}
+            <div className="profile-hero-name-wrap">
+              <div className="profile-hero-name-row">
                 {isEditingName ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
                     <input
@@ -890,12 +954,12 @@ export function UserProfile({
                       onChange={(e) => setEditName(e.target.value)}
                       style={{
                         background: 'var(--bg-input)',
-                        border: '1px solid var(--accent-cyan)',
+                        border: '1.5px solid var(--accent-cyan)',
                         color: 'var(--text-primary)',
                         borderRadius: 'var(--radius-sm)',
-                        padding: '0.3rem 0.65rem',
-                        fontSize: '1rem',
-                        fontWeight: 700
+                        padding: '0.35rem 0.75rem',
+                        fontSize: '1.1rem',
+                        fontWeight: 800
                       }}
                       autoFocus
                     />
@@ -903,7 +967,7 @@ export function UserProfile({
                       className="btn btn-primary"
                       onClick={handleSaveName}
                       disabled={updatingName}
-                      style={{ padding: '0.3rem 0.65rem', fontSize: '0.78rem' }}
+                      style={{ padding: '0.35rem 0.75rem', fontSize: '0.8rem' }}
                       title="Save Name"
                     >
                       {updatingName ? <RefreshCw size={13} className="spin" /> : <Check size={14} />}
@@ -911,20 +975,20 @@ export function UserProfile({
                     <button
                       className="btn btn-secondary"
                       onClick={() => { setIsEditingName(false); setEditName(user.name || ''); }}
-                      style={{ padding: '0.3rem 0.55rem', fontSize: '0.78rem' }}
+                      style={{ padding: '0.35rem 0.65rem', fontSize: '0.8rem' }}
                       title="Cancel"
                     >
                       <X size={14} />
                     </button>
                   </div>
                 ) : (
-                  <div className="profile-name-row">
-                    <h1 className="profile-name-heading">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <h1 className="profile-hero-name">
                       {user.name || 'Trader Pro'}
                     </h1>
                     <button
                       onClick={() => { setIsEditingName(true); setEditName(user.name || ''); }}
-                      style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex', alignItems: 'center' }}
+                      className="profile-inline-edit-btn"
                       title="Edit Account Holder Name"
                     >
                       <Edit2 size={13} />
@@ -933,286 +997,232 @@ export function UserProfile({
                 )}
 
                 <div className="profile-badges-row">
-                  <span
-                    className="badge-pill"
-                    style={{
-                      background: 'rgba(16, 185, 129, 0.14)',
-                      border: '1px solid rgba(16, 185, 129, 0.35)',
-                      color: '#34d399',
-                      fontSize: '0.65rem',
-                      fontWeight: 800,
-                      padding: '0.13rem 0.5rem',
-                      letterSpacing: '0.03em'
-                    }}
-                  >
-                    <CheckCircle2 size={11} /> KYC VERIFIED
+                  {isKycVerified ? (
+                    <span className="profile-badge verified" title="Identity Verified">
+                      <CheckCircle2 size={12} />
+                      <span>KYC Verified</span>
+                    </span>
+                  ) : isKycPending ? (
+                    <span className="profile-badge pending" title="Verification Pending Review">
+                      <Clock size={12} />
+                      <span>Verification Pending</span>
+                    </span>
+                  ) : (
+                    <span
+                      className="profile-badge unverified clickable"
+                      onClick={() => {
+                        setActiveSubTab('profile-edit');
+                        setTimeout(() => {
+                          const el = document.getElementById('mandatory-kyc-section');
+                          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }, 100);
+                      }}
+                      title="Click to complete identity verification"
+                    >
+                      <AlertCircle size={12} />
+                      <span>KYC Required</span>
+                    </span>
+                  )}
+
+                  <span className="profile-badge role">
+                    <Award size={12} />
+                    <span>{traderProfile.experienceLevel?.split(' ')[0] || 'Standard'} Trader</span>
                   </span>
 
-                  <span
-                    className="badge-pill"
-                    style={{
-                      background: 'rgba(6, 182, 212, 0.14)',
-                      border: '1px solid rgba(6, 182, 212, 0.35)',
-                      color: 'var(--accent-cyan)',
-                      fontSize: '0.65rem',
-                      fontWeight: 800,
-                      padding: '0.13rem 0.5rem',
-                      letterSpacing: '0.03em'
-                    }}
-                  >
-                    <Award size={11} /> PRO WORKSTATION
-                  </span>
-
-                  <span
-                    className="badge-pill"
-                    style={{
-                      background: safeZoneStatus === 'OPTIMAL' ? 'rgba(16, 185, 129, 0.12)' : safeZoneStatus === 'WARNING' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(244, 63, 94, 0.12)',
-                      border: safeZoneStatus === 'OPTIMAL' ? '1px solid rgba(16, 185, 129, 0.3)' : safeZoneStatus === 'WARNING' ? '1px solid rgba(245, 158, 11, 0.3)' : '1px solid rgba(244, 63, 94, 0.3)',
-                      color: safeZoneStatus === 'OPTIMAL' ? '#34d399' : safeZoneStatus === 'WARNING' ? 'var(--warning-amber)' : '#fb7185',
-                      fontSize: '0.65rem',
-                      fontWeight: 800,
-                      padding: '0.13rem 0.5rem',
-                      letterSpacing: '0.03em'
-                    }}
-                    title={`Safe Zone Minimum Reserve: $${minBalance.toLocaleString()}`}
-                  >
-                    <ShieldCheck size={11} /> SAFE ZONE: ${minBalance.toLocaleString()} ({safeZoneStatus})
-                  </span>
+                  {minBalance > 0 && (
+                    <span
+                      className={`profile-badge ${safeZoneStatus === 'OPTIMAL' ? 'verified' : safeZoneStatus === 'WARNING' ? 'pending' : 'unverified'}`}
+                      title={`Safe Zone Reserve: $${minBalance.toLocaleString()}`}
+                    >
+                      <ShieldCheck size={12} />
+                      <span>Safe Reserve: ${minBalance.toLocaleString()}</span>
+                    </span>
+                  )}
                 </div>
               </div>
 
               {nameError && (
-                <p style={{ color: '#f87171', fontSize: '0.75rem', margin: '0.1rem 0', gridColumn: '2' }}>{nameError}</p>
+                <p style={{ color: '#f87171', fontSize: '0.75rem', margin: '0.1rem 0' }}>{nameError}</p>
               )}
 
-              {/* Line 2: Institutional Desk Mandate & Risk Classification Bar */}
-              <div className="profile-mandate-inline-bar">
-                <div className="profile-mandate-main">
-                  <span className="profile-mandate-tag">DESK MANDATE</span>
-                  <span className="profile-persona-chip">
-                    <Briefcase size={13} style={{ flexShrink: 0 }} />
-                    <span>{traderProfile.tradingPersona || 'Precious Metals Bullion Speculator'}</span>
-                  </span>
-                </div>
-                <div className="profile-mandate-metrics">
-                  <span className="profile-mandate-pill">
-                    <span className="profile-mandate-pill-label">Tier:</span>
-                    <strong>{traderProfile.experienceLevel || 'Advanced (3-5 yrs)'}</strong>
-                  </span>
-                  <span className="profile-spec-dot">•</span>
-                  <span className="profile-mandate-pill">
-                    <span className="profile-mandate-pill-label">Risk:</span>
-                    <strong className="profile-risk-text">{traderProfile.riskAppetite || 'Moderate Growth'}</strong>
-                  </span>
-                  <span className="profile-spec-dot">•</span>
-                  <span className="profile-mandate-pill">
-                    <span className="profile-mandate-pill-label">Clearance:</span>
-                    <strong style={{ color: '#34d399' }}>Spot &amp; Margin (T+0)</strong>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Structured 3x2 Professional Trading Account Specifications Grid */}
-            <div className="profile-meta-chips-grid">
-              <div className="profile-meta-chip" title={`Client Account ID: ${(user.id || 'usr_demo').toUpperCase()}`}>
-                <ShieldCheck size={13} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
-                <span className="profile-meta-chip-label">Client UID</span>
-                <span className="profile-meta-chip-val font-mono" style={{ color: 'var(--accent-cyan)', fontWeight: 700, fontSize: '0.74rem' }}>
-                  {(user.id || 'usr_demo').slice(0, 16).toUpperCase()}
-                </span>
-              </div>
-
-              <div className="profile-meta-chip" title="Primary Execution Exchange & Regional Hub">
-                <Globe size={13} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
-                <span className="profile-meta-chip-label">Trade Hub</span>
-                <span className="profile-meta-chip-val" style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
-                  {traderProfile.preferredHub || currentRegion.defaultCity}
-                </span>
-              </div>
-
-              <div className="profile-meta-chip" title="Regulatory KYC & Tax Clearance">
-                <IdCard size={13} style={{ color: '#34d399', flexShrink: 0 }} />
-                <span className="profile-meta-chip-label">KYC &amp; ID</span>
-                <span className="profile-meta-chip-val" style={{ color: '#34d399', fontWeight: 700 }}>
-                  {traderProfile.idType || 'PASSPORT'} • {maskIdNumber(traderProfile.idNumber || 'P89201452')}
-                </span>
-              </div>
-
-              <div className="profile-meta-chip" title={user.email}>
-                <Mail size={13} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
-                <span className="profile-meta-chip-label">Email ID</span>
-                <span className="profile-meta-chip-val" style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
-                  {user.email}
-                </span>
-              </div>
-
-              <div className="profile-meta-chip" title="Verified 2FA & Trade Alert Mobile">
-                <Smartphone size={13} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
-                <span className="profile-meta-chip-label">Mobile No.</span>
-                <span className="profile-meta-chip-val font-mono" style={{ color: 'var(--text-primary)', fontWeight: 600, fontSize: '0.74rem' }}>
-                  {user.phone ? user.phone.replace(/^\+?(\d{1,3})\s*(\d{5})(\d{5})$/, '+$1 $2 $3') : '+91 72007 59491'}
-                </span>
-              </div>
-
-              <div className="profile-meta-chip" title="Institutional Workstation Onboarding Date">
-                <Calendar size={13} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
-                <span className="profile-meta-chip-label">Onboarded</span>
-                <span className="profile-meta-chip-val" style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>
-                  {formattedDate}
-                </span>
+              {/* Clean Subline */}
+              <div className="profile-hero-subline">
+                <span>{traderProfile.tradingPersona || 'Active Trader'}</span>
+                <span className="subline-bullet">•</span>
+                <span>{traderProfile.preferredHub || currentRegion.defaultCity}</span>
+                <span className="subline-bullet">•</span>
+                <span>Risk: <strong>{traderProfile.riskAppetite || 'Moderate Growth'}</strong></span>
+                <span className="subline-bullet">•</span>
+                <span>Clearance: <strong style={{ color: '#34d399' }}>Spot &amp; Margin (T+0)</strong></span>
               </div>
             </div>
           </div>
 
-          {/* RIGHT COLUMN: Dedicated Financial Balance Card & Quick Actions */}
-          <div className="profile-hero-right-col">
-            {/* Live Executive Trader Balance Display Card */}
-            <div
-              className="trader-hero-balance-card"
-              style={{
-                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.06) 100%)',
-                border: '1px solid rgba(16, 185, 129, 0.35)',
-                borderRadius: '10px',
-                padding: '0.6rem 0.9rem',
-                boxShadow: '0 3px 14px rgba(16, 185, 129, 0.1)',
-                position: 'relative',
-                overflow: 'hidden',
-                flex: 1,
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between'
-              }}
+          {/* Quick Actions Cluster */}
+          <div className="profile-hero-actions-cluster">
+            <button
+              type="button"
+              className="btn btn-deposit-modern"
+              onClick={() => setShowDepositModal(true)}
+              title="Deposit Cash & Fund Simulation Portfolio"
             >
-              {/* Subtle ambient light dot inside card */}
-              <div
-                style={{
-                  position: 'absolute',
-                  right: '-12%',
-                  top: '-30%',
-                  width: '100px',
-                  height: '100px',
-                  background: 'radial-gradient(circle, rgba(16, 185, 129, 0.22) 0%, transparent 70%)',
-                  pointerEvents: 'none',
-                  filter: 'blur(12px)'
-                }}
-              />
+              <PlusCircle size={14} /> Deposit Funds
+            </button>
 
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.2rem', position: 'relative', zIndex: 1 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                  <span style={{ fontSize: '0.66rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-secondary)' }}>
-                    Trader Cash Balance
-                  </span>
-                  <span
-                    className="badge-pill"
-                    style={{
-                      background: 'rgba(16, 185, 129, 0.22)',
-                      border: '1px solid rgba(16, 185, 129, 0.4)',
-                      color: '#34d399',
-                      fontSize: '0.58rem',
-                      fontWeight: 800,
-                      padding: '0.04rem 0.35rem',
-                      letterSpacing: '0.04em'
-                    }}
-                  >
-                    ● LIVE
-                  </span>
-                </div>
-                <div
-                  onClick={() => setShowDepositModal(true)}
+            <button
+              type="button"
+              className="btn btn-workstation-modern"
+              onClick={() => onNavigateTab && onNavigateTab('dashboard')}
+              title="Launch Trading Workstation"
+            >
+              <Zap size={14} /> Workstation
+            </button>
+
+            <button
+              type="button"
+              className="btn btn-edit-modern"
+              onClick={() => setActiveSubTab('profile-edit')}
+              title="Configure Profile & Settings"
+            >
+              <Edit3 size={14} /> Edit Profile
+            </button>
+          </div>
+        </div>
+
+        {/* Clean Single-Row Horizontal Metadata Strip */}
+        <div className="profile-meta-strip">
+          <div className="profile-meta-pill" title={`Client UID: ${(user.id || 'usr_demo').toUpperCase()}`}>
+            <span className="profile-meta-pill-label">Client UID:</span>
+            <span className="profile-meta-pill-val font-mono" style={{ color: 'var(--accent-cyan)' }}>
+              {(user.id || 'usr_demo').slice(0, 16).toUpperCase()}
+            </span>
+            <button
+              type="button"
+              className="profile-copy-btn"
+              onClick={handleCopyUid}
+              title="Copy Client Account UID"
+            >
+              {copiedUid ? <Check size={12} style={{ color: '#34d399' }} /> : <Copy size={12} />}
+            </button>
+          </div>
+
+          <div className="profile-meta-pill" title={user.email}>
+            <Mail size={13} style={{ color: 'var(--text-muted)' }} />
+            <span className="profile-meta-pill-label">Email:</span>
+            <span className="profile-meta-pill-val">{user.email}</span>
+          </div>
+
+          {/* Contact Mobile with Inline Editor & Add button */}
+          <div className="profile-meta-pill" title="Contact Phone Number">
+            <Smartphone size={13} style={{ color: user.phone ? 'var(--accent-cyan)' : 'var(--text-muted)' }} />
+            <span className="profile-meta-pill-label">Mobile:</span>
+            {isEditingPhone ? (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <input
+                  type="tel"
+                  value={phoneInput}
+                  onChange={(e) => setPhoneInput(e.target.value)}
+                  placeholder="+1 555-0100"
                   style={{
-                    width: '28px',
-                    height: '28px',
-                    borderRadius: '7px',
-                    background: 'rgba(16, 185, 129, 0.2)',
-                    color: '#34d399',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    background: 'var(--bg-input)',
+                    border: '1px solid var(--accent-cyan)',
+                    color: 'var(--text-primary)',
+                    borderRadius: '4px',
+                    padding: '2px 6px',
+                    fontSize: '0.75rem',
+                    width: '130px',
+                    fontFamily: 'var(--font-mono)'
                   }}
-                  title="Purchase Cash & Deposit Funds"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleSavePhone}
+                  disabled={updatingPhone}
+                  style={{ padding: '2px 5px', fontSize: '0.7rem' }}
+                  title="Save Phone"
                 >
-                  <Wallet size={15} />
-                </div>
+                  {updatingPhone ? <RefreshCw size={10} className="spin" /> : <Check size={11} />}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => { setIsEditingPhone(false); setPhoneInput(user.phone || ''); }}
+                  style={{ padding: '2px 5px', fontSize: '0.7rem' }}
+                  title="Cancel"
+                >
+                  <X size={11} />
+                </button>
               </div>
+            ) : user.phone ? (
+              <span className="profile-meta-pill-val font-mono" style={{ display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                <span>{user.phone}</span>
+                <button
+                  type="button"
+                  onClick={() => { setIsEditingPhone(true); setPhoneInput(user.phone || ''); }}
+                  className="profile-meta-edit-btn"
+                  title="Edit Phone Number"
+                >
+                  <Edit2 size={10} />
+                </button>
+              </span>
+            ) : (
+              <span className="profile-meta-pill-val empty">
+                <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Not Provided</span>
+                <button
+                  type="button"
+                  onClick={() => { setIsEditingPhone(true); setPhoneInput(''); }}
+                  className="profile-meta-add-btn"
+                  title="Add contact phone number"
+                >
+                  + Add
+                </button>
+              </span>
+            )}
+          </div>
 
-              {/* Cash Balance Display */}
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', margin: '0.2rem 0 0.15rem', position: 'relative', zIndex: 1 }}>
-                <span className="font-mono" style={{ fontSize: '1.35rem', fontWeight: 800, color: '#34d399', letterSpacing: '-0.02em', lineHeight: 1.15 }}>
-                  ${cashBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-                <span style={{ fontSize: '0.75rem', fontWeight: 800, color: '#10b981' }}>USD</span>
-              </div>
+          {/* KYC ID Proof - dynamic and clean */}
+          <div className="profile-meta-pill" title="Regulatory KYC & ID Proof">
+            <IdCard size={13} style={{ color: isKycVerified ? '#34d399' : 'var(--text-muted)' }} />
+            <span className="profile-meta-pill-label">KYC ID:</span>
+            {isKycVerified && traderProfile.idNumber ? (
+              <span className="profile-meta-pill-val font-mono" style={{ color: '#34d399' }}>
+                {traderProfile.idType || 'ID'} • {maskIdNumber(traderProfile.idNumber)}
+              </span>
+            ) : (
+              <span className="profile-meta-pill-val empty">
+                <span style={{ color: 'var(--text-muted)', fontStyle: 'italic' }}>Not Submitted</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveSubTab('profile-edit');
+                    setTimeout(() => {
+                      const el = document.getElementById('mandatory-kyc-section');
+                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                  }}
+                  className="profile-meta-add-btn"
+                  title="Complete verification"
+                >
+                  Verify →
+                </button>
+              </span>
+            )}
+          </div>
 
-              {dualCash.code !== 'USD' && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', marginBottom: '0.25rem', position: 'relative', zIndex: 1 }}>
-                  <span style={{ fontSize: '0.7rem', color: 'var(--warning-amber)', fontWeight: 700 }}>
-                    ≈ {dualCash.regional} {dualCash.code}
-                  </span>
-                  <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)' }}>
-                    (Benchmark)
-                  </span>
-                </div>
-              )}
+          <div className="profile-meta-pill" title="Primary Execution Hub">
+            <Globe size={13} style={{ color: 'var(--text-muted)' }} />
+            <span className="profile-meta-pill-label">Trade Hub:</span>
+            <span className="profile-meta-pill-val">
+              {traderProfile.preferredHub || currentRegion.defaultCity}
+            </span>
+          </div>
 
-              {/* Dedicated Purchase Cash Action Button (Full Width to Prevent Overlap) */}
-              <button
-                type="button"
-                onClick={() => setShowDepositModal(true)}
-                style={{
-                  marginTop: '0.35rem',
-                  width: '100%',
-                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.22) 0%, rgba(6, 182, 212, 0.16) 100%)',
-                  color: '#34d399',
-                  border: '1px solid rgba(16, 185, 129, 0.5)',
-                  padding: '0.36rem 0.65rem',
-                  borderRadius: '7px',
-                  fontSize: '0.75rem',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.4rem',
-                  transition: 'all 0.2s ease',
-                  position: 'relative',
-                  zIndex: 1,
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.12)'
-                }}
-                title="Purchase trading cash and deposit funds"
-              >
-                <PlusCircle size={13} />
-                <span>+ Purchase Cash</span>
-              </button>
-            </div>
-
-            {/* Quick Action Commands */}
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-              <button
-                className="btn btn-primary"
-                onClick={() => onNavigateTab && onNavigateTab('dashboard')}
-                style={{
-                  width: '100%',
-                  padding: '0.45rem 0.8rem',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  gap: '0.4rem',
-                  background: 'linear-gradient(135deg, #06b6d4 0%, #3b82f6 50%, #6366f1 100%)',
-                  border: 'none',
-                  borderRadius: '7px',
-                  boxShadow: '0 3px 10px rgba(6, 182, 212, 0.25)',
-                  transition: 'all 0.2s ease',
-                  justifyContent: 'center',
-                  height: '36px'
-                }}
-              >
-                <Zap size={13} /> Open Workstation
-              </button>
-            </div>
+          <div className="profile-meta-pill" title="Account Onboarding Date">
+            <Calendar size={13} style={{ color: 'var(--text-muted)' }} />
+            <span className="profile-meta-pill-label">Onboarded:</span>
+            <span className="profile-meta-pill-val">{formattedDate}</span>
           </div>
         </div>
       </div>
@@ -1238,251 +1248,7 @@ export function UserProfile({
       )}
 
       {/* =========================================================================
-          2. QUICK MULTI-CURRENCY SWITCHER & REGIONAL FX STATUS
-          ========================================================================= */}
-      <div
-        className="glass-card"
-        style={{
-          padding: '0.75rem 1.25rem',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '0.75rem',
-          border: '1px solid var(--border-subtle)',
-          background: 'var(--bg-card)'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Coins size={14} style={{ color: 'var(--accent-cyan)' }} />
-            Valuation Currency:
-          </span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
-            {['USD', 'INR', 'GBP', 'EUR', 'AED'].map((code) => {
-              const curr = WORLD_CURRENCIES[code];
-              const isSelected = (activeCurrency || traderProfile.currency || 'USD') === code;
-              return (
-                <button
-                  key={code}
-                  type="button"
-                  onClick={() => handleCurrencySwitch(code)}
-                  className={`chip-btn ${isSelected ? 'active' : ''}`}
-                  style={{
-                    padding: '0.28rem 0.65rem',
-                    fontSize: '0.76rem',
-                    fontWeight: isSelected ? 800 : 600,
-                    borderRadius: 'var(--radius-full)',
-                    border: isSelected ? '1px solid var(--accent-cyan)' : '1px solid var(--border-subtle)',
-                    background: isSelected ? 'rgba(6, 182, 212, 0.18)' : 'rgba(255, 255, 255, 0.03)',
-                    color: isSelected ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.3rem',
-                    transition: 'all 0.15s ease'
-                  }}
-                  title={`${curr.name} (${curr.symbol})`}
-                >
-                  <span>{curr.symbol} {curr.code}</span>
-                  {code === 'USD' && (
-                    <span style={{ fontSize: '0.6rem', background: 'rgba(6, 182, 212, 0.25)', color: 'var(--accent-cyan)', padding: '0.05rem 0.3rem', borderRadius: '3px', fontWeight: 700 }}>
-                      DEFAULT
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-
-            {/* Dropdown for all 11 global currencies */}
-            <select
-              value={activeCurrency || traderProfile.currency || 'USD'}
-              onChange={(e) => handleCurrencySwitch(e.target.value)}
-              style={{
-                background: 'var(--bg-input)',
-                border: '1px solid var(--border-subtle)',
-                color: 'var(--text-primary)',
-                borderRadius: 'var(--radius-full)',
-                padding: '0.28rem 0.65rem',
-                fontSize: '0.76rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                outline: 'none'
-              }}
-              title="Select valuation currency from 11 worldwide jurisdictions"
-            >
-              <option value="" disabled>More Currencies...</option>
-              {Object.values(WORLD_CURRENCIES).map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.code} ({c.symbol}) — {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Live FX Benchmark Status */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-          <span className="status-dot online" style={{ width: '6px', height: '6px' }} />
-          <span>
-            1 USD = <strong style={{ color: 'var(--text-primary)' }}>{currentCurrency.symbol} {formatDualCurrency(1, 4).regional.replace(/[^\d.,]/g, '') || (fxRates[currentCurrency.code] || 1)}</strong> {currentCurrency.code}
-          </span>
-          <span style={{ opacity: 0.5 }}>|</span>
-          <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>Base: $ USD (Default)</span>
-        </div>
-      </div>
-
-      {/* =========================================================================
-          3. DUAL-CURRENCY FINANCIAL SCORECARD ($ USD DEFAULT + REGIONAL SYMBOL)
-          ========================================================================= */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '1rem'
-        }}
-      >
-        {/* Total Net Portfolio Equity */}
-        <div className="glass-card" style={{ padding: '1.25rem', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Total Portfolio Equity
-            </span>
-            <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <DollarSign size={17} />
-            </div>
-          </div>
-          {/* Primary Dollar Value (Default) */}
-          <div className="font-mono" style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-            {dualTotal.usd} <span style={{ fontSize: '0.85rem', color: 'var(--accent-cyan)', fontWeight: 700 }}>USD</span>
-          </div>
-          {/* Regional Currency Badge */}
-          <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
-            <span
-              className="badge-pill font-mono"
-              style={{
-                background: 'rgba(245, 158, 11, 0.15)',
-                border: '1px solid rgba(245, 158, 11, 0.35)',
-                color: 'var(--warning-amber)',
-                fontSize: '0.78rem',
-                fontWeight: 800,
-                padding: '0.2rem 0.6rem'
-              }}
-              title={`Converted at 1 USD = ${dualTotal.rateVsUsd} ${dualTotal.code}`}
-            >
-              {dualTotal.regional} {dualTotal.code}
-            </span>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              ({traderProfile.country || 'Regional'} Valuation)
-            </span>
-          </div>
-        </div>
-
-        {/* Buying Power (Available Cash) */}
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Trader Cash Balance (Buying Power)
-            </span>
-            <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Briefcase size={17} />
-            </div>
-          </div>
-          {/* Primary Dollar Value (Default) */}
-          <div className="font-mono" style={{ fontSize: '1.75rem', fontWeight: 800, color: '#34d399', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-            {dualCash.usd} <span style={{ fontSize: '0.85rem', color: '#10b981', fontWeight: 700 }}>USD</span>
-          </div>
-          {/* Regional Currency Badge */}
-          <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
-            <span
-              className="badge-pill font-mono"
-              style={{
-                background: 'rgba(16, 185, 129, 0.15)',
-                border: '1px solid rgba(16, 185, 129, 0.35)',
-                color: '#34d399',
-                fontSize: '0.78rem',
-                fontWeight: 800,
-                padding: '0.2rem 0.6rem'
-              }}
-            >
-              {dualCash.regional} {dualCash.code}
-            </span>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              {cashPercent}% liquidity
-            </span>
-          </div>
-        </div>
-
-        {/* Invested Capital */}
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Invested Capital
-            </span>
-            <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Layers size={17} />
-            </div>
-          </div>
-          {/* Primary Dollar Value (Default) */}
-          <div className="font-mono" style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-            {dualInvested.usd} <span style={{ fontSize: '0.85rem', color: 'var(--accent-indigo)', fontWeight: 700 }}>USD</span>
-          </div>
-          {/* Regional Currency Badge */}
-          <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
-            <span
-              className="badge-pill font-mono"
-              style={{
-                background: 'rgba(99, 102, 241, 0.15)',
-                border: '1px solid rgba(99, 102, 241, 0.35)',
-                color: '#818cf8',
-                fontSize: '0.78rem',
-                fontWeight: 800,
-                padding: '0.2rem 0.6rem'
-              }}
-            >
-              {dualInvested.regional} {dualInvested.code}
-            </span>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-              {holdings.length} {holdings.length === 1 ? 'position' : 'positions'}
-            </span>
-          </div>
-        </div>
-
-        {/* Unrealized Return / P&L */}
-        <div className="glass-card" style={{ padding: '1.25rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Unrealized Return (P&L)
-            </span>
-            <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: isProfitable ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)', color: isProfitable ? '#34d399' : '#f87171', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {isProfitable ? <TrendingUp size={17} /> : <TrendingDown size={17} />}
-            </div>
-          </div>
-          {/* Primary Dollar Value (Default) */}
-          <div className="font-mono" style={{ fontSize: '1.75rem', fontWeight: 800, color: isProfitable ? '#34d399' : '#f87171', letterSpacing: '-0.02em', lineHeight: 1.1 }}>
-            {dualPnL.usd} <span style={{ fontSize: '0.85rem', fontWeight: 700 }}>USD</span>
-          </div>
-          {/* Regional Currency Badge */}
-          <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
-            <span
-              className="badge-pill font-mono"
-              style={{
-                background: isProfitable ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
-                border: isProfitable ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(244, 63, 94, 0.35)',
-                color: isProfitable ? '#34d399' : '#f87171',
-                fontSize: '0.78rem',
-                fontWeight: 800,
-                padding: '0.2rem 0.6rem'
-              }}
-            >
-              {dualPnL.regional} ({pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%)
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* =========================================================================
-          4. PROFILE SECTION NAVIGATION (HIGH-VISIBILITY SEGMENTED PILL DOCK)
+          2. PROFILE SECTION NAVIGATION (HIGH-VISIBILITY SEGMENTED PILL DOCK)
           ========================================================================= */}
       <div
         className="profile-subnav-dock"
@@ -1558,42 +1324,611 @@ export function UserProfile({
       </div>
 
       {/* =========================================================================
-          TAB 1: MAIN OVERVIEW & SUMMARY (DEFAULT OPENING VIEW)
+          TAB 1: MAIN OVERVIEW & SUMMARY (EXECUTIVE BENTO COCKPIT)
           ========================================================================= */}
       {activeSubTab === 'overview' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {/* Executive Trader Overview & Regional Jurisdiction Card */}
-          <div
-            className="glass-card"
-            style={{
-              padding: '1.35rem 1.5rem',
-              background: 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: 'var(--radius-lg)'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.15rem' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap' }}>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                    Trader Profile &amp; Regional Jurisdiction
-                  </h3>
-                  <span className="badge-pill" style={{ background: 'rgba(6, 182, 212, 0.14)', color: 'var(--accent-cyan)', fontSize: '0.72rem', fontWeight: 800 }}>
-                    ACTIVE SETUP
-                  </span>
+        <div className="profile-overview-bento motion-entry">
+          {/* =====================================================================
+              LEFT COLUMN: FINANCIAL TELEMETRY, CAPITAL ALLOCATION & SURVEILLANCE
+              ===================================================================== */}
+          <div className="profile-overview-col-main">
+            {/* Unified Capital & Purchasing Telemetry Card */}
+            <div className="glass-card profile-card-modern profile-capital-card">
+              {/* Header with Integrated Currency Switcher */}
+              <div className="profile-capital-header">
+                <div>
+                  <div className="profile-card-title-row">
+                    <h3 className="profile-card-title">Portfolio Equity &amp; Purchasing Power</h3>
+                    <span
+                      className="badge-pill"
+                      style={{
+                        background: 'rgba(16, 185, 129, 0.18)',
+                        border: '1px solid rgba(16, 185, 129, 0.4)',
+                        color: '#34d399',
+                        fontSize: '0.64rem',
+                        fontWeight: 800,
+                        padding: '0.12rem 0.45rem'
+                      }}
+                    >
+                      ● LIVE VALUATION
+                    </span>
+                  </div>
+                  <p className="profile-card-subtitle">
+                    Real-time multi-currency valuation, deployable buying power, and safe zone protection buffer.
+                  </p>
                 </div>
-                <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                  Active trading jurisdiction, local currency conversion symbol, and precious metals mandate.
-                </p>
+
+                {/* Seamless Inline Multi-Currency Switcher */}
+                <div className="profile-currency-switcher-inline">
+                  <div className="currency-pills-row">
+                    {['USD', 'INR', 'GBP', 'EUR', 'AED'].map((code) => {
+                      const curr = WORLD_CURRENCIES[code];
+                      const isSelected = (activeCurrency || traderProfile.currency || 'USD') === code;
+                      return (
+                        <button
+                          key={code}
+                          type="button"
+                          onClick={() => handleCurrencySwitch(code)}
+                          className={`chip-btn ${isSelected ? 'active' : ''}`}
+                          style={{
+                            padding: '0.22rem 0.55rem',
+                            fontSize: '0.72rem',
+                            fontWeight: isSelected ? 800 : 600,
+                            borderRadius: 'var(--radius-full)',
+                            border: isSelected ? '1px solid var(--accent-cyan)' : '1px solid var(--border-subtle)',
+                            background: isSelected ? 'rgba(6, 182, 212, 0.18)' : 'rgba(255, 255, 255, 0.03)',
+                            color: isSelected ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            transition: 'all 0.15s ease'
+                          }}
+                          title={`${curr.name} (${curr.symbol})`}
+                        >
+                          <span>{curr.symbol} {curr.code}</span>
+                          {code === 'USD' && (
+                            <span style={{ fontSize: '0.55rem', background: 'rgba(6, 182, 212, 0.25)', color: 'var(--accent-cyan)', padding: '0.04rem 0.25rem', borderRadius: '3px', fontWeight: 700 }}>
+                              DEFAULT
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+
+                    <select
+                      value={activeCurrency || traderProfile.currency || 'USD'}
+                      onChange={(e) => handleCurrencySwitch(e.target.value)}
+                      style={{
+                        background: 'var(--bg-input)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'var(--text-primary)',
+                        borderRadius: 'var(--radius-full)',
+                        padding: '0.22rem 0.55rem',
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        outline: 'none'
+                      }}
+                      title="Select valuation currency from 11 worldwide jurisdictions"
+                    >
+                      <option value="" disabled>More Currencies...</option>
+                      {Object.values(WORLD_CURRENCIES).map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.code} ({c.symbol}) — {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="fx-rate-pill">
+                    <span className="status-dot online" style={{ width: '5px', height: '5px' }} />
+                    <span>
+                      1 USD = <strong style={{ color: 'var(--text-primary)' }}>{currentCurrency.symbol} {formatDualCurrency(1, 4).regional.replace(/[^\d.,]/g, '') || (fxRates[currentCurrency.code] || 1)}</strong> {currentCurrency.code}
+                    </span>
+                    <span style={{ opacity: 0.4 }}>|</span>
+                    <span style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>Base: $ USD (Default)</span>
+                  </div>
+                </div>
               </div>
 
-              {/* Quick Options to View / Edit Details */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
+              {/* Net Portfolio Equity Hero Figure */}
+              <div className="profile-equity-hero">
+                <div>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.25rem' }}>
+                    Total Portfolio Equity
+                  </div>
+                  <div className="equity-primary-val">
+                    {dualTotal.usd} <span className="equity-currency-tag">USD</span>
+                  </div>
+                </div>
+
+                <div className="equity-regional-pill" title={`Converted at 1 USD = ${dualTotal.rateVsUsd} ${dualTotal.code}`}>
+                  <span>≈ {dualTotal.regional} {dualTotal.code}</span>
+                  <span style={{ fontSize: '0.7rem', fontWeight: 600, opacity: 0.85 }}>({traderProfile.country || 'Regional'} Valuation)</span>
+                </div>
+              </div>
+
+              {/* 3 Core Metric Cards (Buying Power, Invested, P&L) */}
+              <div className="profile-metrics-tri-grid">
+                {/* Buying Power */}
+                <div className="profile-submetric-box">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span className="submetric-label">Trader Cash Balance (Buying Power)</span>
+                    <Briefcase size={14} style={{ color: '#34d399' }} />
+                  </div>
+                  <div className="submetric-val" style={{ color: '#34d399' }}>
+                    {dualCash.usd} <span className="submetric-cur" style={{ color: '#10b981' }}>USD</span>
+                  </div>
+                  <div className="submetric-sub">
+                    <span className="badge-pill font-mono" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', fontSize: '0.72rem', padding: '0.1rem 0.45rem' }}>
+                      {dualCash.regional} {dualCash.code}
+                    </span>
+                    <span>{cashPercent}% liquidity</span>
+                  </div>
+                </div>
+
+                {/* Invested Capital */}
+                <div className="profile-submetric-box">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span className="submetric-label">Invested Capital</span>
+                    <Layers size={14} style={{ color: '#818cf8' }} />
+                  </div>
+                  <div className="submetric-val">
+                    {dualInvested.usd} <span className="submetric-cur" style={{ color: 'var(--accent-indigo)' }}>USD</span>
+                  </div>
+                  <div className="submetric-sub">
+                    <span className="badge-pill font-mono" style={{ background: 'rgba(99, 102, 241, 0.15)', color: '#818cf8', fontSize: '0.72rem', padding: '0.1rem 0.45rem' }}>
+                      {dualInvested.regional} {dualInvested.code}
+                    </span>
+                    <span>{holdings.length} {holdings.length === 1 ? 'position' : 'positions'}</span>
+                  </div>
+                </div>
+
+                {/* Unrealized Return (P&L) */}
+                <div className="profile-submetric-box">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span className="submetric-label">Unrealized Return (P&amp;L)</span>
+                    {isProfitable ? <TrendingUp size={14} style={{ color: '#34d399' }} /> : <TrendingDown size={14} style={{ color: '#f87171' }} />}
+                  </div>
+                  <div className="submetric-val" style={{ color: isProfitable ? '#34d399' : '#f87171' }}>
+                    {dualPnL.usd} <span className="submetric-cur">USD</span>
+                  </div>
+                  <div className="submetric-sub">
+                    <span
+                      className="badge-pill font-mono"
+                      style={{
+                        background: isProfitable ? 'rgba(16, 185, 129, 0.15)' : 'rgba(244, 63, 94, 0.15)',
+                        color: isProfitable ? '#34d399' : '#f87171',
+                        fontSize: '0.72rem',
+                        padding: '0.1rem 0.45rem'
+                      }}
+                    >
+                      {dualPnL.regional} ({pnlPercent >= 0 ? '+' : ''}{pnlPercent.toFixed(2)}%)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Integrated Account Safe Zone & Capital Protection Module */}
+              <div
+                className="profile-safezone-embedded"
+                style={{
+                  background: safeZoneStatus === 'OPTIMAL'
+                    ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(6, 182, 212, 0.04) 100%)'
+                    : safeZoneStatus === 'WARNING'
+                      ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.04) 100%)'
+                      : 'linear-gradient(135deg, rgba(244, 63, 94, 0.12) 0%, rgba(225, 29, 72, 0.05) 100%)',
+                  border: safeZoneStatus === 'OPTIMAL'
+                    ? '1px solid rgba(16, 185, 129, 0.3)'
+                    : safeZoneStatus === 'WARNING'
+                      ? '1px solid rgba(245, 158, 11, 0.35)'
+                      : '1px solid rgba(244, 63, 94, 0.4)'
+                }}
+              >
+                <div className="safezone-header-row">
+                  <div className="safezone-title-wrap">
+                    <ShieldCheck size={18} style={{ color: safeZoneStatus === 'OPTIMAL' ? '#34d399' : safeZoneStatus === 'WARNING' ? 'var(--warning-amber)' : '#f43f5e' }} />
+                    <span className="safezone-title">Account Safe Zone &amp; Capital Protection Reserve</span>
+                    <span
+                      className="badge-pill font-mono"
+                      style={{
+                        background: safeZoneStatus === 'OPTIMAL' ? 'rgba(16, 185, 129, 0.18)' : safeZoneStatus === 'WARNING' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(244, 63, 94, 0.25)',
+                        color: safeZoneStatus === 'OPTIMAL' ? '#34d399' : safeZoneStatus === 'WARNING' ? 'var(--warning-amber)' : '#fb7185',
+                        fontWeight: 800,
+                        fontSize: '0.68rem',
+                        letterSpacing: '0.03em'
+                      }}
+                    >
+                      {safeZoneStatus === 'OPTIMAL' && '● SAFE ZONE SECURED'}
+                      {safeZoneStatus === 'WARNING' && '▲ APPROACHING BUFFER'}
+                      {safeZoneStatus === 'BREACHED' && '✕ SAFE ZONE BREACHED'}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setActiveSubTab('profile-edit');
+                      setTimeout(() => {
+                        const el = document.getElementById('safe-zone-config-section');
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 100);
+                    }}
+                    style={{ padding: '0.35rem 0.8rem', fontSize: '0.75rem', gap: '0.35rem', border: '1px solid var(--border-subtle)' }}
+                  >
+                    <Sliders size={12} style={{ color: 'var(--accent-cyan)' }} />
+                    Configure Safe Reserve
+                  </button>
+                </div>
+
+                {/* Safe Zone Metrics Tri-Grid */}
+                <div className="safezone-stats-row">
+                  <div className="safezone-stat-item">
+                    <span className="stat-label">Current Cash Balance</span>
+                    <span className="stat-val">{dualCash.usd}</span>
+                    <span className="stat-sub">{dualCash.regional} {currentCurrency.code}</span>
+                  </div>
+
+                  <div className="safezone-stat-item">
+                    <span className="stat-label">Mandatory Safe Reserve</span>
+                    <span className="stat-val amber">{dualMinBalance.usd}</span>
+                    <span className="stat-sub">{dualMinBalance.regional} {currentCurrency.code} (Locked Protection)</span>
+                  </div>
+
+                  <div className="safezone-stat-item">
+                    <span className="stat-label">Safe Buying Power (Deployable)</span>
+                    <span className="stat-val emerald">{dualSafeTradingPower.usd}</span>
+                    <span className="stat-sub">{safeTradingPower > 0 ? `${dualSafeTradingPower.regional} ${currentCurrency.code} free to trade` : 'Buffer restricted'}</span>
+                  </div>
+                </div>
+
+                {/* Visual Safe Zone Ratio Bar */}
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
+                    <span>
+                      Liquidity Protection Ratio: <strong style={{ color: 'var(--text-primary)' }}>{safeReserveRatio}% Reserved</strong>
+                    </span>
+                    <span>
+                      Status: <strong style={{ color: safeZoneStatus === 'OPTIMAL' ? '#34d399' : safeZoneStatus === 'WARNING' ? 'var(--warning-amber)' : '#f43f5e' }}>
+                        {safeZoneStatus === 'OPTIMAL' ? 'Capital Secure' : safeZoneStatus === 'WARNING' ? 'Buffer Caution' : 'Reserve Breached'}
+                      </strong>
+                    </span>
+                  </div>
+                  <div className="safezone-bar-track">
+                    <div
+                      className="safezone-bar-fill reserve"
+                      style={{ width: `${Math.min(100, (minBalance / (cashBalance || 1)) * 100)}%` }}
+                      title={`Safe Reserve: $${minBalance.toLocaleString()}`}
+                    />
+                    <div
+                      className="safezone-bar-fill deployable"
+                      style={{ width: `${Math.max(0, 100 - (minBalance / (cashBalance || 1)) * 100)}%` }}
+                      title={`Free Buying Power: $${safeTradingPower.toLocaleString()}`}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Capital Allocation Breakdown Substrip */}
+              <div className="profile-allocation-substrip">
+                <div className="allocation-header-mini">
+                  <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                    Capital Allocation Breakdown
+                  </span>
+                  <span className="font-mono" style={{ color: 'var(--accent-cyan)', fontWeight: 700 }}>
+                    ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })} Total
+                  </span>
+                </div>
+
+                <div className="allocation-bar-track">
+                  <div
+                    className="alloc-fill cash"
+                    style={{ width: `${cashPercent}%` }}
+                    title={`Cash: $${cashBalance.toFixed(2)} (${cashPercent}%)`}
+                  />
+                  <div
+                    className="alloc-fill equities"
+                    style={{ width: `${investedPercent}%` }}
+                    title={`Equities: $${investedValue.toFixed(2)} (${investedPercent}%)`}
+                  />
+                </div>
+
+                <div className="allocation-legend-mini">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                    <span className="legend-dot cash" />
+                    <span>Available Cash:</span>
+                    <strong style={{ color: 'var(--text-primary)' }}>${cashBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })} ({cashPercent}%)</strong>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                    <span className="legend-dot equities" />
+                    <span>Stock Equities:</span>
+                    <strong style={{ color: 'var(--text-primary)' }}>${investedValue.toLocaleString('en-US', { minimumFractionDigits: 2 })} ({investedPercent}%)</strong>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Market Surveillance Desk (Active Watchlist & Active Price Alerts) */}
+            <div className="profile-surveillance-grid">
+              {/* Active Watchlist Desk */}
+              <div className="glass-card profile-card-modern surveillance-desk-col">
+                <div className="surveillance-desk-header">
+                  <div className="desk-title-wrap">
+                    <Bookmark size={16} style={{ color: 'var(--accent-cyan)' }} />
+                    <h3 className="desk-title">Active Watchlist</h3>
+                  </div>
+                  <span className="badge-pill" style={{ background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)' }}>
+                    {watchlistSymbols.length} Monitored
+                  </span>
+                </div>
+
+                <p className="surveillance-desk-desc">
+                  Symbols bookmarked for real-time tick streaming and priority algorithmic surveillance.
+                </p>
+
+                {watchlistSymbols.length > 0 ? (
+                  <div className="watchlist-chips-row">
+                    {watchlistSymbols.map((sym) => (
+                      <button
+                        key={sym}
+                        onClick={() => onSelectSymbol && onSelectSymbol(sym)}
+                        className="watchlist-chip-btn"
+                        title={`Analyze ${sym} on Workstation`}
+                      >
+                        <span>{sym}</span>
+                        <ArrowRight size={11} style={{ color: 'var(--accent-cyan)' }} />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="surveillance-empty">
+                    No symbols added to your watchlist yet.
+                  </div>
+                )}
+
+                <div style={{ marginTop: 'auto', paddingTop: '0.65rem', borderTop: '1px solid var(--border-subtle)' }}>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => onNavigateTab && onNavigateTab('watchlist')}
+                    style={{ width: '100%', padding: '0.45rem', fontSize: '0.78rem', justifyContent: 'center' }}
+                  >
+                    View Full Watchlist Desk
+                  </button>
+                </div>
+              </div>
+
+              {/* Active Price Alerts Desk */}
+              <div className="glass-card profile-card-modern surveillance-desk-col">
+                <div className="surveillance-desk-header">
+                  <div className="desk-title-wrap">
+                    <Bell size={16} style={{ color: '#eab308' }} />
+                    <h3 className="desk-title">Active Price Alerts</h3>
+                  </div>
+                  <span className="badge-pill" style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#eab308' }}>
+                    {activeAlertsCount} Armed
+                  </span>
+                </div>
+
+                <p className="surveillance-desk-desc">
+                  Real-time triggers monitoring live ticks to alert you on price target breaches.
+                </p>
+
+                {alerts.length > 0 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                    {alerts.slice(0, 3).map((alt) => (
+                      <div
+                        key={alt.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '0.55rem 0.85rem',
+                          background: 'var(--bg-input)',
+                          border: '1px solid var(--border-subtle)',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.78rem'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                          <span className="font-mono" style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{alt.symbol}</span>
+                          <span style={{ color: 'var(--text-muted)' }}>crosses</span>
+                          <span style={{ color: alt.condition === 'ABOVE' ? 'var(--bull-green)' : 'var(--bear-red)', fontWeight: 700 }}>
+                            {alt.condition}
+                          </span>
+                          <span className="font-mono" style={{ color: 'var(--text-primary)', fontWeight: 700 }}>
+                            ${alt.targetPrice?.toFixed(2)}
+                          </span>
+                        </div>
+
+                        <span
+                          className={`status-pill ${alt.status === 'ACTIVE' ? 'status-active' : alt.status === 'TRIGGERED' ? 'status-triggered' : 'status-disabled'}`}
+                          data-status={alt.status}
+                          style={{
+                            fontSize: '0.64rem',
+                            fontWeight: 700,
+                            padding: '0.12rem 0.45rem',
+                            borderRadius: 'var(--radius-sm)'
+                          }}
+                        >
+                          {alt.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="surveillance-empty">
+                    No price triggers configured.
+                  </div>
+                )}
+
+                <div style={{ marginTop: 'auto', paddingTop: '0.65rem', borderTop: '1px solid var(--border-subtle)' }}>
+                  <button
+                    className="btn btn-secondary"
+                    onClick={() => onNavigateTab && onNavigateTab('alerts')}
+                    style={{ width: '100%', padding: '0.45rem', fontSize: '0.78rem', justifyContent: 'center' }}
+                  >
+                    Manage Alert Triggers
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* =====================================================================
+              RIGHT COLUMN: REGULATORY COMPLIANCE, TRADING MANDATE & TELEMETRY
+              ===================================================================== */}
+          <div className="profile-overview-col-side">
+            {/* Regulatory KYC & Compliance Status */}
+            <div className="glass-card profile-card-modern">
+              <div className="side-card-header">
+                <div className="side-card-title-row">
+                  <IdCard size={18} style={{ color: isKycVerified ? '#34d399' : 'var(--text-muted)' }} />
+                  <h4 className="side-card-title">Identity &amp; Regulatory KYC</h4>
+                </div>
+                <span
+                  className={`badge-pill font-mono ${isKycVerified ? 'status-verified' : isKycPending ? 'status-pending' : 'status-unverified'}`}
+                  style={{
+                    background: isKycVerified ? 'rgba(16, 185, 129, 0.16)' : isKycPending ? 'rgba(245, 158, 11, 0.16)' : 'rgba(148, 163, 184, 0.14)',
+                    color: isKycVerified ? '#34d399' : isKycPending ? 'var(--warning-amber)' : 'var(--text-muted)',
+                    fontSize: '0.66rem',
+                    fontWeight: 800
+                  }}
+                >
+                  {isKycVerified ? '● VERIFIED' : isKycPending ? '▲ UNDER REVIEW' : '○ NOT SUBMITTED'}
+                </span>
+              </div>
+
+              {isKycVerified ? (
+                <div className="kyc-passport-list">
+                  <div className="kyc-item-row">
+                    <span className="kyc-item-label">Legal Name</span>
+                    <span className="kyc-item-val font-semibold">{traderProfile.legalName || user.name}</span>
+                  </div>
+                  <div className="kyc-item-row">
+                    <span className="kyc-item-label">ID Document</span>
+                    <span className="kyc-item-val font-mono">{traderProfile.idType || 'ID'} ({maskIdNumber(traderProfile.idNumber)})</span>
+                  </div>
+                  {traderProfile.taxId ? (
+                    <div className="kyc-item-row">
+                      <span className="kyc-item-label">Tax ID</span>
+                      <span className="kyc-item-val font-mono">{maskIdNumber(traderProfile.taxId)}</span>
+                    </div>
+                  ) : null}
+                  <div className="kyc-item-row">
+                    <span className="kyc-item-label">Account Tier</span>
+                    <span className="kyc-item-val" style={{ color: '#34d399', fontWeight: 700 }}>Spot &amp; Margin (T+0)</span>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.65rem' }}>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                    Your identity details have not been submitted yet. Complete verification with government ID proof to unlock live market execution limits.
+                  </p>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={() => {
+                      setActiveSubTab('profile-edit');
+                      setTimeout(() => {
+                        const el = document.getElementById('mandatory-kyc-section');
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }, 100);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '0.55rem',
+                      fontSize: '0.8rem',
+                      gap: '0.45rem',
+                      justifyContent: 'center',
+                      background: 'rgba(6, 182, 212, 0.15)',
+                      color: 'var(--accent-cyan)',
+                      border: '1px solid rgba(6, 182, 212, 0.4)',
+                      borderRadius: '8px'
+                    }}
+                  >
+                    <IdCard size={14} />
+                    Complete Identity Verification
+                  </button>
+                </div>
+              )}
+
+              {isKycVerified && (
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setActiveSubTab('profile-edit');
+                    setTimeout(() => {
+                      const el = document.getElementById('mandatory-kyc-section');
+                      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }, 100);
+                  }}
+                  style={{
+                    width: '100%',
+                    marginTop: '1rem',
+                    padding: '0.45rem',
+                    fontSize: '0.78rem',
+                    gap: '0.35rem',
+                    border: '1px solid var(--border-subtle)',
+                    color: 'var(--text-secondary)',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <IdCard size={13} />
+                  Update ID Proof &amp; KYC
+                </button>
+              )}
+            </div>
+
+            {/* Desk Mandate & Strategy Setup */}
+            <div className="glass-card profile-card-modern">
+              <div className="side-card-header">
+                <div className="side-card-title-row">
+                  <Briefcase size={18} style={{ color: 'var(--accent-cyan)' }} />
+                  <h4 className="side-card-title">Trader Profile &amp; Jurisdiction</h4>
+                </div>
+                <span className="badge-pill" style={{ background: 'rgba(6, 182, 212, 0.14)', color: 'var(--accent-cyan)', fontSize: '0.66rem', fontWeight: 800 }}>
+                  ACTIVE SETUP
+                </span>
+              </div>
+
+              <div className="mandate-specs-list">
+                <div className="mandate-item-row">
+                  <span className="mandate-item-label">Jurisdiction &amp; Hub</span>
+                  <span className="mandate-item-val font-semibold">{currentRegion.name} • {traderProfile.primaryHub || currentRegion.defaultCity}</span>
+                </div>
+                <div className="mandate-item-row">
+                  <span className="mandate-item-label">Trading Persona</span>
+                  <span className="mandate-item-val font-semibold">{traderProfile.tradingPersona || 'Bullion Speculator'}</span>
+                </div>
+                <div className="mandate-item-row">
+                  <span className="mandate-item-label">Experience &amp; Risk</span>
+                  <span className="mandate-item-val">{traderProfile.experienceLevel || 'Advanced (3-5 yrs)'} • <strong style={{ color: 'var(--warning-amber)' }}>{traderProfile.riskAppetite || 'Moderate Growth'}</strong></span>
+                </div>
+                <div className="mandate-item-row">
+                  <span className="mandate-item-label">Target Allocation</span>
+                  <span className="mandate-item-val font-semibold">
+                    <span style={{ color: 'var(--warning-amber)' }}>{traderProfile.targetGoldAlloc || 40}% Gold</span> • <span style={{ color: 'var(--accent-cyan)' }}>{traderProfile.targetSilverAlloc || 25}% Silver</span> • <span style={{ color: '#34d399' }}>{traderProfile.targetCashAlloc || 35}% Cash</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* Visual 3-Color Target Allocation Bar */}
+              <div className="target-alloc-bar">
+                <div style={{ width: `${traderProfile.targetGoldAlloc || 40}%`, background: 'var(--warning-amber)' }} title={`Gold: ${traderProfile.targetGoldAlloc || 40}%`} />
+                <div style={{ width: `${traderProfile.targetSilverAlloc || 25}%`, background: 'var(--accent-cyan)' }} title={`Silver: ${traderProfile.targetSilverAlloc || 25}%`} />
+                <div style={{ width: `${traderProfile.targetCashAlloc || 35}%`, background: '#10b981' }} title={`Cash: ${traderProfile.targetCashAlloc || 35}%`} />
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.65rem', marginTop: '1rem' }}>
                 <button
                   type="button"
                   className="btn btn-secondary"
                   onClick={() => setActiveSubTab('bullion')}
-                  style={{ padding: '0.45rem 0.95rem', fontSize: '0.78rem', gap: '0.4rem', border: '1px solid var(--border-subtle)' }}
+                  style={{ padding: '0.45rem', fontSize: '0.78rem', gap: '0.35rem', justifyContent: 'center', border: '1px solid var(--border-subtle)' }}
                 >
                   <Scale size={13} style={{ color: 'var(--warning-amber)' }} />
                   View Bullion Power
@@ -1602,7 +1937,7 @@ export function UserProfile({
                   type="button"
                   className="btn btn-primary"
                   onClick={() => setActiveSubTab('profile-edit')}
-                  style={{ padding: '0.45rem 1.05rem', fontSize: '0.78rem', gap: '0.4rem', background: 'linear-gradient(135deg, #06b6d4, #6366f1)', border: 'none' }}
+                  style={{ padding: '0.45rem', fontSize: '0.78rem', gap: '0.35rem', justifyContent: 'center', background: 'linear-gradient(135deg, #06b6d4, #6366f1)', border: 'none' }}
                 >
                   <Edit3 size={13} />
                   Edit Profile &amp; Region
@@ -1610,483 +1945,48 @@ export function UserProfile({
               </div>
             </div>
 
-            {/* 4 Clean Summary Metric Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
-              {/* Card 1: Jurisdiction & Hub */}
-              <div style={{ background: 'var(--bg-input)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
-                  Jurisdiction &amp; Hub
+            {/* System Gateway & Execution Status */}
+            <div className="glass-card profile-card-modern">
+              <div className="side-card-header">
+                <div className="side-card-title-row">
+                  <Activity size={18} style={{ color: '#34d399' }} />
+                  <h4 className="side-card-title">System &amp; Connection Status</h4>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  <span>{currentRegion.name}</span>
-                </div>
-                <div style={{ fontSize: '0.74rem', color: 'var(--accent-cyan)', marginTop: '0.2rem' }}>
-                  {traderProfile.primaryHub || currentRegion.defaultCity}
-                </div>
+                <span className="status-dot online" style={{ width: '6px', height: '6px' }} />
               </div>
 
-              {/* Card 2: Currency & Pricing Symbol */}
-              <div style={{ background: 'var(--bg-input)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
-                  Market Valuation
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  <span>Base: $ USD (Default)</span>
-                </div>
-                <div style={{ fontSize: '0.74rem', color: 'var(--warning-amber)', marginTop: '0.2rem', fontWeight: 700 }}>
-                  Local Symbol: {currentCurrency.symbol} {currentCurrency.code} (1 USD = {currentCurrency.symbol}{fxRates[currentCurrency.code] || 1})
-                </div>
-              </div>
-
-              {/* Card 3: Trading Persona */}
-              <div style={{ background: 'var(--bg-input)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
-                  Trading Persona
-                </div>
-                <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  {traderProfile.tradingPersona || 'Bullion Speculator'}
-                </div>
-                <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                  {traderProfile.experienceLevel || 'Advanced (3-5 yrs)'} • {traderProfile.riskAppetite || 'Moderate Growth'}
-                </div>
-              </div>
-
-              {/* Card 4: Target Asset Allocation */}
-              <div style={{ background: 'var(--bg-input)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.3rem' }}>
-                  Target Allocation
-                </div>
-                <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  <span style={{ color: 'var(--warning-amber)' }}>{traderProfile.targetGoldAlloc || 40}% Gold</span> • <span style={{ color: 'var(--accent-cyan)' }}>{traderProfile.targetSilverAlloc || 25}% Silver</span>
-                </div>
-                <div style={{ fontSize: '0.74rem', color: '#34d399', marginTop: '0.2rem', fontWeight: 600 }}>
-                  {traderProfile.targetCashAlloc || 35}% Cash Reserve
-                </div>
-              </div>
-            </div>
-
-            {/* Mandatory Institutional KYC & ID Proof Status Banner */}
-            <div
-              style={{
-                marginTop: '1rem',
-                background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(16, 185, 129, 0.05) 100%)',
-                border: '1px solid rgba(6, 182, 212, 0.25)',
-                borderRadius: 'var(--radius-md)',
-                padding: '0.95rem 1.25rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '0.85rem'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
-                <div
-                  style={{
-                    width: '38px',
-                    height: '38px',
-                    borderRadius: '50%',
-                    background: 'rgba(6, 182, 212, 0.18)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'var(--accent-cyan)'
-                  }}
-                >
-                  <IdCard size={20} />
-                </div>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase' }}>
-                      Regulatory KYC &amp; ID Proof
-                    </span>
-                    <span
-                      className="badge-pill font-mono"
-                      style={{
-                        background: (traderProfile.kycStatus === 'VERIFIED' || !traderProfile.kycStatus) ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-                        color: (traderProfile.kycStatus === 'VERIFIED' || !traderProfile.kycStatus) ? '#34d399' : 'var(--warning-amber)',
-                        fontSize: '0.68rem',
-                        fontWeight: 800
-                      }}
-                    >
-                      {(traderProfile.kycStatus === 'VERIFIED' || !traderProfile.kycStatus) ? 'TIER-2 INSTITUTIONAL VERIFIED' : 'ACTION REQUIRED'}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', marginTop: '0.15rem', display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-                    <span>
-                      <strong style={{ color: 'var(--text-primary)' }}>Legal Name:</strong> {traderProfile.legalName || traderProfile.name || 'Alexander Vance'}
-                    </span>
-                    <span>•</span>
-                    <span>
-                      <strong style={{ color: 'var(--text-primary)' }}>ID Proof:</strong> {traderProfile.idType || 'PASSPORT'} ({maskIdNumber(traderProfile.idNumber || 'P89201452')})
-                    </span>
-                    <span>•</span>
-                    <span>
-                      <strong style={{ color: 'var(--text-primary)' }}>Tax ID:</strong> {maskIdNumber(traderProfile.taxId || 'US-942-88-1920')}
-                    </span>
+              <div className="telemetry-items-list">
+                <div className="telemetry-item">
+                  <div className="telemetry-icon-box green"><Activity size={16} /></div>
+                  <div>
+                    <div className="telemetry-title">Market Feed WebSocket</div>
+                    <div className="telemetry-status emerald">Active • Streaming Ticks</div>
                   </div>
                 </div>
-              </div>
 
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => {
-                  setActiveSubTab('profile-edit');
-                  setTimeout(() => {
-                    const el = document.getElementById('mandatory-kyc-section');
-                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                  }, 100);
-                }}
-                style={{ padding: '0.4rem 0.85rem', fontSize: '0.75rem', gap: '0.35rem', border: '1px solid rgba(6, 182, 212, 0.35)', color: 'var(--accent-cyan)' }}
-              >
-                <IdCard size={13} />
-                Edit ID Proof &amp; KYC
-              </button>
-            </div>
-          </div>
-
-          {/* Account Safe Zone & Capital Protection Reserve Card */}
-          <div
-            className="glass-card motion-entry"
-            style={{
-              padding: '1.4rem 1.6rem',
-              background: safeZoneStatus === 'OPTIMAL'
-                ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(6, 182, 212, 0.04) 100%)'
-                : safeZoneStatus === 'WARNING'
-                  ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.04) 100%)'
-                  : 'linear-gradient(135deg, rgba(244, 63, 94, 0.12) 0%, rgba(225, 29, 72, 0.05) 100%)',
-              border: safeZoneStatus === 'OPTIMAL'
-                ? '1px solid rgba(16, 185, 129, 0.3)'
-                : safeZoneStatus === 'WARNING'
-                  ? '1px solid rgba(245, 158, 11, 0.35)'
-                  : '1px solid rgba(244, 63, 94, 0.4)',
-              borderRadius: 'var(--radius-lg)',
-              boxShadow: '0 8px 30px rgba(0, 0, 0, 0.25)'
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.2rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div
-                  style={{
-                    width: '42px',
-                    height: '42px',
-                    borderRadius: '12px',
-                    background: safeZoneStatus === 'OPTIMAL' ? 'rgba(16, 185, 129, 0.16)' : safeZoneStatus === 'WARNING' ? 'rgba(245, 158, 11, 0.18)' : 'rgba(244, 63, 94, 0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: safeZoneStatus === 'OPTIMAL' ? '#10b981' : safeZoneStatus === 'WARNING' ? 'var(--warning-amber)' : '#f43f5e'
-                  }}
-                >
-                  <ShieldCheck size={24} />
-                </div>
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap' }}>
-                    <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                      Account Safe Zone &amp; Capital Protection Reserve
-                    </h3>
-                    <span
-                      className="badge-pill font-mono"
-                      style={{
-                        background: safeZoneStatus === 'OPTIMAL' ? 'rgba(16, 185, 129, 0.18)' : safeZoneStatus === 'WARNING' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(244, 63, 94, 0.25)',
-                        color: safeZoneStatus === 'OPTIMAL' ? '#34d399' : safeZoneStatus === 'WARNING' ? 'var(--warning-amber)' : '#fb7185',
-                        fontWeight: 800,
-                        fontSize: '0.72rem',
-                        letterSpacing: '0.04em'
-                      }}
-                    >
-                      {safeZoneStatus === 'OPTIMAL' && '● SAFE ZONE SECURED'}
-                      {safeZoneStatus === 'WARNING' && '▲ APPROACHING BUFFER'}
-                      {safeZoneStatus === 'BREACHED' && '✕ SAFE ZONE BREACHED'}
-                    </span>
+                <div className="telemetry-item">
+                  <div className="telemetry-icon-box cyan"><Zap size={16} /></div>
+                  <div>
+                    <div className="telemetry-title">Order Routing</div>
+                    <div className="telemetry-status">Paper Portfolio Sandbox (0 Risk)</div>
                   </div>
-                  <p style={{ margin: '0.2rem 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                    Locks in a mandatory cash buffer to protect capital from over-trading and market volatility.
-                  </p>
                 </div>
-              </div>
 
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setActiveSubTab('profile-edit')}
-                style={{ padding: '0.4rem 0.85rem', fontSize: '0.78rem', gap: '0.4rem', border: '1px solid var(--border-subtle)' }}
-              >
-                <Sliders size={13} style={{ color: 'var(--accent-cyan)' }} />
-                Configure Safe Reserve
-              </button>
-            </div>
-
-            {/* 3 Metric Stats */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '1rem', marginBottom: '1.15rem' }}>
-              <div style={{ background: 'var(--bg-input)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-                  Current Cash Balance
-                </div>
-                <div className="font-mono" style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  {dualCash.usd}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
-                  {dualCash.regional} {currentCurrency.code}
-                </div>
-              </div>
-
-              <div style={{ background: 'var(--bg-input)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-                  Mandatory Safe Reserve
-                </div>
-                <div className="font-mono" style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--warning-amber)' }}>
-                  {dualMinBalance.usd}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
-                  {dualMinBalance.regional} {currentCurrency.code} (Locked Protection)
-                </div>
-              </div>
-
-              <div style={{ background: 'var(--bg-input)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.25rem' }}>
-                  Safe Buying Power (Deployable)
-                </div>
-                <div className="font-mono" style={{ fontSize: '1.25rem', fontWeight: 800, color: safeTradingPower > 0 ? '#34d399' : '#f43f5e' }}>
-                  {dualSafeTradingPower.usd}
-                </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
-                  {safeTradingPower > 0 ? `${dualSafeTradingPower.regional} ${currentCurrency.code} free to trade` : 'Trading restricted until reserve restored'}
-                </div>
-              </div>
-            </div>
-
-            {/* Visual Safe Zone Ratio Bar */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
-                <span>
-                  Liquidity Protection Ratio: <strong style={{ color: 'var(--text-primary)' }}>{safeReserveRatio}% Reserved</strong>
-                </span>
-                <span>
-                  Status: <strong style={{ color: safeZoneStatus === 'OPTIMAL' ? '#34d399' : safeZoneStatus === 'WARNING' ? 'var(--warning-amber)' : '#f43f5e' }}>
-                    {safeZoneStatus === 'OPTIMAL' ? 'Capital Secure' : safeZoneStatus === 'WARNING' ? 'Buffer Caution' : 'Reserve Breached'}
-                  </strong>
-                </span>
-              </div>
-              <div style={{ width: '100%', height: '10px', borderRadius: '6px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden', display: 'flex' }}>
-                <div
-                  style={{
-                    width: `${Math.min(100, (minBalance / (cashBalance || 1)) * 100)}%`,
-                    background: safeZoneStatus === 'BREACHED' ? '#f43f5e' : 'linear-gradient(90deg, #f59e0b, #d97706)',
-                    transition: 'width 0.4s ease'
-                  }}
-                  title={`Safe Reserve: $${minBalance.toLocaleString()}`}
-                />
-                <div
-                  style={{
-                    width: `${Math.max(0, 100 - (minBalance / (cashBalance || 1)) * 100)}%`,
-                    background: 'linear-gradient(90deg, #10b981, #06b6d4)',
-                    transition: 'width 0.4s ease'
-                  }}
-                  title={`Free Buying Power: $${safeTradingPower.toLocaleString()}`}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Asset Allocation Bar */}
-          <div className="glass-card" style={{ padding: '1.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
-              <div>
-                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                  Capital Allocation Breakdown
-                </h3>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', margin: '0.2rem 0 0' }}>
-                  Distribution of total equity between cash liquidity and active stock positions
-                </p>
-              </div>
-              <span className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--accent-cyan)' }}>
-                ${totalValue.toLocaleString('en-US', { minimumFractionDigits: 2 })} Total
-              </span>
-            </div>
-
-            {/* Visual Segmented Progress Bar */}
-            <div style={{ width: '100%', height: '14px', borderRadius: '8px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden', display: 'flex' }}>
-              <div
-                style={{
-                  width: `${cashPercent}%`,
-                  background: 'linear-gradient(90deg, #10b981, #059669)',
-                  transition: 'width 0.4s ease'
-                }}
-                title={`Cash: $${cashBalance.toFixed(2)} (${cashPercent}%)`}
-              />
-              <div
-                style={{
-                  width: `${investedPercent}%`,
-                  background: 'linear-gradient(90deg, #06b6d4, #6366f1)',
-                  transition: 'width 0.4s ease'
-                }}
-                title={`Equities: $${investedValue.toFixed(2)} (${investedPercent}%)`}
-              />
-            </div>
-
-            {/* Allocation Legend */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginTop: '0.85rem', flexWrap: 'wrap', fontSize: '0.8rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10b981' }} />
-                <span style={{ color: 'var(--text-secondary)' }}>Available Cash:</span>
-                <strong style={{ color: 'var(--text-primary)' }}>${cashBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })} ({cashPercent}%)</strong>
-              </div>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#06b6d4' }} />
-                <span style={{ color: 'var(--text-secondary)' }}>Stock Equities:</span>
-                <strong style={{ color: 'var(--text-primary)' }}>${investedValue.toLocaleString('en-US', { minimumFractionDigits: 2 })} ({investedPercent}%)</strong>
-              </div>
-            </div>
-          </div>
-
-          {/* Two-Column Status Cards: Watchlist & Alerts */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '1.25rem' }}>
-            {/* Live Watchlist Status */}
-            <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-                  <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: 'rgba(6, 182, 212, 0.12)', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Bookmark size={16} />
+                <div className="telemetry-item">
+                  <div className="telemetry-icon-box indigo"><ShieldCheck size={16} /></div>
+                  <div>
+                    <div className="telemetry-title">Safe Zone Protection</div>
+                    <div className="telemetry-status indigo">{minBalance > 0 ? `$${minBalance.toLocaleString()} Protected Reserve` : 'Standard Buffer'}</div>
                   </div>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                    Active Watchlist
-                  </h3>
                 </div>
-                <span className="badge-pill" style={{ background: 'rgba(6, 182, 212, 0.15)', color: 'var(--accent-cyan)' }}>
-                  {watchlistSymbols.length} Monitored
-                </span>
-              </div>
 
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}>
-                Symbols bookmarked for real-time tick streaming and priority algorithmic surveillance.
-              </p>
-
-              {watchlistSymbols.length > 0 ? (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                  {watchlistSymbols.map((sym) => (
-                    <button
-                      key={sym}
-                      onClick={() => onSelectSymbol && onSelectSymbol(sym)}
-                      className="font-mono"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.4rem',
-                        padding: '0.4rem 0.75rem',
-                        background: 'var(--bg-input)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: 'var(--radius-md)',
-                        color: 'var(--text-primary)',
-                        fontSize: '0.82rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        transition: 'all 0.15s ease'
-                      }}
-                      title={`Analyze ${sym} on Workstation`}
-                    >
-                      <span>{sym}</span>
-                      <ArrowRight size={12} style={{ color: 'var(--accent-cyan)' }} />
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ padding: '1.25rem', background: 'var(--bg-input)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                  No symbols added to your watchlist yet.
-                </div>
-              )}
-
-              <div style={{ marginTop: 'auto', paddingTop: '0.65rem', borderTop: '1px solid var(--border-subtle)' }}>
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => onNavigateTab && onNavigateTab('watchlist')}
-                  style={{ width: '100%', padding: '0.5rem', fontSize: '0.8rem', justifyContent: 'center' }}
-                >
-                  View Full Watchlist Desk
-                </button>
-              </div>
-            </div>
-
-            {/* Price Alerts Status */}
-            <div className="glass-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', minWidth: 0 }}>
-                  <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: 'rgba(234, 179, 8, 0.12)', color: '#eab308', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Bell size={16} />
+                <div className="telemetry-item">
+                  <div className="telemetry-icon-box muted"><Briefcase size={16} /></div>
+                  <div>
+                    <div className="telemetry-title">Session Clearance</div>
+                    <div className="telemetry-status">Standard Trader • Full Access</div>
                   </div>
-                  <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                    Active Price Alerts
-                  </h3>
                 </div>
-                <span className="badge-pill" style={{ background: 'rgba(234, 179, 8, 0.15)', color: '#eab308', flexShrink: 0 }}>
-                  {activeAlertsCount} Armed
-                </span>
-              </div>
-
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0 }}>
-                Real-time triggers monitoring live ticks to alert you on price target breaches.
-              </p>
-
-              {alerts.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {alerts.slice(0, 3).map((alt) => (
-                    <div
-                      key={alt.id}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '0.65rem 0.95rem',
-                        background: 'var(--bg-input)',
-                        border: '1px solid var(--border-subtle)',
-                        borderRadius: 'var(--radius-sm)',
-                        fontSize: '0.82rem'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span className="font-mono" style={{ fontWeight: 800, color: 'var(--text-primary)' }}>{alt.symbol}</span>
-                        <span style={{ color: 'var(--text-muted)' }}>crosses</span>
-                        <span style={{ color: alt.condition === 'ABOVE' ? 'var(--bull-green)' : 'var(--bear-red)', fontWeight: 700 }}>
-                          {alt.condition}
-                        </span>
-                        <span className="font-mono" style={{ color: 'var(--text-primary)', fontWeight: 700 }}>
-                          ${alt.targetPrice?.toFixed(2)}
-                        </span>
-                      </div>
-
-                      <span
-                        className={`status-pill ${alt.status === 'ACTIVE' ? 'status-active' : alt.status === 'TRIGGERED' ? 'status-triggered' : 'status-disabled'}`}
-                        data-status={alt.status}
-                        style={{
-                          fontSize: '0.68rem',
-                          fontWeight: 700,
-                          padding: '0.15rem 0.5rem',
-                          borderRadius: 'var(--radius-sm)',
-                          display: 'inline-flex',
-                          letterSpacing: '0.03em'
-                        }}
-                      >
-                        {alt.status}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div style={{ padding: '1.25rem', background: 'var(--bg-input)', border: '1px solid var(--border-subtle)', borderRadius: 'var(--radius-md)', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.82rem' }}>
-                  No price triggers configured.
-                </div>
-              )}
-
-              <div style={{ marginTop: 'auto', paddingTop: '0.65rem', borderTop: '1px solid var(--border-subtle)' }}>
-                <button
-                  className="btn btn-secondary"
-                  onClick={() => onNavigateTab && onNavigateTab('alerts')}
-                  style={{ width: '100%', padding: '0.5rem', fontSize: '0.8rem', justifyContent: 'center' }}
-                >
-                  Manage Alert Triggers
-                </button>
               </div>
             </div>
           </div>
@@ -2250,6 +2150,29 @@ export function UserProfile({
                     color: 'var(--text-primary)',
                     fontSize: '0.85rem',
                     fontWeight: 600
+                  }}
+                />
+              </div>
+
+              {/* Field 1b: Contact Mobile Number */}
+              <div className="kyc-form-field">
+                <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '0.35rem', textTransform: 'uppercase' }}>
+                  Contact Mobile Number
+                </label>
+                <input
+                  type="tel"
+                  value={profileForm.phone !== undefined ? profileForm.phone : (user?.phone || '')}
+                  onChange={(e) => handleProfileFormChange('phone', e.target.value)}
+                  placeholder="e.g. +1 555-0199 or +91 98765 43210"
+                  style={{
+                    width: '100%',
+                    background: 'var(--bg-input)',
+                    border: '1px solid var(--border-subtle)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.55rem 0.85rem',
+                    color: 'var(--text-primary)',
+                    fontSize: '0.85rem',
+                    fontFamily: 'var(--font-mono)'
                   }}
                 />
               </div>
@@ -2487,7 +2410,7 @@ export function UserProfile({
             </div>
 
             {/* Safe Zone Minimum Balance Configuration */}
-            <div className="kyc-module-box" style={{ marginTop: '0.75rem' }}>
+            <div id="safe-zone-config-section" className="kyc-module-box" style={{ marginTop: '0.75rem' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <div>
                   <span style={{ fontSize: '0.85rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
@@ -2701,7 +2624,7 @@ export function UserProfile({
                       type="text"
                       value={profileForm.legalName || ''}
                       onChange={(e) => handleProfileFormChange('legalName', e.target.value)}
-                      placeholder="e.g. Alexander Vance"
+                      placeholder="Enter full legal name as on ID"
                       style={{
                         width: '100%',
                         background: 'var(--bg-card)',
@@ -2860,8 +2783,8 @@ export function UserProfile({
                       onChange={(e) => handleProfileFormChange('idNumber', e.target.value.toUpperCase())}
                       placeholder={
                         profileForm.idType === 'PAN' ? 'e.g. ABCDE1234F' :
-                          profileForm.idType === 'NATIONAL_ID' ? 'e.g. 5482 1904 8821' :
-                            profileForm.idType === 'PASSPORT' ? 'e.g. P89201452' :
+                          profileForm.idType === 'NATIONAL_ID' ? 'e.g. National ID number' :
+                            profileForm.idType === 'PASSPORT' ? 'e.g. Passport number' :
                               profileForm.idType === 'SSN' ? 'e.g. 123-45-6789' :
                                 'e.g. Document Number'
                       }
@@ -3153,7 +3076,7 @@ export function UserProfile({
                       className="font-mono"
                       value={profileForm.taxId || ''}
                       onChange={(e) => handleProfileFormChange('taxId', e.target.value.toUpperCase())}
-                      placeholder="e.g. US-942-88-1920 or AAACT4821K"
+                      placeholder="e.g. Taxpayer ID / PAN / SSN"
                       style={{
                         width: '100%',
                         background: 'var(--bg-card)',
@@ -3332,7 +3255,7 @@ export function UserProfile({
                       type="text"
                       value={profileForm.nomineeName || ''}
                       onChange={(e) => handleProfileFormChange('nomineeName', e.target.value)}
-                      placeholder="e.g. Eleanor Vance"
+                      placeholder="Enter nominee full legal name"
                       style={{
                         width: '100%',
                         background: 'var(--bg-card)',
@@ -3414,13 +3337,34 @@ export function UserProfile({
                   </div>
                 </div>
               </div>
+
+              {/* Submit KYC Button inside the KYC section */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '0.85rem', borderTop: '1px solid var(--border-subtle)' }}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={handleSubmitKyc}
+                  style={{
+                    padding: '0.55rem 1.35rem',
+                    fontSize: '0.82rem',
+                    fontWeight: 700,
+                    gap: '0.45rem',
+                    background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    boxShadow: '0 3px 12px rgba(16, 185, 129, 0.2)'
+                  }}
+                >
+                  <ShieldCheck size={15} /> Submit KYC Verification Documents
+                </button>
+              </div>
             </div>
 
             {/* Action Buttons */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.75rem', paddingTop: '0.5rem', borderTop: '1px solid var(--border-subtle)' }}>
               {prefsSavedToast && (
                 <span className="badge-pill motion-entry" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', fontSize: '0.78rem', fontWeight: 700, padding: '0.3rem 0.75rem' }}>
-                  <Check size={13} /> Profile &amp; KYC Saved &amp; Synced Globally
+                  <Check size={13} /> Profile &amp; Preferences Saved &amp; Synced
                 </span>
               )}
               <button
@@ -3440,7 +3384,7 @@ export function UserProfile({
                 className="btn btn-primary"
                 style={{ padding: '0.5rem 1.45rem', fontSize: '0.82rem', gap: '0.45rem', background: 'linear-gradient(135deg, #06b6d4, #6366f1)', border: 'none' }}
               >
-                <Save size={14} /> Save Profile &amp; KYC Verification
+                <Save size={14} /> Save Profile &amp; Preferences
               </button>
             </div>
           </form>
@@ -4147,29 +4091,41 @@ export function UserProfile({
                 />
               </div>
 
-              {/* Phone (if available) */}
-              {user.phone && (
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
-                    Contact Phone
-                  </label>
+              {/* Phone Contact */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '0.4rem' }}>
+                  Contact Phone
+                </label>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                   <input
                     type="text"
-                    value={user.phone}
+                    value={user.phone || 'Not Provided'}
                     disabled
                     style={{
-                      width: '100%',
+                      flex: 1,
                       background: 'var(--bg-input)',
                       border: '1px solid var(--border-subtle)',
                       borderRadius: 'var(--radius-sm)',
                       padding: '0.55rem 0.85rem',
-                      color: 'var(--text-secondary)',
+                      color: user.phone ? 'var(--text-primary)' : 'var(--text-muted)',
                       fontSize: '0.9rem',
-                      cursor: 'not-allowed'
+                      fontStyle: user.phone ? 'normal' : 'italic'
                     }}
                   />
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setIsEditingPhone(true);
+                      setPhoneInput(user.phone || '');
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    style={{ padding: '0.55rem 0.85rem', fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                  >
+                    {user.phone ? 'Update' : '+ Add Phone'}
+                  </button>
                 </div>
-              )}
+              </div>
 
               {/* Workstation UID */}
               <div>
@@ -5481,58 +5437,61 @@ export function UserProfile({
       {/* =========================================================================
           5. INFRASTRUCTURE & NETWORK HEALTH FOOTER BAR
           ========================================================================= */}
-      <div
-        className="profile-footer-bar"
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-          gap: '1rem',
-          padding: '1.25rem 1.5rem',
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-lg)'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.12)', color: '#34d399', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Activity size={18} />
+      {/* Non-Overview Tab Telemetry Status Bar */}
+      {activeSubTab !== 'overview' && (
+        <div
+          className="profile-footer-bar"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+            gap: '1rem',
+            padding: '1.25rem 1.5rem',
+            background: 'var(--bg-card)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-lg)'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.12)', color: '#34d399', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Activity size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Live WebSocket Gateway</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#34d399' }}>Connected & Operational</div>
+            </div>
           </div>
-          <div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Live WebSocket Gateway</div>
-            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#34d399' }}>Connected & Operational</div>
-          </div>
-        </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(6, 182, 212, 0.12)', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Zap size={18} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(6, 182, 212, 0.12)', color: 'var(--accent-cyan)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Zap size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Execution Engine</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>Instant 0ms Settlement</div>
+            </div>
           </div>
-          <div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Execution Engine</div>
-            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>Instant 0ms Settlement</div>
-          </div>
-        </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(99, 102, 241, 0.12)', color: '#818cf8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Sparkles size={18} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(99, 102, 241, 0.12)', color: '#818cf8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Sparkles size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Quantitative AI Predictor</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#818cf8' }}>Monte Carlo 30D Active</div>
+            </div>
           </div>
-          <div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Quantitative AI Predictor</div>
-            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#818cf8' }}>Monte Carlo 30D Active</div>
-          </div>
-        </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--bg-input)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Briefcase size={18} />
-          </div>
-          <div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Capital Sandbox</div>
-            <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>100% Risk-Free Trading</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--bg-input)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Briefcase size={18} />
+            </div>
+            <div>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Capital Sandbox</div>
+              <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>100% Risk-Free Trading</div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Purchase Cash & Deposit Modal */}
       <DepositCashModal

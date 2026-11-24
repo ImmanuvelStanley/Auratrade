@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Briefcase,
   ArrowUpRight,
@@ -12,7 +12,10 @@ import {
   Award,
   Clock,
   XCircle,
-  LogOut
+  LogOut,
+  TrendingUp,
+  ShieldCheck,
+  FileSpreadsheet
 } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
@@ -221,6 +224,51 @@ export const PortfolioView = React.memo(function PortfolioView({
     : allTransactions.filter((tx) => tx.type === txFilter);
   const displayedTransactions = showAllTx ? filteredTransactions : filteredTransactions.slice(0, 10);
 
+  const handleExportCsv = () => {
+    const headers = ['Timestamp', 'Type', 'Symbol', 'Shares', 'Price', 'Total Amount', 'Realized PnL'];
+    const rows = (allTransactions || []).map((t) => [
+      t.timestamp ? `"${new Date(t.timestamp).toLocaleString()}"` : '""',
+      `"${t.type || ''}"`,
+      `"${t.symbol || ''}"`,
+      t.shares || 0,
+      t.price || 0,
+      t.total || 0,
+      t.realizedPnL || 0
+    ]);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `auratrade_paper_trading_statement_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Portfolio NAV Historical Trajectory Curve Generator
+  const navPoints = useMemo(() => {
+    const baseline = 1000.0;
+    if (!allTransactions || allTransactions.length === 0) {
+      return [
+        { label: 'Inception', val: baseline },
+        { label: 'Current Live', val: totalValue }
+      ];
+    }
+    const sorted = [...allTransactions].reverse();
+    let runningVal = baseline;
+    const pts = [{ label: 'Inception ($1,000)', val: baseline }];
+    sorted.forEach((tx, idx) => {
+      const pnl = Number(tx.realizedPnL || 0);
+      runningVal += pnl;
+      pts.push({
+        label: `${tx.type} ${tx.symbol}`,
+        val: parseFloat(runningVal.toFixed(2))
+      });
+    });
+    pts.push({ label: 'Current Live NAV', val: parseFloat(totalValue.toFixed(2)) });
+    return pts;
+  }, [allTransactions, totalValue]);
+
   return (
     <div className="motion-entry" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
       {actionBanner && (
@@ -349,6 +397,75 @@ export const PortfolioView = React.memo(function PortfolioView({
             <span>{closedTradesCount} closed {closedTradesCount === 1 ? 'exit' : 'exits'}</span>
           </div>
         </div>
+      </div>
+
+      {/* Portfolio Equity Growth & Net Asset Value (NAV) Performance Curve */}
+      <div className="glass-card" style={{ padding: '1.15rem 1.35rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.65rem', marginBottom: '0.85rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+            <TrendingUp size={18} style={{ color: 'var(--bull-green)' }} />
+            <div>
+              <h4 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                Portfolio Equity Growth &amp; NAV Trajectory
+              </h4>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                Account performance trajectory anchored to $1,000.00 baseline
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.74rem' }}>
+            <div>
+              <span style={{ color: 'var(--text-muted)' }}>High-Water Mark: </span>
+              <strong className="font-mono text-bull">${Math.max(1000, totalValue).toFixed(2)}</strong>
+            </div>
+            <div>
+              <span style={{ color: 'var(--text-muted)' }}>Net Growth: </span>
+              <strong className={`font-mono ${totalValue >= 1000 ? 'text-bull' : 'text-bear'}`}>
+                {totalValue >= 1000 ? '+' : ''}{((totalValue - 1000) / 10).toFixed(2)}%
+              </strong>
+            </div>
+          </div>
+        </div>
+
+        {/* SVG Equity Trajectory Curve */}
+        {(() => {
+          const vals = navPoints.map((p) => p.val);
+          const minVal = Math.min(...vals, 1000) * 0.98;
+          const maxVal = Math.max(...vals, 1000) * 1.02;
+          const range = maxVal - minVal || 1;
+          const width = 600;
+          const height = 90;
+          const pad = 10;
+          const h = height - pad * 2;
+          const coords = navPoints.map((p, i) => {
+            const x = pad + (i / Math.max(1, navPoints.length - 1)) * (width - pad * 2);
+            const y = pad + h - ((p.val - minVal) / range) * h;
+            return { x, y, val: p.val, label: p.label };
+          });
+          const pathD = `M ${coords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' L ')}`;
+          const areaD = `${pathD} L ${width - pad},${height} L ${pad},${height} Z`;
+          const isGain = totalValue >= 1000;
+          const strokeColor = isGain ? '#10b981' : '#f43f5e';
+
+          return (
+            <div style={{ position: 'relative', width: '100%', height: '90px' }}>
+              <svg width="100%" height="90" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ overflow: 'visible' }}>
+                <defs>
+                  <linearGradient id="nav-grad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={strokeColor} stopOpacity="0.25" />
+                    <stop offset="100%" stopColor={strokeColor} stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
+                <path d={areaD} fill="url(#nav-grad)" />
+                <path d={pathD} fill="none" stroke={strokeColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                {coords.map((c, i) => (
+                  <circle key={i} cx={c.x} cy={c.y} r="3.5" fill={strokeColor} stroke="#ffffff" strokeWidth="1.2" />
+                ))}
+              </svg>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Portfolio Exposure Allocation Bar */}
@@ -736,6 +853,25 @@ export const PortfolioView = React.memo(function PortfolioView({
                   {showAllTx ? 'Show Recent 10' : `Show All (${filteredTransactions.length})`}
                 </button>
               )}
+
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleExportCsv}
+                style={{
+                  fontSize: '0.75rem',
+                  padding: '0.32rem 0.7rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  background: 'rgba(6, 182, 212, 0.12)',
+                  border: '1px solid rgba(6, 182, 212, 0.35)',
+                  color: 'var(--accent-cyan)'
+                }}
+                title="Download Account Ledger as CSV spreadsheet"
+              >
+                <FileSpreadsheet size={13} /> Export CSV
+              </button>
 
               <button
                 className="btn btn-secondary"

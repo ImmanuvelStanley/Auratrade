@@ -13,10 +13,62 @@ import {
   Search,
   ExternalLink,
   ShieldAlert,
-  Sparkles
+  Sparkles,
+  Building2,
+  Calendar
 } from 'lucide-react';
 
 import { DEFAULT_GLOBAL_INDICES_DATA } from '../data/defaultGlobalIndices';
+
+export const WORLD_EXCHANGES = [
+  { city: 'New York', country: 'United States', countryCode: 'US', exchange: 'NYSE / NASDAQ', timeZone: 'America/New_York', openHour: 9.5, closeHour: 16.0, benchmark: 'S&P 500 (^GSPC)', flag: '🇺🇸' },
+  { city: 'London', country: 'United Kingdom', countryCode: 'GB', exchange: 'London Stock Exchange (LSE)', timeZone: 'Europe/London', openHour: 8.0, closeHour: 16.5, benchmark: 'FTSE 100 (^FTSE)', flag: '🇬🇧' },
+  { city: 'Frankfurt', country: 'Germany', countryCode: 'DE', exchange: 'Deutsche Börse (XETRA)', timeZone: 'Europe/Berlin', openHour: 9.0, closeHour: 17.5, benchmark: 'DAX 40 (^GDAXI)', flag: '🇩🇪' },
+  { city: 'Tokyo', country: 'Japan', countryCode: 'JP', exchange: 'Tokyo Stock Exchange (TSE)', timeZone: 'Asia/Tokyo', openHour: 9.0, closeHour: 15.5, benchmark: 'Nikkei 225 (^N225)', flag: '🇯🇵' },
+  { city: 'Hong Kong', country: 'Hong Kong', countryCode: 'HK', exchange: 'Hong Kong Exchanges (HKEX)', timeZone: 'Asia/Hong_Kong', openHour: 9.5, closeHour: 16.0, benchmark: 'Hang Seng (^HSI)', flag: '🇭🇰' },
+  { city: 'Mumbai', country: 'India', countryCode: 'IN', exchange: 'National Stock Exchange (NSE)', timeZone: 'Asia/Kolkata', openHour: 9.25, closeHour: 15.5, benchmark: 'NIFTY 50 (^NSEI)', flag: '🇮🇳' },
+  { city: 'Sydney', country: 'Australia', countryCode: 'AU', exchange: 'Australian Securities (ASX)', timeZone: 'Australia/Sydney', openHour: 10.0, closeHour: 16.0, benchmark: 'S&P/ASX 200 (^AXJO)', flag: '🇦🇺' }
+];
+
+export function getSessionStatus(timeZone, openHour, closeHour) {
+  try {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      weekday: 'short',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      hour12: false
+    });
+    const parts = formatter.formatToParts(now);
+    let weekday = '';
+    let hour = 0;
+    let minute = 0;
+    parts.forEach((p) => {
+      if (p.type === 'weekday') weekday = p.value;
+      if (p.type === 'hour') hour = parseInt(p.value, 10);
+      if (p.type === 'minute') minute = parseInt(p.value, 10);
+    });
+
+    const isWeekend = weekday === 'Sat' || weekday === 'Sun';
+    const currentDec = hour + minute / 60;
+    const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+
+    if (isWeekend) {
+      return { status: 'CLOSED', timeStr, label: 'Weekend Closed', color: 'var(--text-muted)' };
+    }
+    if (currentDec >= openHour && currentDec < closeHour) {
+      return { status: 'OPEN', timeStr, label: 'Trading Session Active', color: 'var(--bull-green)' };
+    }
+    if (currentDec >= openHour - 1.0 && currentDec < openHour) {
+      return { status: 'PRE-MARKET', timeStr, label: 'Pre-Market Auction', color: 'var(--accent-cyan)' };
+    }
+    return { status: 'CLOSED', timeStr, label: 'Market Closed', color: 'var(--warning-amber)' };
+  } catch (e) {
+    return { status: 'CLOSED', timeStr: '--:--', label: 'Market Closed', color: 'var(--text-muted)' };
+  }
+}
 
 const fmtSigned = (v, decimals = 2) => {
   const n = Number(v ?? 0);
@@ -426,6 +478,82 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
               {fmtSigned(summary?.topLoser?.chgPercent)}%
             </span>
           </div>
+        </div>
+      </div>
+
+      {/* World Financial Centers 24-Hour Trading Sessions & Clocks */}
+      <div className="glass-card" style={{ padding: '1.25rem 1.4rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
+            <Clock size={18} style={{ color: 'var(--accent-cyan)' }} />
+            <div>
+              <h3 style={{ margin: 0, fontSize: '1.02rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                World Financial Centers • 24-Hour Trading Sessions &amp; Clocks
+              </h3>
+              <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                Real-time local hours, opening/closing bells, and benchmark index status
+              </div>
+            </div>
+          </div>
+          <span className="status-pill status-bull" style={{ fontSize: '0.7rem' }}>
+            Multi-Timezone Engine Live
+          </span>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+          {WORLD_EXCHANGES.map((ex) => {
+            const sess = getSessionStatus(ex.timeZone, ex.openHour, ex.closeHour);
+            const isOpen = sess.status === 'OPEN';
+            const isPre = sess.status === 'PRE-MARKET';
+
+            return (
+              <div
+                key={ex.city}
+                style={{
+                  padding: '0.8rem',
+                  borderRadius: '10px',
+                  background: isOpen ? 'rgba(16, 185, 129, 0.06)' : 'rgba(255, 255, 255, 0.02)',
+                  border: `1px solid ${isOpen ? 'rgba(16, 185, 129, 0.25)' : 'var(--border-subtle)'}`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '0.45rem'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <CountryFlag country={ex.country} countryCode={ex.countryCode} size="xs" />
+                    <strong style={{ fontSize: '0.82rem', color: 'var(--text-primary)' }}>{ex.city}</strong>
+                  </div>
+                  <span
+                    className="status-pill"
+                    style={{
+                      fontSize: '0.65rem',
+                      fontWeight: 800,
+                      padding: '0.1rem 0.45rem',
+                      background: isOpen ? 'rgba(16, 185, 129, 0.15)' : isPre ? 'rgba(6, 182, 212, 0.15)' : 'rgba(245, 158, 11, 0.12)',
+                      color: isOpen ? 'var(--bull-green)' : isPre ? 'var(--accent-cyan)' : 'var(--warning-amber)'
+                    }}
+                  >
+                    {sess.status}
+                  </span>
+                </div>
+
+                <div>
+                  <div className="font-mono" style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-primary)' }}>
+                    {sess.timeStr}
+                  </div>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                    {ex.exchange}
+                  </div>
+                </div>
+
+                <div style={{ paddingTop: '0.35rem', borderTop: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
+                  {ex.benchmark}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
