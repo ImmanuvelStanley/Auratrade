@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Bell, Menu, TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight, Globe } from 'lucide-react';
-import { useSocket, useSocketNotifications } from '../context/SocketContext';
+import { Bell, Menu } from 'lucide-react';
+import { useSocketNotifications } from '../context/SocketContext';
 import { NotificationCenter } from './NotificationCenter';
 import { BrandLogo } from './BrandLogo';
 
@@ -10,7 +10,6 @@ export const Header = React.memo(function Header({
   onGoHome,
   onNavigateTab
 }) {
-  const { quotes } = useSocket();
   const { notifications, markAllNotificationsRead } = useSocketNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
 
@@ -26,66 +25,10 @@ export const Header = React.memo(function Header({
     });
   };
 
-  // Institutional Multi-Market Live Benchmarks
-  const sp500Quote = quotes['^GSPC'] || quotes['SPX'] || quotes['AAPL'];
-  const niftyQuote = quotes['^NSEI'] || quotes['NIFTY 50'] || quotes['RELIANCE.NS'];
-  const goldQuote = quotes['XAU'] || quotes['GOLD'] || quotes['GOLDBEES.NS'];
-
-  const marketBenchmarks = [
-    {
-      label: 'S&P 500',
-      price: quotes['^GSPC']?.price || 5910.45,
-      changePercent: quotes['^GSPC']?.changePercent ?? 0.38,
-      tab: 'global-indices',
-      prefix: '$',
-      decimals: 1
-    },
-    {
-      label: 'NIFTY 50',
-      price: quotes['^NSEI']?.price || 23518.50,
-      changePercent: quotes['^NSEI']?.changePercent ?? -0.22,
-      tab: 'nse-india',
-      prefix: '₹',
-      decimals: 1
-    },
-    {
-      label: 'GOLD (10g)',
-      price: quotes['XAU']?.price ? quotes['XAU'].price * 10 : 129379,
-      changePercent: quotes['XAU']?.changePercent ?? 0.85,
-      tab: 'gold-silver',
-      prefix: '₹',
-      decimals: 0
-    }
-  ];
-
   return (
     <header className="navbar">
       {/* Brand Modern Geometric Logo (Always cleanly anchored top-left) */}
       <BrandLogo onClick={onGoHome} title="Return to homepage" />
-
-      {/* Institutional Live Multi-Market Ticker Ribbon (Center) */}
-      <div className="header-market-pulse-bar" aria-label="Global Live Market Pulse">
-        {marketBenchmarks.map((bm) => {
-          const isBull = (bm.changePercent ?? 0) >= 0;
-          return (
-            <button
-              key={bm.label}
-              type="button"
-              className="header-pulse-chip"
-              onClick={() => onNavigateTab && onNavigateTab(bm.tab)}
-              title={`Click to open ${bm.label} desk`}
-            >
-              <span className="header-pulse-label">{bm.label}</span>
-              <span className="header-pulse-price font-mono">
-                {bm.prefix}{Number(bm.price).toLocaleString('en-US', { minimumFractionDigits: bm.decimals, maximumFractionDigits: bm.decimals })}
-              </span>
-              <span className={`header-pulse-chg font-mono ${isBull ? 'text-bull' : 'text-bear'}`}>
-                {isBull ? '+' : ''}{Number(bm.changePercent).toFixed(2)}%
-              </span>
-            </button>
-          );
-        })}
-      </div>
 
       {/* Navigation Actions */}
       <div className="nav-actions">
