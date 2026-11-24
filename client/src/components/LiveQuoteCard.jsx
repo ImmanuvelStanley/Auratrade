@@ -297,7 +297,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
           <div className="live-quote-left-block">
             {/* Identity Row */}
             <div className="live-quote-identity-row">
-              <h1 className="font-mono live-quote-symbol-heading">
+              <h1 className="live-quote-symbol-heading">
                 {mergedQuote.symbol}
               </h1>
               <span className="live-quote-company-name" title={mergedQuote.name}>
@@ -360,12 +360,6 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
               >
                 {isBull ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
                 {activeChange >= 0 ? '+' : ''}{activeChange.toFixed(2)} ({activeChangePct >= 0 ? '+' : ''}{activeChangePct.toFixed(2)}%)
-              </span>
-
-              <span className="live-quote-session-context">
-                {isLiveMode
-                  ? `Today (${formatCalendarDate(todayISO, { month: 'short', day: 'numeric' })})`
-                  : `${isPastMode ? 'Session' : 'Projected'} (${formatCalendarDate(selectedDateStr, { month: 'short', day: 'numeric', year: 'numeric' })})`}
               </span>
             </div>
 
@@ -451,6 +445,12 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                 </button>
               </div>
 
+              <span className="live-quote-meta-separator">•</span>
+              <span className="live-quote-session-context">
+                {isLiveMode
+                  ? `Today (${formatCalendarDate(todayISO, { month: 'short', day: 'numeric' })})`
+                  : `${isPastMode ? 'Session' : 'Projected'} (${formatCalendarDate(selectedDateStr, { month: 'short', day: 'numeric', year: 'numeric' })})`}
+              </span>
               <span className="live-quote-meta-separator">•</span>
               <span className="live-quote-live-tick">
                 <span className="live-pulse-dot" />
