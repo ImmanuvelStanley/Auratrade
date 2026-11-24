@@ -1,7 +1,6 @@
-import React, { useEffect, useLayoutEffect, useState, useRef, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useLiveTickerActions } from '../context/SocketContext';
 import { CountryFlag } from './CountryFlag';
-import { defaultAllCompanies } from '../data/defaultAllCompanies';
 
 const CORE_BENCHMARKS = [
   { symbol: 'NIFTY 50', name: 'Nifty 50', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 23044.60, changePercent: -1.72, currency: 'INR' },
@@ -22,36 +21,13 @@ const CORE_BENCHMARKS = [
   { symbol: 'SILVER', name: 'Silver (XAG/USD)', region: 'Commodity', countryCode: 'METAL', countryFlag: 'XAG', price: 44.95, changePercent: +0.78, currency: 'USD' },
   { symbol: 'GOLD.MCX', name: 'MCX Gold 10g', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 129379.00, changePercent: +0.33, currency: 'INR' },
   { symbol: 'SILVER.MCX', name: 'MCX Silver 1kg', region: 'India', countryCode: 'IN', countryFlag: '🇮🇳', price: 179612.00, changePercent: +0.47, currency: 'INR' },
-  { symbol: 'BTC/USD', name: 'Bitcoin', region: 'Crypto', countryCode: 'CRYPTO', countryFlag: 'CRYPTO', price: 64250.00, changePercent: +2.14, currency: 'USD' },
-  { symbol: 'USD/INR', name: 'USD/INR Forex', region: 'Forex', countryCode: 'FX', countryFlag: 'FX', price: 93.43, changePercent: -0.04, currency: 'INR' }
+  { symbol: 'BTC/USD', name: 'Bitcoin', region: 'Crypto', countryCode: 'CRYPTO', countryFlag: 'CRYPTO', price: 96420.00, changePercent: +1.45, currency: 'USD' },
+  { symbol: 'ETH/USD', name: 'Ethereum', region: 'Crypto', countryCode: 'CRYPTO', countryFlag: 'CRYPTO', price: 3580.00, changePercent: +1.85, currency: 'USD' },
+  { symbol: 'USD/INR', name: 'USD/INR Forex', region: 'Forex', countryCode: 'FX', countryFlag: 'FX', price: 84.43, changePercent: -0.04, currency: 'INR' },
+  { symbol: 'EUR/USD', name: 'EUR/USD Forex', region: 'Forex', countryCode: 'FX', countryFlag: 'FX', price: 1.054, changePercent: +0.12, currency: 'USD' },
+  { symbol: 'GBP/USD', name: 'GBP/USD Forex', region: 'Forex', countryCode: 'FX', countryFlag: 'FX', price: 1.262, changePercent: +0.08, currency: 'USD' },
+  { symbol: 'AAPL', name: 'Apple Inc.', region: 'US', countryCode: 'US', countryFlag: '🇺🇸', price: 232.80, changePercent: +0.75, currency: 'USD' }
 ];
-
-function buildMergedRibbonItems(baseList, incomingList = []) {
-  const map = new Map();
-
-  const upsert = (item) => {
-    if (!item || !item.symbol) return;
-    const sym = String(item.symbol).trim().toUpperCase();
-    const existing = map.get(sym);
-    map.set(sym, {
-      symbol: sym,
-      name: item.name || existing?.name || sym,
-      region: item.country || item.region || existing?.region || 'Global',
-      countryCode: item.countryCode || existing?.countryCode || '',
-      countryFlag: item.countryFlag || existing?.countryFlag || '',
-      price: item.price !== undefined ? item.price : existing?.price,
-      changePercent: item.changePercent !== undefined ? item.changePercent : (existing?.changePercent ?? 0),
-      currency: item.currency !== undefined ? item.currency : (existing?.currency ?? 'USD'),
-      type: item.type || existing?.type || 'stock'
-    });
-  };
-
-  (baseList || []).forEach(upsert);
-  (defaultAllCompanies?.companies || []).forEach(upsert);
-  (incomingList || []).forEach(upsert);
-
-  return Array.from(map.values());
-}
 
 function getCurrencyPrefix(currency, symbol) {
   if (symbol === 'INDIA VIX') return '';
@@ -85,7 +61,7 @@ function formatPercentText(val) {
   return `${num >= 0 ? '+' : ''}${num.toFixed(2)}%`;
 }
 
-// Isolated zero-rerender ribbon ticker cell updated cleanly in-place per symbol tick (no popups)
+// Isolated zero-rerender ribbon ticker cell updated cleanly in-place per symbol tick
 const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }) {
   const { getQuote, subscribeQuote } = useLiveTickerActions();
   const initialQuote = getQuote(item.symbol);
@@ -158,7 +134,7 @@ const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }
       className="market-ribbon-item"
       onClick={() => onSelect(item)}
       style={{ cursor: 'pointer' }}
-      title={`Click to view complete historical record (Starting → Now) & valuation for ${item.name || item.symbol} (${item.region})`}
+      title={`Click to view complete historical record & valuation for ${item.name || item.symbol} (${item.region})`}
     >
       <div className="ribbon-item-left">
         {(item.countryCode || item.region) && (
@@ -205,290 +181,60 @@ const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }
   );
 });
 
-const BASE_RIBBON_SPEED_PX_PER_SEC = 145; // Calibrated to exactly match NSE Live Pulse tape velocity (145 px/s)
-
-function getRibbonSpeedPxPerSec() {
-  if (typeof window === 'undefined') return BASE_RIBBON_SPEED_PX_PER_SEC;
+// Calibrated to match NSE Live Pulse tape velocity (162 px/s across 24 items = 48s linear infinite)
+function getRibbonDurationSeconds() {
+  if (typeof window === 'undefined') return 48;
   try {
     const rawKey = Object.keys(localStorage).find((k) => k.startsWith('trader_workstation_prefs_'));
     const raw = rawKey ? localStorage.getItem(rawKey) : null;
     const prefs = raw ? JSON.parse(raw) : null;
     const mode = prefs?.tickerRibbonSpeed || 'normal';
-    if (mode === 'fast') return 200;
-    if (mode === 'slow') return 90;
-    if (mode === 'paused') return 0;
-    return BASE_RIBBON_SPEED_PX_PER_SEC;
+    if (mode === 'fast') return 32;
+    if (mode === 'slow') return 72;
+    return 48;
   } catch (_) {
-    return BASE_RIBBON_SPEED_PX_PER_SEC;
+    return 48;
   }
 }
 
-function getChunkSizeForViewport() {
-  if (typeof window === 'undefined') return 8;
-  const w = window.innerWidth || 1280;
-  if (w <= 768) return 6;
-  if (w <= 1600) return 8;
-  return 10;
-}
-
 export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol }) {
-  const [indices, setIndices] = useState(() => buildMergedRibbonItems(CORE_BENCHMARKS));
-  const [headIndex, setHeadIndex] = useState(0);
-  const [chunkCount, setChunkCount] = useState(getChunkSizeForViewport);
-
+  const [items, setItems] = useState(CORE_BENCHMARKS);
+  const [duration, setDuration] = useState(getRibbonDurationSeconds);
   const { getQuote, publishTicks } = useLiveTickerActions();
 
-  const containerRef = useRef(null);
-  const trackRef = useRef(null);
-  const animRef = useRef(null);
-  const rateRafRef = useRef(0);
-  const playbackRateRef = useRef(1);
-  const isPausedRef = useRef(false);
-  const queuedAdditionsRef = useRef([]);
-
-  const effectiveChunk = Math.max(1, Math.min(chunkCount, Math.floor(indices.length / 2) || 1));
-  const indicesLengthRef = useRef(indices.length);
-  const headIndexRef = useRef(headIndex);
-  const effectiveChunkRef = useRef(effectiveChunk);
-  indicesLengthRef.current = indices.length;
-  headIndexRef.current = headIndex;
-  effectiveChunkRef.current = effectiveChunk;
-
+  // Periodically update live prices from API without modifying ribbon geometry or triggering layout reflow
   useEffect(() => {
     let isMounted = true;
 
     async function fetchRibbonFeeds() {
       try {
-        const [indicesRes, marketsRes] = await Promise.allSettled([
-          fetch('/api/stocks/indices'),
-          fetch('/api/stocks/all-markets?tier=all&sortBy=marketCap&order=desc')
-        ]);
-
-        const combinedIncoming = [];
-        if (indicesRes.status === 'fulfilled' && indicesRes.value.ok) {
-          const json = await indicesRes.value.json();
-          if (json.success && Array.isArray(json.data)) {
-            combinedIncoming.push(...json.data);
+        const indicesRes = await fetch('/api/stocks/indices');
+        if (indicesRes.ok) {
+          const json = await indicesRes.json();
+          if (json.success && Array.isArray(json.data) && json.data.length > 0) {
+            publishTicks(json.data);
           }
         }
-        if (marketsRes.status === 'fulfilled' && marketsRes.value.ok) {
-          const json = await marketsRes.value.json();
-          if (json.success && Array.isArray(json.data?.companies)) {
-            combinedIncoming.push(...json.data.companies);
-          }
-        }
-
-        if (isMounted && combinedIncoming.length > 0) {
-          // Push live price updates directly to item subscribers without disrupting marquee geometry
-          publishTicks(combinedIncoming);
-
-          // Append ONLY truly unseen symbols so active composited chunk never shifts mid-flight
-          setIndices((prev) => {
-            const known = new Set(prev.map((x) => x.symbol));
-            queuedAdditionsRef.current.forEach((q) => known.add(q.symbol));
-            const additions = [];
-            combinedIncoming.forEach((raw) => {
-              if (!raw || !raw.symbol) return;
-              const sym = String(raw.symbol).trim().toUpperCase();
-              if (known.has(sym)) return;
-              known.add(sym);
-              additions.push({
-                symbol: sym,
-                name: raw.name || sym,
-                region: raw.country || raw.region || 'Global',
-                countryCode: raw.countryCode || '',
-                countryFlag: raw.countryFlag || '',
-                price: raw.price,
-                changePercent: raw.changePercent ?? 0,
-                currency: raw.currency ?? 'USD',
-                type: raw.type || 'stock'
-              });
-            });
-            if (additions.length === 0) return prev;
-            if (headIndexRef.current + 2 * effectiveChunkRef.current > prev.length) {
-              queuedAdditionsRef.current.push(...additions);
-              return prev;
-            }
-            return [...prev, ...additions];
-          });
-        }
-      } catch (e) {}
+      } catch (_) {}
     }
 
     fetchRibbonFeeds();
-    const interval = setInterval(fetchRibbonFeeds, 20000);
+    const interval = setInterval(fetchRibbonFeeds, 15000);
     return () => {
       isMounted = false;
       clearInterval(interval);
     };
   }, [publishTicks]);
 
-  // Adjust active chunk tier cleanly across viewport breakpoints
+  // Sync speed preference if changed in workstation settings
   useEffect(() => {
-    const syncChunk = () => {
-      const next = getChunkSizeForViewport();
-      setChunkCount((prev) => (prev === next ? prev : next));
+    const checkSpeed = () => {
+      const nextDuration = getRibbonDurationSeconds();
+      setDuration((prev) => (prev === nextDuration ? prev : nextDuration));
     };
-    window.addEventListener('resize', syncChunk, { passive: true });
-    return () => window.removeEventListener('resize', syncChunk);
+    window.addEventListener('storage', checkSpeed);
+    return () => window.removeEventListener('storage', checkSpeed);
   }, []);
-
-  // Build two contiguous chunks: [activeChunk (moves out), nextChunk (glides smoothly into slot 0)]
-  const visibleEntries = useMemo(() => {
-    const len = indices.length;
-    if (!len) return [];
-    const total = Math.min(len, effectiveChunk * 2);
-    const list = [];
-    for (let i = 0; i < total; i++) {
-      list.push(indices[(headIndex + i) % len]);
-    }
-    return list;
-  }, [indices, headIndex, effectiveChunk]);
-
-  const visibleKey = useMemo(
-    () => visibleEntries.map((item) => item.symbol).join('|'),
-    [visibleEntries]
-  );
-
-  // GPU compositor-thread WAAPI conveyor (immune to React re-renders below)
-  useLayoutEffect(() => {
-    const trackEl = trackRef.current;
-
-    if (animRef.current) {
-      animRef.current.onfinish = null;
-      animRef.current.cancel();
-      animRef.current = null;
-    }
-
-    if (!trackEl || trackEl.children.length <= effectiveChunk) return;
-
-    const prefersReduced =
-      typeof window !== 'undefined' &&
-      window.matchMedia &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (prefersReduced) {
-      trackEl.style.transform = 'translate3d(0, 0, 0)';
-      return;
-    }
-
-    const r0 = trackEl.children[0].getBoundingClientRect();
-    const rChunk = trackEl.children[effectiveChunk].getBoundingClientRect();
-    const chunkPx = rChunk.left - r0.left;
-    if (!Number.isFinite(chunkPx) || chunkPx <= 0) return;
-
-    const currentSpeed = getRibbonSpeedPxPerSec();
-    const durationMs = (chunkPx / (currentSpeed || BASE_RIBBON_SPEED_PX_PER_SEC)) * 1000;
-
-    if (typeof trackEl.animate === 'function') {
-      const anim = trackEl.animate(
-        [
-          { transform: 'translate3d(0px, 0, 0)' },
-          { transform: `translate3d(-${chunkPx.toFixed(3)}px, 0, 0)` }
-        ],
-        {
-          duration: durationMs,
-          easing: 'linear',
-          fill: 'forwards'
-        }
-      );
-
-      try {
-        anim.playbackRate = isPausedRef.current ? 0 : playbackRateRef.current;
-      } catch (_) {}
-
-      if (document.hidden) {
-        anim.pause();
-      }
-
-      anim.onfinish = () => {
-        if (animRef.current !== anim) return;
-        if (queuedAdditionsRef.current.length > 0) {
-          const queued = queuedAdditionsRef.current;
-          queuedAdditionsRef.current = [];
-          setIndices((prev) => [...prev, ...queued]);
-        }
-        setHeadIndex((prev) => (prev + effectiveChunkRef.current) % (indicesLengthRef.current || 1));
-      };
-
-      animRef.current = anim;
-    }
-
-    return () => {
-      if (animRef.current) {
-        animRef.current.onfinish = null;
-        animRef.current.cancel();
-        animRef.current = null;
-      }
-    };
-  }, [visibleKey, effectiveChunk]);
-
-  useEffect(() => {
-    const onVisibilityChange = () => {
-      const anim = animRef.current;
-      if (!anim) return;
-      if (document.hidden) {
-        anim.pause();
-      } else {
-        anim.play();
-        try {
-          anim.playbackRate = isPausedRef.current ? 0 : playbackRateRef.current;
-        } catch (_) {}
-      }
-    };
-    document.addEventListener('visibilitychange', onVisibilityChange);
-    return () => {
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-      if (rateRafRef.current) cancelAnimationFrame(rateRafRef.current);
-    };
-  }, []);
-
-  const easePlaybackRate = useCallback((targetRate) => {
-    if (rateRafRef.current) {
-      cancelAnimationFrame(rateRafRef.current);
-      rateRafRef.current = 0;
-    }
-
-    let lastTs = 0;
-    const step = (ts) => {
-      if (!lastTs) lastTs = ts;
-      const dt = Math.min(0.05, Math.max(0, (ts - lastTs) / 1000));
-      lastTs = ts;
-
-      const cur = playbackRateRef.current;
-      const alpha = 1 - Math.exp(-10 * dt);
-      let next = cur + (targetRate - cur) * alpha;
-      const done = Math.abs(targetRate - next) < 0.015;
-      if (done) next = targetRate;
-
-      playbackRateRef.current = next;
-      if (animRef.current) {
-        try {
-          animRef.current.playbackRate = next;
-        } catch (_) {}
-      }
-
-      if (!done) {
-        rateRafRef.current = requestAnimationFrame(step);
-      } else {
-        rateRafRef.current = 0;
-      }
-    };
-
-    rateRafRef.current = requestAnimationFrame(step);
-  }, []);
-
-  const handleMouseEnter = useCallback(() => {
-    if (typeof window !== 'undefined' && window.matchMedia && !window.matchMedia('(hover: hover)').matches) {
-      return;
-    }
-    isPausedRef.current = true;
-    easePlaybackRate(0);
-  }, [easePlaybackRate]);
-
-  const handleMouseLeave = useCallback(() => {
-    isPausedRef.current = false;
-    easePlaybackRate(1);
-  }, [easePlaybackRate]);
 
   const handleItemClick = useCallback((idx) => {
     if (!onSelectSymbol) return;
@@ -501,9 +247,12 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
     onSelectSymbol(idx.symbol, enrichedItem);
   }, [onSelectSymbol, getQuote]);
 
+  // Infinite seamless 2x duplicate conveyor running 100% on GPU compositor thread
+  const renderedItems = useMemo(() => [...items, ...items], [items]);
+
   return (
     <div className="market-ribbon-wrapper">
-      {/* Pinned Left Badge with Animated Radar Ripple & NSE/World Tag */}
+      {/* Pinned Left Badge with Animated Radar Pulse & NSE/World Tag */}
       <div className="market-ribbon-badge">
         <span className="radar-beacon" style={{ width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0 }}>
           <span className="status-dot online" style={{ width: '8px', height: '8px' }} />
@@ -513,20 +262,22 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
             <span>MARKET PULSE</span>
             <span style={{ fontSize: '0.6rem', background: 'rgba(16, 185, 129, 0.2)', color: 'var(--bull-green)', padding: '1px 5px', borderRadius: '3px', fontWeight: 800, letterSpacing: '0.04em' }}>LIVE</span>
           </div>
-          <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.04em' }}>NSE & GLOBAL MARKETS</span>
+          <span style={{ fontSize: '0.62rem', color: 'var(--text-muted)', fontWeight: 700, letterSpacing: '0.04em' }}>NSE &amp; GLOBAL MARKETS</span>
         </div>
       </div>
 
-      {/* Smooth Windowed Linear Marquee Conveyor */}
-      <div
-        ref={containerRef}
-        className="ticker-track-container"
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      >
-        <div ref={trackRef} className="ticker-track">
-          {visibleEntries.map((idx) => (
-            <RibbonTickerItem key={idx.symbol} item={idx} onSelect={handleItemClick} />
+      {/* Pure GPU compositor-accelerated infinite linear marquee */}
+      <div className="ticker-track-container">
+        <div
+          className="ticker-track"
+          style={{ animationDuration: `${duration}s` }}
+        >
+          {renderedItems.map((idx, index) => (
+            <RibbonTickerItem
+              key={`${idx.symbol}-${index}`}
+              item={idx}
+              onSelect={handleItemClick}
+            />
           ))}
         </div>
       </div>
@@ -535,4 +286,3 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
 });
 
 export default MarketRibbon;
-
