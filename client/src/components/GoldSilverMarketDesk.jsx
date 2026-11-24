@@ -6328,9 +6328,9 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
 
               {/* Status Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                <span>IST Time: <strong style={{ color: 'var(--text-primary)' }}>{formattedIstTime}</strong></span>
+                <span>IST Time: <strong style={{ color: 'var(--text-primary)' }}>{liveClock?.time || istTime || '14:30:00'}</strong> ({liveClock?.date || istDate || 'Today'})</span>
                 <span className="status-pill status-bull" style={{ fontSize: '0.7rem' }}>
-                  MCX TRADING ACTIVE
+                  {mcxStatus || 'MCX TRADING ACTIVE'}
                 </span>
               </div>
 

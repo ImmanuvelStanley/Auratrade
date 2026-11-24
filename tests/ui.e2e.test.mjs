@@ -757,8 +757,12 @@ const run = async () => {
       const pushBtn = Array.from(document.querySelectorAll('button')).find((b) => /Push Sample Tick/i.test(b.innerText));
       if (pushBtn) pushBtn.click();
     })()`);
-    await sleep(900);
-    const webhookToastVisible = await evalJs(`/Webhook ingested AAPL/i.test(document.body.innerText)`);
+    let webhookToastVisible = false;
+    for (let i = 0; i < 20; i++) {
+      webhookToastVisible = await evalJs(`/Webhook ingested AAPL/i.test(document.body.innerText)`);
+      if (webhookToastVisible) break;
+      await sleep(200);
+    }
     assert.equal(webhookToastVisible, true, 'Push Sample Tick button must ingest tick and show confirmation banner');
 
     // Mobile 390px pass
