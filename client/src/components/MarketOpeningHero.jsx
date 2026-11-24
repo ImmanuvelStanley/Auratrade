@@ -340,13 +340,13 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
             <svg viewBox="0 0 360 88" className="opening-pulse-svg" preserveAspectRatio="none">
               <defs>
                 <linearGradient id="obsCleanFill" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor={activeSpotlight.isPositive ? '#10b981' : '#f43f5e'} stopOpacity="0.25" />
-                  <stop offset="100%" stopColor={activeSpotlight.isPositive ? '#10b981' : '#f43f5e'} stopOpacity="0" />
+                  <stop offset="0%" stopColor={activeSpotlight.isPositive ? '#0ecb81' : '#f6465d'} stopOpacity="0.22" />
+                  <stop offset="100%" stopColor={activeSpotlight.isPositive ? '#0ecb81' : '#f6465d'} stopOpacity="0" />
                 </linearGradient>
                 <linearGradient id="obsCleanStroke" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#64748b" stopOpacity="0.4" />
-                  <stop offset="45%" stopColor={activeSpotlight.isPositive ? '#10b981' : '#f43f5e'} />
-                  <stop offset="100%" stopColor={activeSpotlight.isPositive ? '#34d399' : '#fb7185'} />
+                  <stop offset="0%" stopColor="#475569" stopOpacity="0.3" />
+                  <stop offset="45%" stopColor={activeSpotlight.isPositive ? '#0ecb81' : '#f6465d'} />
+                  <stop offset="100%" stopColor={activeSpotlight.isPositive ? '#26e7a6' : '#ff6b7e'} />
                 </linearGradient>
                 <filter id="obsGlow" x="-20%" y="-20%" width="140%" height="140%">
                   <feGaussianBlur stdDeviation="2" result="blur" />
@@ -355,9 +355,9 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
               </defs>
               <path d={pulsePaths.areaD} fill="url(#obsCleanFill)" />
               <path d={pulsePaths.mainD} fill="none" stroke="url(#obsCleanStroke)" strokeWidth="2.3" strokeLinecap="round" filter="url(#obsGlow)" />
-              <circle cx={pulsePaths.endX} cy={pulsePaths.endY} r="8" fill={activeSpotlight.isPositive ? 'rgba(16, 185, 129, 0.22)' : 'rgba(244, 63, 94, 0.22)'} className="opening-wave-halo-outer" />
-              <circle cx={pulsePaths.endX} cy={pulsePaths.endY} r="5" fill={activeSpotlight.isPositive ? 'rgba(16, 185, 129, 0.45)' : 'rgba(244, 63, 94, 0.45)'} className="opening-wave-halo" />
-              <circle cx={pulsePaths.endX} cy={pulsePaths.endY} r="3" fill={activeSpotlight.isPositive ? '#34d399' : '#fb7185'} />
+              <circle cx={pulsePaths.endX} cy={pulsePaths.endY} r="8" fill={activeSpotlight.isPositive ? 'rgba(14, 203, 129, 0.2)' : 'rgba(246, 70, 93, 0.2)'} className="opening-wave-halo-outer" />
+              <circle cx={pulsePaths.endX} cy={pulsePaths.endY} r="5" fill={activeSpotlight.isPositive ? 'rgba(14, 203, 129, 0.4)' : 'rgba(246, 70, 93, 0.4)'} className="opening-wave-halo" />
+              <circle cx={pulsePaths.endX} cy={pulsePaths.endY} r="3" fill={activeSpotlight.isPositive ? '#0ecb81' : '#f6465d'} />
             </svg>
           </div>
 

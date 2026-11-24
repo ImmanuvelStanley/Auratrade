@@ -89,7 +89,7 @@ function ComparisonModal({ isOpen, onClose, symbols, allCompanies, onSelectSymbo
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '1rem', borderBottom: '1px solid var(--border-subtle)', marginBottom: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-            <div style={{ width: '38px', height: '38px', borderRadius: '8px', background: 'rgba(6, 182, 212, 0.15)', border: '1px solid rgba(6, 182, 212, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-cyan)' }}>
+            <div style={{ width: '38px', height: '38px', borderRadius: '8px', background: 'rgba(37, 99, 235, 0.15)', border: '1px solid rgba(59, 130, 246, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#60a5fa' }}>
               <Scale size={20} />
             </div>
             <div>
@@ -148,10 +148,10 @@ function ComparisonModal({ isOpen, onClose, symbols, allCompanies, onSelectSymbo
                 </div>
 
                 {/* Live Price Box */}
-                <div style={{ padding: '0.75rem', background: 'rgba(255,255,252,0.02)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ padding: '0.75rem', background: '#0e141f', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                   <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span>Live Market Price</span>
-                    <span style={{ color: '#10b981', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: 600 }}>
+                    <span style={{ color: '#0ecb81', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: 600 }}>
                       <Zap size={9} fill="currentColor" /> LIVE
                     </span>
                   </div>
@@ -169,7 +169,7 @@ function ComparisonModal({ isOpen, onClose, symbols, allCompanies, onSelectSymbo
                 <div>
                   <div className="comparison-metric-row">
                     <span className="comparison-metric-label">Market Capitalization</span>
-                    <span className="font-mono" style={{ fontWeight: 700, color: 'var(--accent-cyan)' }}>{c.marketCapFormatted}</span>
+                    <span className="font-mono" style={{ fontWeight: 700, color: '#e2e8f0' }}>{c.marketCapFormatted}</span>
                   </div>
                   <div className="comparison-metric-row">
                     <span className="comparison-metric-label">P/E Ratio</span>
@@ -177,7 +177,7 @@ function ComparisonModal({ isOpen, onClose, symbols, allCompanies, onSelectSymbo
                   </div>
                   <div className="comparison-metric-row">
                     <span className="comparison-metric-label">Dividend Yield</span>
-                    <span className="font-mono" style={{ color: 'var(--bull-green)', fontWeight: 600 }}>{c.dividendYield || '0.0%'}</span>
+                    <span className="font-mono" style={{ color: '#0ecb81', fontWeight: 600 }}>{c.dividendYield || '0.0%'}</span>
                   </div>
                   <div className="comparison-metric-row">
                     <span className="comparison-metric-label">Sector</span>
@@ -185,19 +185,19 @@ function ComparisonModal({ isOpen, onClose, symbols, allCompanies, onSelectSymbo
                   </div>
                   <div className="comparison-metric-row">
                     <span className="comparison-metric-label">Analyst Consensus</span>
-                    <span className="badge-pill" style={{ fontSize: '0.7rem', background: c.rating === 'STRONG BUY' ? 'rgba(16,185,129,0.15)' : 'rgba(6,182,212,0.15)', color: c.rating === 'STRONG BUY' ? 'var(--bull-green)' : 'var(--accent-cyan)' }}>
+                    <span className="badge-pill" style={{ fontSize: '0.7rem', background: c.rating === 'STRONG BUY' ? 'rgba(14,203,129,0.12)' : 'rgba(37,99,235,0.12)', color: c.rating === 'STRONG BUY' ? '#0ecb81' : '#60a5fa', border: `1px solid ${c.rating === 'STRONG BUY' ? 'rgba(14,203,129,0.25)' : 'rgba(59,130,246,0.25)'}` }}>
                       {c.rating} ({c.ratingScore || 85})
                     </span>
                   </div>
                   <div className="comparison-metric-row">
                     <span className="comparison-metric-label">30D AI Expected Target</span>
-                    <span className="font-mono" style={{ color: 'var(--bull-green)', fontWeight: 700 }}>
+                    <span className="font-mono" style={{ color: '#0ecb81', fontWeight: 700 }}>
                       {currSym}{forecastTarget.toFixed(2)} (+{forecastGain}%)
                     </span>
                   </div>
                   <div className="comparison-metric-row">
                     <span className="comparison-metric-label">Risk Profile</span>
-                    <span style={{ fontWeight: 600, color: c.riskLevel?.includes('Low') ? 'var(--bull-green)' : 'var(--warning-amber)' }}>
+                    <span style={{ fontWeight: 600, color: c.riskLevel?.includes('Low') ? '#0ecb81' : 'var(--warning-amber)' }}>
                       {c.riskLevel}
                     </span>
                   </div>
@@ -210,12 +210,12 @@ function ComparisonModal({ isOpen, onClose, symbols, allCompanies, onSelectSymbo
                     <span>52W High: {currSym}{c.high52}</span>
                   </div>
                   <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', position: 'relative' }}>
-                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${posPercent}%`, background: '#10b981', borderRadius: '3px' }} />
+                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${posPercent}%`, background: 'linear-gradient(90deg, #2563eb, #0ecb81)', borderRadius: '3px' }} />
                   </div>
                 </div>
 
                 {/* Investment Appeal */}
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.15)', padding: '0.6rem', borderRadius: 'var(--radius-sm)', lineHeight: 1.45, flex: 1 }}>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.25)', padding: '0.6rem', borderRadius: 'var(--radius-sm)', lineHeight: 1.45, flex: 1, border: '1px solid rgba(255,255,255,0.05)' }}>
                   <strong style={{ color: 'var(--text-primary)' }}>Investment Case:</strong> {c.investorAppeal}
                 </div>
 
@@ -233,7 +233,7 @@ function ComparisonModal({ isOpen, onClose, symbols, allCompanies, onSelectSymbo
                   </button>
                   <button
                     className="btn btn-primary"
-                    style={{ flex: 1, padding: '0.4rem', fontSize: '0.75rem', justifyContent: 'center', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none' }}
+                    style={{ flex: 1, padding: '0.4rem', fontSize: '0.75rem', justifyContent: 'center', background: '#2563eb', border: '1px solid #3b82f6', color: '#ffffff' }}
                     onClick={() => {
                       onClose();
                       onOpenTradeModal(c.symbol);
@@ -298,7 +298,7 @@ const MarketTableRow = React.memo(
             checked={isCompared}
             onChange={() => onToggleCompare(c.symbol)}
             title="Select to compare (max 4 assets)"
-            style={{ cursor: 'pointer', accentColor: 'var(--accent-cyan)', width: '15px', height: '15px' }}
+            style={{ cursor: 'pointer', accentColor: '#3b82f6', width: '15px', height: '15px' }}
           />
         </td>
 
@@ -349,12 +349,12 @@ const MarketTableRow = React.memo(
                   <span
                     style={{
                       fontSize: '0.62rem',
-                      color: c.tier?.includes('Mega') ? '#38bdf8' : c.tier?.includes('Large') ? '#a78bfa' : 'var(--text-muted)',
+                      color: c.tier?.includes('Mega') ? '#93c5fd' : c.tier?.includes('Large') ? '#cbd5e1' : 'var(--text-muted)',
                       fontWeight: 600,
                       padding: '0.08rem 0.3rem',
-                      background: c.tier?.includes('Mega') ? 'rgba(56, 189, 248, 0.1)' : c.tier?.includes('Large') ? 'rgba(167, 139, 250, 0.1)' : 'rgba(255,255,255,0.04)',
+                      background: c.tier?.includes('Mega') ? 'rgba(59, 130, 246, 0.12)' : c.tier?.includes('Large') ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255,255,255,0.04)',
                       borderRadius: '3px',
-                      border: `1px solid ${c.tier?.includes('Mega') ? 'rgba(56, 189, 248, 0.2)' : c.tier?.includes('Large') ? 'rgba(167, 139, 250, 0.2)' : 'rgba(255,255,255,0.08)'}`
+                      border: `1px solid ${c.tier?.includes('Mega') ? 'rgba(59, 130, 246, 0.25)' : 'rgba(255, 255, 255, 0.08)'}`
                     }}
                   >
                     {c.tier?.includes('Mega') ? 'MEGA' : c.tier?.includes('Large') ? 'LARGE' : c.tier?.includes('Growth') ? 'GROWTH' : c.tier?.includes('Index') ? 'INDEX' : ''}
@@ -385,7 +385,7 @@ const MarketTableRow = React.memo(
                 <CountryFlag country={c.country} countryCode={c.countryCode} symbol={c.symbol} size="xs" />
                 <span>{c.country}</span>
               </div>
-              <div style={{ fontSize: '0.7rem', color: 'var(--accent-cyan)', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
                 {c.exchange} • {c.currency}
               </div>
             </div>
@@ -393,7 +393,7 @@ const MarketTableRow = React.memo(
         )}
 
         {/* Market Cap (Always visible) */}
-        <td style={{ textAlign: 'right', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--accent-cyan)' }}>
+        <td style={{ textAlign: 'right', fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#e2e8f0' }}>
           {c.marketCapFormatted}
         </td>
 
@@ -405,7 +405,7 @@ const MarketTableRow = React.memo(
           <div
             style={{
               fontSize: '0.65rem',
-              color: '#10b981',
+              color: '#0ecb81',
               display: 'flex',
               alignItems: 'center',
               gap: '0.15rem',
@@ -449,7 +449,7 @@ const MarketTableRow = React.memo(
                       top: 0,
                       bottom: 0,
                       width: `${posPercent}%`,
-                      background: '#10b981',
+                      background: 'linear-gradient(90deg, #2563eb, #0ecb81)',
                       borderRadius: '3px'
                     }}
                   />
@@ -472,7 +472,7 @@ const MarketTableRow = React.memo(
                       top: 0,
                       bottom: 0,
                       width: `${dayPosPercent}%`,
-                      background: 'linear-gradient(90deg, #f59e0b, #10b981)',
+                      background: 'linear-gradient(90deg, #3b82f6, #0ecb81)',
                       borderRadius: '2px'
                     }}
                   />
@@ -587,7 +587,7 @@ const MarketTableRow = React.memo(
 
             {/* Rating */}
             <td style={{ textAlign: 'center' }}>
-              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: c.rating === 'STRONG BUY' ? 'var(--bull-green)' : 'var(--accent-cyan)' }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: c.rating === 'STRONG BUY' ? '#0ecb81' : '#60a5fa' }}>
                 {c.rating}
               </span>
             </td>
@@ -624,7 +624,7 @@ const MarketTableRow = React.memo(
             </button>
             <button
               className="btn btn-primary"
-              style={{ padding: '0.3rem 0.55rem', fontSize: '0.75rem', background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none' }}
+              style={{ padding: '0.3rem 0.55rem', fontSize: '0.75rem', background: '#2563eb', border: '1px solid #3b82f6', color: '#ffffff' }}
               title="Execute Paper Trade"
               onClick={() => onOpenTradeModal(c.symbol)}
             >
@@ -643,7 +643,7 @@ const MarketTableRow = React.memo(
               style={{
                 width: '28px',
                 height: '28px',
-                color: isInWatchlist ? 'var(--accent-cyan)' : 'var(--text-muted)'
+                color: isInWatchlist ? '#60a5fa' : 'var(--text-muted)'
               }}
               title={isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
               onClick={() => {
@@ -745,12 +745,12 @@ const MarketInvestorCard = React.memo(
                   <span
                     style={{
                       fontSize: '0.56rem',
-                      color: c.tier?.includes('Mega') ? '#38bdf8' : c.tier?.includes('Large') ? '#a78bfa' : 'var(--text-muted)',
+                      color: c.tier?.includes('Mega') ? '#93c5fd' : c.tier?.includes('Large') ? '#cbd5e1' : 'var(--text-muted)',
                       fontWeight: 700,
                       padding: '0.06rem 0.25rem',
-                      background: c.tier?.includes('Mega') ? 'rgba(56, 189, 248, 0.1)' : c.tier?.includes('Large') ? 'rgba(167, 139, 250, 0.1)' : 'rgba(255,255,255,0.04)',
+                      background: c.tier?.includes('Mega') ? 'rgba(59, 130, 246, 0.12)' : c.tier?.includes('Large') ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255,255,255,0.04)',
                       borderRadius: '3px',
-                      border: `1px solid ${c.tier?.includes('Mega') ? 'rgba(56, 189, 248, 0.2)' : c.tier?.includes('Large') ? 'rgba(167, 139, 250, 0.2)' : 'rgba(255,255,255,0.08)'}`,
+                      border: `1px solid ${c.tier?.includes('Mega') ? 'rgba(59, 130, 246, 0.25)' : 'rgba(255, 255, 255, 0.08)'}`,
                       flexShrink: 0
                     }}
                   >
@@ -774,7 +774,7 @@ const MarketInvestorCard = React.memo(
                   name={`compare_card_${c.symbol}`}
                   checked={isCompared}
                   onChange={() => onToggleCompare(c.symbol)}
-                  style={{ cursor: 'pointer', accentColor: 'var(--accent-cyan)' }}
+                  style={{ cursor: 'pointer', accentColor: '#3b82f6' }}
                 />
                 <span>Compare</span>
               </label>
@@ -782,7 +782,7 @@ const MarketInvestorCard = React.memo(
                 className="badge-pill"
                 style={{
                   background: c.rating === 'STRONG BUY' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(6, 182, 212, 0.15)',
-                  color: c.rating === 'STRONG BUY' ? 'var(--bull-green)' : 'var(--accent-cyan)',
+                  color: c.rating === 'STRONG BUY' ? '#0ecb81' : '#60a5fa',
                   border: `1px solid ${c.rating === 'STRONG BUY' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(6, 182, 212, 0.3)'}`,
                   fontSize: '0.64rem',
                   fontWeight: 700,
@@ -804,7 +804,7 @@ const MarketInvestorCard = React.memo(
               >
                 {currSym}{fmtNum(price)}
               </span>
-              <span style={{ fontSize: '0.62rem', color: '#10b981', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+              <span style={{ fontSize: '0.62rem', color: '#0ecb81', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap', flexShrink: 0 }}>
                 <Zap size={9} fill="currentColor" /> LIVE
               </span>
             </div>
@@ -833,7 +833,7 @@ const MarketInvestorCard = React.memo(
           >
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Mkt Cap</div>
-              <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--accent-cyan)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 700, color: '#e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {c.marketCapFormatted}
               </div>
             </div>
@@ -887,7 +887,7 @@ const MarketInvestorCard = React.memo(
                     top: 0,
                     bottom: 0,
                     width: `${dayPosPercent}%`,
-                    background: 'linear-gradient(90deg, #f59e0b, #10b981)',
+                    background: 'linear-gradient(90deg, #3b82f6, #0ecb81)',
                     borderRadius: '2px'
                   }}
                 />
@@ -907,7 +907,7 @@ const MarketInvestorCard = React.memo(
                     top: 0,
                     bottom: 0,
                     width: `${posPercent}%`,
-                    background: '#10b981',
+                      background: 'linear-gradient(90deg, #2563eb, #0ecb81)',
                     borderRadius: '2px'
                   }}
                 />
@@ -1049,7 +1049,7 @@ const MarketInvestorCard = React.memo(
                 width: '34px',
                 height: '34px',
                 flexShrink: 0,
-                color: isInWatchlist ? 'var(--accent-cyan)' : 'var(--text-muted)'
+                color: isInWatchlist ? '#60a5fa' : 'var(--text-muted)'
               }}
               title={isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
               onClick={() => {
@@ -1230,7 +1230,7 @@ function SectorHeatmapMatrix({
       {/* Heatmap Legend Bar */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem', paddingBottom: '0.85rem', borderBottom: '1px solid var(--border-subtle)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <PieChart size={16} style={{ color: 'var(--accent-cyan)' }} />
+          <PieChart size={16} style={{ color: '#60a5fa' }} />
           <span style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
             Institutional Sector Heatmap Matrix
           </span>
@@ -2325,7 +2325,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
       {selectedCompareSymbols.length > 0 && (
         <div className="compare-floating-dock">
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-            <Scale size={16} style={{ color: 'var(--accent-cyan)' }} />
+            <Scale size={16} style={{ color: '#60a5fa' }} />
             <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)' }}>Compare:</span>
           </div>
 
