@@ -19,11 +19,49 @@ import {
 import { useSocketQuote } from '../context/SocketContext';
 import { CountryFlag } from './CountryFlag';
 import { ModernDatePicker } from './ModernDatePicker';
+import { defaultAllCompanies } from '../data/defaultAllCompanies';
 import {
   toISODateString,
   formatCalendarDate,
   computeDateMarketSnapshot
 } from '../utils/marketCalendarEngine';
+
+const companyCatalogMap = new Map();
+(defaultAllCompanies?.companies || []).forEach(c => {
+  if (c.symbol) companyCatalogMap.set(c.symbol.toUpperCase(), c);
+});
+
+function getCurrencyPrefix(currency, symbol, country) {
+  if (symbol === 'INDIA VIX') return '';
+  if (currency === 'INR' || country === 'India') return '₹';
+  if (currency === 'EUR' || country === 'Germany' || country === 'France' || country === 'Europe') return '€';
+  if (currency === 'GBP' || country === 'United Kingdom' || country === 'UK') return '£';
+  if (currency === 'JPY' || country === 'Japan') return '¥';
+  if (currency === 'CNY' || country === 'China') return '¥';
+  if (currency === 'HKD' || country === 'Hong Kong') return 'HK$';
+  if (currency === 'AUD' || country === 'Australia') return 'A$';
+  if (currency === 'CAD' || country === 'Canada') return 'CA$';
+  if (currency === 'CHF' || country === 'Switzerland') return 'CHF ';
+  if (currency === 'BRL' || country === 'Brazil') return 'R$';
+  if (currency === 'KRW' || country === 'South Korea') return '₩';
+  if (currency === 'TWD' || country === 'Taiwan') return 'NT$';
+  return '$';
+}
+
+function formatPrice(val, currSym = '$') {
+  if (val === undefined || val === null || Number.isNaN(Number(val))) return `${currSym}--`;
+  const num = Number(val);
+  return `${currSym}${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function formatVolume(v) {
+  if (!v || Number.isNaN(Number(v))) return '--';
+  const num = Number(v);
+  if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
+  if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
+  if (num >= 1e3) return `${(num / 1e3).toFixed(1)}K`;
+  return num.toLocaleString();
+}
 
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
@@ -211,56 +249,133 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
   const isPastMode = dateSnapshot.mode === 'past';
   const isFutureMode = dateSnapshot.mode === 'future';
 
+  const catalogMeta = useMemo(() => {
+    if (!symbol) return {};
+    return companyCatalogMap.get(symbol.toUpperCase()) || {};
+  }, [symbol]);
+
+  const mergedQuote = useMemo(() => {
+    if (!quote) return catalogMeta;
+    return {
+      ...catalogMeta,
+      ...quote,
+      currency: quote.currency || catalogMeta.currency || (catalogMeta.country === 'India' ? 'INR' : 'USD'),
+      name: quote.name || catalogMeta.name || symbol,
+      sector: quote.sector || catalogMeta.sector || 'Global Equity',
+      country: quote.country || catalogMeta.country || 'United States',
+      countryCode: quote.countryCode || catalogMeta.countryCode || 'US',
+      countryFlag: quote.countryFlag || catalogMeta.countryFlag || '',
+      marketCapFormatted: quote.marketCapFormatted || catalogMeta.marketCapFormatted || '',
+      exchange: quote.exchange || catalogMeta.exchange || ''
+    };
+  }, [catalogMeta, quote, symbol]);
+
+  const currSym = getCurrencyPrefix(mergedQuote.currency, mergedQuote.symbol, mergedQuote.country);
+
   const activePrice = isLiveMode ? quote.price : dateSnapshot.price;
   const activeChange = isLiveMode ? (quote.change || 0) : dateSnapshot.change;
   const activeChangePct = isLiveMode ? (quote.changePercent || 0) : dateSnapshot.changePercent;
-  const activeHigh = isLiveMode ? quote.dayHigh : dateSnapshot.dayHigh;
-  const activeLow = isLiveMode ? quote.dayLow : dateSnapshot.dayLow;
-  const activePrevClose = isLiveMode ? quote.previousClose : dateSnapshot.previousClose;
+  const activeHigh = isLiveMode ? (quote.dayHigh ?? (activePrice * 1.01)) : (dateSnapshot.dayHigh ?? activePrice);
+  const activeLow = isLiveMode ? (quote.dayLow ?? (activePrice * 0.99)) : (dateSnapshot.dayLow ?? activePrice);
+  const activePrevClose = isLiveMode ? (quote.previousClose ?? (activePrice - activeChange)) : (dateSnapshot.previousClose ?? (activePrice - activeChange));
   const activeVolume = isLiveMode ? quote.volume : dateSnapshot.volume;
   const isBull = activeChange >= 0;
 
+  const dayRangePct = useMemo(() => {
+    if (!activeHigh || !activeLow || activeHigh <= activeLow) return 50;
+    const pct = ((activePrice - activeLow) / (activeHigh - activeLow)) * 100;
+    return Math.max(3, Math.min(97, Math.round(pct)));
+  }, [activePrice, activeHigh, activeLow]);
+
   return (
-    <div className="glass-card" style={{ minWidth: 0, maxWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
-      <div className="glass-card-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0, width: '100%', boxSizing: 'border-box' }}>
-        {/* Top Header: Symbol Info & Action Buttons */}
-        <div className="live-quote-header-row" style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', minWidth: 0, width: '100%' }}>
-          <div style={{ flex: '1 1 auto', minWidth: 0, maxWidth: '100%' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
-              <h1 className="font-mono live-quote-symbol-heading" style={{ fontSize: '1.85rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
-                {quote.symbol}
+    <div className="glass-card live-quote-banner-card">
+      <div className="glass-card-body live-quote-card-body">
+        {/* Upper Stage: Left (Identity + Price + Session) & Right (Actions + Day Range Gauge) */}
+        <div className="live-quote-upper-zone">
+          {/* Left Block: Identity, Pricing & Calendar Session */}
+          <div className="live-quote-left-block">
+            {/* Identity Row */}
+            <div className="live-quote-identity-row">
+              <h1 className="font-mono live-quote-symbol-heading">
+                {mergedQuote.symbol}
               </h1>
-              <CountryFlag country={quote.country} countryCode={quote.countryCode} symbol={quote.symbol} countryFlag={quote.countryFlag} size="md" showName={true} />
-              <span className="status-pill live-quote-sector-pill" style={{ fontSize: '0.75rem', background: 'var(--bg-input)', border: '1px solid var(--border-subtle)', color: 'var(--text-secondary)', flexShrink: 0 }}>
-                {quote.sector || 'US Equity'}
+              <span className="live-quote-company-name" title={mergedQuote.name}>
+                {mergedQuote.name}
               </span>
+              <CountryFlag
+                country={mergedQuote.country}
+                countryCode={mergedQuote.countryCode}
+                symbol={mergedQuote.symbol}
+                countryFlag={mergedQuote.countryFlag}
+                size="md"
+                showName={true}
+              />
+              <span className="status-pill live-quote-sector-pill">
+                {mergedQuote.sector || 'US Equity'}
+              </span>
+              {mergedQuote.exchange && (
+                <span className="live-quote-exchange-tag">
+                  {mergedQuote.exchange}
+                </span>
+              )}
               {!isLiveMode && (
                 <span
-                  className="font-mono"
+                  className="font-mono live-quote-mode-pill"
                   style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    fontSize: '0.68rem',
-                    fontWeight: 800,
-                    padding: '0.15rem 0.5rem',
-                    borderRadius: '9999px',
                     background: isPastMode ? 'rgba(245, 158, 11, 0.16)' : 'rgba(6, 182, 212, 0.16)',
                     color: isPastMode ? 'var(--warning-amber)' : 'var(--accent-cyan)',
                     border: `1px solid ${isPastMode ? 'rgba(245, 158, 11, 0.45)' : 'rgba(6, 182, 212, 0.45)'}`
                   }}
                 >
                   {isPastMode ? <History size={11} /> : <Sparkles size={11} />}
-                  {isPastMode ? `PAST MARKET (${dateSnapshot.daysDiff}D)` : `FUTURE PROJECTION (+${dateSnapshot.daysDiff}D)`}
+                  {isPastMode ? `PAST (${dateSnapshot.daysDiff}D)` : `PROJECTION (+${dateSnapshot.daysDiff}D)`}
                 </span>
               )}
             </div>
 
-            <div style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.4rem 0.6rem', flexWrap: 'wrap', minWidth: 0 }}>
-              <span className="live-quote-name-text" style={{ fontWeight: 600 }}>{quote.name}</span>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>•</span>
+            {/* Price Hero Row */}
+            <div className="live-quote-price-hero">
+              <div
+                className={`font-mono live-quote-big-price ${isLiveMode ? pulseClass : ''}`}
+                style={{
+                  color: !isLiveMode
+                    ? (isPastMode ? 'var(--warning-amber)' : 'var(--accent-cyan)')
+                    : 'var(--text-primary)'
+                }}
+              >
+                {formatPrice(activePrice, currSym)}
+              </div>
 
-              {/* Interactive Past & Future Calendar Trigger Pill */}
+              {isLiveMode && tickDirection !== 'neutral' && (
+                <span
+                  className={`status-pill font-mono ${tickDirection === 'up' ? 'bg-bull' : 'bg-bear'}`}
+                  style={{
+                    fontSize: '0.7rem',
+                    padding: '0.2rem 0.5rem',
+                    fontWeight: 700,
+                    flexShrink: 0
+                  }}
+                >
+                  {tickDirection === 'up' ? '▲ UPTICK' : '▼ DOWNTICK'}
+                </span>
+              )}
+
+              <span
+                className={`font-mono ${isBull ? 'bg-bull' : 'bg-bear'} live-quote-change-badge`}
+              >
+                {isBull ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
+                {activeChange >= 0 ? '+' : ''}{activeChange.toFixed(2)} ({activeChangePct >= 0 ? '+' : ''}{activeChangePct.toFixed(2)}%)
+              </span>
+
+              <span className="live-quote-session-context">
+                {isLiveMode
+                  ? `Today (${formatCalendarDate(todayISO, { month: 'short', day: 'numeric' })})`
+                  : `${isPastMode ? 'Session' : 'Projected'} (${formatCalendarDate(selectedDateStr, { month: 'short', day: 'numeric', year: 'numeric' })})`}
+              </span>
+            </div>
+
+            {/* Session Meta & Calendar Trigger */}
+            <div className="live-quote-session-meta">
               <div
                 className="live-quote-calendar-trigger-pill"
                 style={{
@@ -318,7 +433,6 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                     whiteSpace: 'nowrap'
                   }}
                 >
-                  
                   <span>{dateSnapshot.formattedDate}</span>
                   <span style={{ fontSize: '0.62rem', opacity: 0.8 }}>{isCalendarOpen ? '▴' : '▾'}</span>
                 </button>
@@ -342,8 +456,9 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                 </button>
               </div>
 
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>•</span>
-              <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
+              <span className="live-quote-meta-separator">•</span>
+              <span className="live-quote-live-tick">
+                <span className="live-pulse-dot" />
                 {isLiveMode
                   ? `Last tick: ${new Date(lastTickTime).toLocaleTimeString()}`
                   : isPastMode
@@ -353,54 +468,80 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
             </div>
           </div>
 
-          <div className="live-quote-actions-cluster" style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap', minWidth: 0 }}>
-            {onOpenDeepRecord && (
-              <button
-                type="button"
-                className="btn btn-secondary live-quote-action-btn"
-                onClick={() => onOpenDeepRecord(quote.symbol, quote)}
-                title="View Complete Stock Record & Valuation from Starting (IPO) Till Now"
-              >
-                <History size={14} style={{ flexShrink: 0 }} />
-                <span>Full Record (Start → Now)</span>
-              </button>
-            )}
-
-            <button
-              className="btn btn-secondary live-quote-action-btn"
-              onClick={onToggleWatchlist}
-              title={isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
-            >
-              {isInWatchlist ? (
-                <>
-                  <BookmarkCheck size={14} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
-                  <span>Watching</span>
-                </>
-              ) : (
-                <>
-                  <BookmarkPlus size={14} style={{ flexShrink: 0 }} />
-                  <span>Watchlist</span>
-                </>
+          {/* Right Block: Action Buttons & Day Range Progress Gauge */}
+          <div className="live-quote-right-block">
+            <div className="live-quote-actions-cluster">
+              {onOpenDeepRecord && (
+                <button
+                  type="button"
+                  className="btn btn-secondary live-quote-action-btn"
+                  onClick={() => onOpenDeepRecord(mergedQuote.symbol, mergedQuote)}
+                  title="View Complete Stock Record & Valuation from Starting (IPO) Till Now"
+                >
+                  <History size={14} style={{ flexShrink: 0 }} />
+                  <span>Full Record (Start → Now)</span>
+                </button>
               )}
-            </button>
 
-            <button
-              className="btn btn-secondary live-quote-action-btn"
-              onClick={onOpenAlertModal}
-              title="Configure Price Alert"
-            >
-              <Bell size={14} style={{ color: 'var(--warning-amber)', flexShrink: 0 }} />
-              <span>Set Alert</span>
-            </button>
+              <button
+                className="btn btn-secondary live-quote-action-btn"
+                onClick={onToggleWatchlist}
+                title={isInWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
+              >
+                {isInWatchlist ? (
+                  <>
+                    <BookmarkCheck size={14} style={{ color: 'var(--accent-cyan)', flexShrink: 0 }} />
+                    <span>Watching</span>
+                  </>
+                ) : (
+                  <>
+                    <BookmarkPlus size={14} style={{ flexShrink: 0 }} />
+                    <span>Watchlist</span>
+                  </>
+                )}
+              </button>
 
-            <button
-              className="btn btn-bull live-quote-action-btn live-quote-trade-btn"
-              onClick={onOpenTradeModal}
-              title="Simulate Paper Order"
-            >
-              <ShoppingCart size={14} style={{ flexShrink: 0 }} />
-              <span>Trade</span>
-            </button>
+              <button
+                className="btn btn-secondary live-quote-action-btn"
+                onClick={onOpenAlertModal}
+                title="Configure Price Alert"
+              >
+                <Bell size={14} style={{ color: 'var(--warning-amber)', flexShrink: 0 }} />
+                <span>Set Alert</span>
+              </button>
+
+              <button
+                className="btn btn-bull live-quote-action-btn live-quote-trade-btn"
+                onClick={onOpenTradeModal}
+                title="Simulate Paper Order"
+              >
+                <ShoppingCart size={14} style={{ flexShrink: 0 }} />
+                <span>Trade</span>
+              </button>
+            </div>
+
+            {/* Day Range Progress Gauge */}
+            <div className="live-quote-range-card">
+              <div className="live-quote-range-header">
+                <span className="live-quote-range-title">DAY RANGE</span>
+                <span className="live-quote-range-pct">{dayRangePct}% of Range</span>
+              </div>
+              <div className="live-quote-range-track">
+                <div
+                  className="live-quote-range-fill"
+                  style={{ width: `${dayRangePct}%` }}
+                />
+                <div
+                  className="live-quote-range-thumb"
+                  style={{ left: `${dayRangePct}%` }}
+                />
+              </div>
+              <div className="live-quote-range-labels">
+                <span>{formatPrice(activeLow, currSym)}</span>
+                <span className="live-quote-range-curr">CURR: {formatPrice(activePrice, currSym)}</span>
+                <span>{formatPrice(activeHigh, currSym)}</span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -788,114 +929,46 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
           </div>
         )}
 
-        {/* Big Live / Historical / Projected Price Block */}
-        <div className="live-quote-price-hero" style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem 1rem', flexWrap: 'wrap', minWidth: 0, width: '100%' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', flexWrap: 'wrap', minWidth: 0 }}>
-            <div
-              className={`font-mono live-quote-big-price ${isLiveMode ? pulseClass : ''}`}
-              style={{
-                fontSize: '2.4rem',
-                fontWeight: 800,
-                letterSpacing: '-0.03em',
-                padding: '0.2rem 0.5rem',
-                borderRadius: 'var(--radius-md)',
-                transition: 'all 0.15s ease',
-                color: !isLiveMode ? (isPastMode ? 'var(--warning-amber)' : 'var(--accent-cyan)') : 'var(--text-primary)'
-              }}
-            >
-              ${activePrice.toFixed(2)}
-            </div>
-
-            {isLiveMode && tickDirection !== 'neutral' && (
-              <span
-                className={`status-pill font-mono ${tickDirection === 'up' ? 'bg-bull' : 'bg-bear'}`}
-                style={{
-                  fontSize: '0.7rem',
-                  padding: '0.2rem 0.5rem',
-                  fontWeight: 700,
-                  transition: 'all 0.2s ease',
-                  flexShrink: 0
-                }}
-              >
-                {tickDirection === 'up' ? '▲ UPTICK' : '▼ DOWNTICK'}
-              </span>
-            )}
+        {/* Financial Stat Pills - Dense 6-Cell Balanced Dock (Zero Empty Space) */}
+        <div className="live-quote-stats-grid">
+          <div className="stat-pill-box">
+            <span className="stat-pill-label">{isFutureMode ? 'Proj. High' : 'Day High'}</span>
+            <span className="stat-pill-val font-mono">{formatPrice(activeHigh, currSym)}</span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', minWidth: 0 }}>
-            <span
-              className={`font-mono ${isBull ? 'bg-bull' : 'bg-bear'}`}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.25rem',
-                padding: '0.35rem 0.75rem',
-                borderRadius: 'var(--radius-full)',
-                fontWeight: 700,
-                fontSize: '0.92rem',
-                whiteSpace: 'nowrap',
-                flexShrink: 0
-              }}
-            >
-              {isBull ? <ArrowUpRight size={17} /> : <ArrowDownRight size={17} />}
-              {activeChange >= 0 ? '+' : ''}{activeChange.toFixed(2)} ({activeChangePct >= 0 ? '+' : ''}{activeChangePct.toFixed(2)}%)
-            </span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-              {isLiveMode
-                ? `Today (${formatCalendarDate(todayISO, { month: 'short', day: 'numeric' })})`
-                : `${isPastMode ? 'Session' : 'Projected'} (${formatCalendarDate(selectedDateStr, { month: 'short', day: 'numeric', year: 'numeric' })})`}
+          <div className="stat-pill-box">
+            <span className="stat-pill-label">{isFutureMode ? 'Proj. Low' : 'Day Low'}</span>
+            <span className="stat-pill-val font-mono">{formatPrice(activeLow, currSym)}</span>
+          </div>
+
+          <div className="stat-pill-box">
+            <span className="stat-pill-label">{isFutureMode ? 'Prior Session' : 'Prev Close'}</span>
+            <span className="stat-pill-val font-mono">{formatPrice(activePrevClose, currSym)}</span>
+          </div>
+
+          <div className="stat-pill-box">
+            <span className="stat-pill-label">{isFutureMode ? 'Est. Volume' : 'Volume'}</span>
+            <span className="stat-pill-val font-mono" title={activeVolume ? activeVolume.toLocaleString() : undefined}>
+              {formatVolume(activeVolume)}
             </span>
           </div>
-        </div>
 
-        {/* Financial Stat Pills */}
-        <div
-          className="live-quote-stats-grid"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 75px), 1fr))',
-            gap: '0.65rem',
-            paddingTop: '0.5rem',
-            borderTop: '1px solid var(--border-subtle)',
-            minWidth: 0,
-            width: '100%',
-            boxSizing: 'border-box'
-          }}
-        >
-          <div style={{ minWidth: 0, overflow: 'hidden' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-              {isFutureMode ? 'Proj. High' : 'Day High'}
-            </div>
-            <div className="font-mono" style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: '0.15rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              ${activeHigh?.toFixed(2) || '--'}
-            </div>
+          <div className="stat-pill-box">
+            <span className="stat-pill-label">
+              {mergedQuote.marketCapFormatted ? 'Market Cap' : (mergedQuote.week52High ? '52W High' : 'Exchange')}
+            </span>
+            <span className="stat-pill-val font-mono">
+              {mergedQuote.marketCapFormatted || (mergedQuote.week52High ? formatPrice(mergedQuote.week52High, currSym) : (mergedQuote.exchange || '--'))}
+            </span>
           </div>
 
-          <div style={{ minWidth: 0, overflow: 'hidden' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-              {isFutureMode ? 'Proj. Low' : 'Day Low'}
-            </div>
-            <div className="font-mono" style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: '0.15rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              ${activeLow?.toFixed(2) || '--'}
-            </div>
-          </div>
-
-          <div style={{ minWidth: 0, overflow: 'hidden' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-              {isFutureMode ? 'Prior Session' : 'Prev Close'}
-            </div>
-            <div className="font-mono" style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: '0.15rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              ${activePrevClose?.toFixed(2) || '--'}
-            </div>
-          </div>
-
-          <div style={{ minWidth: 0, overflow: 'hidden' }}>
-            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-              {isFutureMode ? 'Est. Volume' : 'Volume'}
-            </div>
-            <div className="font-mono" style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: '0.15rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              {activeVolume ? activeVolume.toLocaleString() : '--'}
-            </div>
+          <div className="stat-pill-box">
+            <span className="stat-pill-label">
+              {mergedQuote.peRatio ? 'P/E Ratio' : (mergedQuote.week52Low ? '52W Low' : 'Clearance')}
+            </span>
+            <span className="stat-pill-val font-mono">
+              {mergedQuote.peRatio ? `${mergedQuote.peRatio.toFixed(1)}x` : (mergedQuote.week52Low ? formatPrice(mergedQuote.week52Low, currSym) : 'T+0 Spot')}
+            </span>
           </div>
         </div>
       </div>

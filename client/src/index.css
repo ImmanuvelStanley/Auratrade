@@ -844,6 +844,284 @@ body:before {
   min-width: 0;
   max-width: 100%;
 }
+
+/* Live Quote Banner Institutional Zero-Empty-Space Layout */
+.live-quote-banner-card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.live-quote-banner-card:hover {
+  transform: none !important;
+}
+.live-quote-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.15rem 1.35rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+.live-quote-upper-zone {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+.live-quote-left-block {
+  flex: 1 1 380px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.live-quote-identity-row {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.live-quote-symbol-heading {
+  font-size: 1.85rem;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  line-height: 1.1;
+  flex-shrink: 0;
+}
+.live-quote-company-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.live-quote-sector-pill {
+  font-size: 0.72rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.live-quote-exchange-tag {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+}
+.live-quote-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+.live-quote-price-hero {
+  display: flex;
+  align-items: baseline;
+  gap: 0.65rem 0.85rem;
+  flex-wrap: wrap;
+  min-width: 0;
+  margin-top: 0.15rem;
+}
+.live-quote-big-price {
+  font-size: 2.35rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  color: var(--text-primary);
+  transition: all 0.15s ease;
+}
+.live-quote-change-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.28rem 0.65rem;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  font-size: 0.88rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.live-quote-session-context {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.live-quote-session-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+  margin-top: 0.1rem;
+}
+.live-quote-meta-separator {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+.live-quote-live-tick {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+.live-pulse-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--bull-green);
+  box-shadow: 0 0 6px var(--bull-green);
+  animation: pulseBeacon 2s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+/* Right Block: Action Buttons & Day Range Progress Bar */
+.live-quote-right-block {
+  flex: 0 1 360px;
+  min-width: 270px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 0.85rem;
+}
+.live-quote-actions-cluster {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  width: 100%;
+}
+.live-quote-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  font-weight: 600;
+  padding: 0.38rem 0.65rem;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.live-quote-range-card {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.55rem 0.75rem;
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.live-quote-range-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.live-quote-range-pct {
+  color: var(--accent-cyan);
+}
+.live-quote-range-track {
+  position: relative;
+  width: 100%;
+  height: 5px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: visible;
+}
+.live-quote-range-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, rgba(6, 182, 212, 0.3) 0%, var(--accent-cyan) 100%);
+}
+.live-quote-range-thumb {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 8px var(--accent-cyan), 0 0 2px #fff;
+  border: 2px solid var(--bg-card);
+}
+.live-quote-range-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+.live-quote-range-curr {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+/* Bottom Stats Strip - 6-Cell Balanced High-Density Grid */
+.live-quote-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.65rem 0.85rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border-subtle);
+  width: 100%;
+  box-sizing: border-box;
+}
+.stat-pill-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  overflow: hidden;
+}
+.stat-pill-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.stat-pill-val {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .dashboard-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.85fr) minmax(320px, 1fr);
@@ -3726,18 +4004,23 @@ select option:checked {
   .tab-btn.active:after {
     display: none !important;
   }
-  .live-quote-header-row {
+  .live-quote-upper-zone {
     flex-direction: column !important;
     align-items: stretch !important;
-    gap: 0.65rem !important;
+    gap: 0.85rem !important;
+  }
+  .live-quote-right-block {
     width: 100% !important;
+    align-items: stretch !important;
+    min-width: 0 !important;
+  }
+  .live-quote-range-card {
     max-width: 100% !important;
-    box-sizing: border-box !important;
   }
   .live-quote-actions-cluster {
     width: 100% !important;
     display: grid !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 0.35rem !important;
   }
   .live-quote-action-btn {
@@ -3764,7 +4047,7 @@ select option:checked {
     padding: 0.15rem 0.35rem !important;
   }
   .live-quote-stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     gap: 0.6rem 0.75rem !important;
   }
   .chart-canvas-container {
