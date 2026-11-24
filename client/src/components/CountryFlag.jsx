@@ -107,6 +107,18 @@ const FLAG_COMPONENTS = {
       <circle cx="15" cy="10" r="2.2" fill="#FFFFFF" />
     </svg>
   ),
+  SG: (
+    <svg viewBox="0 0 30 20" width="100%" height="100%" aria-hidden="true">
+      <rect width="30" height="10" fill="#ED2939" />
+      <rect y="10" width="30" height="10" fill="#FFFFFF" />
+      <path d="M4.5 2.5 A 3.2 3.2 0 1 0 4.5 7.5 A 2.6 2.6 0 1 1 4.5 2.5" fill="#FFFFFF" />
+      <circle cx="7" cy="3.5" r="0.45" fill="#FFFFFF" />
+      <circle cx="8" cy="4.4" r="0.45" fill="#FFFFFF" />
+      <circle cx="7.7" cy="5.6" r="0.45" fill="#FFFFFF" />
+      <circle cx="6.5" cy="5.6" r="0.45" fill="#FFFFFF" />
+      <circle cx="6.2" cy="4.4" r="0.45" fill="#FFFFFF" />
+    </svg>
+  ),
   TW: (
     <svg viewBox="0 0 30 20" width="100%" height="100%" aria-hidden="true">
       <rect width="30" height="20" fill="#FE0000" />
@@ -235,6 +247,7 @@ const COUNTRY_NAMES = {
   FR: 'France',
   CN: 'China',
   HK: 'Hong Kong',
+  SG: 'Singapore',
   TW: 'Taiwan',
   KR: 'South Korea',
   NL: 'Netherlands',
@@ -276,6 +289,7 @@ const SYMBOL_COUNTRY_MAP = (() => {
     [['CAC 40', '^FCHI'], 'FR', '🇫🇷'],
     [['NIKKEI 225', '^N225', 'EWJ'], 'JP', '🇯🇵'],
     [['HANG SENG', '^HSI'], 'HK', '🇭🇰'],
+    [['STI', '^STI', 'STRAITS TIMES', 'SGX'], 'SG', '🇸🇬'],
     [['ASX 200', '^AXJO', 'BHP'], 'AU', '🇦🇺'],
     [['SHANGHAI', '000001.SS'], 'CN', '🇨🇳'],
     [['KOSPI', '^KS11', 'SSNLF', 'HXSCF'], 'KR', '🇰🇷'],

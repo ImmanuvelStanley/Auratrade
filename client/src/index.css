@@ -13201,3 +13201,47 @@ canvas {
   background: #f8fafc;
   border-color: #e2e8f0;
 }
+
+/* World Financial Centers Clocks Grid: 4x2 balanced layout, zero empty space */
+.world-clocks-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.world-clock-card {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.world-clock-card:hover {
+  border-color: rgba(6, 182, 212, 0.45) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 1100px) {
+  .world-clocks-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 580px) {
+  .world-clocks-grid {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+}
+
+[data-theme="light"] .world-clock-card {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .world-clock-card:hover {
+  border-color: #06b6d4 !important;
+  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.15);
+}

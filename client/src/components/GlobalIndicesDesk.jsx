@@ -26,6 +26,7 @@ export const WORLD_EXCHANGES = [
   { city: 'Frankfurt', country: 'Germany', countryCode: 'DE', exchange: 'Deutsche Börse (XETRA)', timeZone: 'Europe/Berlin', openHour: 9.0, closeHour: 17.5, benchmark: 'DAX 40 (^GDAXI)', flag: '🇩🇪' },
   { city: 'Tokyo', country: 'Japan', countryCode: 'JP', exchange: 'Tokyo Stock Exchange (TSE)', timeZone: 'Asia/Tokyo', openHour: 9.0, closeHour: 15.5, benchmark: 'Nikkei 225 (^N225)', flag: '🇯🇵' },
   { city: 'Hong Kong', country: 'Hong Kong', countryCode: 'HK', exchange: 'Hong Kong Exchanges (HKEX)', timeZone: 'Asia/Hong_Kong', openHour: 9.5, closeHour: 16.0, benchmark: 'Hang Seng (^HSI)', flag: '🇭🇰' },
+  { city: 'Singapore', country: 'Singapore', countryCode: 'SG', exchange: 'Singapore Exchange (SGX)', timeZone: 'Asia/Singapore', openHour: 9.0, closeHour: 17.0, benchmark: 'Straits Times (^STI)', flag: '🇸🇬' },
   { city: 'Mumbai', country: 'India', countryCode: 'IN', exchange: 'National Stock Exchange (NSE)', timeZone: 'Asia/Kolkata', openHour: 9.25, closeHour: 15.5, benchmark: 'NIFTY 50 (^NSEI)', flag: '🇮🇳' },
   { city: 'Sydney', country: 'Australia', countryCode: 'AU', exchange: 'Australian Securities (ASX)', timeZone: 'Australia/Sydney', openHour: 10.0, closeHour: 16.0, benchmark: 'S&P/ASX 200 (^AXJO)', flag: '🇦🇺' }
 ];
@@ -39,16 +40,19 @@ export function getSessionStatus(timeZone, openHour, closeHour) {
       hour: 'numeric',
       minute: 'numeric',
       second: 'numeric',
-      hour12: false
+      hour12: false,
+      timeZoneName: 'short'
     });
     const parts = formatter.formatToParts(now);
     let weekday = '';
     let hour = 0;
     let minute = 0;
+    let tzName = '';
     parts.forEach((p) => {
       if (p.type === 'weekday') weekday = p.value;
       if (p.type === 'hour') hour = parseInt(p.value, 10);
       if (p.type === 'minute') minute = parseInt(p.value, 10);
+      if (p.type === 'timeZoneName') tzName = p.value;
     });
 
     const isWeekend = weekday === 'Sat' || weekday === 'Sun';
@@ -56,17 +60,17 @@ export function getSessionStatus(timeZone, openHour, closeHour) {
     const timeStr = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
 
     if (isWeekend) {
-      return { status: 'CLOSED', timeStr, label: 'Weekend Closed', color: 'var(--text-muted)' };
+      return { status: 'CLOSED', timeStr, tzName, label: 'Weekend Closed', color: 'var(--text-muted)' };
     }
     if (currentDec >= openHour && currentDec < closeHour) {
-      return { status: 'OPEN', timeStr, label: 'Trading Session Active', color: 'var(--bull-green)' };
+      return { status: 'OPEN', timeStr, tzName, label: 'Trading Session Active', color: 'var(--bull-green)' };
     }
     if (currentDec >= openHour - 1.0 && currentDec < openHour) {
-      return { status: 'PRE-MARKET', timeStr, label: 'Pre-Market Auction', color: 'var(--accent-cyan)' };
+      return { status: 'PRE-MARKET', timeStr, tzName, label: 'Pre-Market Auction', color: 'var(--accent-cyan)' };
     }
-    return { status: 'CLOSED', timeStr, label: 'Market Closed', color: 'var(--warning-amber)' };
+    return { status: 'CLOSED', timeStr, tzName, label: 'Market Closed', color: 'var(--warning-amber)' };
   } catch (e) {
-    return { status: 'CLOSED', timeStr: '--:--', label: 'Market Closed', color: 'var(--text-muted)' };
+    return { status: 'CLOSED', timeStr: '--:--', tzName: '', label: 'Market Closed', color: 'var(--text-muted)' };
   }
 }
 
@@ -500,7 +504,7 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
           </span>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
+        <div className="world-clocks-grid">
           {WORLD_EXCHANGES.map((ex) => {
             const sess = getSessionStatus(ex.timeZone, ex.openHour, ex.closeHour);
             const isOpen = sess.status === 'OPEN';
@@ -509,47 +513,60 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
             return (
               <div
                 key={ex.city}
+                className="world-clock-card"
                 style={{
-                  padding: '0.8rem',
+                  padding: '0.85rem 1rem',
                   borderRadius: '10px',
-                  background: isOpen ? 'rgba(16, 185, 129, 0.06)' : 'rgba(255, 255, 255, 0.02)',
-                  border: `1px solid ${isOpen ? 'rgba(16, 185, 129, 0.25)' : 'var(--border-subtle)'}`,
+                  background: isOpen ? 'rgba(16, 185, 129, 0.05)' : 'rgba(255, 255, 255, 0.02)',
+                  border: `1px solid ${isOpen ? 'rgba(16, 185, 129, 0.28)' : 'var(--border-subtle)'}`,
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  gap: '0.45rem'
+                  gap: '0.55rem',
+                  minHeight: '118px',
+                  boxSizing: 'border-box'
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                     <CountryFlag country={ex.country} countryCode={ex.countryCode} size="xs" />
-                    <strong style={{ fontSize: '0.82rem', color: 'var(--text-primary)' }}>{ex.city}</strong>
+                    <strong style={{ fontSize: '0.86rem', color: 'var(--text-primary)', fontWeight: 700 }}>{ex.city}</strong>
                   </div>
                   <span
                     className="status-pill"
                     style={{
                       fontSize: '0.65rem',
                       fontWeight: 800,
-                      padding: '0.1rem 0.45rem',
+                      padding: '0.12rem 0.5rem',
+                      borderRadius: '4px',
+                      letterSpacing: '0.2px',
                       background: isOpen ? 'rgba(16, 185, 129, 0.15)' : isPre ? 'rgba(6, 182, 212, 0.15)' : 'rgba(245, 158, 11, 0.12)',
                       color: isOpen ? 'var(--bull-green)' : isPre ? 'var(--accent-cyan)' : 'var(--warning-amber)'
                     }}
                   >
-                    {sess.status}
+                    {isOpen ? '● OPEN' : isPre ? '▲ PRE-MKT' : '○ CLOSED'}
                   </span>
                 </div>
 
                 <div>
-                  <div className="font-mono" style={{ fontSize: '1.25rem', fontWeight: 900, color: 'var(--text-primary)' }}>
-                    {sess.timeStr}
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem' }}>
+                    <div className="font-mono" style={{ fontSize: '1.35rem', fontWeight: 900, color: 'var(--text-primary)', letterSpacing: '-0.3px', lineHeight: 1.1 }}>
+                      {sess.timeStr}
+                    </div>
+                    {sess.tzName && (
+                      <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                        {sess.tzName}
+                      </span>
+                    )}
                   </div>
-                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {ex.exchange}
                   </div>
                 </div>
 
-                <div style={{ paddingTop: '0.35rem', borderTop: '1px solid rgba(255, 255, 255, 0.05)', fontSize: '0.72rem', color: 'var(--text-secondary)' }}>
-                  {ex.benchmark}
+                <div style={{ paddingTop: '0.4rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)', fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ color: 'var(--text-muted)', fontSize: '0.68rem' }}>Benchmark</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{ex.benchmark}</span>
                 </div>
               </div>
             );
