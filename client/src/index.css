@@ -13299,7 +13299,8 @@ canvas {
 .status-dot.online,
 .profile-online-dot,
 .live-badge-dot,
-.live-pulse-dot {
+.live-pulse-dot,
+.radar-pulse-dot {
   animation: beaconBreathe 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
 }
 

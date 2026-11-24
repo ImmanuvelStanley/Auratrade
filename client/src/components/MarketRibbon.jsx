@@ -205,7 +205,23 @@ const RibbonTickerItem = React.memo(function RibbonTickerItem({ item, onSelect }
   );
 });
 
-const RIBBON_SPEED_PX_PER_SEC = 60;
+const BASE_RIBBON_SPEED_PX_PER_SEC = 145; // Calibrated to exactly match NSE Live Pulse tape velocity (145 px/s)
+
+function getRibbonSpeedPxPerSec() {
+  if (typeof window === 'undefined') return BASE_RIBBON_SPEED_PX_PER_SEC;
+  try {
+    const rawKey = Object.keys(localStorage).find((k) => k.startsWith('trader_workstation_prefs_'));
+    const raw = rawKey ? localStorage.getItem(rawKey) : null;
+    const prefs = raw ? JSON.parse(raw) : null;
+    const mode = prefs?.tickerRibbonSpeed || 'normal';
+    if (mode === 'fast') return 200;
+    if (mode === 'slow') return 90;
+    if (mode === 'paused') return 0;
+    return BASE_RIBBON_SPEED_PX_PER_SEC;
+  } catch (_) {
+    return BASE_RIBBON_SPEED_PX_PER_SEC;
+  }
+}
 
 function getChunkSizeForViewport() {
   if (typeof window === 'undefined') return 8;
@@ -360,7 +376,8 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
     const chunkPx = rChunk.left - r0.left;
     if (!Number.isFinite(chunkPx) || chunkPx <= 0) return;
 
-    const durationMs = (chunkPx / RIBBON_SPEED_PX_PER_SEC) * 1000;
+    const currentSpeed = getRibbonSpeedPxPerSec();
+    const durationMs = (chunkPx / (currentSpeed || BASE_RIBBON_SPEED_PX_PER_SEC)) * 1000;
 
     if (typeof trackEl.animate === 'function') {
       const anim = trackEl.animate(
@@ -488,7 +505,9 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
     <div className="market-ribbon-wrapper">
       {/* Pinned Left Badge with Animated Radar Ripple & NSE/World Tag */}
       <div className="market-ribbon-badge">
-        <span className="radar-pulse-dot" />
+        <span className="radar-beacon" style={{ width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0 }}>
+          <span className="status-dot online" style={{ width: '8px', height: '8px' }} />
+        </span>
         <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             <span>MARKET PULSE</span>

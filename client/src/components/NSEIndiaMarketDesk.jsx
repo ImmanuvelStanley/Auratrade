@@ -346,7 +346,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
           </span>
         </div>
         <div className="nse-marquee-track">
-          {[...(heroIndices || []), ...(sectoralIndices || []), ...(currencyDesk || []), ...(heroIndices || []), ...(sectoralIndices || [])].map((item, idx) => {
+          {[...(heroIndices || []), ...(sectoralIndices || []), ...(currencyDesk || []), ...(heroIndices || []), ...(sectoralIndices || []), ...(currencyDesk || [])].map((item, idx) => {
             if (!item) return null;
             const sym = item.symbol || item.pair || 'INDEX';
             const chgVal = item.change !== undefined && item.change !== null ? Number(item.change) : Number(item.changePercent ?? item.pChange ?? 0);
