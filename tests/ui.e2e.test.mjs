@@ -7,6 +7,14 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const workspaceDir = process.cwd();
+const WebSocketClient = globalThis.WebSocket || (() => {
+  try {
+    const wsModule = require('ws');
+    return wsModule.default || wsModule.WebSocket || wsModule;
+  } catch {
+    return null;
+  }
+})();
 const backendApp = require(path.join(workspaceDir, 'server/src/server.js'));
 const ingestionWorker = require(path.join(workspaceDir, 'server/src/services/ingestionWorker.js'));
 const marketFeedManager = require(path.join(workspaceDir, 'server/src/services/marketFeedManager.js'));
@@ -98,8 +106,9 @@ const run = async () => {
       await sleep(200);
     }
     assert.ok(wsUrl, 'Failed to attach Chrome DevTools WebSocket');
+    assert.ok(WebSocketClient, 'WebSocket client is not available in this Node runtime');
 
-    ws = new WebSocket(wsUrl);
+    ws = new WebSocketClient(wsUrl);
     await new Promise((resolve) => ws.addEventListener('open', resolve));
 
     let msgId = 1;
