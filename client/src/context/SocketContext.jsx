@@ -373,7 +373,7 @@ export function SocketProvider({ children }) {
       if (Object.keys(updatedTicks).length > 0) {
         setQuotes(prev => ({ ...prev, ...updatedTicks }));
       }
-    }, 700);
+    }, 2000);
 
     return () => {
       clearInterval(liveTicksInterval);
