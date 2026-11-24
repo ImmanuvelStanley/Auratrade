@@ -340,8 +340,8 @@ export function TradeModal({
             width: '100%',
             flexShrink: 0,
             background: orderType === 'BUY'
-              ? 'linear-gradient(90deg, #059669 0%, #10b981 35%, #34d399 70%, #06b6d4 100%)'
-              : 'linear-gradient(90deg, #be123c 0%, #f43f5e 35%, #fb7185 70%, #f59e0b 100%)',
+              ? '#10b981'
+              : '#f43f5e',
             transition: 'background 0.3s ease'
           }}
         />

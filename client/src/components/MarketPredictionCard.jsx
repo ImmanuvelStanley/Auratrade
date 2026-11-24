@@ -976,10 +976,10 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
                 top: 0,
                 bottom: 0,
                 width: `${prediction.positionIn52Week}%`,
-                background: 'linear-gradient(90deg, #6366f1 0%, #06b6d4 100%)',
+                background: 'var(--accent-primary, #2563eb)',
                 borderRadius: 'var(--radius-full)',
                 transition: 'width 1.2s cubic-bezier(0.16, 1, 0.3, 1)',
-                boxShadow: '0 0 10px rgba(6, 182, 212, 0.5)'
+                boxShadow: '0 1px 3px rgba(0, 0, 0, 0.3)'
               }}
             />
             <div

@@ -343,12 +343,12 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
               width: '46px',
               height: '46px',
               borderRadius: 'var(--radius-md)',
-              background: 'linear-gradient(135deg, #06b6d4, #6366f1)',
+              background: 'var(--accent-primary, #2563eb)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#fff',
-              boxShadow: '0 0 20px rgba(6, 182, 212, 0.35)',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.35)',
               flexShrink: 0
             }}
           >

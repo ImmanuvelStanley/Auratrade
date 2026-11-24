@@ -54,7 +54,7 @@ export function BrandLogo({
           height: `${emblemSize}px`,
           borderRadius: isLarge ? '14px' : '11px',
           boxShadow: isLarge
-            ? '0 8px 24px -2px rgba(16, 185, 129, 0.35), 0 0 16px rgba(6, 182, 212, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+            ? '0 8px 24px -2px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
             : undefined,
           borderColor: isLarge ? 'rgba(16, 185, 129, 0.45)' : undefined
         }}

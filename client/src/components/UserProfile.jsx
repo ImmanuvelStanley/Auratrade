@@ -1937,7 +1937,7 @@ export function UserProfile({
                   type="button"
                   className="btn btn-primary"
                   onClick={() => setActiveSubTab('profile-edit')}
-                  style={{ padding: '0.45rem', fontSize: '0.78rem', gap: '0.35rem', justifyContent: 'center', background: 'linear-gradient(135deg, #06b6d4, #6366f1)', border: 'none' }}
+                  style={{ padding: '0.45rem 0.85rem', fontSize: '0.78rem', gap: '0.35rem', justifyContent: 'center' }}
                 >
                   <Edit3 size={13} />
                   Edit Profile &amp; Region
@@ -2040,7 +2040,7 @@ export function UserProfile({
                 type="button"
                 className="btn btn-primary"
                 onClick={handleSaveProfileForm}
-                style={{ padding: '0.45rem 1.15rem', fontSize: '0.8rem', gap: '0.4rem', background: 'linear-gradient(135deg, #06b6d4, #6366f1)', border: 'none' }}
+                style={{ padding: '0.45rem 1.15rem', fontSize: '0.8rem', gap: '0.4rem' }}
               >
                 <Save size={14} /> Save Profile
               </button>
@@ -2574,8 +2574,8 @@ export function UserProfile({
                         width: `${getKycCompletion(profileForm)}%`,
                         height: '100%',
                         background: getKycCompletion(profileForm) === 100
-                          ? 'linear-gradient(90deg, #10b981, #06b6d4)'
-                          : 'linear-gradient(90deg, #f59e0b, #06b6d4)',
+                          ? '#10b981'
+                          : '#f59e0b',
                         transition: 'width 0.3s ease'
                       }}
                     />
@@ -3349,10 +3349,10 @@ export function UserProfile({
                     fontSize: '0.82rem',
                     fontWeight: 700,
                     gap: '0.45rem',
-                    background: 'linear-gradient(135deg, #10b981 0%, #06b6d4 100%)',
-                    border: 'none',
+                    background: '#10b981',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
                     borderRadius: '8px',
-                    boxShadow: '0 3px 12px rgba(16, 185, 129, 0.2)'
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)'
                   }}
                 >
                   <ShieldCheck size={15} /> Submit KYC Verification Documents
@@ -3382,7 +3382,7 @@ export function UserProfile({
               <button
                 type="submit"
                 className="btn btn-primary"
-                style={{ padding: '0.5rem 1.45rem', fontSize: '0.82rem', gap: '0.45rem', background: 'linear-gradient(135deg, #06b6d4, #6366f1)', border: 'none' }}
+                style={{ padding: '0.5rem 1.45rem', fontSize: '0.82rem', gap: '0.45rem' }}
               >
                 <Save size={14} /> Save Profile &amp; Preferences
               </button>
@@ -3438,7 +3438,7 @@ export function UserProfile({
                 type="button"
                 className="btn btn-primary"
                 onClick={() => onNavigateTab && onNavigateTab('gold-silver')}
-                style={{ padding: '0.45rem 1.15rem', fontSize: '0.8rem', gap: '0.45rem', background: 'linear-gradient(135deg, #f59e0b, #d97706)', border: 'none' }}
+                style={{ padding: '0.45rem 1.15rem', fontSize: '0.8rem', gap: '0.45rem', background: '#d97706', border: '1px solid rgba(255, 255, 255, 0.12)' }}
               >
                 <ExternalLink size={13} /> Open Bullion Desk
               </button>
@@ -3979,7 +3979,7 @@ export function UserProfile({
                     padding: '0.4rem 1rem',
                     borderRadius: 'var(--radius-full)',
                     border: 'none',
-                    background: theme === 'dark' ? 'linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo))' : 'transparent',
+                    background: theme === 'dark' ? '#2563eb' : 'transparent',
                     color: theme === 'dark' ? '#ffffff' : 'var(--text-secondary)',
                     fontSize: '0.82rem',
                     fontWeight: 700,
@@ -4002,7 +4002,7 @@ export function UserProfile({
                     padding: '0.4rem 1rem',
                     borderRadius: 'var(--radius-full)',
                     border: 'none',
-                    background: theme === 'light' ? 'linear-gradient(135deg, #0ea5e9, #6366f1)' : 'transparent',
+                    background: theme === 'light' ? '#2563eb' : 'transparent',
                     color: theme === 'light' ? '#ffffff' : 'var(--text-secondary)',
                     fontSize: '0.82rem',
                     fontWeight: 700,

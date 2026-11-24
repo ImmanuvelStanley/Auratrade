@@ -615,7 +615,7 @@ export function WatchlistCompanyChooserModal({
                             fontSize: '0.74rem',
                             fontWeight: 700,
                             borderRadius: '6px',
-                            background: 'linear-gradient(135deg, #06b6d4, #2563eb)',
+                            background: 'var(--accent-primary, #2563eb)',
                             color: '#fff',
                             border: 'none',
                             cursor: 'pointer',
@@ -670,8 +670,8 @@ export function WatchlistCompanyChooserModal({
               padding: '0.45rem 1.3rem',
               fontSize: '0.82rem',
               fontWeight: 700,
-              background: 'linear-gradient(135deg, #06b6d4, #6366f1)',
-              border: 'none',
+              background: 'var(--accent-primary, #2563eb)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
               borderRadius: '8px'
             }}
           >

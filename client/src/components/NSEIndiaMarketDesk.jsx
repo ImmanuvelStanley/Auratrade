@@ -760,7 +760,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                             style={{
                               width: `${Math.min(100, stk.weight * 3.5)}%`,
                               height: '100%',
-                              background: 'linear-gradient(90deg, #06b6d4, #6366f1)',
+                              background: 'var(--accent-primary, #2563eb)',
                               borderRadius: '2px'
                             }}
                           />

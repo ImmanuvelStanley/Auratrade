@@ -736,12 +736,12 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         }}
         id="auth-modal-dialog"
       >
-        {/* Top Glowing Brand Accent Stripe */}
+        {/* Top Institutional Accent Line */}
         <div
           style={{
-            height: '3.5px',
+            height: '2px',
             width: '100%',
-            background: 'linear-gradient(90deg, #10b981 0%, #06b6d4 50%, #6366f1 100%)'
+            background: 'var(--accent-primary, #2563eb)'
           }}
         />
 

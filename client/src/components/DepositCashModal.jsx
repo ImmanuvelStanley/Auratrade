@@ -127,15 +127,15 @@ export function DepositCashModal({ isOpen, onClose, currentCashBalance = 0, onDe
           border: '1px solid var(--border-subtle)',
           borderRadius: '16px',
           overflow: 'hidden',
-          boxShadow: '0 25px 70px rgba(0, 0, 0, 0.55), 0 0 40px rgba(6, 182, 212, 0.15)'
+          boxShadow: '0 25px 70px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.1)'
         }}
       >
-        {/* Top Glowing Header Accent Bar */}
+        {/* Top Institutional Accent Line */}
         <div
           style={{
-            height: '3px',
+            height: '2px',
             width: '100%',
-            background: 'linear-gradient(90deg, #06b6d4 0%, #10b981 50%, #6366f1 100%)'
+            background: 'var(--accent-primary, #2563eb)'
           }}
         />
 
@@ -156,7 +156,7 @@ export function DepositCashModal({ isOpen, onClose, currentCashBalance = 0, onDe
                 width: '36px',
                 height: '36px',
                 borderRadius: '10px',
-                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.25), rgba(6, 182, 212, 0.25))',
+                background: 'rgba(16, 185, 129, 0.15)',
                 border: '1px solid rgba(16, 185, 129, 0.45)',
                 display: 'flex',
                 alignItems: 'center',

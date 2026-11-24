@@ -64,8 +64,8 @@ export class ErrorBoundary extends React.Component {
             type="button"
             onClick={this.handleReset}
             style={{
-              background: 'linear-gradient(135deg, #06b6d4, #6366f1)',
-              border: 'none',
+              background: 'var(--accent-primary, #2563eb)',
+              border: '1px solid rgba(255, 255, 255, 0.12)',
               borderRadius: '8px',
               color: '#ffffff',
               padding: '0.55rem 1.2rem',

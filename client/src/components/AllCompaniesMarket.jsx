@@ -211,7 +211,7 @@ function ComparisonModal({ isOpen, onClose, symbols, allCompanies, onSelectSymbo
                     <span>52W High: {currSym}{c.high52}</span>
                   </div>
                   <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', position: 'relative' }}>
-                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${posPercent}%`, background: 'linear-gradient(90deg, #06b6d4, #10b981)', borderRadius: '3px' }} />
+                    <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${posPercent}%`, background: '#10b981', borderRadius: '3px' }} />
                   </div>
                 </div>
 
@@ -450,7 +450,7 @@ const MarketTableRow = React.memo(
                       top: 0,
                       bottom: 0,
                       width: `${posPercent}%`,
-                      background: 'linear-gradient(90deg, #06b6d4, #10b981)',
+                      background: '#10b981',
                       borderRadius: '3px'
                     }}
                   />
@@ -908,7 +908,7 @@ const MarketInvestorCard = React.memo(
                     top: 0,
                     bottom: 0,
                     width: `${posPercent}%`,
-                    background: 'linear-gradient(90deg, #06b6d4, #10b981)',
+                    background: '#10b981',
                     borderRadius: '2px'
                   }}
                 />
@@ -2357,7 +2357,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
 
           <button
             className="btn btn-primary"
-            style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', background: 'linear-gradient(135deg, #06b6d4, #6366f1)', border: 'none' }}
+            style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem' }}
             onClick={() => setIsCompareModalOpen(true)}
             disabled={selectedCompareSymbols.length < 2}
             title={selectedCompareSymbols.length < 2 ? 'Select at least 2 assets to compare' : 'Launch side-by-side comparison showdown'}
