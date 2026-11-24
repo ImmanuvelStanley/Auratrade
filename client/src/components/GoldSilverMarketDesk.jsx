@@ -5205,7 +5205,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                   </div>
                 </div>
 
-                <div style={{ display: 'inline-flex', background: 'rgba(0, 0, 0, 0.35)', padding: '0.25rem', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: 'rgba(0, 0, 0, 0.35)', padding: '0.25rem', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
                   {[
                     { id: 'GOLD24K', label: '24K Gold SIP (11.5%)' },
                     { id: 'SGB', label: 'SGB Bonds (14.0%)' },
@@ -5216,7 +5216,13 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                       type="button"
                       onClick={() => setSipAsset(tab.id)}
                       className={`btn ${sipAsset === tab.id ? 'btn-primary' : 'btn-ghost'}`}
-                      style={{ fontSize: '0.74rem', padding: '0.3rem 0.65rem' }}
+                      style={{
+                        fontSize: '0.74rem',
+                        padding: '0.32rem 0.68rem',
+                        borderRadius: '6px',
+                        fontWeight: sipAsset === tab.id ? 700 : 500,
+                        transition: 'all 0.15s ease'
+                      }}
                     >
                       {tab.label}
                     </button>
