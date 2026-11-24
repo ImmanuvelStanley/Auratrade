@@ -13039,12 +13039,22 @@ canvas {
   gap: 0.35rem;
   background: transparent;
   border: none;
+  outline: none;
   cursor: pointer;
-  padding: 0.2rem 0.45rem;
+  padding: 0.2rem 0.5rem;
   border-radius: 6px;
   transition: all 0.15s ease;
   font-size: 0.74rem;
   text-decoration: none;
+  user-select: none;
+}
+
+.header-pulse-chip:focus,
+.header-pulse-chip:focus-visible,
+.header-pulse-chip:active {
+  outline: none !important;
+  box-shadow: none !important;
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .header-pulse-chip:hover {

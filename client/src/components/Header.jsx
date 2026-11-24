@@ -30,7 +30,6 @@ export const Header = React.memo(function Header({
   const sp500Quote = quotes['^GSPC'] || quotes['SPX'] || quotes['AAPL'];
   const niftyQuote = quotes['^NSEI'] || quotes['NIFTY 50'] || quotes['RELIANCE.NS'];
   const goldQuote = quotes['XAU'] || quotes['GOLD'] || quotes['GOLDBEES.NS'];
-  const btcQuote = quotes['BTC-USD'] || quotes['BTC'] || quotes['NVDA'];
 
   const marketBenchmarks = [
     {
@@ -55,14 +54,6 @@ export const Header = React.memo(function Header({
       changePercent: quotes['XAU']?.changePercent ?? 0.85,
       tab: 'gold-silver',
       prefix: '₹',
-      decimals: 0
-    },
-    {
-      label: 'BITCOIN',
-      price: quotes['BTC-USD']?.price || 96420,
-      changePercent: quotes['BTC-USD']?.changePercent ?? 1.45,
-      tab: 'all-markets',
-      prefix: '$',
       decimals: 0
     }
   ];
