@@ -280,6 +280,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
   const activePrevClose = isLiveMode ? (quote.previousClose ?? (activePrice - activeChange)) : (dateSnapshot.previousClose ?? (activePrice - activeChange));
   const activeVolume = isLiveMode ? quote.volume : dateSnapshot.volume;
   const isBull = activeChange >= 0;
+  const displayTickDir = tickDirection !== 'neutral' ? tickDirection : (activeChange >= 0 ? 'up' : 'down');
 
   const dayRangePct = useMemo(() => {
     if (!activeHigh || !activeLow || activeHigh <= activeLow) return 50;
@@ -333,7 +334,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
               )}
             </div>
 
-            {/* Price Hero Row */}
+            {/* Price Hero Row - Fixed Layout Rock Solid Zero Jitter */}
             <div className="live-quote-price-hero">
               <div
                 className={`font-mono live-quote-big-price ${isLiveMode ? pulseClass : ''}`}
@@ -346,17 +347,11 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                 {formatPrice(activePrice, currSym)}
               </div>
 
-              {isLiveMode && tickDirection !== 'neutral' && (
+              {isLiveMode && (
                 <span
-                  className={`status-pill font-mono ${tickDirection === 'up' ? 'bg-bull' : 'bg-bear'}`}
-                  style={{
-                    fontSize: '0.7rem',
-                    padding: '0.2rem 0.5rem',
-                    fontWeight: 700,
-                    flexShrink: 0
-                  }}
+                  className={`status-pill font-mono live-quote-tick-pill ${displayTickDir === 'up' ? 'bg-bull' : 'bg-bear'}`}
                 >
-                  {tickDirection === 'up' ? '▲ UPTICK' : '▼ DOWNTICK'}
+                  {displayTickDir === 'up' ? '▲ UPTICK' : '▼ DOWNTICK'}
                 </span>
               )}
 
@@ -471,18 +466,6 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
           {/* Right Block: Action Buttons & Day Range Progress Gauge */}
           <div className="live-quote-right-block">
             <div className="live-quote-actions-cluster">
-              {onOpenDeepRecord && (
-                <button
-                  type="button"
-                  className="btn btn-secondary live-quote-action-btn"
-                  onClick={() => onOpenDeepRecord(mergedQuote.symbol, mergedQuote)}
-                  title="View Complete Stock Record & Valuation from Starting (IPO) Till Now"
-                >
-                  <History size={14} style={{ flexShrink: 0 }} />
-                  <span>Full Record (Start → Now)</span>
-                </button>
-              )}
-
               <button
                 className="btn btn-secondary live-quote-action-btn"
                 onClick={onToggleWatchlist}
