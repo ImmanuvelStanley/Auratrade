@@ -6307,25 +6307,6 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
 
             {/* Modal Body */}
             <div style={{ padding: '1.25rem 1.4rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {copiedRateNotice && (
-                <div
-                  style={{
-                    padding: '0.6rem 0.85rem',
-                    borderRadius: '8px',
-                    background: 'rgba(16, 185, 129, 0.15)',
-                    border: '1px solid rgba(16, 185, 129, 0.35)',
-                    color: 'var(--bull-green)',
-                    fontSize: '0.78rem',
-                    fontWeight: 800,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.45rem'
-                  }}
-                >
-                  <CheckCheck size={16} /> Rates summary copied to clipboard! Ready to paste on WhatsApp / Telegram.
-                </div>
-              )}
-
               {/* Status Header */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.74rem', color: 'var(--text-muted)' }}>
                 <span>IST Time: <strong style={{ color: 'var(--text-primary)' }}>{liveClock?.time || istTime || '14:30:00'}</strong> ({liveClock?.date || istDate || 'Today'})</span>
@@ -6404,58 +6385,6 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
               <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
                 Rates include 6% Basic Customs Duty + 5.5% AIDC + 3% GST. 100% BIS Hallmarked (IS 1417 standard).
               </div>
-            </div>
-
-            {/* Modal Footer */}
-            <div
-              style={{
-                padding: '1rem 1.4rem',
-                borderTop: '1px solid var(--border-subtle)',
-                background: 'rgba(0, 0, 0, 0.15)',
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: '0.75rem'
-              }}
-            >
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => setShowShareRateModal(false)}
-                style={{ fontSize: '0.82rem', padding: '0.6rem 1rem' }}
-              >
-                Close
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={() => window.print()}
-                style={{ fontSize: '0.82rem', padding: '0.6rem 1rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-              >
-                <Printer size={15} /> Print Sheet
-              </button>
-
-              <button
-                type="button"
-                className="btn btn-primary"
-                onClick={handleCopyRatesText}
-                style={{
-                  fontSize: '0.82rem',
-                  padding: '0.6rem 1.15rem',
-                  fontWeight: 800,
-                  background: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',
-                  color: '#0f172a',
-                  border: 'none',
-                  boxShadow: '0 4px 15px rgba(245, 158, 11, 0.35)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.4rem',
-                  cursor: 'pointer'
-                }}
-              >
-                {copiedRateNotice ? <CheckCheck size={15} /> : <Copy size={15} />}
-                {copiedRateNotice ? 'Copied!' : 'Copy Summary'}
-              </button>
             </div>
           </div>
         </div>
