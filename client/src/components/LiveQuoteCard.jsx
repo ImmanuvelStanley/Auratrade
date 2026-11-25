@@ -272,6 +272,13 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
 
   const currSym = getCurrencyPrefix(mergedQuote.currency, mergedQuote.symbol, mergedQuote.country);
 
+  const parsedPe = typeof mergedQuote.peRatio === 'number'
+    ? mergedQuote.peRatio
+    : (typeof mergedQuote.peRatio === 'string' && !isNaN(parseFloat(mergedQuote.peRatio))
+        ? parseFloat(mergedQuote.peRatio)
+        : null);
+  const hasValidPe = parsedPe !== null && Number.isFinite(parsedPe) && parsedPe > 0;
+
   const activePrice = isLiveMode ? quote.price : dateSnapshot.price;
   const activeChange = isLiveMode ? (quote.change || 0) : dateSnapshot.change;
   const activeChangePct = isLiveMode ? (quote.changePercent || 0) : dateSnapshot.changePercent;
@@ -733,7 +740,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                     <strong style={{ color: 'var(--text-primary)' }}>{dateSnapshot.formattedDate}</strong>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>{isLiveMode ? 'Market Status:' : 'vs Live ($' + quote.price.toFixed(2) + '):'}</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>{isLiveMode ? 'Market Status:' : 'vs Live (' + formatPrice(quote.price, currSym) + '):'}</span>
                     {isLiveMode ? (
                       <strong style={{ color: 'var(--bull-green)' }}>● Real-Time Live Tape</strong>
                     ) : (
@@ -880,7 +887,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                 {isPastMode ? `PAST MARKET SNAPSHOT: ${dateSnapshot.formattedDate}` : `FUTURE AI MARKET PROJECTION: ${dateSnapshot.formattedDate}`}
               </span>
               <span style={{ color: 'var(--text-secondary)' }}>
-                vs Current Live (${quote.price.toFixed(2)}):{' '}
+                vs Current Live ({formatPrice(quote.price, currSym)}):{' '}
                 <strong style={{ color: dateSnapshot.vsLiveChange >= 0 ? 'var(--bull-green)' : 'var(--bear-red)' }}>
                   {dateSnapshot.vsLiveChange >= 0 ? '+' : '-'}${Math.abs(dateSnapshot.vsLiveChange).toFixed(2)} ({dateSnapshot.vsLivePercent >= 0 ? '+' : ''}{dateSnapshot.vsLivePercent.toFixed(2)}%)
                 </strong>
@@ -947,10 +954,10 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
 
           <div className="stat-pill-box">
             <span className="stat-pill-label">
-              {mergedQuote.peRatio ? 'P/E Ratio' : (mergedQuote.week52Low ? '52W Low' : 'Clearance')}
+              {hasValidPe ? 'P/E Ratio' : (mergedQuote.week52Low ? '52W Low' : 'Clearance')}
             </span>
             <span className="stat-pill-val font-mono">
-              {mergedQuote.peRatio ? `${mergedQuote.peRatio.toFixed(1)}x` : (mergedQuote.week52Low ? formatPrice(mergedQuote.week52Low, currSym) : 'T+0 Spot')}
+              {hasValidPe ? `${parsedPe.toFixed(1)}x` : (mergedQuote.week52Low ? formatPrice(mergedQuote.week52Low, currSym) : 'T+0 Spot')}
             </span>
           </div>
         </div>

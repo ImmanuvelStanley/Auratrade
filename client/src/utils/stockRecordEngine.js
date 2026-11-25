@@ -1156,7 +1156,8 @@ export function getCompleteStockRecord(rawSymbol, liveQuote = null) {
   });
 
   // Deep Fundamental & Intrinsic Valuation Analysis ("Easy for User to Understand Market & Stock Value")
-  const peRatio = Number(catalogItem?.peRatio || (18.5 + (seed % 18)));
+  const parsedCatalogPe = Number(catalogItem?.peRatio);
+  const peRatio = !isNaN(parsedCatalogPe) && parsedCatalogPe > 0 ? parsedCatalogPe : (18.5 + (seed % 18));
   const sectorAvgPe = sector.toLowerCase().includes('tech') || sector.toLowerCase().includes('semi') ? 29.5 : sector.toLowerCase().includes('bank') || sector.toLowerCase().includes('fin') ? 16.5 : 22.0;
   const forwardPe = parseFloat((peRatio * 0.86).toFixed(1));
   const pegRatio = parseFloat((forwardPe / Math.max(9.5, Math.min(28, cagrPercent))).toFixed(2));
