@@ -849,48 +849,6 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
               {/* MODE 1: SIGN IN FORM */}
               {mode === 'signin' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                  {/* Standard Web Social OAuth Stack (Google & Apple) */}
-                  <div className="auth-social-stack">
-                    <button
-                      type="button"
-                      className="auth-social-btn auth-social-btn--google"
-                      id="auth-social-google-btn"
-                      disabled={loading || !!socialLoading}
-                      onClick={() => startSocialOAuthPopup('google')}
-                      aria-label="Continue with Google"
-                    >
-                      {socialLoading === 'google' ? (
-                        <RefreshCw size={15} className="spin" />
-                      ) : (
-                        <GoogleSvg />
-                      )}
-                      <span>Continue with Google</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      className="auth-social-btn auth-social-btn--apple"
-                      id="auth-social-apple-btn"
-                      disabled={loading || !!socialLoading}
-                      onClick={() => startSocialOAuthPopup('apple')}
-                      aria-label="Continue with Apple"
-                    >
-                      {socialLoading === 'apple' ? (
-                        <RefreshCw size={15} className="spin" />
-                      ) : (
-                        <AppleSvg />
-                      )}
-                      <span>Continue with Apple</span>
-                    </button>
-                  </div>
-
-                  {/* Standard Modern Divider */}
-                  <div className="auth-social-divider" role="separator" aria-label="Sign-in alternatives">
-                    <span className="auth-social-divider-line" />
-                    <span className="auth-social-divider-text">OR CONTINUE WITH EMAIL</span>
-                    <span className="auth-social-divider-line" />
-                  </div>
-
                   <form
                     onSubmit={handlePasswordSignIn}
                     style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}
@@ -1047,6 +1005,48 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                       )}
                     </button>
                   </form>
+
+                  {/* Standard Modern Divider */}
+                  <div className="auth-social-divider" role="separator" aria-label="Sign-in alternatives">
+                    <span className="auth-social-divider-line" />
+                    <span className="auth-social-divider-text">OR CONTINUE WITH</span>
+                    <span className="auth-social-divider-line" />
+                  </div>
+
+                  {/* Standard Web Social OAuth Stack (Google & Apple) */}
+                  <div className="auth-social-stack">
+                    <button
+                      type="button"
+                      className="auth-social-btn auth-social-btn--google"
+                      id="auth-social-google-btn"
+                      disabled={loading || !!socialLoading}
+                      onClick={() => startSocialOAuthPopup('google')}
+                      aria-label="Continue with Google"
+                    >
+                      {socialLoading === 'google' ? (
+                        <RefreshCw size={15} className="spin" />
+                      ) : (
+                        <GoogleSvg />
+                      )}
+                      <span>Continue with Google</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="auth-social-btn auth-social-btn--apple"
+                      id="auth-social-apple-btn"
+                      disabled={loading || !!socialLoading}
+                      onClick={() => startSocialOAuthPopup('apple')}
+                      aria-label="Continue with Apple"
+                    >
+                      {socialLoading === 'apple' ? (
+                        <RefreshCw size={15} className="spin" />
+                      ) : (
+                        <AppleSvg />
+                      )}
+                      <span>Continue with Apple</span>
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -1107,51 +1107,6 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                   {/* STEP 1: FULL NAME & MANDATORY EMAIL OTP VERIFICATION */}
                   {registerStep === 1 && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                      {/* Social OAuth Buttons Stack for Registration */}
-                      {!emailOtpSent && (
-                        <>
-                          <div className="auth-social-stack">
-                            <button
-                              type="button"
-                              className="auth-social-btn auth-social-btn--google"
-                              id="auth-social-google-reg-btn"
-                              disabled={loading || !!socialLoading}
-                              onClick={() => startSocialOAuthPopup('google')}
-                              aria-label="Continue with Google"
-                            >
-                              {socialLoading === 'google' ? (
-                                <RefreshCw size={15} className="spin" />
-                              ) : (
-                                <GoogleSvg />
-                              )}
-                              <span>Continue with Google</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              className="auth-social-btn auth-social-btn--apple"
-                              id="auth-social-apple-reg-btn"
-                              disabled={loading || !!socialLoading}
-                              onClick={() => startSocialOAuthPopup('apple')}
-                              aria-label="Continue with Apple"
-                            >
-                              {socialLoading === 'apple' ? (
-                                <RefreshCw size={15} className="spin" />
-                              ) : (
-                                <AppleSvg />
-                              )}
-                              <span>Continue with Apple</span>
-                            </button>
-                          </div>
-
-                          <div className="auth-social-divider" role="separator" aria-label="Registration alternatives">
-                            <span className="auth-social-divider-line" />
-                            <span className="auth-social-divider-text">OR REGISTER WITH EMAIL</span>
-                            <span className="auth-social-divider-line" />
-                          </div>
-                        </>
-                      )}
-
                       <form
                         onSubmit={emailOtpSent ? handleVerifyRegisterEmailOtp : handleSendRegisterEmailOtp}
                         style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}
@@ -1345,6 +1300,51 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                         </button>
                       )}
                     </form>
+
+                    {/* Social OAuth Buttons Stack for Registration */}
+                    {!emailOtpSent && (
+                      <>
+                        <div className="auth-social-divider" role="separator" aria-label="Registration alternatives">
+                          <span className="auth-social-divider-line" />
+                          <span className="auth-social-divider-text">OR CONTINUE WITH</span>
+                          <span className="auth-social-divider-line" />
+                        </div>
+
+                        <div className="auth-social-stack">
+                          <button
+                            type="button"
+                            className="auth-social-btn auth-social-btn--google"
+                            id="auth-social-google-reg-btn"
+                            disabled={loading || !!socialLoading}
+                            onClick={() => startSocialOAuthPopup('google')}
+                            aria-label="Continue with Google"
+                          >
+                            {socialLoading === 'google' ? (
+                              <RefreshCw size={15} className="spin" />
+                            ) : (
+                              <GoogleSvg />
+                            )}
+                            <span>Continue with Google</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            className="auth-social-btn auth-social-btn--apple"
+                            id="auth-social-apple-reg-btn"
+                            disabled={loading || !!socialLoading}
+                            onClick={() => startSocialOAuthPopup('apple')}
+                            aria-label="Continue with Apple"
+                          >
+                            {socialLoading === 'apple' ? (
+                              <RefreshCw size={15} className="spin" />
+                            ) : (
+                              <AppleSvg />
+                            )}
+                            <span>Continue with Apple</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                   )}
 
