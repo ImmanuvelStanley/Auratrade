@@ -1034,79 +1034,9 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
               {/* MODE 1: SIGN IN FORM */}
               {mode === 'signin' && (
                 <form
-                  onSubmit={signInMethod === 'otp' ? handleRequestSignInOtp : handlePasswordSignIn}
+                  onSubmit={handlePasswordSignIn}
                   style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}
                 >
-                  {/* Clean Method Switcher: Password vs Email OTP */}
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
-                      gap: '0.35rem',
-                      background: 'var(--bg-input)',
-                      padding: '0.22rem',
-                      borderRadius: '8px',
-                      border: '1px solid var(--border-subtle)'
-                    }}
-                  >
-                    <button
-                      type="button"
-                      id="auth-signin-tab-password"
-                      onClick={() => {
-                        setSignInMethod('password');
-                        setError('');
-                        setSuccessMsg('');
-                      }}
-                      style={{
-                        padding: '0.42rem',
-                        borderRadius: '6px',
-                        border: 'none',
-                        background: signInMethod === 'password' ? 'var(--bg-card)' : 'transparent',
-                        color: signInMethod === 'password' ? 'var(--text-primary)' : 'var(--text-muted)',
-                        fontWeight: signInMethod === 'password' ? 700 : 500,
-                        fontSize: '0.78rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.35rem',
-                        boxShadow: signInMethod === 'password' ? '0 1px 4px rgba(0,0,0,0.18)' : 'none',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <Lock size={12} color={signInMethod === 'password' ? 'var(--accent-cyan)' : 'currentColor'} />
-                      <span>Password</span>
-                    </button>
-                    <button
-                      type="button"
-                      id="auth-signin-tab-otp"
-                      onClick={() => {
-                        setSignInMethod('otp');
-                        setError('');
-                        setSuccessMsg('');
-                      }}
-                      style={{
-                        padding: '0.42rem',
-                        borderRadius: '6px',
-                        border: 'none',
-                        background: signInMethod === 'otp' ? 'var(--bg-card)' : 'transparent',
-                        color: signInMethod === 'otp' ? 'var(--text-primary)' : 'var(--text-muted)',
-                        fontWeight: signInMethod === 'otp' ? 700 : 500,
-                        fontSize: '0.78rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.35rem',
-                        boxShadow: signInMethod === 'otp' ? '0 1px 4px rgba(0,0,0,0.18)' : 'none',
-                        transition: 'all 0.15s ease'
-                      }}
-                    >
-                      <Mail size={12} color={signInMethod === 'otp' ? 'var(--accent-cyan)' : 'currentColor'} />
-                      <span>Email OTP</span>
-                    </button>
-                  </div>
-
                   <div className="input-group">
                     <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
                       Email Address
@@ -1132,66 +1062,64 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                     </div>
                   </div>
 
-                  {signInMethod === 'password' && (
-                    <div className="input-group">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                          Password
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => handleSwitchMode('forgot')}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#06b6d4',
-                            fontSize: '0.72rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            padding: 0
-                          }}
-                          id="auth-forgot-password-link"
-                        >
-                          Forgot password?
-                        </button>
-                      </div>
-                      <div className="auth-input-wrapper">
-                        <Lock size={15} className="auth-input-icon" />
-                        <input
-                          type={showSignInPassword ? 'text' : 'password'}
-                          id="auth-password-input"
-                          name="password"
-                          autoComplete="current-password"
-                          required
-                          className="auth-input-field"
-                          placeholder="Enter account password"
-                          value={signInPassword}
-                          onChange={(e) => setSignInPassword(e.target.value)}
-                          style={{ paddingRight: '2.5rem' }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowSignInPassword(!showSignInPassword)}
-                          style={{
-                            position: 'absolute',
-                            right: '0.75rem',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--text-muted)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            padding: 0
-                          }}
-                          title={showSignInPassword ? 'Hide password' : 'Show password'}
-                        >
-                          {showSignInPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                        </button>
-                      </div>
+                  <div className="input-group">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                        Password
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => handleSwitchMode('forgot')}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#06b6d4',
+                          fontSize: '0.72rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          padding: 0
+                        }}
+                        id="auth-forgot-password-link"
+                      >
+                        Forgot password?
+                      </button>
                     </div>
-                  )}
+                    <div className="auth-input-wrapper">
+                      <Lock size={15} className="auth-input-icon" />
+                      <input
+                        type={showSignInPassword ? 'text' : 'password'}
+                        id="auth-password-input"
+                        name="password"
+                        autoComplete="current-password"
+                        required
+                        className="auth-input-field"
+                        placeholder="Enter account password"
+                        value={signInPassword}
+                        onChange={(e) => setSignInPassword(e.target.value)}
+                        style={{ paddingRight: '2.5rem' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowSignInPassword(!showSignInPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '0.75rem',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-muted)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: 0
+                        }}
+                        title={showSignInPassword ? 'Hide password' : 'Show password'}
+                      >
+                        {showSignInPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                    </div>
+                  </div>
 
                   {userNotFound && (
                     <div style={{ textAlign: 'center', marginTop: '-0.2rem' }}>
@@ -1234,7 +1162,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                   <button
                     type="submit"
                     className="btn btn-primary"
-                    disabled={loading || !signInIdentifier.trim()}
+                    disabled={loading || !signInIdentifier.trim() || !signInPassword.trim()}
                     style={{
                       width: '100%',
                       padding: '0.7rem',
@@ -1251,13 +1179,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                     {loading ? (
                       <>
                         <RefreshCw size={14} className="spin" />
-                        <span>{signInMethod === 'otp' ? 'Sending Code...' : 'Signing In...'}</span>
-                      </>
-                    ) : signInMethod === 'otp' ? (
-                      <>
-                        <Mail size={15} />
-                        <span>Send 6-Digit Login Code to Email</span>
-                        <ArrowRight size={14} />
+                        <span>Signing In...</span>
                       </>
                     ) : (
                       <>
