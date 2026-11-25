@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, useDeferredValue } from 'react';
 
 import {
   TrendingUp,
@@ -1275,15 +1275,38 @@ function SectorHeatmapMatrix({
   const [selectedSector, setSelectedSector] = useState('ALL');
   const [scope, setScope] = useState('full'); // 'full' or 'screen'
 
+  // Throttled quotes to limit heavy 300+ constituent heatmap calculations to 1s cadence
+  const [throttledQuotes, setThrottledQuotes] = useState(quotes);
+  const lastQuotesThrottleRef = useRef(Date.now());
+  const quotesThrottleTimerRef = useRef(null);
+
+  useEffect(() => {
+    const now = Date.now();
+    const elapsed = now - lastQuotesThrottleRef.current;
+    if (elapsed >= 1000) {
+      lastQuotesThrottleRef.current = now;
+      setThrottledQuotes(quotes);
+    } else {
+      if (quotesThrottleTimerRef.current) clearTimeout(quotesThrottleTimerRef.current);
+      quotesThrottleTimerRef.current = setTimeout(() => {
+        lastQuotesThrottleRef.current = Date.now();
+        setThrottledQuotes(quotes);
+      }, 1000 - elapsed);
+    }
+    return () => {
+      if (quotesThrottleTimerRef.current) clearTimeout(quotesThrottleTimerRef.current);
+    };
+  }, [quotes]);
+
   // Pick dataset based on scope
   const rawPool = (scope === 'full' && allCompanies && allCompanies.length > 0)
     ? allCompanies
     : (companies && companies.length > 0 ? companies : allCompanies);
 
-  // Merge live socket updates for real-time prices & change percentages
+  // Merge live socket updates for real-time prices & change percentages (throttled for 60fps responsiveness)
   const enrichedPool = useMemo(() => {
     return (rawPool || []).map(c => {
-      const live = quotes ? quotes[c.symbol] : null;
+      const live = throttledQuotes ? throttledQuotes[c.symbol] : null;
       const price = live && Number(live.price) ? Number(live.price) : (Number(c.price) || 0);
       const chg = live && Number.isFinite(Number(live.change)) ? Number(live.change) : (Number(c.change) || 0);
       const chgPct = live && Number.isFinite(Number(live.changePercent)) ? Number(live.changePercent) : (Number(c.changePercent) || 0);
@@ -1296,7 +1319,7 @@ function SectorHeatmapMatrix({
         marketCapNum: mktCap
       };
     });
-  }, [rawPool, quotes]);
+  }, [rawPool, throttledQuotes]);
 
   // Market Breadth Sentiment Analytics
   const marketBreadth = useMemo(() => {
@@ -1685,12 +1708,13 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
     fetchMarketData(false);
   }, [selectedRegion, selectedTier, selectedSector, sortBy, sortOrder]);
 
-  // Continuous background live market sync every 10s so all 166+ global assets stay updated
+  // High-performance background live market sync every 60s when active (WebSocket streams live ticks continuously)
   useEffect(() => {
     if (!isActive) return;
     const syncTimer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return;
       fetchMarketData(true);
-    }, 10000);
+    }, 60000);
     return () => clearInterval(syncTimer);
   }, [isActive, fetchMarketData]);
 
@@ -1894,10 +1918,12 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
     });
   }, [rawCompanies, activePreset]);
 
-  // Instant client-side search filtering (0ms typing latency)
+  // High-performance deferred search filtering (0ms typing latency, non-blocking concurrent list filter)
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+
   const filteredRawCompanies = useMemo(() => {
     if (!presetFilteredCompanies || presetFilteredCompanies.length === 0) return [];
-    const q = searchQuery.trim().toLowerCase();
+    const q = deferredSearchQuery.trim().toLowerCase();
     if (!q) return presetFilteredCompanies;
     return presetFilteredCompanies.filter(
       (c) =>
@@ -1909,7 +1935,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
         (c?.country && String(c.country).toLowerCase().includes(q)) ||
         (c?.sector && String(c.sector).toLowerCase().includes(q))
     );
-  }, [presetFilteredCompanies, searchQuery]);
+  }, [presetFilteredCompanies, deferredSearchQuery]);
 
   // Paginated companies slice calculation on raw filtered data
   const totalItems = filteredRawCompanies.length;

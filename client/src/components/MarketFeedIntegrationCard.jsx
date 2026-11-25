@@ -330,16 +330,16 @@ export function MarketFeedIntegrationCard() {
               {copiedWebhook ? <Check size={12} /> : <Copy size={12} />} {copiedWebhook ? 'Copied URL' : 'Copy Endpoint'}
             </button>
             <button type="button" onClick={handleSimulateWebhook} disabled={simulatingWebhook} className="btn btn-secondary" style={{ fontSize: '0.72rem', padding: '0.3rem 0.6rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-              <Send size={12} /> Push Sample Tick
+              <Send size={12} /> Send Live Webhook Tick
             </button>
           </div>
         </div>
       </div>
 
-      {/* Save Row + Test Symbol */}
+      {/* Save Row + Active Symbol */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <label style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Test Symbol:</label>
+          <label style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Active Symbol:</label>
           <input
             type="text"
             id="market-feed-test-symbol-input"

@@ -9,10 +9,10 @@ import {
 import { formatAllTimePercent } from '../utils/stockRecordEngine';
 
 const QUICK_TICKERS = [
-  { symbol: 'NVDA', label: 'NVDA', currency: 'USD', fallbackPrice: 138.25, fallbackPct: 2.14 },
-  { symbol: 'AAPL', label: 'AAPL', currency: 'USD', fallbackPrice: 229.40, fallbackPct: 1.08 },
-  { symbol: 'RELIANCE', label: 'RELIANCE', currency: 'INR', fallbackPrice: 1294.60, fallbackPct: 1.35 },
-  { symbol: 'GOLD', label: 'GOLD', currency: 'USD', fallbackPrice: 2684.50, fallbackPct: 0.72 }
+  { symbol: 'NVDA', label: 'NVDA', currency: 'USD' },
+  { symbol: 'AAPL', label: 'AAPL', currency: 'USD' },
+  { symbol: 'RELIANCE', label: 'RELIANCE', currency: 'INR' },
+  { symbol: 'GOLD', label: 'GOLD', currency: 'USD' }
 ];
 
 function getCurrencySymbolSafe(currency, symbol = '') {
@@ -116,23 +116,23 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
         ? Number(q.changePercent)
         : base?.changePercent !== undefined
           ? Number(base.changePercent)
-          : entry.fallbackPct;
+          : 0;
       return {
         symbol: entry.symbol,
         label: entry.label,
-        pct: Number.isFinite(pct) ? pct : entry.fallbackPct
+        pct: Number.isFinite(pct) ? pct : 0
       };
     });
   }, [companyLookup, quotes]);
 
   const activeSpotlight = useMemo(() => {
     if (spotlightTab === 'mover') {
-      const sym = topMover.symbol || 'SONY';
+      const sym = topMover.symbol || 'NVDA';
       const base = companyLookup.get(sym);
       const q = quotes?.[sym];
-      const livePrice = q?.price ?? topMover.price ?? base?.price ?? 0;
-      const currency = q?.currency || topMover.currency || base?.currency || 'USD';
-      const pct = q?.changePercent ?? topMover.changePercent ?? 0;
+      const livePrice = q?.price ?? base?.price ?? topMover.price ?? 0;
+      const currency = q?.currency || base?.currency || topMover.currency || 'USD';
+      const pct = q?.changePercent ?? base?.changePercent ?? topMover.changePercent ?? 0;
       return {
         modeLabel: '24H MOMENTUM LEADER',
         symbol: sym,
@@ -149,8 +149,8 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
       const sym = allTimeHero.symbol || 'MSFT';
       const base = companyLookup.get(sym);
       const q = quotes?.[sym];
-      const livePrice = q?.price ?? base?.price ?? allTimeHero.currentPrice ?? 420;
-      const currency = q?.currency || allTimeHero.currency || base?.currency || 'USD';
+      const livePrice = q?.price ?? base?.price ?? allTimeHero.currentPrice ?? 495.91;
+      const currency = q?.currency || base?.currency || allTimeHero.currency || 'USD';
       return {
         modeLabel: `ALL-TIME LEADER · SINCE ${allTimeHero.ipoYear || 1986}`,
         symbol: sym,
@@ -167,7 +167,7 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
     const sym = aiPick.symbol || 'NVDA';
     const base = companyLookup.get(sym);
     const q = quotes?.[sym];
-    const livePrice = q?.price ?? base?.price ?? 138.25;
+    const livePrice = q?.price ?? base?.price ?? 142.50;
     const currency = q?.currency || base?.currency || 'USD';
     return {
       modeLabel: '30D AI CONVICTION PICK',
@@ -348,13 +348,20 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
                   <stop offset="45%" stopColor={activeSpotlight.isPositive ? '#0ecb81' : '#f6465d'} />
                   <stop offset="100%" stopColor={activeSpotlight.isPositive ? '#26e7a6' : '#ff6b7e'} />
                 </linearGradient>
-                <filter id="obsGlow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="2" result="blur" />
-                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                </filter>
               </defs>
               <path d={pulsePaths.areaD} fill="url(#obsCleanFill)" />
-              <path d={pulsePaths.mainD} fill="none" stroke="url(#obsCleanStroke)" strokeWidth="2.3" strokeLinecap="round" filter="url(#obsGlow)" />
+              <path
+                d={pulsePaths.mainD}
+                fill="none"
+                stroke="url(#obsCleanStroke)"
+                strokeWidth="2.3"
+                strokeLinecap="round"
+                style={{
+                  filter: activeSpotlight.isPositive
+                    ? 'drop-shadow(0 2px 6px rgba(14, 203, 129, 0.45))'
+                    : 'drop-shadow(0 2px 6px rgba(246, 70, 93, 0.45))'
+                }}
+              />
               <circle cx={pulsePaths.endX} cy={pulsePaths.endY} r="8" fill={activeSpotlight.isPositive ? 'rgba(14, 203, 129, 0.2)' : 'rgba(246, 70, 93, 0.2)'} className="opening-wave-halo-outer" />
               <circle cx={pulsePaths.endX} cy={pulsePaths.endY} r="5" fill={activeSpotlight.isPositive ? 'rgba(14, 203, 129, 0.4)' : 'rgba(246, 70, 93, 0.4)'} className="opening-wave-halo" />
               <circle cx={pulsePaths.endX} cy={pulsePaths.endY} r="3" fill={activeSpotlight.isPositive ? '#0ecb81' : '#f6465d'} />
