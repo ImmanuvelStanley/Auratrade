@@ -280,7 +280,7 @@ export function AuthProvider({ children }) {
   };
 
   // OAuth 2.0 / Social Authentication (Google & Apple)
-  const signInWithOAuth = async ({ provider = 'google', idToken, credential, identityToken, profile, email, name, avatar, sub } = {}) => {
+  const signInWithOAuth = async ({ provider = 'google', idToken, credential, identityToken, profile, email, name, avatar, sub, mode = 'signin', requireExisting = true } = {}) => {
     const res = await fetch('/api/auth/oauth', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -293,12 +293,19 @@ export function AuthProvider({ children }) {
         email,
         name,
         avatar,
-        sub
+        sub,
+        mode,
+        requireExisting
       })
     });
     const data = await res.json();
     if (!data.success) {
-      throw new Error(data.error || `Failed to authenticate with ${provider}.`);
+      const err = new Error(data.error || `Failed to authenticate with ${provider}.`);
+      if (data.notFound || data.code === 'USER_NOT_FOUND') {
+        err.notFound = true;
+        err.code = 'USER_NOT_FOUND';
+      }
+      throw err;
     }
 
     const cleanEmail = (data.user?.email || '').trim().toLowerCase();
