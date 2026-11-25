@@ -13521,77 +13521,171 @@ canvas {
   box-sizing: border-box;
 }
 
+/* ==========================================================================
+   INSTITUTIONAL SECTOR HEATMAP MATRIX DESIGN & ANIMATIONS
+   ========================================================================== */
+
+@keyframes heatmapClusterFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.sector-heatmap-wrapper {
+  background: linear-gradient(145deg, rgba(13, 20, 36, 0.72) 0%, rgba(8, 14, 28, 0.88) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+}
+
 .heatmap-sectors-masonry {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 1.15rem;
   width: 100%;
   box-sizing: border-box;
+  align-items: stretch;
+}
+
+@media (min-width: 1280px) {
+  .heatmap-sector-cluster.cluster-wide {
+    grid-column: span 2;
+  }
 }
 
 .heatmap-sector-cluster {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-md, 8px);
-  padding: 0.85rem;
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.65) 0%, rgba(10, 15, 30, 0.8) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 0.95rem;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.75rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  animation: heatmapClusterFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  box-sizing: border-box;
+}
+
+.heatmap-sector-cluster:hover {
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
 }
 
 .heatmap-cluster-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 0.45rem;
-  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .cluster-perf-badge {
   font-size: 0.72rem;
-  font-weight: 700;
-  padding: 0.15rem 0.45rem;
-  border-radius: 4px;
+  font-weight: 800;
+  padding: 0.16rem 0.55rem;
+  border-radius: 6px;
+  letter-spacing: 0.02em;
+  font-family: var(--font-mono);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
 }
 
 .cluster-perf-badge.pos {
-  background: rgba(16, 185, 129, 0.15);
-  color: var(--accent-green);
-  border: 1px solid rgba(16, 185, 129, 0.3);
+  background: rgba(14, 203, 129, 0.14);
+  color: #0ecb81;
+  border: 1px solid rgba(14, 203, 129, 0.35);
+  box-shadow: 0 0 10px rgba(14, 203, 129, 0.12);
 }
 
 .cluster-perf-badge.neg {
-  background: rgba(239, 68, 68, 0.15);
-  color: var(--accent-red);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(246, 70, 93, 0.14);
+  color: #f6465d;
+  border: 1px solid rgba(246, 70, 93, 0.35);
+  box-shadow: 0 0 10px rgba(246, 70, 93, 0.12);
 }
 
 .heatmap-cluster-tiles {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
   gap: 0.5rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
+/* Individual Tiles */
 .heatmap-tile {
-  border-radius: 6px;
-  padding: 0.55rem 0.45rem;
+  position: relative;
+  border-radius: 8px;
+  padding: 0.6rem 0.45rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1), filter 0.18s ease, border-color 0.18s ease;
   user-select: none;
-  min-height: 64px;
+  min-height: 68px;
   box-sizing: border-box;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.heatmap-tile::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.12), transparent 70%);
+  pointer-events: none;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
 }
 
 .heatmap-tile:hover {
-  transform: translateY(-2px) scale(1.03);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  filter: brightness(1.15);
-  z-index: 2;
+  transform: translateY(-3px) scale(1.025);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.5), 0 0 18px var(--tile-glow, rgba(56, 189, 248, 0.2));
+  filter: brightness(1.2);
+  z-index: 5;
+}
+
+.heatmap-tile:hover::after {
+  opacity: 1;
+}
+
+.heatmap-tile:active {
+  transform: scale(0.97);
+  transition: transform 0.06s ease;
+}
+
+/* Solo 1-Item Horizontal Tile (Full-Width Clean Fill) */
+.heatmap-tile-solo {
+  min-height: 52px;
+  padding: 0.65rem 0.85rem;
+  flex-direction: row !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  text-align: left !important;
+}
+
+.heatmap-tile-solo-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.heatmap-tile-solo-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
 }
 
 .heatmap-tile-sym-row {
@@ -13602,30 +13696,54 @@ canvas {
 }
 
 .heatmap-tile-sym {
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 800;
   font-family: var(--font-brand);
-  color: var(--text-primary);
+  color: #ffffff;
   letter-spacing: 0.02em;
 }
 
+.heatmap-tile-name {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}
+
 .heatmap-tile-price-val {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  line-height: 1.1;
+  font-size: 0.73rem;
+  font-weight: 700;
+  color: #cbd5e1;
+  line-height: 1.15;
   margin-bottom: 0.15rem;
 }
 
 .heatmap-tile-pct-val {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 800;
   line-height: 1.1;
+  letter-spacing: 0.01em;
+}
+
+[data-theme="light"] .sector-heatmap-wrapper {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
 }
 
 [data-theme="light"] .heatmap-sector-cluster {
   background: #f8fafc;
   border-color: #e2e8f0;
+}
+
+[data-theme="light"] .heatmap-tile-sym {
+  color: #0f172a;
+}
+
+[data-theme="light"] .heatmap-tile-price-val {
+  color: #475569;
 }
 
 /* World Financial Centers Clocks Grid: 4x2 balanced layout, zero empty space */
