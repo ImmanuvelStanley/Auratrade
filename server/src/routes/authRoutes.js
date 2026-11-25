@@ -407,8 +407,7 @@ router.post('/login', async (req, res) => {
     if (!isMatch) {
       return res.status(401).json({
         success: false,
-        canOtpVerify: true,
-        error: 'Invalid password. Click "Sign in with 6-Digit Email OTP" below to authenticate and update your password.'
+        error: 'Incorrect email or password. Click "Forgot password?" to reset your password.'
       });
     }
 
@@ -493,19 +492,12 @@ async function handleSocialOAuth(req, res, forceProvider = null) {
       if (!verifiedAvatar && profile.picture) verifiedAvatar = profile.picture;
     }
 
-    // If no email was provided in request, search database for existing accounts created for this provider
+    // Require a valid email address for social authentication
     if (!verifiedEmail || typeof verifiedEmail !== 'string' || !verifiedEmail.includes('@')) {
-      const dbAccounts = await store.searchUserAccounts({ provider, limit: 1 });
-      if (dbAccounts && dbAccounts.length > 0) {
-        verifiedEmail = dbAccounts[0].email;
-        verifiedName = dbAccounts[0].name;
-      } else {
-        return res.status(400).json({
-          success: false,
-          requireAccountSelection: true,
-          error: 'Please select or enter the account name or email you created on AuraTrade.'
-        });
-      }
+      return res.status(400).json({
+        success: false,
+        error: 'Please enter your account email address to continue.'
+      });
     }
 
     verifiedEmail = verifiedEmail.trim().toLowerCase();
@@ -811,7 +803,7 @@ router.get('/oauth/popup', async (req, res) => {
 
     <div id="errorBox" class="error-box"></div>
 
-    ${accounts && accounts.length > 0 ? `
+    ${!isRegister && accounts && accounts.length > 0 ? `
       <div class="account-list">
         ${accounts.map(acc => `
           <button type="button" class="account-item" onclick="submitAuth('${acc.email.replace(/'/g, "\\'")}', '${(acc.name || '').replace(/'/g, "\\'")}')">

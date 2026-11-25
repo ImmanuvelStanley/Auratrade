@@ -80,7 +80,7 @@ export function TradeModal({
       if (saved) return JSON.parse(saved);
       if (user?.traderProfile) return user.traderProfile;
     } catch (e) {}
-    return { name: user?.name || 'Alex Mercer (Demo Pro)', currency: user?.traderProfile?.currency || 'USD' };
+    return { name: user?.name || 'Institutional Trader', currency: user?.traderProfile?.currency || 'USD' };
   })();
   const activeCurrency = traderProfile.currency || 'USD';
 

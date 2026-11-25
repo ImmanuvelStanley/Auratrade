@@ -489,9 +489,9 @@ class DataStore {
       if (!u || !u.email) return false;
       const em = u.email.toLowerCase();
       const nm = (u.name || '').toLowerCase();
-      if (em.includes('google.trader@') || em.includes('apple.trader@') || em.includes('trader.aura@')) return false;
-      if (nm.includes('google trader') || nm.includes('apple trader')) return false;
-      if (em.includes('ci_') || em.includes('.test') || nm.includes('ci smoke tester')) return false;
+      // Filter out all test, demo, mock, CI, and synthetic trader accounts
+      if (/trader|test|ci_|e2e_|snap_|smoke|mock|demo|dummy|sample|link_test/i.test(em)) return false;
+      if (/trader|test|ci |e2e|snap|smoke|mock|demo|dummy|sample|alex mercer|original account/i.test(nm)) return false;
       return true;
     });
 

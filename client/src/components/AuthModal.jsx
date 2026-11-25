@@ -300,6 +300,9 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         style={{
           maxWidth: '430px',
           width: '94vw',
+          maxHeight: 'min(92vh, 720px)',
+          display: 'flex',
+          flexDirection: 'column',
           background: 'var(--bg-card, #0f172a)',
           border: '1px solid var(--border-subtle, rgba(148, 163, 184, 0.18))',
           borderRadius: '16px',
@@ -352,22 +355,35 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         {/* Header Branding */}
         <div
           style={{
-            padding: '1.4rem 1.4rem 1.1rem',
+            padding: '1.1rem 1.25rem 0.85rem',
             background: 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.05) 50%, transparent 85%)',
             borderBottom: '1px solid var(--border-subtle, rgba(148, 163, 184, 0.12))',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             textAlign: 'center',
-            gap: '0.4rem',
-            position: 'relative'
+            gap: '0.35rem',
+            position: 'relative',
+            flexShrink: 0
           }}
         >
           <BrandLogo size="portal" layout="vertical" subtitle="Institutional Trading Portal" />
         </div>
 
         {/* Modal Content */}
-        <div style={{ padding: '1.25rem clamp(1rem, 3.5vw, 1.45rem) 1.35rem', display: 'flex', flexDirection: 'column', gap: '1rem', boxSizing: 'border-box' }}>
+        <div
+          className="auth-modal-body"
+          style={{
+            padding: '1.05rem clamp(1rem, 3.5vw, 1.35rem) 1.25rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.85rem',
+            boxSizing: 'border-box',
+            overflowY: 'auto',
+            flex: 1,
+            overscrollBehavior: 'contain'
+          }}
+        >
 
           {/* Mode Switcher Tabs (Sign In / Create Account) */}
           {mode !== 'forgot' ? (
@@ -701,7 +717,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                       autoComplete="name"
                       required
                       className="auth-input-field"
-                      placeholder="e.g. Alex Mercer"
+                      placeholder="Enter your full name"
                       value={regName}
                       onChange={(e) => setRegName(e.target.value)}
                       autoFocus
