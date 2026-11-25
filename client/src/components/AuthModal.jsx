@@ -52,7 +52,7 @@ function AppleSvg() {
 }
 
 export function AuthModal({ onClose, closable = true, initialResetData = null }) {
-  const { sendOtp, verifyOtp, verifyEmailOnly, login, register, forgotPassword, resetPassword, verifyResetToken, signInWithGoogle, signInWithApple } = useAuth();
+  const { sendOtp, verifyOtp, verifyEmailOnly, login, register, forgotPassword, resetPassword, verifyResetToken, loginWithOAuthToken } = useAuth();
 
   // Mode: 'signin' | 'register' | 'forgot'
   const [mode, setMode] = useState('signin');
@@ -63,14 +63,6 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
   const [resetToken, setResetToken] = useState(initialResetData?.token || '');
   // Social Loading State
   const [socialLoading, setSocialLoading] = useState(null); // 'google' | 'apple' | null
-
-  // OAuth Account Chooser from Database State
-  const [oauthProvider, setOauthProvider] = useState('google');
-  const [oauthAccounts, setOauthAccounts] = useState([]);
-  const [oauthSearchQuery, setOauthSearchQuery] = useState('');
-  const [oauthLoadingAccounts, setOauthLoadingAccounts] = useState(false);
-  const [oauthManualEmail, setOauthManualEmail] = useState('');
-  const [showManualOAuthInput, setShowManualOAuthInput] = useState(false);
 
   // Sign In State
   const [signInIdentifier, setSignInIdentifier] = useState('');
@@ -175,75 +167,61 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
     }
   };
 
-  // Fetch created user accounts from database for OAuth selection
-  const fetchOAuthAccountsFromDB = async (provider, query = '') => {
-    setOauthLoadingAccounts(true);
-    try {
-      const url = `/api/auth/oauth/accounts?provider=${encodeURIComponent(provider)}&q=${encodeURIComponent(query)}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.success && Array.isArray(data.accounts)) {
-        setOauthAccounts(data.accounts);
-      } else {
-        setOauthAccounts([]);
+  // Listen for OAuth completion from the official Google / Apple popup window
+  useEffect(() => {
+    const handleOAuthMessage = (event) => {
+      if (event.origin !== window.location.origin) return;
+      if (event.data && event.data.type === 'AURATRADE_OAUTH_SUCCESS') {
+        const { user, token, vaultToken, provider } = event.data;
+        if (user && token) {
+          loginWithOAuthToken(user, token, vaultToken);
+          setSuccessMsg(`Welcome back, ${user.name || 'Trader'}! Authenticated with ${provider === 'apple' ? 'Apple ID' : 'Google'}.`);
+          setTimeout(() => {
+            if (onClose) onClose();
+          }, 350);
+        }
       }
-    } catch (err) {
-      console.error('Failed to load accounts from database:', err);
-      setOauthAccounts([]);
-    } finally {
-      setOauthLoadingAccounts(false);
-    }
-  };
+    };
+    window.addEventListener('message', handleOAuthMessage);
+    return () => window.removeEventListener('message', handleOAuthMessage);
+  }, [loginWithOAuthToken, onClose]);
 
-  // Direct Social OAuth Sign In executor: authenticates with chosen account from database
-  const handleDirectOAuthSignIn = async (provider, emailToUse, nameToUse = '') => {
+  // Standard OAuth 2.0 Popup Window (Google & Apple)
+  const startSocialOAuthPopup = (provider) => {
     setError('');
     setSuccessMsg('');
     setUserNotFound(false);
     setSocialLoading(provider);
 
-    try {
-      const emailPayload = emailToUse ? { email: emailToUse.trim(), name: nameToUse || undefined } : {};
-      if (provider === 'google') {
-        await signInWithGoogle(emailPayload);
-      } else if (provider === 'apple') {
-        await signInWithApple(emailPayload);
-      }
-      setSuccessMsg(`Welcome back! Authenticated with ${provider === 'apple' ? 'Apple ID' : 'Google'}. Accessing workstation...`);
-      setTimeout(() => {
-        if (onClose) onClose();
-      }, 350);
-    } catch (err) {
-      if (err.notFound || err.code === 'USER_NOT_FOUND' || (err.message && err.message.toLowerCase().includes('not found'))) {
-        setUserNotFound(true);
-        setError(`User account not found for ${emailToUse}. Please create an account first.`);
-      } else {
-        setError(err.message || `Failed to sign in with ${provider === 'apple' ? 'Apple ID' : 'Google'}.`);
-      }
-    } finally {
+    const width = 500;
+    const height = 620;
+    const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - width) / 2));
+    const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - height) / 2));
+
+    const popupUrl = `/api/auth/oauth/popup?provider=${encodeURIComponent(provider)}&mode=${encodeURIComponent(mode)}&origin=${encodeURIComponent(window.location.origin)}`;
+    const popup = window.open(
+      popupUrl,
+      `auratrade_oauth_${provider}`,
+      `width=${width},height=${height},left=${left},top=${top},status=no,menubar=no,toolbar=no,location=no,resizable=yes`
+    );
+
+    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+      setError(`Pop-up was blocked by your browser. Please allow pop-ups for AuraTrade to continue with ${provider === 'apple' ? 'Apple' : 'Google'}.`);
       setSocialLoading(null);
-    }
-  };
-
-  // Social OAuth Sign In (Google & Apple) — Opens database account chooser if email not yet specified
-  const handleSocialSignIn = async (provider) => {
-    setError('');
-    setSuccessMsg('');
-    setUserNotFound(false);
-
-    // If an email is already typed in the sign-in form, directly authenticate with it!
-    if (signInIdentifier && signInIdentifier.includes('@')) {
-      handleDirectOAuthSignIn(provider, signInIdentifier.trim());
       return;
     }
 
-    // Otherwise open the Google / Apple account chooser to display accounts from database
-    setOauthProvider(provider);
-    setOauthSearchQuery('');
-    setOauthManualEmail('');
-    setShowManualOAuthInput(false);
-    setMode('oauth_chooser');
-    fetchOAuthAccountsFromDB(provider, '');
+    const checkPopupInterval = setInterval(() => {
+      try {
+        if (popup.closed) {
+          clearInterval(checkPopupInterval);
+          setSocialLoading(null);
+        }
+      } catch (e) {
+        clearInterval(checkPopupInterval);
+        setSocialLoading(null);
+      }
+    }, 400);
   };
 
   // 1. Password Sign In
@@ -747,8 +725,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
           {/* Step 1: Input Credentials / Selection */}
           {step === 1 && (
             <>
-              {/* Segmented Mode Switcher (Visible when not in forgot password or oauth chooser mode) */}
-              {mode !== 'forgot' && mode !== 'oauth_chooser' ? (
+              {/* Segmented Mode Switcher (Visible when not in forgot password mode) */}
+              {mode !== 'forgot' ? (
                 <div
                   style={{
                     display: 'grid',
@@ -807,31 +785,6 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                     <UserPlus size={14} color={mode === 'register' ? 'var(--accent-cyan)' : 'currentColor'} />
                     <span>Create Account</span>
                   </button>
-                </div>
-              ) : mode === 'oauth_chooser' ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleSwitchMode('signin')}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#94a3b8',
-                      fontSize: '0.78rem',
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.35rem',
-                      padding: 0
-                    }}
-                  >
-                    <ArrowLeft size={13} />
-                    <span>Back to Sign In</span>
-                  </button>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                    {oauthProvider === 'apple' ? <AppleSvg /> : <GoogleSvg />}
-                    <span>{oauthProvider === 'apple' ? 'Sign in with Apple' : 'Sign in with Google'}</span>
-                  </span>
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -893,372 +846,17 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                 </div>
               )}
 
-              {/* MODE 0: OAUTH ACCOUNT CHOOSER FROM DATABASE (Google & Apple) */}
-              {mode === 'oauth_chooser' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                  <div style={{ textAlign: 'left', marginBottom: '0.1rem' }}>
-                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      Choose an account
-                    </div>
-                    <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '2px' }}>
-                      Select a registered account from database to continue to AuraTrade:
-                    </div>
-                  </div>
-
-                  {/* Real-time search from backend database */}
-                  <div className="auth-input-wrapper">
-                    <Search size={14} className="auth-input-icon" />
-                    <input
-                      type="text"
-                      className="auth-input-field"
-                      placeholder="Search accounts in database by name or email..."
-                      value={oauthSearchQuery}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setOauthSearchQuery(val);
-                        fetchOAuthAccountsFromDB(oauthProvider, val);
-                      }}
-                      autoFocus
-                    />
-                  </div>
-
-                  {/* Loading indicator */}
-                  {oauthLoadingAccounts ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem', padding: '1.2rem', color: '#94a3b8', fontSize: '0.8rem' }}>
-                      <RefreshCw size={14} className="spin" />
-                      <span>Searching database for registered accounts...</span>
-                    </div>
-                  ) : oauthAccounts.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', maxHeight: '230px', overflowY: 'auto' }}>
-                      {oauthAccounts.map((acc) => (
-                        <button
-                          key={acc.id || acc.email}
-                          type="button"
-                          onClick={() => handleDirectOAuthSignIn(oauthProvider, acc.email, acc.name)}
-                          disabled={loading || !!socialLoading}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '0.65rem 0.85rem',
-                            background: 'var(--bg-card-hover)',
-                            border: '1px solid var(--border-subtle)',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            transition: 'all 0.15s ease'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                            <div
-                              style={{
-                                width: '32px',
-                                height: '32px',
-                                borderRadius: '50%',
-                                background: oauthProvider === 'apple' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(66, 133, 244, 0.15)',
-                                color: 'var(--text-primary)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: 700,
-                                fontSize: '0.85rem'
-                              }}
-                            >
-                              {(acc.name || acc.email || 'U').charAt(0).toUpperCase()}
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                                {acc.name}
-                              </span>
-                              <span style={{ fontSize: '0.73rem', color: '#94a3b8' }}>
-                                {acc.email}
-                              </span>
-                            </div>
-                          </div>
-                          <span style={{ fontSize: '0.72rem', color: '#06b6d4', fontWeight: 600 }}>
-                            Sign In &rarr;
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div style={{ padding: '0.85rem', background: 'var(--bg-card-hover)', borderRadius: '8px', textAlign: 'center', fontSize: '0.78rem', color: '#94a3b8' }}>
-                      No registered accounts found matching "{oauthSearchQuery}".
-                    </div>
-                  )}
-
-                  {/* Option: Sign in with another email */}
-                  {!showManualOAuthInput ? (
-                    <button
-                      type="button"
-                      onClick={() => setShowManualOAuthInput(true)}
-                      style={{
-                        background: 'transparent',
-                        border: '1px dashed var(--border-subtle)',
-                        borderRadius: '8px',
-                        padding: '0.55rem',
-                        color: 'var(--text-secondary)',
-                        fontSize: '0.78rem',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.4rem'
-                      }}
-                    >
-                      <UserPlus size={14} />
-                      <span>Use another account</span>
-                    </button>
-                  ) : (
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        if (oauthManualEmail && oauthManualEmail.includes('@')) {
-                          handleDirectOAuthSignIn(oauthProvider, oauthManualEmail);
-                        }
-                      }}
-                      style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.2rem' }}
-                    >
-                      <div className="auth-input-wrapper">
-                        <Mail size={15} className="auth-input-icon" />
-                        <input
-                          type="email"
-                          required
-                          className="auth-input-field"
-                          placeholder={oauthProvider === 'apple' ? 'Enter Apple ID / email' : 'Enter Google email address'}
-                          value={oauthManualEmail}
-                          onChange={(e) => setOauthManualEmail(e.target.value)}
-                          autoFocus
-                        />
-                      </div>
-                      <button
-                        type="submit"
-                        className="btn btn-primary"
-                        disabled={loading || !oauthManualEmail.trim() || !oauthManualEmail.includes('@')}
-                        style={{ padding: '0.6rem', fontSize: '0.8rem', fontWeight: 700 }}
-                      >
-                        {socialLoading ? (
-                          <>
-                            <RefreshCw size={14} className="spin" />
-                            <span>Signing in...</span>
-                          </>
-                        ) : (
-                          <span>Continue with {oauthProvider === 'apple' ? 'Apple' : 'Google'}</span>
-                        )}
-                      </button>
-                    </form>
-                  )}
-
-                  {userNotFound && (
-                    <div style={{ textAlign: 'center', marginTop: '0.2rem' }}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMode('register');
-                          setRegisterStep(1);
-                          setEmailOtpSent(false);
-                          setIsEmailVerified(false);
-                          setEmailOtpDigits(['', '', '', '', '', '']);
-                          setError('');
-                          setUserNotFound(false);
-                          if (oauthManualEmail) setEmail(oauthManualEmail.trim());
-                        }}
-                        style={{
-                          background: 'rgba(6, 182, 212, 0.12)',
-                          border: '1px solid rgba(6, 182, 212, 0.35)',
-                          color: '#06b6d4',
-                          padding: '0.5rem 0.85rem',
-                          borderRadius: '6px',
-                          fontSize: '0.78rem',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.4rem',
-                          width: '100%',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        <UserPlus size={14} />
-                        <span>New trader? Switch to Create Account</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-
               {/* MODE 1: SIGN IN FORM */}
               {mode === 'signin' && (
-                <form
-                  onSubmit={handlePasswordSignIn}
-                  style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}
-                >
-                  <div className="input-group">
-                    <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                      Email Address
-                    </label>
-                    <div className="auth-input-wrapper">
-                      {signInIdentifier.replace(/\s+/g, '').match(/^\+?\d+$/) ? (
-                        <Smartphone size={15} className="auth-input-icon" />
-                      ) : (
-                        <Mail size={15} className="auth-input-icon" />
-                      )}
-                      <input
-                        type="text"
-                        id="auth-identifier-input"
-                        name="username"
-                        autoComplete="username"
-                        required
-                        className="auth-input-field"
-                        placeholder="e.g. name@domain.com"
-                        value={signInIdentifier}
-                        onChange={(e) => setSignInIdentifier(e.target.value)}
-                        autoFocus
-                      />
-                    </div>
-                  </div>
-
-                  <div className="input-group">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                        Password
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => handleSwitchMode('forgot')}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: '#06b6d4',
-                          fontSize: '0.72rem',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          padding: 0
-                        }}
-                        id="auth-forgot-password-link"
-                      >
-                        Forgot password?
-                      </button>
-                    </div>
-                    <div className="auth-input-wrapper">
-                      <Lock size={15} className="auth-input-icon" />
-                      <input
-                        type={showSignInPassword ? 'text' : 'password'}
-                        id="auth-password-input"
-                        name="password"
-                        autoComplete="current-password"
-                        required
-                        className="auth-input-field"
-                        placeholder="Enter account password"
-                        value={signInPassword}
-                        onChange={(e) => setSignInPassword(e.target.value)}
-                        style={{ paddingRight: '2.5rem' }}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowSignInPassword(!showSignInPassword)}
-                        style={{
-                          position: 'absolute',
-                          right: '0.75rem',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'var(--text-muted)',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          padding: 0
-                        }}
-                        title={showSignInPassword ? 'Hide password' : 'Show password'}
-                      >
-                        {showSignInPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {userNotFound && (
-                    <div style={{ textAlign: 'center', marginTop: '-0.2rem' }}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMode('register');
-                          setRegisterStep(1);
-                          setEmailOtpSent(false);
-                          setIsEmailVerified(false);
-                          setEmailOtpDigits(['', '', '', '', '', '']);
-                          setError('');
-                          setUserNotFound(false);
-                          if (signInIdentifier.includes('@')) {
-                            setEmail(signInIdentifier);
-                          } else {
-                            setPhoneNumber(signInIdentifier.replace(/\D/g, ''));
-                          }
-                        }}
-                        style={{
-                          background: 'rgba(6, 182, 212, 0.12)',
-                          border: '1px solid rgba(6, 182, 212, 0.35)',
-                          color: '#06b6d4',
-                          padding: '0.45rem 0.8rem',
-                          borderRadius: '6px',
-                          fontSize: '0.76rem',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.35rem'
-                        }}
-                      >
-                        <UserPlus size={13} />
-                        <span>New trader? Switch to Create Account</span>
-                      </button>
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={loading || !signInIdentifier.trim() || !signInPassword.trim()}
-                    style={{
-                      width: '100%',
-                      padding: '0.7rem',
-                      fontSize: '0.85rem',
-                      fontWeight: 700,
-                      marginTop: '0.2rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.45rem'
-                    }}
-                    id="auth-submit-direct-login-btn"
-                  >
-                    {loading ? (
-                      <>
-                        <RefreshCw size={14} className="spin" />
-                        <span>Signing In...</span>
-                      </>
-                    ) : (
-                      <>
-                        <LogIn size={15} />
-                        <span>Sign In</span>
-                      </>
-                    )}
-                  </button>
-
-                  {/* Social OAuth Authentication Section */}
-                  <div className="auth-social-divider" role="separator" aria-label="Social sign-in alternatives">
-                    <span className="auth-social-divider-line" />
-                    <span className="auth-social-divider-text">OR CONTINUE WITH</span>
-                    <span className="auth-social-divider-line" />
-                  </div>
-
-                  <div className="auth-social-grid">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                  {/* Standard Web Social OAuth Stack (Google & Apple) */}
+                  <div className="auth-social-stack">
                     <button
                       type="button"
                       className="auth-social-btn auth-social-btn--google"
                       id="auth-social-google-btn"
                       disabled={loading || !!socialLoading}
-                      onClick={() => handleSocialSignIn('google')}
+                      onClick={() => startSocialOAuthPopup('google')}
                       aria-label="Continue with Google"
                     >
                       {socialLoading === 'google' ? (
@@ -1266,7 +864,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                       ) : (
                         <GoogleSvg />
                       )}
-                      <span>Google</span>
+                      <span>Continue with Google</span>
                     </button>
 
                     <button
@@ -1274,7 +872,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                       className="auth-social-btn auth-social-btn--apple"
                       id="auth-social-apple-btn"
                       disabled={loading || !!socialLoading}
-                      onClick={() => handleSocialSignIn('apple')}
+                      onClick={() => startSocialOAuthPopup('apple')}
                       aria-label="Continue with Apple"
                     >
                       {socialLoading === 'apple' ? (
@@ -1282,10 +880,174 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                       ) : (
                         <AppleSvg />
                       )}
-                      <span>Apple</span>
+                      <span>Continue with Apple</span>
                     </button>
                   </div>
-                </form>
+
+                  {/* Standard Modern Divider */}
+                  <div className="auth-social-divider" role="separator" aria-label="Sign-in alternatives">
+                    <span className="auth-social-divider-line" />
+                    <span className="auth-social-divider-text">OR CONTINUE WITH EMAIL</span>
+                    <span className="auth-social-divider-line" />
+                  </div>
+
+                  <form
+                    onSubmit={handlePasswordSignIn}
+                    style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}
+                  >
+                    <div className="input-group">
+                      <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                        Email Address
+                      </label>
+                      <div className="auth-input-wrapper">
+                        {signInIdentifier.replace(/\s+/g, '').match(/^\+?\d+$/) ? (
+                          <Smartphone size={15} className="auth-input-icon" />
+                        ) : (
+                          <Mail size={15} className="auth-input-icon" />
+                        )}
+                        <input
+                          type="text"
+                          id="auth-identifier-input"
+                          name="username"
+                          autoComplete="username"
+                          required
+                          className="auth-input-field"
+                          placeholder="e.g. name@domain.com"
+                          value={signInIdentifier}
+                          onChange={(e) => setSignInIdentifier(e.target.value)}
+                          autoFocus
+                        />
+                      </div>
+                    </div>
+
+                    <div className="input-group">
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                          Password
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => handleSwitchMode('forgot')}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            color: '#06b6d4',
+                            fontSize: '0.72rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            padding: 0
+                          }}
+                          id="auth-forgot-password-link"
+                        >
+                          Forgot password?
+                        </button>
+                      </div>
+                      <div className="auth-input-wrapper">
+                        <Lock size={15} className="auth-input-icon" />
+                        <input
+                          type={showSignInPassword ? 'text' : 'password'}
+                          id="auth-password-input"
+                          name="password"
+                          autoComplete="current-password"
+                          required
+                          className="auth-input-field"
+                          placeholder="Enter account password"
+                          value={signInPassword}
+                          onChange={(e) => setSignInPassword(e.target.value)}
+                          style={{ paddingRight: '2.5rem' }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowSignInPassword(!showSignInPassword)}
+                          style={{
+                            position: 'absolute',
+                            right: '0.75rem',
+                            top: '50%',
+                            transform: 'translateY(-50%)',
+                            background: 'transparent',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: 0
+                          }}
+                          title={showSignInPassword ? 'Hide password' : 'Show password'}
+                        >
+                          {showSignInPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    {userNotFound && (
+                      <div style={{ textAlign: 'center', marginTop: '-0.2rem' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMode('register');
+                            setRegisterStep(1);
+                            setEmailOtpSent(false);
+                            setIsEmailVerified(false);
+                            setEmailOtpDigits(['', '', '', '', '', '']);
+                            setError('');
+                            setUserNotFound(false);
+                            if (signInIdentifier.includes('@')) {
+                              setEmail(signInIdentifier);
+                            } else {
+                              setPhoneNumber(signInIdentifier.replace(/\D/g, ''));
+                            }
+                          }}
+                          style={{
+                            background: 'rgba(6, 182, 212, 0.12)',
+                            border: '1px solid rgba(6, 182, 212, 0.35)',
+                            color: '#06b6d4',
+                            padding: '0.45rem 0.8rem',
+                            borderRadius: '6px',
+                            fontSize: '0.76rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.35rem'
+                          }}
+                        >
+                          <UserPlus size={13} />
+                          <span>New trader? Switch to Create Account</span>
+                        </button>
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={loading || !signInIdentifier.trim() || !signInPassword.trim()}
+                      style={{
+                        width: '100%',
+                        padding: '0.7rem',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        marginTop: '0.2rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.45rem'
+                      }}
+                      id="auth-submit-direct-login-btn"
+                    >
+                      {loading ? (
+                        <>
+                          <RefreshCw size={14} className="spin" />
+                          <span>Signing In...</span>
+                        </>
+                      ) : (
+                        <>
+                          <LogIn size={15} />
+                          <span>Sign In</span>
+                        </>
+                      )}
+                    </button>
+                  </form>
+                </div>
               )}
 
               {/* MODE 2: CREATE ACCOUNT FORM (Step 1: Mandatory Email Verification -> Step 2: Password & Create Account) */}
@@ -1344,10 +1106,56 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
 
                   {/* STEP 1: FULL NAME & MANDATORY EMAIL OTP VERIFICATION */}
                   {registerStep === 1 && (
-                    <form
-                      onSubmit={emailOtpSent ? handleVerifyRegisterEmailOtp : handleSendRegisterEmailOtp}
-                      style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}
-                    >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                      {/* Social OAuth Buttons Stack for Registration */}
+                      {!emailOtpSent && (
+                        <>
+                          <div className="auth-social-stack">
+                            <button
+                              type="button"
+                              className="auth-social-btn auth-social-btn--google"
+                              id="auth-social-google-reg-btn"
+                              disabled={loading || !!socialLoading}
+                              onClick={() => startSocialOAuthPopup('google')}
+                              aria-label="Continue with Google"
+                            >
+                              {socialLoading === 'google' ? (
+                                <RefreshCw size={15} className="spin" />
+                              ) : (
+                                <GoogleSvg />
+                              )}
+                              <span>Continue with Google</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              className="auth-social-btn auth-social-btn--apple"
+                              id="auth-social-apple-reg-btn"
+                              disabled={loading || !!socialLoading}
+                              onClick={() => startSocialOAuthPopup('apple')}
+                              aria-label="Continue with Apple"
+                            >
+                              {socialLoading === 'apple' ? (
+                                <RefreshCw size={15} className="spin" />
+                              ) : (
+                                <AppleSvg />
+                              )}
+                              <span>Continue with Apple</span>
+                            </button>
+                          </div>
+
+                          <div className="auth-social-divider" role="separator" aria-label="Registration alternatives">
+                            <span className="auth-social-divider-line" />
+                            <span className="auth-social-divider-text">OR REGISTER WITH EMAIL</span>
+                            <span className="auth-social-divider-line" />
+                          </div>
+                        </>
+                      )}
+
+                      <form
+                        onSubmit={emailOtpSent ? handleVerifyRegisterEmailOtp : handleSendRegisterEmailOtp}
+                        style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}
+                      >
                       {/* Full Name */}
                       <div className="input-group">
                         <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Full Name</label>
@@ -1505,9 +1313,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                           </button>
                         </div>
                       ) : (
-                        <>
-                          <button
-                            type="submit"
+                        <button
+                          type="submit"
                           className="btn btn-primary"
                           disabled={loading || !name.trim() || !email.trim()}
                           style={{
@@ -1536,50 +1343,9 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                             </>
                           )}
                         </button>
-
-                        {/* Social Quick Registration Section */}
-                        <div className="auth-social-divider" role="separator" aria-label="Social registration alternatives">
-                          <span className="auth-social-divider-line" />
-                          <span className="auth-social-divider-text">OR SIGN UP WITH</span>
-                          <span className="auth-social-divider-line" />
-                        </div>
-
-                        <div className="auth-social-grid">
-                          <button
-                            type="button"
-                            className="auth-social-btn auth-social-btn--google"
-                            id="auth-social-google-reg-btn"
-                            disabled={loading || !!socialLoading}
-                            onClick={() => handleSocialSignIn('google')}
-                            aria-label="Sign up with Google"
-                          >
-                            {socialLoading === 'google' ? (
-                              <RefreshCw size={15} className="spin" />
-                            ) : (
-                              <GoogleSvg />
-                            )}
-                            <span>Google</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            className="auth-social-btn auth-social-btn--apple"
-                            id="auth-social-apple-reg-btn"
-                            disabled={loading || !!socialLoading}
-                            onClick={() => handleSocialSignIn('apple')}
-                            aria-label="Sign up with Apple"
-                          >
-                            {socialLoading === 'apple' ? (
-                              <RefreshCw size={15} className="spin" />
-                            ) : (
-                              <AppleSvg />
-                            )}
-                            <span>Apple</span>
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </form>
+                      )}
+                    </form>
+                  </div>
                   )}
 
                   {/* STEP 2: PASSWORD, MOBILE & FINAL CREATE ACCOUNT (Unlocked ONLY after Email is Verified) */}

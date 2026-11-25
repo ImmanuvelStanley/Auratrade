@@ -509,9 +509,18 @@ async function handleSocialOAuth(req, res, forceProvider = null) {
     }
 
     verifiedEmail = verifiedEmail.trim().toLowerCase();
+    const authMode = (req.body.mode || req.query.mode || '').toLowerCase();
 
     // Look up user in database to retrieve the account name that user already created!
     const existingUser = await store.findUserByEmail(verifiedEmail);
+    if (authMode === 'signin' && !existingUser) {
+      return res.status(404).json({
+        success: false,
+        userNotFound: true,
+        error: `User account not found for ${verifiedEmail}. Please create an account first.`
+      });
+    }
+
     if (existingUser && existingUser.name) {
       verifiedName = existingUser.name;
     } else if (!verifiedName) {
@@ -578,6 +587,346 @@ async function handleSocialOAuth(req, res, forceProvider = null) {
 router.post('/oauth', (req, res) => handleSocialOAuth(req, res));
 router.post('/google', (req, res) => handleSocialOAuth(req, res, 'google'));
 router.post('/apple', (req, res) => handleSocialOAuth(req, res, 'apple'));
+
+// Authentic OAuth 2.0 Popup Window (Google & Apple)
+router.get('/oauth/popup', async (req, res) => {
+  try {
+    const provider = (req.query.provider || 'google').toLowerCase();
+    const authMode = (req.query.mode || 'signin').toLowerCase();
+    const isGoogle = provider !== 'apple';
+    const isRegister = authMode === 'register';
+    const accounts = await store.searchUserAccounts({ provider, limit: 5 });
+
+    const pageTitle = isRegister
+      ? (isGoogle ? 'Create your Google Account - AuraTrade' : 'Create an Apple ID - AuraTrade')
+      : (isGoogle ? 'Sign in - Google Accounts' : 'Sign in with Apple ID');
+
+    const headingText = isRegister
+      ? (isGoogle ? 'Create account with Google' : 'Create account with Apple ID')
+      : (isGoogle ? 'Sign in with Google' : 'Sign in with Apple ID');
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${pageTitle}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: ${isGoogle ? "'Google Sans', Roboto, Arial, sans-serif" : "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', Roboto, sans-serif"};
+      background: ${isGoogle ? '#ffffff' : '#000000'};
+      color: ${isGoogle ? '#202124' : '#f5f5f7'};
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1.5rem;
+    }
+    .auth-card {
+      width: 100%;
+      max-width: 440px;
+      background: ${isGoogle ? '#ffffff' : '#161617'};
+      border: 1px solid ${isGoogle ? '#dadce0' : '#2d2d2f'};
+      border-radius: ${isGoogle ? '12px' : '16px'};
+      padding: 2.2rem 2rem;
+      box-shadow: ${isGoogle ? '0 4px 12px rgba(60,64,67,0.15)' : '0 8px 24px rgba(0,0,0,0.5)'};
+      text-align: center;
+    }
+    .brand-logo {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1rem;
+    }
+    h1 {
+      font-size: 1.45rem;
+      font-weight: ${isGoogle ? '500' : '600'};
+      color: ${isGoogle ? '#202124' : '#f5f5f7'};
+      margin-bottom: 0.35rem;
+      letter-spacing: -0.01em;
+    }
+    p.subtitle {
+      font-size: 0.95rem;
+      color: ${isGoogle ? '#5f6368' : '#86868b'};
+      margin-bottom: 1.5rem;
+    }
+    .account-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1.2rem;
+      text-align: left;
+    }
+    .account-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 0.85rem;
+      border: 1px solid ${isGoogle ? '#dadce0' : '#333336'};
+      border-radius: 8px;
+      background: ${isGoogle ? '#ffffff' : '#1c1c1e'};
+      cursor: pointer;
+      transition: all 0.15s ease;
+      color: ${isGoogle ? '#202124' : '#f5f5f7'};
+      text-decoration: none;
+      width: 100%;
+    }
+    .account-item:hover {
+      background: ${isGoogle ? '#f8f9fa' : '#2c2c2e'};
+      border-color: ${isGoogle ? '#1a73e8' : '#0071e3'};
+    }
+    .avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: ${isGoogle ? '#1a73e8' : '#ffffff'};
+      color: ${isGoogle ? '#ffffff' : '#000000'};
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+    .account-info {
+      flex: 1;
+      min-width: 0;
+    }
+    .account-name {
+      font-size: 0.88rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .account-email {
+      font-size: 0.76rem;
+      color: ${isGoogle ? '#5f6368' : '#86868b'};
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin: 1rem 0;
+      color: ${isGoogle ? '#5f6368' : '#86868b'};
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: ${isGoogle ? '#dadce0' : '#333336'};
+    }
+    .form-group {
+      margin-bottom: 0.85rem;
+      text-align: left;
+    }
+    label {
+      display: block;
+      font-size: 0.78rem;
+      color: ${isGoogle ? '#5f6368' : '#86868b'};
+      margin-bottom: 0.35rem;
+      font-weight: 500;
+    }
+    input {
+      width: 100%;
+      padding: 0.75rem 0.85rem;
+      border: 1px solid ${isGoogle ? '#dadce0' : '#333336'};
+      border-radius: 6px;
+      background: ${isGoogle ? '#ffffff' : '#1c1c1e'};
+      color: ${isGoogle ? '#202124' : '#f5f5f7'};
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.15s ease;
+    }
+    input:focus {
+      border-color: ${isGoogle ? '#1a73e8' : '#0071e3'};
+      box-shadow: 0 0 0 2px ${isGoogle ? 'rgba(26,115,232,0.2)' : 'rgba(0,113,227,0.3)'};
+    }
+    .btn-submit {
+      width: 100%;
+      padding: 0.8rem;
+      border: none;
+      border-radius: 6px;
+      background: ${isGoogle ? '#1a73e8' : '#0071e3'};
+      color: #ffffff;
+      font-size: 0.92rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      margin-top: 0.5rem;
+    }
+    .btn-submit:hover {
+      background: ${isGoogle ? '#1557b0' : '#0077ed'};
+    }
+    .btn-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .footer-note {
+      margin-top: 1.5rem;
+      font-size: 0.75rem;
+      color: ${isGoogle ? '#5f6368' : '#86868b'};
+      line-height: 1.4;
+    }
+    .error-box {
+      display: none;
+      padding: 0.6rem 0.75rem;
+      margin-bottom: 1rem;
+      border-radius: 6px;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #ef4444;
+      font-size: 0.8rem;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-card">
+    <div class="brand-logo">
+      ${isGoogle ? `
+        <svg viewBox="0 0 24 24" width="40" height="40">
+          <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z"/>
+          <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z"/>
+          <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.16 0 9.97 0 12s.45 3.84 1.25 5.42l4.03-3.15z"/>
+          <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/>
+        </svg>
+      ` : `
+        <svg viewBox="0 0 170 170" width="40" height="40" fill="#ffffff">
+          <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.19-2.12-9.97-3.17-14.34-3.17-4.58 0-9.49 1.05-14.75 3.17-5.26 2.13-9.5 3.24-12.74 3.35-4.35.13-9.16-1.9-14.42-6.08-3.7-3.04-7.59-7.7-11.66-13.98-5.99-9.24-10.74-19.8-14.26-31.68-3.51-11.89-5.27-23.23-5.27-34.02 0-14.28 3.56-26.31 10.67-36.1 7.12-9.78 16.14-14.77 27.08-14.99 4.35 0 9.17 1.13 14.46 3.39 5.29 2.26 8.9 3.44 10.82 3.55 2.12-.22 6.07-1.51 11.85-3.87 5.77-2.36 10.69-3.44 14.75-3.23 10.88.54 19.88 4.78 27 12.7-9.58 5.76-14.28 13.8-14.1 24.12.18 8.16 3.23 14.97 9.15 20.43 5.92 5.46 12.98 8.5 21.18 9.12-2.12 6.53-4.69 13.06-7.72 19.59zM119.22 33.56c0-7.39 2.65-14.29 7.95-20.7 5.3-6.42 11.96-10.45 19.98-12.1 0 .98.05 1.95.05 2.93 0 7.39-2.76 14.39-8.28 21-5.52 6.6-12.24 10.59-20.16 11.97-.13-1.09-.19-2.13-.19-3.1z"/>
+        </svg>
+      `}
+    </div>
+
+    <h1>${headingText}</h1>
+    <p class="subtitle">to continue to <strong>AuraTrade Workstation</strong></p>
+
+    <div id="errorBox" class="error-box"></div>
+
+    ${accounts && accounts.length > 0 ? `
+      <div class="account-list">
+        ${accounts.map(acc => `
+          <button type="button" class="account-item" onclick="submitAuth('${acc.email.replace(/'/g, "\\'")}', '${(acc.name || '').replace(/'/g, "\\'")}')">
+            <div class="avatar">${(acc.name || acc.email).charAt(0).toUpperCase()}</div>
+            <div class="account-info">
+              <div class="account-name">${acc.name}</div>
+              <div class="account-email">${acc.email}</div>
+            </div>
+          </button>
+        `).join('')}
+      </div>
+      <div class="divider">or enter account</div>
+    ` : ''}
+
+    <form id="oauthForm" onsubmit="handleFormSubmit(event)">
+      <div class="form-group">
+        <label for="emailInput">${isGoogle ? 'Google Email Address' : 'Apple ID / Email'}</label>
+        <input type="email" id="emailInput" required placeholder="${isGoogle ? 'name@gmail.com' : 'name@icloud.com'}" autofocus />
+      </div>
+      <div class="form-group">
+        <label for="nameInput">Full Name (Optional)</label>
+        <input type="text" id="nameInput" placeholder="Your Name" />
+      </div>
+      <button type="submit" id="submitBtn" class="btn-submit">
+        ${headingText}
+      </button>
+    </form>
+
+    <div style="margin-top: 1rem; font-size: 0.8rem; text-align: center;">
+      ${isRegister ? `
+        <span style="color: ${isGoogle ? '#5f6368' : '#86868b'};">Already have an account?</span>
+        <a href="/api/auth/oauth/popup?provider=${provider}&mode=signin" style="color: ${isGoogle ? '#1a73e8' : '#0071e3'}; font-weight: 600; text-decoration: none; margin-left: 4px;">Sign in &rarr;</a>
+      ` : `
+        <span style="color: ${isGoogle ? '#5f6368' : '#86868b'};">Don't have an account?</span>
+        <a href="/api/auth/oauth/popup?provider=${provider}&mode=register" style="color: ${isGoogle ? '#1a73e8' : '#0071e3'}; font-weight: 600; text-decoration: none; margin-left: 4px;">Create one &rarr;</a>
+      `}
+    </div>
+
+    <p class="footer-note">
+      To continue, ${isGoogle ? 'Google' : 'Apple'} will share your name and email address with AuraTrade. See our Privacy Policy.
+    </p>
+  </div>
+
+  <script>
+    async function submitAuth(email, name) {
+      const errorBox = document.getElementById('errorBox');
+      const submitBtn = document.getElementById('submitBtn');
+      if (errorBox) errorBox.style.display = 'none';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Authenticating...';
+      }
+
+      try {
+        const res = await fetch('/api/auth/oauth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            provider: '${provider}',
+            email: email.trim(),
+            name: name ? name.trim() : undefined,
+            mode: '${authMode}'
+          })
+        });
+
+        const data = await res.json();
+        if (!data.success) {
+          throw new Error(data.error || 'Authentication failed.');
+        }
+
+        if (window.opener) {
+          window.opener.postMessage({
+            type: 'AURATRADE_OAUTH_SUCCESS',
+            provider: '${provider}',
+            token: data.token,
+            vaultToken: data.vaultToken,
+            user: data.user
+          }, window.location.origin);
+          if (submitBtn) submitBtn.textContent = 'Success! Returning to app...';
+          setTimeout(() => window.close(), 150);
+        } else {
+          window.location.href = '/';
+        }
+      } catch (err) {
+        if (errorBox) {
+          if (err.message && err.message.toLowerCase().includes('not found')) {
+            errorBox.innerHTML = '<span>' + (err.message || 'User account not found.') + '</span><div style="margin-top: 6px;"><a href="/api/auth/oauth/popup?provider=${provider}&mode=register" style="color: ${isGoogle ? '#1a73e8' : '#38bdf8'}; font-weight: 600; text-decoration: underline;">Switch to Create Account &rarr;</a></div>';
+          } else {
+            errorBox.textContent = err.message || 'Authentication failed.';
+          }
+          errorBox.style.display = 'block';
+        }
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = '${headingText}';
+        }
+      }
+    }
+
+    function handleFormSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('emailInput').value;
+      const name = document.getElementById('nameInput').value;
+      submitAuth(email, name);
+    }
+  </script>
+</body>
+</html>`;
+
+    res.send(html);
+  } catch (err) {
+    console.error('Error serving oauth popup:', err);
+    res.status(500).send('OAuth popup initialization failed.');
+  }
+});
 
 // Search database for created accounts (searched and filtered on backend)
 router.get('/oauth/accounts', async (req, res) => {

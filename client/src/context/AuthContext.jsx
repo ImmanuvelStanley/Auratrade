@@ -326,6 +326,33 @@ export function AuthProvider({ children }) {
     return data.user;
   };
 
+  // Direct login with OAuth Token received from official OAuth popup
+  const loginWithOAuthToken = (userData, authToken, vaultToken = null) => {
+    if (!userData || !authToken) return null;
+    const cleanEmail = (userData.email || '').trim().toLowerCase();
+    if (vaultToken && cleanEmail) {
+      localStorage.setItem('auratrade_vault_' + cleanEmail, vaultToken);
+    }
+    // Save metadata locally for serverless cold-start resilience
+    try {
+      if (cleanEmail && cleanEmail.includes('@')) {
+        const savedAccounts = JSON.parse(localStorage.getItem('auratrade_local_accounts') || '{}');
+        savedAccounts[cleanEmail] = {
+          name: userData.name || cleanEmail.split('@')[0],
+          phone: userData.phone || '',
+          provider: userData.authProvider || null
+        };
+        localStorage.setItem('auratrade_local_accounts', JSON.stringify(savedAccounts));
+      }
+    } catch (e) {}
+
+    setUser(userData);
+    setToken(authToken);
+    localStorage.setItem('auratrade_token', authToken);
+    localStorage.removeItem('auratrade_logged_out');
+    return userData;
+  };
+
   const signInWithGoogle = async (extraPayload = {}) => {
     return signInWithOAuth({ provider: 'google', ...extraPayload });
   };
@@ -353,6 +380,7 @@ export function AuthProvider({ children }) {
         verifyEmailOnly,
         login,
         register,
+        loginWithOAuthToken,
         signInWithOAuth,
         signInWithGoogle,
         signInWithApple,
