@@ -1,22 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   X,
   User,
   Mail,
-  Phone,
-  ArrowRight,
-  ArrowLeft,
-  RefreshCw,
-  LogIn,
-  UserPlus,
-  Smartphone,
-  CheckCircle2,
   Lock,
   Eye,
   EyeOff,
+  LogIn,
+  UserPlus,
   KeyRound,
-  ShieldCheck,
-  Search
+  ArrowLeft,
+  RefreshCw,
+  CheckCircle2,
+  AlertCircle,
+  Smartphone
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { BrandLogo } from './BrandLogo';
@@ -52,122 +49,50 @@ function AppleSvg() {
 }
 
 export function AuthModal({ onClose, closable = true, initialResetData = null }) {
-  const { sendOtp, verifyOtp, verifyEmailOnly, login, register, forgotPassword, resetPassword, verifyResetToken, loginWithOAuthToken } = useAuth();
+  const { login, register, forgotPassword, resetPassword, loginWithOAuthToken } = useAuth();
 
   // Mode: 'signin' | 'register' | 'forgot'
   const [mode, setMode] = useState('signin');
-  // Step: 1 = Details / Form, 2 = 6-digit OTP verification
-  const [step, setStep] = useState(1);
-  // Purpose for OTP step: 'register' | 'login' | 'reset'
-  const [otpPurpose, setOtpPurpose] = useState('register');
-  const [resetToken, setResetToken] = useState(initialResetData?.token || '');
-  // Social Loading State
+  const [loading, setLoading] = useState(false);
   const [socialLoading, setSocialLoading] = useState(null); // 'google' | 'apple' | null
-
-  // Sign In State
-  const [signInIdentifier, setSignInIdentifier] = useState('');
-  const [signInPassword, setSignInPassword] = useState('');
-  const [signInMethod, setSignInMethod] = useState('password'); // 'password' | 'otp'
-  const [showSignInPassword, setShowSignInPassword] = useState(false);
-  const [userNotFound, setUserNotFound] = useState(false);
-
-  // Register State (Step 1: Name & Email OTP Verification -> Step 2: Password, Mobile & Final Account Creation)
-  const [registerStep, setRegisterStep] = useState(1);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [emailOtpSent, setEmailOtpSent] = useState(false);
-  const [isEmailVerified, setIsEmailVerified] = useState(false);
-  const [emailVerifiedToken, setEmailVerifiedToken] = useState('');
-  const [emailOtpDigits, setEmailOtpDigits] = useState(['', '', '', '', '', '']);
-  const [registerPassword, setRegisterPassword] = useState('');
-  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
-  const [phoneCountryCode, setPhoneCountryCode] = useState('+91');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const emailDigitRefs = useRef([]);
-
-  // Forgot / Reset Password State
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [resetNewPassword, setResetNewPassword] = useState('');
-  const [resetConfirmPassword, setResetConfirmPassword] = useState('');
-  const [showResetPassword, setShowResetPassword] = useState(false);
-
-  // OTP Verification State
-  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
-  const [maskedDestination, setMaskedDestination] = useState('');
-  const [cooldown, setCooldown] = useState(0);
-  const [deliveryInfo, setDeliveryInfo] = useState(null);
-  const [otpToken, setOtpToken] = useState('');
-
-  // Status & Feedback
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [canOtpVerify, setCanOtpVerify] = useState(false);
 
-  const digitInputRefs = useRef([]);
+  // Sign In Form State
+  const [signInEmail, setSignInEmail] = useState('');
+  const [signInPassword, setSignInPassword] = useState('');
+  const [showSignInPassword, setShowSignInPassword] = useState(false);
 
-  // Cooldown countdown timer
-  useEffect(() => {
-    let timer = null;
-    if (cooldown > 0) {
-      timer = setInterval(() => {
-        setCooldown((prev) => (prev > 0 ? prev - 1 : 0));
-      }, 1000);
-    }
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [cooldown]);
+  // Register Form State (One-step standard registration)
+  const [regName, setRegName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [regCountryCode, setRegCountryCode] = useState('+91');
+  const [regPhone, setRegPhone] = useState('');
 
-  // Handle initialResetData (e.g. from password reset link in email)
+  // Forgot Password State
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [resetSent, setResetSent] = useState(false);
+  const [resetCode, setResetCode] = useState('');
+  const [resetToken, setResetToken] = useState(initialResetData?.token || '');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showResetPassword, setShowResetPassword] = useState(false);
+
+  // Handle password reset email link payload
   useEffect(() => {
     if (initialResetData && initialResetData.token) {
       setMode('forgot');
-      setStep(2);
-      setOtpPurpose('reset');
       setResetToken(initialResetData.token);
+      setResetSent(true);
       if (initialResetData.email) {
         setForgotEmail(initialResetData.email);
-        setMaskedDestination(initialResetData.email);
       }
     }
   }, [initialResetData]);
 
-  // Focus first OTP digit box when advancing to step 2
-  useEffect(() => {
-    if (step === 2 && !resetToken) {
-      setTimeout(() => {
-        if (digitInputRefs.current[0]) {
-          digitInputRefs.current[0].focus();
-        }
-      }, 80);
-    }
-  }, [step, resetToken]);
-
-  const getFullPhone = () => {
-    if (!phoneNumber || !phoneNumber.trim()) return '';
-    return `${phoneCountryCode} ${phoneNumber.trim()}`;
-  };
-
-  // Switch between main modes
-  const handleSwitchMode = (newMode) => {
-    setMode(newMode);
-    setSignInMethod('password');
-    setStep(1);
-    setRegisterStep(1);
-    setEmailOtpSent(false);
-    setIsEmailVerified(false);
-    setEmailOtpDigits(['', '', '', '', '', '']);
-    setError('');
-    setSuccessMsg('');
-    setUserNotFound(false);
-    setCanOtpVerify(false);
-    if (newMode === 'forgot' && signInIdentifier.includes('@')) {
-      setForgotEmail(signInIdentifier.trim());
-    }
-  };
-
-  // Listen for OAuth completion from the official Google / Apple popup window
+  // Listen for OAuth completion from official popup window
   useEffect(() => {
     const handleOAuthMessage = (event) => {
       if (event.origin !== window.location.origin) return;
@@ -186,11 +111,154 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
     return () => window.removeEventListener('message', handleOAuthMessage);
   }, [loginWithOAuthToken, onClose]);
 
-  // Standard OAuth 2.0 Popup Window (Google & Apple)
+  // Mode switcher helper
+  const handleSwitchMode = (newMode) => {
+    setMode(newMode);
+    setError('');
+    setSuccessMsg('');
+    if (newMode === 'forgot' && signInEmail && signInEmail.includes('@')) {
+      setForgotEmail(signInEmail.trim());
+    }
+  };
+
+  // 1. Standard Sign In Handler
+  const handleSignIn = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+
+    const email = signInEmail.trim().toLowerCase();
+    if (!email) {
+      setError('Please enter your email address.');
+      return;
+    }
+    if (!signInPassword) {
+      setError('Please enter your account password.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await login(email, signInPassword);
+      setSuccessMsg('Signed in successfully! Loading workstation...');
+      setTimeout(() => {
+        if (onClose) onClose();
+      }, 300);
+    } catch (err) {
+      if (err.userNotFound) {
+        setError('No account found with this email. Please check your spelling or create an account.');
+      } else {
+        setError(err.message || 'Incorrect email or password. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 2. Standard Create Account Handler
+  const handleRegister = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+
+    const name = regName.trim();
+    const email = regEmail.trim().toLowerCase();
+    const password = regPassword;
+
+    if (!name || name.length < 2) {
+      setError('Please enter your full name.');
+      return;
+    }
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+    if (!password || password.length < 6) {
+      setError('Password must be at least 6 characters long.');
+      return;
+    }
+
+    const fullPhone = regPhone.trim() ? `${regCountryCode} ${regPhone.trim()}` : '';
+
+    setLoading(true);
+    try {
+      await register(email, password, name, 1000, fullPhone);
+      setSuccessMsg('Account created successfully! Loading workstation...');
+      setTimeout(() => {
+        if (onClose) onClose();
+      }, 350);
+    } catch (err) {
+      if (err.message && err.message.toLowerCase().includes('already exists')) {
+        setError('An account with this email already exists. Please sign in instead.');
+      } else {
+        setError(err.message || 'Registration failed. Please check your information and try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 3. Forgot Password Request Handler
+  const handleForgotPassword = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+
+    const targetEmail = forgotEmail.trim().toLowerCase();
+    if (!targetEmail || !targetEmail.includes('@') || !targetEmail.includes('.')) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await forgotPassword(targetEmail);
+      setResetSent(true);
+      setSuccessMsg(`Recovery code sent to ${targetEmail}. Please check your inbox.`);
+    } catch (err) {
+      setError(err.message || 'Failed to dispatch recovery code.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 4. Reset Password Confirmation Handler
+  const handleResetPassword = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+
+    if (!resetCode && !resetToken) {
+      setError('Please enter the 6-digit verification code from your email.');
+      return;
+    }
+    if (!newPassword || newPassword.length < 6) {
+      setError('New password must be at least 6 characters long.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match. Please re-enter.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await resetPassword(forgotEmail.trim().toLowerCase(), resetCode.trim() || null, newPassword, resetToken || null);
+      setSuccessMsg('Password updated successfully! Logged in.');
+      setTimeout(() => {
+        if (onClose) onClose();
+      }, 400);
+    } catch (err) {
+      setError(err.message || 'Failed to reset password. Please check the code.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 5. Standard Social OAuth 2.0 Popup Window (Google & Apple)
   const startSocialOAuthPopup = (provider) => {
     setError('');
     setSuccessMsg('');
-    setUserNotFound(false);
     setSocialLoading(provider);
 
     const width = 500;
@@ -224,446 +292,25 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
     }, 400);
   };
 
-  // 1. Password Sign In
-  const handlePasswordSignIn = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    setError('');
-    setSuccessMsg('');
-    setUserNotFound(false);
-
-    const identifier = signInIdentifier.trim();
-    if (!identifier) {
-      setError('Please enter your registered email address.');
-      return;
-    }
-    if (!signInPassword) {
-      setError('Please enter your account password.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await login(identifier, signInPassword);
-      if (onClose) onClose();
-    } catch (err) {
-      setError(err.message || 'Sign in failed. Please check your credentials.');
-      if (err.userNotFound) {
-        setUserNotFound(true);
-      }
-      if (err.canOtpVerify || err.message?.toLowerCase().includes('password')) {
-        setCanOtpVerify(true);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 2. Request OTP for Passwordless Sign In
-  const handleRequestSignInOtp = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    setError('');
-    setSuccessMsg('');
-    setUserNotFound(false);
-
-    const identifier = signInIdentifier.trim();
-    if (!identifier) {
-      setError('Please enter your email address first.');
-      return;
-    }
-    if (!identifier.includes('@') || !identifier.includes('.')) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const resp = await sendOtp({
-        identifier,
-        channel: 'email',
-        purpose: 'login',
-        email: identifier,
-        password: signInPassword || ''
-      });
-
-      if (resp.otpToken) setOtpToken(resp.otpToken);
-      setOtpPurpose('login');
-      setMaskedDestination(resp.maskedDestination || identifier);
-      setDeliveryInfo(resp.deliveryStatus || {});
-      setCooldown(resp.resendCooldown || 30);
-      setOtpDigits(['', '', '', '', '', '']);
-      setSuccessMsg(`Login code sent to ${resp.maskedDestination || identifier}`);
-      setStep(2);
-      setTimeout(() => {
-        if (digitInputRefs.current[0]) {
-          digitInputRefs.current[0].focus();
-        }
-      }, 80);
-    } catch (err) {
-      setError(err.message || 'Failed to dispatch verification code.');
-      if (err.userNotFound) {
-        setUserNotFound(true);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 3a. Register Step 1a: Send OTP to Email Address for Mandatory Verification
-  const handleSendRegisterEmailOtp = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    setError('');
-    setSuccessMsg('');
-
-    const targetEmail = email.trim();
-    if (!name.trim()) {
-      setError('Please enter your full name.');
-      return;
-    }
-    if (!targetEmail || !targetEmail.includes('@') || !targetEmail.includes('.')) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const resp = await sendOtp({
-        identifier: targetEmail,
-        channel: 'email',
-        purpose: 'register',
-        name: name.trim(),
-        email: targetEmail
-      });
-
-      if (resp.otpToken) setOtpToken(resp.otpToken);
-      setOtpPurpose('register');
-      setMaskedDestination(resp.maskedDestination || targetEmail);
-      setDeliveryInfo(resp.deliveryStatus || {});
-      setCooldown(resp.resendCooldown || 30);
-      setEmailOtpDigits(['', '', '', '', '', '']);
-      setEmailOtpSent(true);
-      setTimeout(() => {
-        if (emailDigitRefs.current[0]) {
-          emailDigitRefs.current[0].focus();
-        }
-      }, 80);
-    } catch (err) {
-      setError(err.message || 'Failed to dispatch verification code. Please check your email.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 3b. Register Step 1b: Verify Email OTP Code -> Unlock Next Step
-  const handleVerifyRegisterEmailOtp = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    setError('');
-    setSuccessMsg('');
-
-    const fullCode = emailOtpDigits.join('');
-    if (fullCode.length !== 6) {
-      setError('Please enter the 6-digit verification code sent to your email.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const resp = await verifyEmailOnly({
-        identifier: email.trim(),
-        code: fullCode,
-        otpToken
-      });
-
-      setIsEmailVerified(true);
-      setEmailVerifiedToken(resp.emailVerifiedToken || '');
-      setRegisterStep(2);
-      setSuccessMsg('Email verified successfully! Now set your password to create your account.');
-    } catch (err) {
-      setError(err.message || 'Verification failed. Please check the code and try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // 3c. Register Step 2: Final Account Creation (Only accessible after Email is verified)
-  const handleFinalCreateAccount = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    setError('');
-    setSuccessMsg('');
-
-    if (!isEmailVerified) {
-      setError('Please verify your email address first before creating your account.');
-      setRegisterStep(1);
-      return;
-    }
-    if (!registerPassword || registerPassword.length < 8) {
-      setError('Please create a secure password with at least 8 characters.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await register(email.trim(), registerPassword, name.trim(), 1000, getFullPhone(), emailVerifiedToken);
-      setSuccessMsg('Account created successfully! Loading your trading dashboard...');
-      setTimeout(() => {
-        if (onClose) onClose();
-      }, 400);
-    } catch (err) {
-      setError(err.message || 'Registration failed. Please check your details.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle Inline Email OTP Digit Input
-  const handleEmailDigitChange = (index, value) => {
-    const numeric = value.replace(/\D/g, '');
-    const newDigits = [...emailOtpDigits];
-
-    if (!numeric) {
-      newDigits[index] = '';
-      setEmailOtpDigits(newDigits);
-      return;
-    }
-
-    if (numeric.length > 1) {
-      const pasted = numeric.slice(0, 6).split('');
-      for (let i = 0; i < 6; i++) {
-        newDigits[i] = pasted[i] || '';
-      }
-      setEmailOtpDigits(newDigits);
-      const nextIdx = Math.min(pasted.length, 5);
-      if (emailDigitRefs.current[nextIdx]) {
-        emailDigitRefs.current[nextIdx].focus();
-      }
-      return;
-    }
-
-    newDigits[index] = numeric.slice(-1);
-    setEmailOtpDigits(newDigits);
-
-    if (index < 5 && numeric) {
-      if (emailDigitRefs.current[index + 1]) {
-        emailDigitRefs.current[index + 1].focus();
-      }
-    }
-  };
-
-  const handleEmailDigitKeyDown = (index, e) => {
-    if (e.key === 'Backspace' && !emailOtpDigits[index] && index > 0) {
-      if (emailDigitRefs.current[index - 1]) {
-        emailDigitRefs.current[index - 1].focus();
-      }
-    }
-  };
-
-  // 4. Forgot Password: Send Reset Code
-  const handleForgotSendCode = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    setError('');
-    setSuccessMsg('');
-
-    const targetEmail = forgotEmail.trim();
-    if (!targetEmail || !targetEmail.includes('@') || !targetEmail.includes('.')) {
-      setError('Please enter a valid registered email address.');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const resp = await forgotPassword(targetEmail);
-      if (resp.otpToken) setOtpToken(resp.otpToken);
-      setOtpPurpose('reset');
-      setMaskedDestination(resp.maskedDestination || targetEmail);
-      setDeliveryInfo(resp.deliveryStatus || {});
-      setCooldown(resp.resendCooldown || 30);
-      setOtpDigits(['', '', '', '', '', '']);
-      setStep(2);
-    } catch (err) {
-      setError(err.message || 'Failed to send reset code.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Resend OTP
-  const handleResendOtp = async () => {
-    if (cooldown > 0 || loading) return;
-    setError('');
-    setLoading(true);
-    try {
-      if (otpPurpose === 'register') {
-        const resp = await sendOtp({
-          identifier: email.trim(),
-          channel: 'email',
-          purpose: 'register',
-          name: name.trim(),
-          email: email.trim(),
-          phone: getFullPhone(),
-          password: registerPassword
-        });
-        if (resp.otpToken) setOtpToken(resp.otpToken);
-        setMaskedDestination(resp.maskedDestination || email.trim());
-        setDeliveryInfo(resp.deliveryStatus || {});
-        setCooldown(resp.resendCooldown || 30);
-        setOtpDigits(['', '', '', '', '', '']);
-        setEmailOtpDigits(['', '', '', '', '', '']);
-      } else if (otpPurpose === 'login') {
-        const resp = await sendOtp({
-          identifier: signInIdentifier.trim(),
-          channel: 'email',
-          purpose: 'login',
-          email: signInIdentifier.trim()
-        });
-        if (resp.otpToken) setOtpToken(resp.otpToken);
-        setMaskedDestination(resp.maskedDestination || signInIdentifier.trim());
-        setDeliveryInfo(resp.deliveryStatus || {});
-        setCooldown(resp.resendCooldown || 30);
-        setOtpDigits(['', '', '', '', '', '']);
-        setEmailOtpDigits(['', '', '', '', '', '']);
-      } else if (otpPurpose === 'reset') {
-        const resp = await forgotPassword(forgotEmail.trim());
-        if (resp.otpToken) setOtpToken(resp.otpToken);
-        setMaskedDestination(resp.maskedDestination || forgotEmail.trim());
-        setDeliveryInfo(resp.deliveryStatus || {});
-        setCooldown(resp.resendCooldown || 30);
-        setOtpDigits(['', '', '', '', '', '']);
-        setEmailOtpDigits(['', '', '', '', '', '']);
-      }
-    } catch (err) {
-      setError(err.message || 'Failed to resend code.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Handle 6-Digit PIN input
-  const handleDigitChange = (index, value) => {
-    const numeric = value.replace(/\D/g, '');
-    const newDigits = [...otpDigits];
-
-    if (!numeric) {
-      newDigits[index] = '';
-      setOtpDigits(newDigits);
-      return;
-    }
-
-    if (numeric.length > 1) {
-      const pasted = numeric.slice(0, 6).split('');
-      for (let i = 0; i < 6; i++) {
-        newDigits[i] = pasted[i] || '';
-      }
-      setOtpDigits(newDigits);
-      const nextIdx = Math.min(pasted.length, 5);
-      if (digitInputRefs.current[nextIdx]) {
-        digitInputRefs.current[nextIdx].focus();
-      }
-      return;
-    }
-
-    newDigits[index] = numeric.slice(-1);
-    setOtpDigits(newDigits);
-
-    if (index < 5 && numeric) {
-      if (digitInputRefs.current[index + 1]) {
-        digitInputRefs.current[index + 1].focus();
-      }
-    }
-  };
-
-  const handleKeyDown = (index, e) => {
-    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
-      if (digitInputRefs.current[index - 1]) {
-        digitInputRefs.current[index - 1].focus();
-      }
-    }
-  };
-
-  // Step 2: Verification Submit
-  const handleVerifySubmit = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    const fullCode = otpDigits.join('');
-
-    // If resetting via email link with verified resetToken, 6-digit code is optional
-    if (otpPurpose !== 'reset' || !resetToken) {
-      if (fullCode.length !== 6) {
-        setError('Please enter the complete 6-digit code.');
-        return;
-      }
-    }
-
-    setError('');
-    setLoading(true);
-
-    try {
-      if (otpPurpose === 'register') {
-        await verifyOtp({
-          identifier: email.trim(),
-          code: fullCode,
-          otpToken,
-          name: name.trim(),
-          phone: getFullPhone()
-        });
-        setSuccessMsg('Account verified & created successfully! Welcome to AuraTrade.');
-        setTimeout(() => {
-          if (onClose) onClose();
-        }, 500);
-      } else if (otpPurpose === 'login') {
-        await verifyOtp({
-          identifier: signInIdentifier.trim(),
-          code: fullCode,
-          otpToken,
-          password: signInPassword || ''
-        });
-        if (onClose) onClose();
-      } else if (otpPurpose === 'reset') {
-        if (!resetNewPassword || resetNewPassword.length < 8) {
-          setError('New password must be at least 8 characters long.');
-          setLoading(false);
-          return;
-        }
-        if (resetNewPassword !== resetConfirmPassword) {
-          setError('New passwords do not match. Please re-check.');
-          setLoading(false);
-          return;
-        }
-
-        // Reset password via API (supports token from link OR 6-digit code)
-        await resetPassword(forgotEmail.trim(), fullCode || null, resetNewPassword, resetToken || null);
-        setSuccessMsg('Password reset successfully! Logged in.');
-
-        // Clean query params from URL
-        if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
-
-        setTimeout(() => {
-          if (onClose) onClose();
-        }, 500);
-      }
-    } catch (err) {
-      setError(err.message || 'Verification failed. Please check the code and try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
     <div className="modal-overlay" onClick={closable ? onClose : undefined} id="auth-modal-overlay">
       <div
         className="modal-card auth-modal-card"
         onClick={(e) => e.stopPropagation()}
         style={{
-          maxWidth: '435px',
-          background: 'var(--bg-card)',
-          border: '1px solid var(--border-subtle)',
+          maxWidth: '430px',
+          width: '94vw',
+          background: 'var(--bg-card, #0f172a)',
+          border: '1px solid var(--border-subtle, rgba(148, 163, 184, 0.18))',
           borderRadius: '16px',
           boxShadow: '0 24px 60px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 255, 255, 0.1)',
           overflow: 'hidden',
-          position: 'relative'
+          position: 'relative',
+          boxSizing: 'border-box'
         }}
         id="auth-modal-dialog"
       >
-        {/* Top Institutional Accent Line */}
+        {/* Accent Top Border */}
         <div
           style={{
             height: '2px',
@@ -672,7 +319,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
           }}
         />
 
-        {/* Floating Close Button */}
+        {/* Close Button */}
         {closable && (
           <button
             type="button"
@@ -686,8 +333,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
               width: '32px',
               height: '32px',
               background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid var(--border-subtle)',
-              color: 'var(--text-secondary)',
+              border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))',
+              color: 'var(--text-secondary, #94a3b8)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -702,842 +349,588 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
           </button>
         )}
 
-        {/* Hero Brand Header Area */}
+        {/* Header Branding */}
         <div
           style={{
-            padding: '1.45rem 1.4rem 1.15rem',
-            background: 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(16, 185, 129, 0.13) 0%, rgba(6, 182, 212, 0.05) 50%, transparent 85%)',
-            borderBottom: '1px solid var(--border-subtle)',
+            padding: '1.4rem 1.4rem 1.1rem',
+            background: 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.05) 50%, transparent 85%)',
+            borderBottom: '1px solid var(--border-subtle, rgba(148, 163, 184, 0.12))',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             textAlign: 'center',
-            gap: '0.45rem',
+            gap: '0.4rem',
             position: 'relative'
           }}
         >
           <BrandLogo size="portal" layout="vertical" subtitle="Institutional Trading Portal" />
         </div>
 
-        {/* Modal Body */}
-        <div style={{ padding: '1.15rem clamp(0.85rem, 3vw, 1.4rem) 1.25rem', display: 'flex', flexDirection: 'column', gap: '0.95rem', boxSizing: 'border-box' }}>
-          
-          {/* Step 1: Input Credentials / Selection */}
-          {step === 1 && (
-            <>
-              {/* Segmented Mode Switcher (Visible when not in forgot password mode) */}
-              {mode !== 'forgot' ? (
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    background: 'var(--bg-card-hover)',
-                    padding: '3px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--border-subtle)'
-                  }}
-                >
-                  <button
-                    type="button"
-                    id="auth-tab-signin"
-                    onClick={() => handleSwitchMode('signin')}
-                    style={{
-                      padding: '0.55rem',
-                      borderRadius: '8px',
-                      border: 'none',
-                      background: mode === 'signin' ? 'var(--bg-card)' : 'transparent',
-                      color: mode === 'signin' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                      fontWeight: mode === 'signin' ? 700 : 500,
-                      fontSize: '0.82rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.45rem',
-                      boxShadow: mode === 'signin' ? '0 2px 8px rgba(0,0,0,0.2), 0 0 1px rgba(255,255,255,0.1)' : 'none',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    <LogIn size={14} color={mode === 'signin' ? 'var(--accent-cyan)' : 'currentColor'} />
-                    <span>Sign In</span>
-                  </button>
-                  <button
-                    type="button"
-                    id="auth-tab-register"
-                    onClick={() => handleSwitchMode('register')}
-                    style={{
-                      padding: '0.55rem',
-                      borderRadius: '8px',
-                      border: 'none',
-                      background: mode === 'register' ? 'var(--bg-card)' : 'transparent',
-                      color: mode === 'register' ? 'var(--text-primary)' : 'var(--text-secondary)',
-                      fontWeight: mode === 'register' ? 700 : 500,
-                      fontSize: '0.82rem',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.45rem',
-                      boxShadow: mode === 'register' ? '0 2px 8px rgba(0,0,0,0.2), 0 0 1px rgba(255,255,255,0.1)' : 'none',
-                      transition: 'all 0.15s ease'
-                    }}
-                  >
-                    <UserPlus size={14} color={mode === 'register' ? 'var(--accent-cyan)' : 'currentColor'} />
-                    <span>Create Account</span>
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleSwitchMode('signin')}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#94a3b8',
-                      fontSize: '0.78rem',
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.35rem',
-                      padding: 0
-                    }}
-                  >
-                    <ArrowLeft size={13} />
-                    <span>Back to Sign In</span>
-                  </button>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <KeyRound size={14} color="var(--accent-cyan)" /> Reset Password
-                  </span>
-                </div>
-              )}
+        {/* Modal Content */}
+        <div style={{ padding: '1.25rem clamp(1rem, 3.5vw, 1.45rem) 1.35rem', display: 'flex', flexDirection: 'column', gap: '1rem', boxSizing: 'border-box' }}>
 
-              {/* Error Message Banner */}
-              {error && (
-                <div
-                  style={{
-                    padding: '0.6rem 0.8rem',
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    border: '1px solid rgba(239, 68, 68, 0.25)',
-                    color: '#f87171',
-                    borderRadius: '7px',
-                    fontSize: '0.78rem',
-                    lineHeight: 1.4
-                  }}
-                >
-                  {error}
-                </div>
-              )}
+          {/* Mode Switcher Tabs (Sign In / Create Account) */}
+          {mode !== 'forgot' ? (
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                background: 'var(--bg-input, rgba(255, 255, 255, 0.04))',
+                padding: '4px',
+                borderRadius: '10px',
+                border: '1px solid var(--border-subtle, rgba(148, 163, 184, 0.15))'
+              }}
+            >
+              <button
+                type="button"
+                id="auth-tab-signin"
+                onClick={() => handleSwitchMode('signin')}
+                style={{
+                  padding: '0.6rem 0.5rem',
+                  borderRadius: '7px',
+                  border: 'none',
+                  background: mode === 'signin' ? 'var(--bg-card, #1e293b)' : 'transparent',
+                  color: mode === 'signin' ? 'var(--text-primary, #ffffff)' : 'var(--text-secondary, #94a3b8)',
+                  fontWeight: mode === 'signin' ? 700 : 500,
+                  fontSize: '0.84rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.45rem',
+                  boxShadow: mode === 'signin' ? '0 2px 8px rgba(0,0,0,0.25), 0 0 1px rgba(255,255,255,0.1)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <LogIn size={14} color={mode === 'signin' ? 'var(--accent-cyan, #06b6d4)' : 'currentColor'} />
+                <span>Sign In</span>
+              </button>
+              <button
+                type="button"
+                id="auth-tab-register"
+                onClick={() => handleSwitchMode('register')}
+                style={{
+                  padding: '0.6rem 0.5rem',
+                  borderRadius: '7px',
+                  border: 'none',
+                  background: mode === 'register' ? 'var(--bg-card, #1e293b)' : 'transparent',
+                  color: mode === 'register' ? 'var(--text-primary, #ffffff)' : 'var(--text-secondary, #94a3b8)',
+                  fontWeight: mode === 'register' ? 700 : 500,
+                  fontSize: '0.84rem',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.45rem',
+                  boxShadow: mode === 'register' ? '0 2px 8px rgba(0,0,0,0.25), 0 0 1px rgba(255,255,255,0.1)' : 'none',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <UserPlus size={14} color={mode === 'register' ? 'var(--accent-cyan, #06b6d4)' : 'currentColor'} />
+                <span>Create Account</span>
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <button
+                type="button"
+                onClick={() => handleSwitchMode('signin')}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-secondary, #94a3b8)',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                  padding: 0
+                }}
+              >
+                <ArrowLeft size={14} />
+                <span>Back to Sign In</span>
+              </button>
+              <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary, #ffffff)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <KeyRound size={15} color="var(--accent-cyan, #06b6d4)" /> Reset Password
+              </span>
+            </div>
+          )}
 
-              {/* Success Message Banner */}
-              {successMsg && (
-                <div
-                  style={{
-                    padding: '0.6rem 0.8rem',
-                    background: 'rgba(16, 185, 129, 0.1)',
-                    border: '1px solid rgba(16, 185, 129, 0.25)',
-                    color: '#34d399',
-                    borderRadius: '7px',
-                    fontSize: '0.78rem',
-                    lineHeight: 1.4
-                  }}
-                >
-                  {successMsg}
-                </div>
-              )}
+          {/* Feedback Messages */}
+          {error && (
+            <div
+              style={{
+                padding: '0.65rem 0.85rem',
+                background: 'rgba(239, 68, 68, 0.12)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                color: '#f87171',
+                borderRadius: '8px',
+                fontSize: '0.78rem',
+                lineHeight: 1.45,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem'
+              }}
+            >
+              <AlertCircle size={15} style={{ flexShrink: 0 }} />
+              <span>{error}</span>
+            </div>
+          )}
 
-              {/* MODE 1: SIGN IN FORM */}
-              {mode === 'signin' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                  <form
-                    onSubmit={handlePasswordSignIn}
-                    style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}
-                  >
-                    <div className="input-group">
-                      <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                        Email Address
-                      </label>
-                      <div className="auth-input-wrapper">
-                        {signInIdentifier.replace(/\s+/g, '').match(/^\+?\d+$/) ? (
-                          <Smartphone size={15} className="auth-input-icon" />
-                        ) : (
-                          <Mail size={15} className="auth-input-icon" />
-                        )}
-                        <input
-                          type="text"
-                          id="auth-identifier-input"
-                          name="username"
-                          autoComplete="username"
-                          required
-                          className="auth-input-field"
-                          placeholder="e.g. name@domain.com"
-                          value={signInIdentifier}
-                          onChange={(e) => setSignInIdentifier(e.target.value)}
-                          autoFocus
-                        />
-                      </div>
-                    </div>
+          {successMsg && (
+            <div
+              style={{
+                padding: '0.65rem 0.85rem',
+                background: 'rgba(16, 185, 129, 0.12)',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                color: '#34d399',
+                borderRadius: '8px',
+                fontSize: '0.78rem',
+                lineHeight: 1.45,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.45rem'
+              }}
+            >
+              <CheckCircle2 size={15} style={{ flexShrink: 0 }} />
+              <span>{successMsg}</span>
+            </div>
+          )}
 
-                    <div className="input-group">
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                          Password
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => handleSwitchMode('forgot')}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#06b6d4',
-                            fontSize: '0.72rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            padding: 0
-                          }}
-                          id="auth-forgot-password-link"
-                        >
-                          Forgot password?
-                        </button>
-                      </div>
-                      <div className="auth-input-wrapper">
-                        <Lock size={15} className="auth-input-icon" />
-                        <input
-                          type={showSignInPassword ? 'text' : 'password'}
-                          id="auth-password-input"
-                          name="password"
-                          autoComplete="current-password"
-                          required
-                          className="auth-input-field"
-                          placeholder="Enter account password"
-                          value={signInPassword}
-                          onChange={(e) => setSignInPassword(e.target.value)}
-                          style={{ paddingRight: '2.5rem' }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowSignInPassword(!showSignInPassword)}
-                          style={{
-                            position: 'absolute',
-                            right: '0.75rem',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--text-muted)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            padding: 0
-                          }}
-                          title={showSignInPassword ? 'Hide password' : 'Show password'}
-                        >
-                          {showSignInPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                        </button>
-                      </div>
-                    </div>
-
-                    {userNotFound && (
-                      <div style={{ textAlign: 'center', marginTop: '-0.2rem' }}>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setMode('register');
-                            setRegisterStep(1);
-                            setEmailOtpSent(false);
-                            setIsEmailVerified(false);
-                            setEmailOtpDigits(['', '', '', '', '', '']);
-                            setError('');
-                            setUserNotFound(false);
-                            if (signInIdentifier.includes('@')) {
-                              setEmail(signInIdentifier);
-                            } else {
-                              setPhoneNumber(signInIdentifier.replace(/\D/g, ''));
-                            }
-                          }}
-                          style={{
-                            background: 'rgba(6, 182, 212, 0.12)',
-                            border: '1px solid rgba(6, 182, 212, 0.35)',
-                            color: '#06b6d4',
-                            padding: '0.45rem 0.8rem',
-                            borderRadius: '6px',
-                            fontSize: '0.76rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '0.35rem'
-                          }}
-                        >
-                          <UserPlus size={13} />
-                          <span>New trader? Switch to Create Account</span>
-                        </button>
-                      </div>
-                    )}
-
-                    <button
-                      type="submit"
-                      className="btn btn-primary"
-                      disabled={loading || !signInIdentifier.trim() || !signInPassword.trim()}
-                      style={{
-                        width: '100%',
-                        padding: '0.7rem',
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        marginTop: '0.2rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.45rem'
-                      }}
-                      id="auth-submit-direct-login-btn"
-                    >
-                      {loading ? (
-                        <>
-                          <RefreshCw size={14} className="spin" />
-                          <span>Signing In...</span>
-                        </>
-                      ) : (
-                        <>
-                          <LogIn size={15} />
-                          <span>Sign In</span>
-                        </>
-                      )}
-                    </button>
-                  </form>
-
-                  {/* Standard Modern Divider */}
-                  <div className="auth-social-divider" role="separator" aria-label="Sign-in alternatives">
-                    <span className="auth-social-divider-line" />
-                    <span className="auth-social-divider-text">OR CONTINUE WITH</span>
-                    <span className="auth-social-divider-line" />
+          {/* ================================================================= */}
+          {/* VIEW 1: SIGN IN FORM                                             */}
+          {/* ================================================================= */}
+          {mode === 'signin' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+              <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                {/* Email Address */}
+                <div className="input-group">
+                  <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.35rem', display: 'block' }}>
+                    Email Address
+                  </label>
+                  <div className="auth-input-wrapper">
+                    <Mail size={15} className="auth-input-icon" />
+                    <input
+                      type="email"
+                      id="auth-signin-email"
+                      name="email"
+                      autoComplete="email"
+                      required
+                      className="auth-input-field"
+                      placeholder="name@domain.com"
+                      value={signInEmail}
+                      onChange={(e) => setSignInEmail(e.target.value)}
+                      autoFocus
+                    />
                   </div>
+                </div>
 
-                  {/* Standard Web Social OAuth Stack (Google & Apple) */}
-                  <div className="auth-social-stack">
+                {/* Password */}
+                <div className="input-group">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                    <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)' }}>
+                      Password
+                    </label>
                     <button
                       type="button"
-                      className="auth-social-btn auth-social-btn--google"
-                      id="auth-social-google-btn"
-                      disabled={loading || !!socialLoading}
-                      onClick={() => startSocialOAuthPopup('google')}
-                      aria-label="Continue with Google"
+                      onClick={() => handleSwitchMode('forgot')}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--accent-cyan, #06b6d4)',
+                        fontSize: '0.74rem',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        padding: 0
+                      }}
+                      id="auth-forgot-password-link"
                     >
-                      {socialLoading === 'google' ? (
-                        <RefreshCw size={15} className="spin" />
-                      ) : (
-                        <GoogleSvg />
-                      )}
-                      <span>Continue with Google</span>
+                      Forgot password?
                     </button>
-
+                  </div>
+                  <div className="auth-input-wrapper">
+                    <Lock size={15} className="auth-input-icon" />
+                    <input
+                      type={showSignInPassword ? 'text' : 'password'}
+                      id="auth-signin-password"
+                      name="password"
+                      autoComplete="current-password"
+                      required
+                      className="auth-input-field"
+                      placeholder="Enter your password"
+                      value={signInPassword}
+                      onChange={(e) => setSignInPassword(e.target.value)}
+                      style={{ paddingRight: '2.5rem' }}
+                    />
                     <button
                       type="button"
-                      className="auth-social-btn auth-social-btn--apple"
-                      id="auth-social-apple-btn"
-                      disabled={loading || !!socialLoading}
-                      onClick={() => startSocialOAuthPopup('apple')}
-                      aria-label="Continue with Apple"
+                      onClick={() => setShowSignInPassword(!showSignInPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '0.75rem',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-muted, #64748b)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: 0
+                      }}
+                      title={showSignInPassword ? 'Hide password' : 'Show password'}
                     >
-                      {socialLoading === 'apple' ? (
-                        <RefreshCw size={15} className="spin" />
-                      ) : (
-                        <AppleSvg />
-                      )}
-                      <span>Continue with Apple</span>
+                      {showSignInPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
                 </div>
-              )}
 
-              {/* MODE 2: CREATE ACCOUNT FORM (Step 1: Mandatory Email Verification -> Step 2: Password & Create Account) */}
-              {mode === 'register' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                  {/* 2-Step Registration Progress Indicator */}
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
-                      gap: '0.5rem',
-                      padding: '0.3rem',
-                      background: 'var(--bg-input)',
-                      border: '1px solid var(--border-subtle)',
-                      borderRadius: '8px'
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.4rem',
-                        padding: '0.4rem 0.5rem',
-                        borderRadius: '6px',
-                        fontSize: '0.73rem',
-                        fontWeight: 700,
-                        background: registerStep === 1 ? 'rgba(6, 182, 212, 0.14)' : 'rgba(16, 185, 129, 0.12)',
-                        color: registerStep === 1 ? 'var(--accent-cyan)' : '#10b981',
-                        border: registerStep === 1 ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid rgba(16, 185, 129, 0.25)'
-                      }}
-                    >
-                      {isEmailVerified ? <CheckCircle2 size={13} /> : <span>1.</span>}
-                      <span>Verify Email</span>
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '0.4rem',
-                        padding: '0.4rem 0.5rem',
-                        borderRadius: '6px',
-                        fontSize: '0.73rem',
-                        fontWeight: 700,
-                        background: registerStep === 2 ? 'rgba(6, 182, 212, 0.14)' : 'transparent',
-                        color: registerStep === 2 ? 'var(--accent-cyan)' : 'var(--text-muted)',
-                        border: registerStep === 2 ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid transparent',
-                        opacity: isEmailVerified ? 1 : 0.6
-                      }}
-                    >
-                      <Lock size={12} />
-                      <span>2. Create Account</span>
-                    </div>
-                  </div>
-
-                  {/* STEP 1: FULL NAME & MANDATORY EMAIL OTP VERIFICATION */}
-                  {registerStep === 1 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                      <form
-                        onSubmit={emailOtpSent ? handleVerifyRegisterEmailOtp : handleSendRegisterEmailOtp}
-                        style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}
-                      >
-                      {/* Full Name */}
-                      <div className="input-group">
-                        <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Full Name</label>
-                        <div className="auth-input-wrapper">
-                          <User size={15} className="auth-input-icon" />
-                          <input
-                            type="text"
-                            id="auth-name-input"
-                            name="name"
-                            autoComplete="name"
-                            required
-                            className="auth-input-field"
-                            placeholder="e.g. Alex Mercer"
-                            value={name}
-                            onChange={(e) => setName(e.target.value)}
-                            autoFocus
-                          />
-                        </div>
-                      </div>
-
-                      {/* Email Address with Mandatory Verification */}
-                      <div className="input-group">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Email Address</label>
-                          <span style={{ fontSize: '0.68rem', color: emailOtpSent ? '#f59e0b' : '#06b6d4', fontWeight: 600 }}>
-                            {emailOtpSent ? 'OTP Dispatched — Verify Below' : 'Verification Required'}
-                          </span>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.45rem' }}>
-                          <div className="auth-input-wrapper" style={{ flex: 1, minWidth: 0 }}>
-                            <Mail size={15} className="auth-input-icon" />
-                            <input
-                              type="email"
-                              id="auth-email-input"
-                              name="email"
-                              autoComplete="email"
-                              required
-                              className="auth-input-field"
-                              placeholder="name@domain.com"
-                              value={email}
-                              onChange={(e) => {
-                                setEmail(e.target.value);
-                                if (emailOtpSent || isEmailVerified) {
-                                  setEmailOtpSent(false);
-                                  setIsEmailVerified(false);
-                                  setEmailOtpDigits(['', '', '', '', '', '']);
-                                  setError('');
-                                  setSuccessMsg('');
-                                }
-                              }}
-                            />
-                          </div>
-                          {emailOtpSent && (
-                            <button
-                              type="button"
-                              onClick={handleSendRegisterEmailOtp}
-                              disabled={loading || cooldown > 0}
-                              style={{
-                                padding: '0 0.75rem',
-                                borderRadius: 'var(--radius-sm)',
-                                border: '1px solid var(--border-subtle)',
-                                background: 'var(--bg-input)',
-                                color: cooldown > 0 ? 'var(--text-muted)' : 'var(--accent-cyan)',
-                                fontSize: '0.74rem',
-                                fontWeight: 600,
-                                cursor: loading || cooldown > 0 ? 'not-allowed' : 'pointer',
-                                whiteSpace: 'nowrap'
-                              }}
-                            >
-                              {cooldown > 0 ? `${cooldown}s` : 'Resend'}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Inline Email OTP Verification Section */}
-                      {emailOtpSent ? (
-                        <div
-                          style={{
-                            padding: '0.85rem',
-                            background: 'var(--bg-card-hover)',
-                            border: '1px solid rgba(6, 182, 212, 0.3)',
-                            borderRadius: '10px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: '0.75rem'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
-                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                              Enter code sent to <strong style={{ color: 'var(--text-primary)' }}>{maskedDestination || email}</strong>
-                            </span>
-                          </div>
-
-                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.4rem' }}>
-                            {emailOtpDigits.map((digit, idx) => (
-                              <input
-                                key={idx}
-                                ref={(el) => (emailDigitRefs.current[idx] = el)}
-                                type="text"
-                                id={`reg-otp-box-${idx}`}
-                                name={`reg_otp_${idx}`}
-                                autoComplete="one-time-code"
-                                inputMode="numeric"
-                                maxLength={6}
-                                value={digit}
-                                onChange={(e) => handleEmailDigitChange(idx, e.target.value)}
-                                onKeyDown={(e) => handleEmailDigitKeyDown(idx, e)}
-                                style={{
-                                  width: '100%',
-                                  height: '44px',
-                                  textAlign: 'center',
-                                  fontSize: '1.15rem',
-                                  fontWeight: 700,
-                                  fontFamily: 'var(--font-mono)',
-                                  borderRadius: '8px',
-                                  border: digit ? '1.5px solid var(--accent-cyan)' : '1px solid var(--border-subtle)',
-                                  background: digit ? 'rgba(6, 182, 212, 0.08)' : 'var(--bg-input)',
-                                  color: 'var(--text-primary)',
-                                  outline: 'none',
-                                  transition: 'all 0.15s ease'
-                                }}
-                              />
-                            ))}
-                          </div>
-
-                          <button
-                            type="submit"
-                            className="btn btn-primary"
-                            disabled={loading || emailOtpDigits.join('').length !== 6}
-                            style={{
-                              width: '100%',
-                              padding: '0.7rem',
-                              fontSize: '0.84rem',
-                              fontWeight: 700,
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: '0.45rem'
-                            }}
-                            id="auth-verify-email-next-btn"
-                          >
-                            {loading ? (
-                              <>
-                                <RefreshCw size={14} className="spin" />
-                                <span>Verifying Email...</span>
-                              </>
-                            ) : (
-                              <>
-                                <CheckCircle2 size={15} />
-                                <span>Verify Email & Next Step</span>
-                                <ArrowRight size={14} />
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="submit"
-                          className="btn btn-primary"
-                          disabled={loading || !name.trim() || !email.trim()}
-                          style={{
-                            width: '100%',
-                            padding: '0.75rem',
-                            fontSize: '0.85rem',
-                            fontWeight: 700,
-                            marginTop: '0.2rem',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '0.45rem'
-                          }}
-                          id="auth-send-email-otp-btn"
-                        >
-                          {loading ? (
-                            <>
-                              <RefreshCw size={14} className="spin" />
-                              <span>Sending Verification Code...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Mail size={15} />
-                              <span>Verify Email to Continue</span>
-                              <ArrowRight size={14} />
-                            </>
-                          )}
-                        </button>
-                      )}
-                    </form>
-
-                    {/* Social OAuth Buttons Stack for Registration */}
-                    {!emailOtpSent && (
-                      <>
-                        <div className="auth-social-divider" role="separator" aria-label="Registration alternatives">
-                          <span className="auth-social-divider-line" />
-                          <span className="auth-social-divider-text">OR CONTINUE WITH</span>
-                          <span className="auth-social-divider-line" />
-                        </div>
-
-                        <div className="auth-social-stack">
-                          <button
-                            type="button"
-                            className="auth-social-btn auth-social-btn--google"
-                            id="auth-social-google-reg-btn"
-                            disabled={loading || !!socialLoading}
-                            onClick={() => startSocialOAuthPopup('google')}
-                            aria-label="Continue with Google"
-                          >
-                            {socialLoading === 'google' ? (
-                              <RefreshCw size={15} className="spin" />
-                            ) : (
-                              <GoogleSvg />
-                            )}
-                            <span>Continue with Google</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            className="auth-social-btn auth-social-btn--apple"
-                            id="auth-social-apple-reg-btn"
-                            disabled={loading || !!socialLoading}
-                            onClick={() => startSocialOAuthPopup('apple')}
-                            aria-label="Continue with Apple"
-                          >
-                            {socialLoading === 'apple' ? (
-                              <RefreshCw size={15} className="spin" />
-                            ) : (
-                              <AppleSvg />
-                            )}
-                            <span>Continue with Apple</span>
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                {/* Submit Sign In Button */}
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={loading || !signInEmail.trim() || !signInPassword.trim()}
+                  style={{
+                    width: '100%',
+                    padding: '0.72rem',
+                    fontSize: '0.86rem',
+                    fontWeight: 700,
+                    marginTop: '0.2rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.45rem'
+                  }}
+                  id="auth-submit-signin-btn"
+                >
+                  {loading ? (
+                    <>
+                      <RefreshCw size={14} className="spin" />
+                      <span>Signing In...</span>
+                    </>
+                  ) : (
+                    <>
+                      <LogIn size={15} />
+                      <span>Sign In</span>
+                    </>
                   )}
+                </button>
+              </form>
 
-                  {/* STEP 2: PASSWORD, MOBILE & FINAL CREATE ACCOUNT (Unlocked ONLY after Email is Verified) */}
-                  {registerStep === 2 && isEmailVerified && (
-                    <form onSubmit={handleFinalCreateAccount} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                      {/* Verified Email Confirmation Pill */}
-                      <div
-                        style={{
-                          padding: '0.65rem 0.85rem',
-                          background: 'rgba(16, 185, 129, 0.1)',
-                          border: '1px solid rgba(16, 185, 129, 0.3)',
-                          borderRadius: '8px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          gap: '0.5rem'
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', minWidth: 0 }}>
-                          <CheckCircle2 size={15} color="#10b981" style={{ flexShrink: 0 }} />
-                          <div style={{ fontSize: '0.76rem', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            <span style={{ color: '#10b981', fontWeight: 700 }}>Verified:</span> {email}
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setRegisterStep(1);
-                            setIsEmailVerified(false);
-                            setEmailOtpSent(false);
-                            setEmailOtpDigits(['', '', '', '', '', '']);
-                            setSuccessMsg('');
-                            setError('');
-                          }}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--accent-cyan)',
-                            fontSize: '0.72rem',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            padding: 0,
-                            flexShrink: 0
-                          }}
-                        >
-                          Change
-                        </button>
-                      </div>
+              {/* Standard Divider */}
+              <div className="auth-social-divider" role="separator" aria-label="Sign-in alternatives">
+                <span className="auth-social-divider-line" />
+                <span className="auth-social-divider-text">OR CONTINUE WITH</span>
+                <span className="auth-social-divider-line" />
+              </div>
 
-                      {/* Account Password */}
-                      <div className="input-group">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Create Password</label>
-                          <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Min. 8 characters</span>
-                        </div>
-                        <div className="auth-input-wrapper">
-                          <Lock size={15} className="auth-input-icon" />
-                          <input
-                            type={showRegisterPassword ? 'text' : 'password'}
-                            id="auth-register-password-input"
-                            name="newPassword"
-                            autoComplete="new-password"
-                            required
-                            minLength={8}
-                            className="auth-input-field"
-                            placeholder="At least 8 characters"
-                            value={registerPassword}
-                            onChange={(e) => setRegisterPassword(e.target.value)}
-                            style={{ paddingRight: '2.5rem' }}
-                            autoFocus
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowRegisterPassword(!showRegisterPassword)}
-                            style={{
-                              position: 'absolute',
-                              right: '0.75rem',
-                              top: '50%',
-                              transform: 'translateY(-50%)',
-                              background: 'transparent',
-                              border: 'none',
-                              color: 'var(--text-muted)',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              padding: 0
-                            }}
-                            title={showRegisterPassword ? 'Hide password' : 'Show password'}
-                          >
-                            {showRegisterPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                          </button>
-                        </div>
-                      </div>
-
-                      {/* Mobile Number */}
-                      <div className="input-group">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Mobile Number</label>
-                          <span style={{ fontSize: '0.68rem', color: '#94a3b8' }}>Optional contact</span>
-                        </div>
-                        <div style={{ display: 'flex', gap: '0.4rem' }}>
-                          <select
-                            id="auth-country-code-select"
-                            name="phoneCountryCode"
-                            autoComplete="tel-country-code"
-                            value={phoneCountryCode}
-                            onChange={(e) => setPhoneCountryCode(e.target.value)}
-                            style={{
-                              background: 'var(--bg-input)',
-                              border: '1px solid var(--border-subtle)',
-                              borderRadius: 'var(--radius-sm)',
-                              color: 'var(--text-primary)',
-                              padding: '0 0.5rem',
-                              fontSize: '0.78rem',
-                              fontWeight: 600,
-                              cursor: 'pointer',
-                              outline: 'none',
-                              minWidth: '85px'
-                            }}
-                          >
-                            {COUNTRY_CODES.map((c) => (
-                              <option key={c.code} value={c.code} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
-                                {c.code} ({c.country})
-                              </option>
-                            ))}
-                          </select>
-
-                          <div className="auth-input-wrapper" style={{ flex: 1, minWidth: 0 }}>
-                            <Phone size={15} className="auth-input-icon" />
-                            <input
-                              type="tel"
-                              id="auth-phone-input"
-                              name="phone"
-                              autoComplete="tel-national"
-                              className="auth-input-field"
-                              placeholder="Phone number"
-                              value={phoneNumber}
-                              onChange={(e) => setPhoneNumber(e.target.value)}
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Final Submit: Create Account */}
-                      <button
-                        type="submit"
-                        className="btn btn-primary"
-                        disabled={loading || registerPassword.length < 8}
-                        style={{
-                          width: '100%',
-                          padding: '0.75rem',
-                          fontSize: '0.85rem',
-                          fontWeight: 700,
-                          marginTop: '0.2rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '0.45rem'
-                        }}
-                        id="auth-submit-register-btn"
-                      >
-                        {loading ? (
-                          <>
-                            <RefreshCw size={14} className="spin" />
-                            <span>Creating Your Account...</span>
-                          </>
-                        ) : (
-                          <>
-                            <UserPlus size={15} />
-                            <span>Create Account</span>
-                          </>
-                        )}
-                      </button>
-                    </form>
+              {/* Social Login Options */}
+              <div className="auth-social-stack">
+                <button
+                  type="button"
+                  className="auth-social-btn auth-social-btn--google"
+                  id="auth-social-google-btn"
+                  disabled={loading || !!socialLoading}
+                  onClick={() => startSocialOAuthPopup('google')}
+                  aria-label="Continue with Google"
+                >
+                  {socialLoading === 'google' ? (
+                    <RefreshCw size={15} className="spin" />
+                  ) : (
+                    <GoogleSvg />
                   )}
+                  <span>Continue with Google</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="auth-social-btn auth-social-btn--apple"
+                  id="auth-social-apple-btn"
+                  disabled={loading || !!socialLoading}
+                  onClick={() => startSocialOAuthPopup('apple')}
+                  aria-label="Continue with Apple"
+                >
+                  {socialLoading === 'apple' ? (
+                    <RefreshCw size={15} className="spin" />
+                  ) : (
+                    <AppleSvg />
+                  )}
+                  <span>Continue with Apple</span>
+                </button>
+              </div>
+
+              {/* Switch Prompt */}
+              <div style={{ textAlign: 'center', marginTop: '0.25rem', fontSize: '0.78rem', color: 'var(--text-secondary, #94a3b8)' }}>
+                Don't have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => handleSwitchMode('register')}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--accent-cyan, #06b6d4)',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    padding: 0,
+                    textDecoration: 'underline'
+                  }}
+                >
+                  Create one now
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ================================================================= */}
+          {/* VIEW 2: CREATE ACCOUNT FORM (Standard 1-Step Registration)       */}
+          {/* ================================================================= */}
+          {mode === 'register' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+              <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                {/* Full Name */}
+                <div className="input-group">
+                  <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.35rem', display: 'block' }}>
+                    Full Name
+                  </label>
+                  <div className="auth-input-wrapper">
+                    <User size={15} className="auth-input-icon" />
+                    <input
+                      type="text"
+                      id="auth-register-name"
+                      name="name"
+                      autoComplete="name"
+                      required
+                      className="auth-input-field"
+                      placeholder="e.g. Alex Mercer"
+                      value={regName}
+                      onChange={(e) => setRegName(e.target.value)}
+                      autoFocus
+                    />
+                  </div>
                 </div>
-              )}
 
-              {/* MODE 3: FORGOT PASSWORD REQUEST FORM */}
-              {mode === 'forgot' && (
-                <form onSubmit={handleForgotSendCode} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                {/* Email Address */}
+                <div className="input-group">
+                  <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.35rem', display: 'block' }}>
+                    Email Address
+                  </label>
+                  <div className="auth-input-wrapper">
+                    <Mail size={15} className="auth-input-icon" />
+                    <input
+                      type="email"
+                      id="auth-register-email"
+                      name="email"
+                      autoComplete="email"
+                      required
+                      className="auth-input-field"
+                      placeholder="name@domain.com"
+                      value={regEmail}
+                      onChange={(e) => setRegEmail(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div className="input-group">
+                  <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.35rem', display: 'block' }}>
+                    Password (min. 6 characters)
+                  </label>
+                  <div className="auth-input-wrapper">
+                    <Lock size={15} className="auth-input-icon" />
+                    <input
+                      type={showRegPassword ? 'text' : 'password'}
+                      id="auth-register-password"
+                      name="new-password"
+                      autoComplete="new-password"
+                      required
+                      className="auth-input-field"
+                      placeholder="Create a secure password"
+                      value={regPassword}
+                      onChange={(e) => setRegPassword(e.target.value)}
+                      style={{ paddingRight: '2.5rem' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegPassword(!showRegPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '0.75rem',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-muted, #64748b)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: 0
+                      }}
+                      title={showRegPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showRegPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Mobile Number (Optional) */}
+                <div className="input-group">
+                  <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.35rem', display: 'block' }}>
+                    Mobile Number <span style={{ color: 'var(--text-muted, #64748b)' }}>(Optional)</span>
+                  </label>
+                  <div style={{ display: 'flex', gap: '0.45rem' }}>
+                    <select
+                      value={regCountryCode}
+                      onChange={(e) => setRegCountryCode(e.target.value)}
+                      style={{
+                        width: '85px',
+                        background: 'var(--bg-input, #090e1b)',
+                        border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.12))',
+                        borderRadius: 'var(--radius-md, 8px)',
+                        color: 'var(--text-primary, #ffffff)',
+                        fontSize: '0.82rem',
+                        padding: '0.65rem 0.4rem',
+                        outline: 'none',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {COUNTRY_CODES.map((c) => (
+                        <option key={c.code} value={c.code} style={{ background: '#1e293b', color: '#fff' }}>
+                          {c.flag} {c.code}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="auth-input-wrapper" style={{ flex: 1 }}>
+                      <Smartphone size={15} className="auth-input-icon" />
+                      <input
+                        type="tel"
+                        id="auth-register-phone"
+                        name="tel"
+                        autoComplete="tel"
+                        className="auth-input-field"
+                        placeholder="Mobile number"
+                        value={regPhone}
+                        onChange={(e) => setRegPhone(e.target.value.replace(/[^\d\s-]/g, ''))}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Submit Register Button */}
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  disabled={loading || !regName.trim() || !regEmail.trim() || !regPassword.trim()}
+                  style={{
+                    width: '100%',
+                    padding: '0.72rem',
+                    fontSize: '0.86rem',
+                    fontWeight: 700,
+                    marginTop: '0.2rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.45rem'
+                  }}
+                  id="auth-submit-register-btn"
+                >
+                  {loading ? (
+                    <>
+                      <RefreshCw size={14} className="spin" />
+                      <span>Creating Account...</span>
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus size={15} />
+                      <span>Create Account</span>
+                    </>
+                  )}
+                </button>
+              </form>
+
+              {/* Standard Divider */}
+              <div className="auth-social-divider" role="separator" aria-label="Registration alternatives">
+                <span className="auth-social-divider-line" />
+                <span className="auth-social-divider-text">OR SIGN UP WITH</span>
+                <span className="auth-social-divider-line" />
+              </div>
+
+              {/* Social Registration Options */}
+              <div className="auth-social-stack">
+                <button
+                  type="button"
+                  className="auth-social-btn auth-social-btn--google"
+                  id="auth-social-google-reg-btn"
+                  disabled={loading || !!socialLoading}
+                  onClick={() => startSocialOAuthPopup('google')}
+                  aria-label="Continue with Google"
+                >
+                  {socialLoading === 'google' ? (
+                    <RefreshCw size={15} className="spin" />
+                  ) : (
+                    <GoogleSvg />
+                  )}
+                  <span>Continue with Google</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="auth-social-btn auth-social-btn--apple"
+                  id="auth-social-apple-reg-btn"
+                  disabled={loading || !!socialLoading}
+                  onClick={() => startSocialOAuthPopup('apple')}
+                  aria-label="Continue with Apple"
+                >
+                  {socialLoading === 'apple' ? (
+                    <RefreshCw size={15} className="spin" />
+                  ) : (
+                    <AppleSvg />
+                  )}
+                  <span>Continue with Apple</span>
+                </button>
+              </div>
+
+              {/* Switch Prompt */}
+              <div style={{ textAlign: 'center', marginTop: '0.25rem', fontSize: '0.78rem', color: 'var(--text-secondary, #94a3b8)' }}>
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => handleSwitchMode('signin')}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--accent-cyan, #06b6d4)',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    padding: 0,
+                    textDecoration: 'underline'
+                  }}
+                >
+                  Sign in
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* ================================================================= */}
+          {/* VIEW 3: FORGOT / RESET PASSWORD                                  */}
+          {/* ================================================================= */}
+          {mode === 'forgot' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+              {!resetSent ? (
+                <form onSubmit={handleForgotPassword} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #94a3b8)', lineHeight: 1.5, margin: 0 }}>
+                    Enter your registered email address and we'll send a 6-digit verification code to reset your password.
+                  </p>
+
                   <div className="input-group">
-                    <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                      Registered Email Address
+                    <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.35rem', display: 'block' }}>
+                      Registered Email
                     </label>
                     <div className="auth-input-wrapper">
                       <Mail size={15} className="auth-input-icon" />
                       <input
                         type="email"
-                        id="auth-forgot-email-input"
-                        name="email"
-                        autoComplete="email"
+                        id="auth-forgot-email"
                         required
                         className="auth-input-field"
                         placeholder="name@domain.com"
@@ -1546,9 +939,6 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                         autoFocus
                       />
                     </div>
-                    <p style={{ fontSize: '0.71rem', color: '#64748b', margin: '4px 0 0 2px' }}>
-                      A single-use verification code will be dispatched to this email address.
-                    </p>
                   </div>
 
                   <button
@@ -1557,8 +947,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                     disabled={loading || !forgotEmail.trim()}
                     style={{
                       width: '100%',
-                      padding: '0.7rem',
-                      fontSize: '0.85rem',
+                      padding: '0.72rem',
+                      fontSize: '0.86rem',
                       fontWeight: 700,
                       marginTop: '0.2rem',
                       display: 'flex',
@@ -1566,327 +956,145 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                       justifyContent: 'center',
                       gap: '0.45rem'
                     }}
-                    id="auth-forgot-submit-btn"
+                    id="auth-send-forgot-btn"
                   >
                     {loading ? (
                       <>
                         <RefreshCw size={14} className="spin" />
-                        <span>Sending Reset Code...</span>
+                        <span>Sending Code...</span>
                       </>
                     ) : (
                       <>
-                        <span>Send Reset Code</span>
-                        <ArrowRight size={14} />
+                        <Mail size={15} />
+                        <span>Send Recovery Code</span>
+                      </>
+                    )}
+                  </button>
+                </form>
+              ) : (
+                <form onSubmit={handleResetPassword} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                  <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary, #94a3b8)', lineHeight: 1.5, margin: 0 }}>
+                    Enter the code sent to <strong style={{ color: 'var(--text-primary, #fff)' }}>{forgotEmail}</strong> and choose a new password.
+                  </p>
+
+                  {/* 6-Digit Code */}
+                  <div className="input-group">
+                    <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.35rem', display: 'block' }}>
+                      6-Digit Code
+                    </label>
+                    <div className="auth-input-wrapper">
+                      <KeyRound size={15} className="auth-input-icon" />
+                      <input
+                        type="text"
+                        required
+                        maxLength={6}
+                        className="auth-input-field"
+                        placeholder="123456"
+                        value={resetCode}
+                        onChange={(e) => setResetCode(e.target.value.replace(/\D/g, ''))}
+                        style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.2em', fontSize: '1rem', fontWeight: 700 }}
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+
+                  {/* New Password */}
+                  <div className="input-group">
+                    <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.35rem', display: 'block' }}>
+                      New Password
+                    </label>
+                    <div className="auth-input-wrapper">
+                      <Lock size={15} className="auth-input-icon" />
+                      <input
+                        type={showResetPassword ? 'text' : 'password'}
+                        required
+                        className="auth-input-field"
+                        placeholder="At least 6 characters"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        style={{ paddingRight: '2.5rem' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowResetPassword(!showResetPassword)}
+                        style={{
+                          position: 'absolute',
+                          right: '0.75rem',
+                          top: '50%',
+                          transform: 'translateY(-50%)',
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-muted, #64748b)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          padding: 0
+                        }}
+                      >
+                        {showResetPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Confirm Password */}
+                  <div className="input-group">
+                    <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.35rem', display: 'block' }}>
+                      Confirm Password
+                    </label>
+                    <div className="auth-input-wrapper">
+                      <Lock size={15} className="auth-input-icon" />
+                      <input
+                        type={showResetPassword ? 'text' : 'password'}
+                        required
+                        className="auth-input-field"
+                        placeholder="Re-enter your password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={loading || !newPassword || !confirmPassword}
+                    style={{
+                      width: '100%',
+                      padding: '0.72rem',
+                      fontSize: '0.86rem',
+                      fontWeight: 700,
+                      marginTop: '0.2rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.45rem'
+                    }}
+                    id="auth-submit-reset-btn"
+                  >
+                    {loading ? (
+                      <>
+                        <RefreshCw size={14} className="spin" />
+                        <span>Updating Password...</span>
+                      </>
+                    ) : (
+                      <>
+                        <KeyRound size={15} />
+                        <span>Update Password & Sign In</span>
                       </>
                     )}
                   </button>
                 </form>
               )}
-            </>
-          )}
-
-          {/* Step 2: OTP Verification & Final Entry */}
-          {step === 2 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setStep(1);
-                  setError('');
-                }}
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#94a3b8',
-                  fontSize: '0.76rem',
-                  cursor: 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  padding: 0,
-                  alignSelf: 'flex-start'
-                }}
-                id="auth-back-to-step1-btn"
-              >
-                <ArrowLeft size={13} />
-                <span>Change destination</span>
-              </button>
-
-              {/* Delivery Status Info */}
-              <div
-                style={{
-                  padding: '0.65rem 0.85rem',
-                  background: 'var(--bg-card-hover)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '8px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.35rem'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                    <Mail size={14} color="var(--accent-cyan)" />
-                    <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                      {otpPurpose === 'login' ? (
-                        <>
-                          Login code sent to <strong style={{ color: 'var(--text-primary)' }}>{maskedDestination}</strong>
-                        </>
-                      ) : otpPurpose === 'reset' ? (
-                        <>
-                          Password reset code sent to <strong style={{ color: 'var(--text-primary)' }}>{maskedDestination}</strong>
-                        </>
-                      ) : (
-                        <>
-                          Verification code sent to <strong style={{ color: 'var(--text-primary)' }}>{maskedDestination}</strong>
-                        </>
-                      )}
-                    </span>
-                  </div>
-                </div>
-
-                <span style={{ fontSize: '0.73rem', color: '#94a3b8', lineHeight: 1.4 }}>
-                  {otpPurpose === 'login'
-                    ? 'Please check your email inbox (and spam or junk folder) for your 6-digit login code. Enter it below to access your workstation directly.'
-                    : otpPurpose === 'reset'
-                    ? 'Please check your email inbox (and spam or junk folder) for your 6-digit verification code.'
-                    : 'Please check your email inbox (and spam or junk folder) for your 6-digit verification code.'}
-                </span>
-              </div>
-
-              {/* Error Message */}
-              {error && (
-                <div
-                  style={{
-                    padding: '0.6rem 0.8rem',
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    border: '1px solid rgba(239, 68, 68, 0.25)',
-                    color: '#f87171',
-                    borderRadius: '7px',
-                    fontSize: '0.78rem',
-                    lineHeight: 1.4
-                  }}
-                >
-                  {error}
-                </div>
-              )}
-
-              {error && canOtpVerify && mode === 'signin' && (
-                <button
-                  type="button"
-                  onClick={handleRequestSignInOtp}
-                  disabled={loading}
-                  style={{
-                    padding: '0.6rem 0.85rem',
-                    background: 'rgba(6, 182, 212, 0.12)',
-                    border: '1px solid rgba(6, 182, 212, 0.35)',
-                    color: '#06b6d4',
-                    borderRadius: '7px',
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.45rem',
-                    marginTop: '-0.3rem',
-                    transition: 'all 0.15s ease'
-                  }}
-                  id="auth-verify-and-update-pwd-btn"
-                >
-                  <Mail size={14} />
-                  <span>Verify with Email OTP & Set Current Password</span>
-                </button>
-              )}
-
-              {/* Form for OTP input and (if reset) New Password */}
-              <form onSubmit={handleVerifySubmit} style={{ display: 'flex', flexDirection: 'column', gap: '0.95rem' }}>
-                {resetToken ? (
-                  <div style={{
-                    padding: '0.75rem 0.9rem',
-                    background: 'rgba(16, 185, 129, 0.12)',
-                    border: '1px solid rgba(16, 185, 129, 0.35)',
-                    borderRadius: '8px',
-                    color: '#34d399',
-                    fontSize: '0.78rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.45rem'
-                  }}>
-                    <CheckCircle2 size={16} />
-                    <span>Security link verified for <strong>{forgotEmail}</strong>. Enter your new password below:</span>
-                  </div>
-                ) : (
-                  <div className="input-group">
-                    <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.4rem' }}>
-                      Enter 6-Digit Code
-                    </label>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.4rem' }}>
-                      {otpDigits.map((digit, idx) => (
-                        <input
-                          key={idx}
-                          ref={(el) => (digitInputRefs.current[idx] = el)}
-                          type="text"
-                          id={`otp-box-${idx}`}
-                          name={`otp_${idx}`}
-                          autoComplete="one-time-code"
-                          inputMode="numeric"
-                          maxLength={6}
-                          value={digit}
-                          onChange={(e) => handleDigitChange(idx, e.target.value)}
-                          onKeyDown={(e) => handleKeyDown(idx, e)}
-                          style={{
-                            width: '100%',
-                            height: '46px',
-                            textAlign: 'center',
-                            fontSize: '1.25rem',
-                            fontWeight: 700,
-                            fontFamily: 'var(--font-mono)',
-                            borderRadius: '8px',
-                            border: digit ? '1.5px solid var(--accent-cyan)' : '1px solid var(--border-subtle)',
-                            background: digit ? 'rgba(6, 182, 212, 0.08)' : 'var(--bg-input)',
-                            color: 'var(--text-primary)',
-                            outline: 'none',
-                            transition: 'all 0.15s ease'
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Additional Fields if Resetting Password */}
-                {otpPurpose === 'reset' && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.2rem' }}>
-                    <div className="input-group">
-                      <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                        New Password (min 8 characters)
-                      </label>
-                      <div className="auth-input-wrapper">
-                        <Lock size={15} className="auth-input-icon" />
-                        <input
-                          type={showResetPassword ? 'text' : 'password'}
-                          id="auth-reset-password-input"
-                          name="newPassword"
-                          autoComplete="new-password"
-                          required
-                          minLength={8}
-                          className="auth-input-field"
-                          placeholder="Enter new password"
-                          value={resetNewPassword}
-                          onChange={(e) => setResetNewPassword(e.target.value)}
-                          style={{ paddingRight: '2.5rem' }}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowResetPassword(!showResetPassword)}
-                          style={{
-                            position: 'absolute',
-                            right: '0.75rem',
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            background: 'transparent',
-                            border: 'none',
-                            color: 'var(--text-muted)',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            padding: 0
-                          }}
-                        >
-                          {showResetPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="input-group">
-                      <label className="input-label" style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                        Confirm New Password
-                      </label>
-                      <div className="auth-input-wrapper">
-                        <ShieldCheck size={15} className="auth-input-icon" />
-                        <input
-                          type={showResetPassword ? 'text' : 'password'}
-                          id="auth-reset-confirm-password-input"
-                          name="confirmPassword"
-                          autoComplete="new-password"
-                          required
-                          minLength={8}
-                          className="auth-input-field"
-                          placeholder="Re-enter new password"
-                          value={resetConfirmPassword}
-                          onChange={(e) => setResetConfirmPassword(e.target.value)}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Resend Cooldown */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.76rem' }}>
-                  <span style={{ color: '#64748b' }}>Didn't receive code?</span>
-                  {cooldown > 0 ? (
-                    <span style={{ color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
-                      Resend in {cooldown}s
-                    </span>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleResendOtp}
-                      disabled={loading}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: '#06b6d4',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        padding: 0
-                      }}
-                      id="resend-otp-btn"
-                    >
-                      Resend Code
-                    </button>
-                  )}
-                </div>
-
-                {/* Submit Verification Button */}
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={loading || (!resetToken && otpDigits.join('').length !== 6)}
-                  style={{
-                    width: '100%',
-                    padding: '0.7rem',
-                    fontSize: '0.85rem',
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.45rem'
-                  }}
-                  id="auth-verify-btn"
-                >
-                  {loading ? (
-                    <>
-                      <RefreshCw size={14} className="spin" />
-                      <span>{otpPurpose === 'reset' ? 'Saving Password...' : 'Verifying...'}</span>
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 size={15} />
-                      <span>
-                        {otpPurpose === 'reset'
-                          ? 'Save New Password & Enter'
-                          : otpPurpose === 'login'
-                          ? 'Verify & Sign In'
-                          : 'Verify & Complete Registration'}
-                      </span>
-                    </>
-                  )}
-                </button>
-              </form>
             </div>
           )}
+
+          {/* Institutional Security Notice Footer */}
+          <div style={{ textAlign: 'center', paddingTop: '0.25rem', borderTop: '1px solid var(--border-subtle, rgba(148, 163, 184, 0.1))' }}>
+            <span style={{ fontSize: '0.68rem', color: 'var(--text-muted, #64748b)', lineHeight: 1.4 }}>
+              Encrypted 256-bit institutional authentication. Virtual balance $1,000 credited on registration.
+            </span>
+          </div>
+
         </div>
       </div>
     </div>
