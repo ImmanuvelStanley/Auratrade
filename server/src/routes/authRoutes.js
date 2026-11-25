@@ -495,12 +495,6 @@ async function handleSocialOAuth(req, res, forceProvider = null) {
 
     // Dev/Sandbox resilient fallback: if no email provided, assign sandbox profile
     if (!verifiedEmail || typeof verifiedEmail !== 'string' || !verifiedEmail.includes('@')) {
-      if (req.body.requireExisting || req.body.mode === 'signin') {
-        return res.status(400).json({
-          success: false,
-          error: 'Please enter a valid Google or Apple ID email address.'
-        });
-      }
       if (provider === 'apple') {
         verifiedEmail = 'apple.trader@auratrade.com';
         verifiedName = verifiedName || 'Apple Trader';
@@ -512,20 +506,6 @@ async function handleSocialOAuth(req, res, forceProvider = null) {
 
     verifiedEmail = verifiedEmail.trim().toLowerCase();
     verifiedName = verifiedName || (verifiedEmail.split('@')[0]);
-
-    // Check if user already exists for direct sign-in flow
-    const isSignInMode = req.body.requireExisting === true || req.body.mode === 'signin' || req.query.mode === 'signin';
-    if (isSignInMode) {
-      const existingUser = await store.findUserByEmail(verifiedEmail);
-      if (!existingUser) {
-        return res.status(404).json({
-          success: false,
-          notFound: true,
-          code: 'USER_NOT_FOUND',
-          error: `User account not found for ${verifiedEmail}. Please create an account first.`
-        });
-      }
-    }
 
     const { user, isNewUser } = await store.findOrCreateOAuthUser({
       provider,

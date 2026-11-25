@@ -57,18 +57,10 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
   const [mode, setMode] = useState('signin');
   // Step: 1 = Details / Form, 2 = 6-digit OTP verification
   const [step, setStep] = useState(1);
-  // Purpose for OTP step: 'register' | 'login' | 'reset' | 'oauth_verify'
+  // Purpose for OTP step: 'register' | 'login' | 'reset'
   const [otpPurpose, setOtpPurpose] = useState('register');
   const [resetToken, setResetToken] = useState(initialResetData?.token || '');
   const [socialLoading, setSocialLoading] = useState(null); // 'google' | 'apple' | null
-
-  // OAuth Account Selection & Verification State
-  const [oauthProvider, setOauthProvider] = useState('google'); // 'google' | 'apple'
-  const [oauthSelectedEmail, setOauthSelectedEmail] = useState('');
-  const [oauthSelectedName, setOauthSelectedName] = useState('');
-  const [oauthCustomEmail, setOauthCustomEmail] = useState('');
-  const [oauthCustomName, setOauthCustomName] = useState('');
-  const [isUsingCustomOAuthEmail, setIsUsingCustomOAuthEmail] = useState(false);
 
   // Sign In State
   const [signInIdentifier, setSignInIdentifier] = useState('');
@@ -168,142 +160,30 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
     setSuccessMsg('');
     setUserNotFound(false);
     setCanOtpVerify(false);
-    setIsUsingCustomOAuthEmail(false);
     if (newMode === 'forgot' && signInIdentifier.includes('@')) {
       setForgotEmail(signInIdentifier.trim());
     }
   };
 
-  const getSavedOAuthAccounts = (provider = oauthProvider) => {
-    const list = [];
-    try {
-      const saved = JSON.parse(localStorage.getItem('auratrade_local_accounts') || '{}');
-      for (const [em, details] of Object.entries(saved)) {
-        if (em && em.includes('@')) {
-          list.push({
-            email: em,
-            name: details?.name || em.split('@')[0],
-            isSaved: true
-          });
-        }
-      }
-    } catch (e) {}
-
-    return list;
-  };
-
-  const handleOpenOAuthPicker = (provider) => {
+  // Social OAuth Sign In (Google & Apple)
+  const handleSocialSignIn = async (provider) => {
     setError('');
     setSuccessMsg('');
     setUserNotFound(false);
-    setOauthProvider(provider);
-    if (signInIdentifier && signInIdentifier.includes('@')) {
-      setOauthCustomEmail(signInIdentifier.trim());
-    } else {
-      setOauthCustomEmail('');
-    }
-    setOauthCustomName('');
-    setMode('oauth_picker');
-    setStep(1);
-  };
-
-  // Direct Social OAuth Sign In executor: authenticates existing user or flags USER_NOT_FOUND
-  const handleDirectSocialSignIn = async (provider, emailToUse, nameToUse = '') => {
-    setError('');
-    setSuccessMsg('');
-    setUserNotFound(false);
-
-    const targetEmail = (emailToUse || '').trim();
-    if (!targetEmail || !targetEmail.includes('@') || !targetEmail.includes('.')) {
-      setError(`Please enter a valid ${provider === 'apple' ? 'Apple ID' : 'Google Account'} email address.`);
-      return;
-    }
-
-    const chosenName = (nameToUse || '').trim() || targetEmail.split('@')[0];
-
     setSocialLoading(provider);
-    setLoading(true);
     try {
-      await signInWithOAuth({
-        provider,
-        email: targetEmail,
-        name: chosenName,
-        mode: 'signin',
-        requireExisting: true
-      });
-      setSuccessMsg(`Welcome back! Authenticated via ${provider === 'apple' ? 'Apple ID' : 'Google'}. Accessing workstation...`);
-      setTimeout(() => {
-        if (onClose) onClose();
-      }, 350);
-    } catch (err) {
-      if (err.notFound || err.code === 'USER_NOT_FOUND' || (err.message && err.message.toLowerCase().includes('not found'))) {
-        setUserNotFound(true);
-        setError(`User account not found for ${targetEmail}. Please create an account first.`);
-      } else {
-        setError(err.message || `Failed to sign in with ${provider === 'apple' ? 'Apple ID' : 'Google'}.`);
+      const emailPayload = signInIdentifier && signInIdentifier.includes('@') ? { email: signInIdentifier.trim() } : {};
+      if (provider === 'google') {
+        await signInWithGoogle(emailPayload);
+      } else if (provider === 'apple') {
+        await signInWithApple(emailPayload);
       }
+      if (onClose) onClose();
+    } catch (err) {
+      setError(err.message || `Failed to sign in with ${provider === 'apple' ? 'Apple ID' : 'Google'}.`);
     } finally {
       setSocialLoading(null);
-      setLoading(false);
     }
-  };
-
-  // Direct Social OAuth Sign Up executor (for Create Account mode)
-  const handleSocialSignUp = async (provider, emailToUse, nameToUse = '') => {
-    setError('');
-    setSuccessMsg('');
-    setUserNotFound(false);
-
-    const targetEmail = (emailToUse || '').trim();
-    if (!targetEmail || !targetEmail.includes('@') || !targetEmail.includes('.')) {
-      setError(`Please enter a valid ${provider === 'apple' ? 'Apple ID' : 'Google Account'} email address.`);
-      return;
-    }
-
-    const chosenName = (nameToUse || '').trim() || targetEmail.split('@')[0];
-
-    setSocialLoading(provider);
-    setLoading(true);
-    try {
-      await signInWithOAuth({
-        provider,
-        email: targetEmail,
-        name: chosenName,
-        mode: 'register',
-        requireExisting: false
-      });
-      setSuccessMsg(`Account created! Authenticated via ${provider === 'apple' ? 'Apple ID' : 'Google'}. Accessing workstation...`);
-      setTimeout(() => {
-        if (onClose) onClose();
-      }, 350);
-    } catch (err) {
-      setError(err.message || `Failed to register with ${provider === 'apple' ? 'Apple ID' : 'Google'}.`);
-    } finally {
-      setSocialLoading(null);
-      setLoading(false);
-    }
-  };
-
-  // Direct Social OAuth Sign In (Google & Apple)
-  const handleSocialSignIn = (provider) => {
-    setError('');
-    setSuccessMsg('');
-    setUserNotFound(false);
-    setOauthProvider(provider);
-
-    // If an email is already typed in the sign-in form, directly authenticate with it!
-    if (signInIdentifier && signInIdentifier.includes('@')) {
-      handleDirectSocialSignIn(provider, signInIdentifier.trim());
-      return;
-    }
-
-    handleOpenOAuthPicker(provider);
-  };
-
-  // Direct OAuth submit handler from OAuth picker dialog
-  const handleProceedOAuthWithEmail = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    await handleDirectSocialSignIn(oauthProvider, oauthCustomEmail, oauthCustomName);
   };
 
   // 1. Password Sign In
@@ -610,23 +490,6 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         setCooldown(resp.resendCooldown || 30);
         setOtpDigits(['', '', '', '', '', '']);
         setEmailOtpDigits(['', '', '', '', '', '']);
-      } else if (otpPurpose === 'oauth_verify') {
-        const targetEmail = (oauthCustomEmail || '').trim() || maskedDestination;
-        const targetName = (oauthCustomName || '').trim();
-        const resp = await sendOtp({
-          identifier: targetEmail,
-          channel: 'email',
-          purpose: 'oauth_verify',
-          provider: oauthProvider,
-          name: targetName
-        });
-        if (resp.otpToken) setOtpToken(resp.otpToken);
-        setMaskedDestination(resp.maskedDestination || targetEmail);
-        setDeliveryInfo(resp.deliveryStatus || {});
-        setCooldown(resp.resendCooldown || 30);
-        setOtpDigits(['', '', '', '', '', '']);
-        setEmailOtpDigits(['', '', '', '', '', '']);
-        setSuccessMsg(`New confirmation code sent to ${resp.maskedDestination || targetEmail}`);
       }
     } catch (err) {
       setError(err.message || 'Failed to resend code.');
@@ -714,20 +577,6 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
           password: signInPassword || ''
         });
         if (onClose) onClose();
-      } else if (otpPurpose === 'oauth_verify') {
-        const targetEmail = (oauthCustomEmail || '').trim() || maskedDestination;
-        const targetName = (oauthCustomName || '').trim();
-        await verifyOtp({
-          identifier: targetEmail,
-          code: fullCode,
-          otpToken,
-          provider: oauthProvider,
-          name: targetName
-        });
-        setSuccessMsg(`Verified with ${oauthProvider === 'apple' ? 'Apple ID' : 'Google Account'}! Accessing workstation...`);
-        setTimeout(() => {
-          if (onClose) onClose();
-        }, 500);
       } else if (otpPurpose === 'reset') {
         if (!resetNewPassword || resetNewPassword.length < 8) {
           setError('New password must be at least 8 characters long.');
@@ -838,8 +687,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
           {/* Step 1: Input Credentials / Selection */}
           {step === 1 && (
             <>
-              {/* Segmented Mode Switcher (Visible when not in forgot password or oauth picker mode) */}
-              {mode !== 'forgot' && mode !== 'oauth_picker' ? (
+              {/* Segmented Mode Switcher (Visible when not in forgot password mode) */}
+              {mode !== 'forgot' ? (
                 <div
                   style={{
                     display: 'grid',
@@ -899,32 +748,6 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                     <span>Create Account</span>
                   </button>
                 </div>
-              ) : mode === 'oauth_picker' ? (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.2rem' }}>
-                  <button
-                    type="button"
-                    onClick={() => handleSwitchMode('signin')}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#94a3b8',
-                      fontSize: '0.78rem',
-                      cursor: 'pointer',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '0.35rem',
-                      padding: 0
-                    }}
-                    id="auth-oauth-back-btn"
-                  >
-                    <ArrowLeft size={13} />
-                    <span>Back to Sign In</span>
-                  </button>
-                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                    {oauthProvider === 'apple' ? <AppleSvg /> : <GoogleSvg />}
-                    <span>{oauthProvider === 'apple' ? 'Sign in with Apple' : 'Sign in with Google'}</span>
-                  </span>
-                </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <button
@@ -983,162 +806,6 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                 >
                   {successMsg}
                 </div>
-              )}
-
-              {/* MODE 0: OAUTH ACCOUNT SELECTION (Google & Apple) */}
-              {mode === 'oauth_picker' && (
-                <form onSubmit={handleProceedOAuthWithEmail} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
-                  <div style={{ textAlign: 'left', marginBottom: '0.15rem' }}>
-                    <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      {oauthProvider === 'apple' ? 'Direct Sign In with Apple ID' : 'Direct Sign In with Google'}
-                    </div>
-                    <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '2px' }}>
-                      {oauthProvider === 'apple'
-                        ? 'Enter your Apple ID to directly access your registered AuraTrade account.'
-                        : 'Enter your Google Account email to directly access your registered AuraTrade account.'}
-                    </div>
-                  </div>
-
-                  {/* Saved accounts on this device */}
-                  {getSavedOAuthAccounts(oauthProvider).length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginBottom: '0.2rem' }}>
-                      <span style={{ fontSize: '0.72rem', color: '#94a3b8' }}>Saved accounts on this device:</span>
-                      {getSavedOAuthAccounts(oauthProvider).map((acc) => (
-                        <button
-                          key={acc.email}
-                          type="button"
-                          onClick={() => handleDirectSocialSignIn(oauthProvider, acc.email, acc.name)}
-                          disabled={loading}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            padding: '0.55rem 0.75rem',
-                            background: 'var(--bg-card-hover)',
-                            border: '1px solid var(--border-subtle)',
-                            borderRadius: '6px',
-                            color: 'var(--text-primary)',
-                            cursor: 'pointer',
-                            fontSize: '0.78rem'
-                          }}
-                        >
-                          <span style={{ fontWeight: 600 }}>{acc.email}</span>
-                          <span style={{ fontSize: '0.7rem', color: '#06b6d4', fontWeight: 600 }}>Direct Sign In &rarr;</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="input-group">
-                    <label className="input-label" style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
-                      {oauthProvider === 'apple' ? 'Apple ID / Email Address' : 'Google Email Address'}
-                    </label>
-                    <div className="auth-input-wrapper">
-                      <Mail size={15} className="auth-input-icon" />
-                      <input
-                        type="email"
-                        id="auth-oauth-custom-email-input"
-                        name="oauthEmail"
-                        autoComplete="email"
-                        required
-                        className="auth-input-field"
-                        placeholder={oauthProvider === 'apple' ? 'e.g. name@icloud.com or email' : 'e.g. name@gmail.com'}
-                        value={oauthCustomEmail}
-                        onChange={(e) => {
-                          setOauthCustomEmail(e.target.value);
-                          if (userNotFound) setUserNotFound(false);
-                        }}
-                        autoFocus
-                      />
-                    </div>
-                  </div>
-
-                  <div className="input-group">
-                    <label className="input-label" style={{ fontSize: '0.74rem', color: '#94a3b8' }}>
-                      Full Name (Optional)
-                    </label>
-                    <div className="auth-input-wrapper">
-                      <User size={15} className="auth-input-icon" />
-                      <input
-                        type="text"
-                        id="auth-oauth-custom-name-input"
-                        name="oauthName"
-                        autoComplete="name"
-                        className="auth-input-field"
-                        placeholder="e.g. Alex Morgan"
-                        value={oauthCustomName}
-                        onChange={(e) => setOauthCustomName(e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  {userNotFound && (
-                    <div style={{ textAlign: 'center', marginTop: '-0.1rem' }}>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setMode('register');
-                          setRegisterStep(1);
-                          setEmailOtpSent(false);
-                          setIsEmailVerified(false);
-                          setEmailOtpDigits(['', '', '', '', '', '']);
-                          setError('');
-                          setUserNotFound(false);
-                          setEmail(oauthCustomEmail.trim());
-                        }}
-                        style={{
-                          background: 'rgba(6, 182, 212, 0.12)',
-                          border: '1px solid rgba(6, 182, 212, 0.35)',
-                          color: '#06b6d4',
-                          padding: '0.5rem 0.85rem',
-                          borderRadius: '6px',
-                          fontSize: '0.78rem',
-                          fontWeight: 600,
-                          cursor: 'pointer',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '0.4rem',
-                          width: '100%',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        <UserPlus size={14} />
-                        <span>New trader? Switch to Create Account</span>
-                      </button>
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    className="btn btn-primary"
-                    disabled={loading || !oauthCustomEmail.trim() || !oauthCustomEmail.includes('@')}
-                    style={{
-                      width: '100%',
-                      padding: '0.75rem',
-                      fontSize: '0.85rem',
-                      fontWeight: 700,
-                      marginTop: '0.2rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.45rem'
-                    }}
-                    id="auth-oauth-continue-btn"
-                  >
-                    {loading ? (
-                      <>
-                        <RefreshCw size={14} className="spin" />
-                        <span>Signing in with {oauthProvider === 'apple' ? 'Apple ID' : 'Google'}...</span>
-                      </>
-                    ) : (
-                      <>
-                        {oauthProvider === 'apple' ? <AppleSvg /> : <GoogleSvg />}
-                        <span>Direct Sign In with {oauthProvider === 'apple' ? 'Apple ID' : 'Google'}</span>
-                        <ArrowRight size={14} />
-                      </>
-                    )}
-                  </button>
-                </form>
               )}
 
               {/* MODE 1: SIGN IN FORM */}
@@ -1604,13 +1271,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                             className="auth-social-btn auth-social-btn--google"
                             id="auth-social-google-reg-btn"
                             disabled={loading || !!socialLoading}
-                            onClick={() => {
-                              if (email && email.includes('@')) {
-                                handleSocialSignUp('google', email, fullName);
-                              } else {
-                                handleOpenOAuthPicker('google');
-                              }
-                            }}
+                            onClick={() => handleSocialSignIn('google')}
                             aria-label="Sign up with Google"
                           >
                             {socialLoading === 'google' ? (
@@ -1626,13 +1287,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                             className="auth-social-btn auth-social-btn--apple"
                             id="auth-social-apple-reg-btn"
                             disabled={loading || !!socialLoading}
-                            onClick={() => {
-                              if (email && email.includes('@')) {
-                                handleSocialSignUp('apple', email, fullName);
-                              } else {
-                                handleOpenOAuthPicker('apple');
-                              }
-                            }}
+                            onClick={() => handleSocialSignIn('apple')}
                             aria-label="Sign up with Apple"
                           >
                             {socialLoading === 'apple' ? (
@@ -1891,9 +1546,6 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
               <button
                 type="button"
                 onClick={() => {
-                  if (otpPurpose === 'oauth_verify') {
-                    setMode('oauth_picker');
-                  }
                   setStep(1);
                   setError('');
                 }}
@@ -1912,7 +1564,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                 id="auth-back-to-step1-btn"
               >
                 <ArrowLeft size={13} />
-                <span>{otpPurpose === 'oauth_verify' ? 'Choose another account' : 'Change destination'}</span>
+                <span>Change destination</span>
               </button>
 
               {/* Delivery Status Info */}
@@ -1929,17 +1581,9 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                    {otpPurpose === 'oauth_verify' ? (
-                      oauthProvider === 'apple' ? <AppleSvg /> : <GoogleSvg />
-                    ) : (
-                      <Mail size={14} color="var(--accent-cyan)" />
-                    )}
+                    <Mail size={14} color="var(--accent-cyan)" />
                     <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                      {otpPurpose === 'oauth_verify' ? (
-                        <>
-                          Confirmation code sent to <strong style={{ color: 'var(--text-primary)' }}>{maskedDestination}</strong>
-                        </>
-                      ) : otpPurpose === 'login' ? (
+                      {otpPurpose === 'login' ? (
                         <>
                           Login code sent to <strong style={{ color: 'var(--text-primary)' }}>{maskedDestination}</strong>
                         </>
@@ -1957,9 +1601,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                 </div>
 
                 <span style={{ fontSize: '0.73rem', color: '#94a3b8', lineHeight: 1.4 }}>
-                  {otpPurpose === 'oauth_verify'
-                    ? `Please enter the 6-digit confirmation code dispatched to verify this ${oauthProvider === 'apple' ? 'Apple ID' : 'Google Account'} and unlock your trading dashboard.`
-                    : otpPurpose === 'login'
+                  {otpPurpose === 'login'
                     ? 'Please check your email inbox (and spam or junk folder) for your 6-digit login code. Enter it below to access your workstation directly.'
                     : otpPurpose === 'reset'
                     ? 'Please check your email inbox (and spam or junk folder) for your 6-digit verification code.'
@@ -2192,8 +1834,6 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                           ? 'Save New Password & Enter'
                           : otpPurpose === 'login'
                           ? 'Verify & Sign In'
-                          : otpPurpose === 'oauth_verify'
-                          ? `Verify ${oauthProvider === 'apple' ? 'Apple ID' : 'Google Account'} & Enter`
                           : 'Verify & Complete Registration'}
                       </span>
                     </>
