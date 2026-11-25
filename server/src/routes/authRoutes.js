@@ -493,19 +493,30 @@ async function handleSocialOAuth(req, res, forceProvider = null) {
       if (!verifiedAvatar && profile.picture) verifiedAvatar = profile.picture;
     }
 
-    // Dev/Sandbox resilient fallback: if no email provided, assign sandbox profile
+    // If no email was provided in request, search database for existing accounts created for this provider
     if (!verifiedEmail || typeof verifiedEmail !== 'string' || !verifiedEmail.includes('@')) {
-      if (provider === 'apple') {
-        verifiedEmail = 'apple.trader@auratrade.com';
-        verifiedName = verifiedName || 'Apple Trader';
+      const dbAccounts = await store.searchUserAccounts({ provider, limit: 1 });
+      if (dbAccounts && dbAccounts.length > 0) {
+        verifiedEmail = dbAccounts[0].email;
+        verifiedName = dbAccounts[0].name;
       } else {
-        verifiedEmail = 'google.trader@auratrade.com';
-        verifiedName = verifiedName || 'Google Trader';
+        return res.status(400).json({
+          success: false,
+          requireAccountSelection: true,
+          error: 'Please select or enter the account name or email you created on AuraTrade.'
+        });
       }
     }
 
     verifiedEmail = verifiedEmail.trim().toLowerCase();
-    verifiedName = verifiedName || (verifiedEmail.split('@')[0]);
+
+    // Look up user in database to retrieve the account name that user already created!
+    const existingUser = await store.findUserByEmail(verifiedEmail);
+    if (existingUser && existingUser.name) {
+      verifiedName = existingUser.name;
+    } else if (!verifiedName) {
+      verifiedName = verifiedEmail.split('@')[0].charAt(0).toUpperCase() + verifiedEmail.split('@')[0].slice(1);
+    }
 
     const { user, isNewUser } = await store.findOrCreateOAuthUser({
       provider,
@@ -567,6 +578,27 @@ async function handleSocialOAuth(req, res, forceProvider = null) {
 router.post('/oauth', (req, res) => handleSocialOAuth(req, res));
 router.post('/google', (req, res) => handleSocialOAuth(req, res, 'google'));
 router.post('/apple', (req, res) => handleSocialOAuth(req, res, 'apple'));
+
+// Search database for created accounts (searched and filtered on backend)
+router.get('/oauth/accounts', async (req, res) => {
+  try {
+    const provider = (req.query.provider || 'google').toLowerCase();
+    const query = (req.query.q || req.query.query || '').trim();
+    const limit = parseInt(req.query.limit, 10) || 12;
+
+    const accounts = await store.searchUserAccounts({ query, provider, limit });
+
+    res.json({
+      success: true,
+      provider,
+      total: accounts.length,
+      accounts
+    });
+  } catch (err) {
+    console.error('Error searching oauth accounts:', err);
+    res.status(500).json({ success: false, error: 'Failed to search accounts from database.' });
+  }
+});
 
 // Get Current User
 router.get('/me', requireAuth, async (req, res) => {

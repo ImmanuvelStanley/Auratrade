@@ -15,7 +15,8 @@ import {
   Eye,
   EyeOff,
   KeyRound,
-  ShieldCheck
+  ShieldCheck,
+  Search
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { BrandLogo } from './BrandLogo';
@@ -60,7 +61,16 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
   // Purpose for OTP step: 'register' | 'login' | 'reset'
   const [otpPurpose, setOtpPurpose] = useState('register');
   const [resetToken, setResetToken] = useState(initialResetData?.token || '');
+  // Social Loading State
   const [socialLoading, setSocialLoading] = useState(null); // 'google' | 'apple' | null
+
+  // OAuth Account Chooser from Database State
+  const [oauthProvider, setOauthProvider] = useState('google');
+  const [oauthAccounts, setOauthAccounts] = useState([]);
+  const [oauthSearchQuery, setOauthSearchQuery] = useState('');
+  const [oauthLoadingAccounts, setOauthLoadingAccounts] = useState(false);
+  const [oauthManualEmail, setOauthManualEmail] = useState('');
+  const [showManualOAuthInput, setShowManualOAuthInput] = useState(false);
 
   // Sign In State
   const [signInIdentifier, setSignInIdentifier] = useState('');
@@ -165,25 +175,75 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
     }
   };
 
-  // Social OAuth Sign In (Google & Apple)
-  const handleSocialSignIn = async (provider) => {
+  // Fetch created user accounts from database for OAuth selection
+  const fetchOAuthAccountsFromDB = async (provider, query = '') => {
+    setOauthLoadingAccounts(true);
+    try {
+      const url = `/api/auth/oauth/accounts?provider=${encodeURIComponent(provider)}&q=${encodeURIComponent(query)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.accounts)) {
+        setOauthAccounts(data.accounts);
+      } else {
+        setOauthAccounts([]);
+      }
+    } catch (err) {
+      console.error('Failed to load accounts from database:', err);
+      setOauthAccounts([]);
+    } finally {
+      setOauthLoadingAccounts(false);
+    }
+  };
+
+  // Direct Social OAuth Sign In executor: authenticates with chosen account from database
+  const handleDirectOAuthSignIn = async (provider, emailToUse, nameToUse = '') => {
     setError('');
     setSuccessMsg('');
     setUserNotFound(false);
     setSocialLoading(provider);
+
     try {
-      const emailPayload = signInIdentifier && signInIdentifier.includes('@') ? { email: signInIdentifier.trim() } : {};
+      const emailPayload = emailToUse ? { email: emailToUse.trim(), name: nameToUse || undefined } : {};
       if (provider === 'google') {
         await signInWithGoogle(emailPayload);
       } else if (provider === 'apple') {
         await signInWithApple(emailPayload);
       }
-      if (onClose) onClose();
+      setSuccessMsg(`Welcome back! Authenticated with ${provider === 'apple' ? 'Apple ID' : 'Google'}. Accessing workstation...`);
+      setTimeout(() => {
+        if (onClose) onClose();
+      }, 350);
     } catch (err) {
-      setError(err.message || `Failed to sign in with ${provider === 'apple' ? 'Apple ID' : 'Google'}.`);
+      if (err.notFound || err.code === 'USER_NOT_FOUND' || (err.message && err.message.toLowerCase().includes('not found'))) {
+        setUserNotFound(true);
+        setError(`User account not found for ${emailToUse}. Please create an account first.`);
+      } else {
+        setError(err.message || `Failed to sign in with ${provider === 'apple' ? 'Apple ID' : 'Google'}.`);
+      }
     } finally {
       setSocialLoading(null);
     }
+  };
+
+  // Social OAuth Sign In (Google & Apple) — Opens database account chooser if email not yet specified
+  const handleSocialSignIn = async (provider) => {
+    setError('');
+    setSuccessMsg('');
+    setUserNotFound(false);
+
+    // If an email is already typed in the sign-in form, directly authenticate with it!
+    if (signInIdentifier && signInIdentifier.includes('@')) {
+      handleDirectOAuthSignIn(provider, signInIdentifier.trim());
+      return;
+    }
+
+    // Otherwise open the Google / Apple account chooser to display accounts from database
+    setOauthProvider(provider);
+    setOauthSearchQuery('');
+    setOauthManualEmail('');
+    setShowManualOAuthInput(false);
+    setMode('oauth_chooser');
+    fetchOAuthAccountsFromDB(provider, '');
   };
 
   // 1. Password Sign In
@@ -687,8 +747,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
           {/* Step 1: Input Credentials / Selection */}
           {step === 1 && (
             <>
-              {/* Segmented Mode Switcher (Visible when not in forgot password mode) */}
-              {mode !== 'forgot' ? (
+              {/* Segmented Mode Switcher (Visible when not in forgot password or oauth chooser mode) */}
+              {mode !== 'forgot' && mode !== 'oauth_chooser' ? (
                 <div
                   style={{
                     display: 'grid',
@@ -748,6 +808,31 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                     <span>Create Account</span>
                   </button>
                 </div>
+              ) : mode === 'oauth_chooser' ? (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <button
+                    type="button"
+                    onClick={() => handleSwitchMode('signin')}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      color: '#94a3b8',
+                      fontSize: '0.78rem',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.35rem',
+                      padding: 0
+                    }}
+                  >
+                    <ArrowLeft size={13} />
+                    <span>Back to Sign In</span>
+                  </button>
+                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                    {oauthProvider === 'apple' ? <AppleSvg /> : <GoogleSvg />}
+                    <span>{oauthProvider === 'apple' ? 'Sign in with Apple' : 'Sign in with Google'}</span>
+                  </span>
+                </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <button
@@ -805,6 +890,200 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                   }}
                 >
                   {successMsg}
+                </div>
+              )}
+
+              {/* MODE 0: OAUTH ACCOUNT CHOOSER FROM DATABASE (Google & Apple) */}
+              {mode === 'oauth_chooser' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                  <div style={{ textAlign: 'left', marginBottom: '0.1rem' }}>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      Choose an account
+                    </div>
+                    <div style={{ fontSize: '0.74rem', color: '#94a3b8', marginTop: '2px' }}>
+                      Select a registered account from database to continue to AuraTrade:
+                    </div>
+                  </div>
+
+                  {/* Real-time search from backend database */}
+                  <div className="auth-input-wrapper">
+                    <Search size={14} className="auth-input-icon" />
+                    <input
+                      type="text"
+                      className="auth-input-field"
+                      placeholder="Search accounts in database by name or email..."
+                      value={oauthSearchQuery}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setOauthSearchQuery(val);
+                        fetchOAuthAccountsFromDB(oauthProvider, val);
+                      }}
+                      autoFocus
+                    />
+                  </div>
+
+                  {/* Loading indicator */}
+                  {oauthLoadingAccounts ? (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem', padding: '1.2rem', color: '#94a3b8', fontSize: '0.8rem' }}>
+                      <RefreshCw size={14} className="spin" />
+                      <span>Searching database for registered accounts...</span>
+                    </div>
+                  ) : oauthAccounts.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem', maxHeight: '230px', overflowY: 'auto' }}>
+                      {oauthAccounts.map((acc) => (
+                        <button
+                          key={acc.id || acc.email}
+                          type="button"
+                          onClick={() => handleDirectOAuthSignIn(oauthProvider, acc.email, acc.name)}
+                          disabled={loading || !!socialLoading}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '0.65rem 0.85rem',
+                            background: 'var(--bg-card-hover)',
+                            border: '1px solid var(--border-subtle)',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                            <div
+                              style={{
+                                width: '32px',
+                                height: '32px',
+                                borderRadius: '50%',
+                                background: oauthProvider === 'apple' ? 'rgba(255, 255, 255, 0.12)' : 'rgba(66, 133, 244, 0.15)',
+                                color: 'var(--text-primary)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 700,
+                                fontSize: '0.85rem'
+                              }}
+                            >
+                              {(acc.name || acc.email || 'U').charAt(0).toUpperCase()}
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                                {acc.name}
+                              </span>
+                              <span style={{ fontSize: '0.73rem', color: '#94a3b8' }}>
+                                {acc.email}
+                              </span>
+                            </div>
+                          </div>
+                          <span style={{ fontSize: '0.72rem', color: '#06b6d4', fontWeight: 600 }}>
+                            Sign In &rarr;
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div style={{ padding: '0.85rem', background: 'var(--bg-card-hover)', borderRadius: '8px', textAlign: 'center', fontSize: '0.78rem', color: '#94a3b8' }}>
+                      No registered accounts found matching "{oauthSearchQuery}".
+                    </div>
+                  )}
+
+                  {/* Option: Sign in with another email */}
+                  {!showManualOAuthInput ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowManualOAuthInput(true)}
+                      style={{
+                        background: 'transparent',
+                        border: '1px dashed var(--border-subtle)',
+                        borderRadius: '8px',
+                        padding: '0.55rem',
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.78rem',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.4rem'
+                      }}
+                    >
+                      <UserPlus size={14} />
+                      <span>Use another account</span>
+                    </button>
+                  ) : (
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        if (oauthManualEmail && oauthManualEmail.includes('@')) {
+                          handleDirectOAuthSignIn(oauthProvider, oauthManualEmail);
+                        }
+                      }}
+                      style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.2rem' }}
+                    >
+                      <div className="auth-input-wrapper">
+                        <Mail size={15} className="auth-input-icon" />
+                        <input
+                          type="email"
+                          required
+                          className="auth-input-field"
+                          placeholder={oauthProvider === 'apple' ? 'Enter Apple ID / email' : 'Enter Google email address'}
+                          value={oauthManualEmail}
+                          onChange={(e) => setOauthManualEmail(e.target.value)}
+                          autoFocus
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        className="btn btn-primary"
+                        disabled={loading || !oauthManualEmail.trim() || !oauthManualEmail.includes('@')}
+                        style={{ padding: '0.6rem', fontSize: '0.8rem', fontWeight: 700 }}
+                      >
+                        {socialLoading ? (
+                          <>
+                            <RefreshCw size={14} className="spin" />
+                            <span>Signing in...</span>
+                          </>
+                        ) : (
+                          <span>Continue with {oauthProvider === 'apple' ? 'Apple' : 'Google'}</span>
+                        )}
+                      </button>
+                    </form>
+                  )}
+
+                  {userNotFound && (
+                    <div style={{ textAlign: 'center', marginTop: '0.2rem' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setMode('register');
+                          setRegisterStep(1);
+                          setEmailOtpSent(false);
+                          setIsEmailVerified(false);
+                          setEmailOtpDigits(['', '', '', '', '', '']);
+                          setError('');
+                          setUserNotFound(false);
+                          if (oauthManualEmail) setEmail(oauthManualEmail.trim());
+                        }}
+                        style={{
+                          background: 'rgba(6, 182, 212, 0.12)',
+                          border: '1px solid rgba(6, 182, 212, 0.35)',
+                          color: '#06b6d4',
+                          padding: '0.5rem 0.85rem',
+                          borderRadius: '6px',
+                          fontSize: '0.78rem',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.4rem',
+                          width: '100%',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        <UserPlus size={14} />
+                        <span>New trader? Switch to Create Account</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 

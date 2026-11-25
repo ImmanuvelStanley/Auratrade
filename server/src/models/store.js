@@ -461,6 +461,80 @@ class DataStore {
     return this.findUserByEmail(raw);
   }
 
+  async searchUserAccounts({ query = '', provider = null, limit = 12 } = {}) {
+    const q = (query || '').trim().toLowerCase();
+    const prov = (provider || '').trim().toLowerCase();
+
+    let userList = Array.from(this.users.values());
+
+    if (this.isMongoConnected) {
+      try {
+        const filter = {};
+        if (q) {
+          filter.$or = [
+            { name: { $regex: q, $options: 'i' } },
+            { email: { $regex: q, $options: 'i' } }
+          ];
+        }
+        const docs = await User.find(filter).limit(30).lean();
+        for (const doc of docs) {
+          if (!this.users.has(doc.id)) {
+            userList.push(doc);
+          }
+        }
+      } catch (err) {}
+    }
+
+    userList = userList.filter(u => {
+      if (!u || !u.email) return false;
+      const em = u.email.toLowerCase();
+      const nm = (u.name || '').toLowerCase();
+      if (em.includes('google.trader@') || em.includes('apple.trader@') || em.includes('trader.aura@')) return false;
+      if (nm.includes('google trader') || nm.includes('apple trader')) return false;
+      if (em.includes('ci_') || em.includes('.test') || nm.includes('ci smoke tester')) return false;
+      return true;
+    });
+
+    if (q) {
+      userList = userList.filter(u => {
+        const nm = (u.name || '').toLowerCase();
+        const em = (u.email || '').toLowerCase();
+        return nm.includes(q) || em.includes(q);
+      });
+    }
+
+    if (prov) {
+      userList.sort((a, b) => {
+        const aMatches = (a.authProvider === prov || (prov === 'google' && a.email.endsWith('@gmail.com')) || (prov === 'apple' && a.email.endsWith('@icloud.com')));
+        const bMatches = (b.authProvider === prov || (prov === 'google' && b.email.endsWith('@gmail.com')) || (prov === 'apple' && b.email.endsWith('@icloud.com')));
+        if (aMatches && !bMatches) return -1;
+        if (!aMatches && bMatches) return 1;
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      });
+    } else {
+      userList.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    }
+
+    const seen = new Set();
+    const result = [];
+    for (const u of userList) {
+      const em = u.email.toLowerCase();
+      if (!seen.has(em)) {
+        seen.add(em);
+        result.push({
+          id: u.id,
+          name: u.name || (u.email.split('@')[0].charAt(0).toUpperCase() + u.email.split('@')[0].slice(1)),
+          email: u.email,
+          authProvider: u.authProvider || (u.email.endsWith('@gmail.com') ? 'google' : u.email.endsWith('@icloud.com') ? 'apple' : null),
+          avatar: u.avatar || null,
+          createdAt: u.createdAt
+        });
+      }
+    }
+
+    return result.slice(0, limit);
+  }
+
   async rehydrateUserFromToken(decoded) {
     if (!decoded || !decoded.userId) return null;
     const userId = decoded.userId;
@@ -624,7 +698,7 @@ class DataStore {
       email: cleanEmail,
       phone: '',
       passwordHash: hash,
-      name: name || (provider === 'google' ? 'Google Trader' : 'Apple Trader'),
+      name: name || (cleanEmail.split('@')[0].charAt(0).toUpperCase() + cleanEmail.split('@')[0].slice(1)),
       authProvider: provider,
       googleId: provider === 'google' ? (providerId || `g_${Date.now()}`) : null,
       appleSub: provider === 'apple' ? (providerId || `a_${Date.now()}`) : null,
