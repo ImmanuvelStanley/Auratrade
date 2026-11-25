@@ -358,7 +358,8 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                 <span
                   className={`status-pill font-mono live-quote-tick-pill ${displayTickDir === 'up' ? 'bg-bull' : 'bg-bear'}`}
                 >
-                  {displayTickDir === 'up' ? '▲ UPTICK' : '▼ DOWNTICK'}
+                  <span className="tick-pill-arrow">{displayTickDir === 'up' ? '▲' : '▼'}</span>
+                  <span className="tick-pill-text">{displayTickDir === 'up' ? 'UPTICK' : 'DOWNTICK'}</span>
                 </span>
               )}
 

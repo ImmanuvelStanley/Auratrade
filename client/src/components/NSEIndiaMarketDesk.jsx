@@ -444,10 +444,10 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                   </span>
                   {tickDirections[idx.symbol] && (
                     <span
-                      className={`status-pill font-mono ${tickDirections[idx.symbol] === 'up' ? 'bg-bull' : 'bg-bear'}`}
-                      style={{ fontSize: '0.65rem', padding: '0.1rem 0.4rem', fontWeight: 700 }}
+                      className={`status-pill font-mono live-quote-tick-pill ${tickDirections[idx.symbol] === 'up' ? 'bg-bull' : 'bg-bear'}`}
                     >
-                      {tickDirections[idx.symbol] === 'up' ? '▲ UPTICK' : '▼ DOWNTICK'}
+                      <span className="tick-pill-arrow">{tickDirections[idx.symbol] === 'up' ? '▲' : '▼'}</span>
+                      <span className="tick-pill-text">{tickDirections[idx.symbol] === 'up' ? 'UPTICK' : 'DOWNTICK'}</span>
                     </span>
                   )}
                 </div>

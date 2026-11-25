@@ -1020,19 +1020,39 @@ body:before {
   transition: color 0.15s ease;
 }
 .live-quote-tick-pill {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 84px;
-  min-width: 84px;
-  height: 24px;
-  font-size: 0.7rem;
-  padding: 0 0.45rem;
-  font-weight: 700;
-  letter-spacing: 0.03em;
-  border-radius: var(--radius-sm);
-  flex-shrink: 0;
-  box-sizing: border-box;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.32rem !important;
+  white-space: nowrap !important;
+  width: auto !important;
+  min-width: 92px !important;
+  height: 24px !important;
+  max-height: 24px !important;
+  font-size: 0.68rem !important;
+  padding: 0 0.55rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.04em !important;
+  border-radius: 6px !important;
+  flex-shrink: 0 !important;
+  box-sizing: border-box !important;
+  line-height: 1 !important;
+  vertical-align: middle !important;
+}
+
+.live-quote-tick-pill .tick-pill-arrow {
+  font-size: 0.6rem !important;
+  line-height: 1 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transform: translateY(-0.5px);
+}
+
+.live-quote-tick-pill .tick-pill-text {
+  line-height: 1 !important;
+  display: inline-block !important;
+  letter-spacing: 0.05em !important;
 }
 .live-quote-change-badge {
   display: inline-flex;
