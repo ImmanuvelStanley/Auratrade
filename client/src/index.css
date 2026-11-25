@@ -13530,25 +13530,14 @@ canvas {
   color: #64748b;
 }
 
-/* ============================================================================
-   INSTITUTIONAL SECTOR HEATMAP MATRIX
-   ============================================================================ */
-.sector-heatmap-wrapper {
-  background: var(--surface-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg, 12px);
-  width: 100%;
-  box-sizing: border-box;
-}
-
 /* ==========================================================================
-   INSTITUTIONAL SECTOR HEATMAP MATRIX DESIGN & ANIMATIONS
+   INSTITUTIONAL MARKET TREEMAP & HEATMAP HUB DESIGN
    ========================================================================== */
 
-@keyframes heatmapClusterFadeIn {
+@keyframes heatmapHubFadeIn {
   0% {
     opacity: 0;
-    transform: translateY(14px) scale(0.985);
+    transform: translateY(12px) scale(0.99);
   }
   100% {
     opacity: 1;
@@ -13556,163 +13545,333 @@ canvas {
   }
 }
 
-.sector-heatmap-wrapper {
-  background: linear-gradient(145deg, rgba(13, 20, 36, 0.72) 0%, rgba(8, 14, 28, 0.88) 100%);
+@keyframes breadthPulse {
+  0%, 100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.heatmap-hub-container {
+  background: linear-gradient(145deg, rgba(13, 20, 36, 0.78) 0%, rgba(8, 14, 28, 0.92) 100%);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 14px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
-}
-
-.heatmap-sectors-masonry {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-  gap: 1.15rem;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+  padding: 1.15rem;
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   width: 100%;
   box-sizing: border-box;
-  align-items: stretch;
+  animation: heatmapHubFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-@media (min-width: 1280px) {
-  .heatmap-sector-cluster.cluster-wide {
+/* 1. Macro Breadth & Sentiment Toolbar */
+.heatmap-breadth-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.85rem;
+  padding-bottom: 0.95rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.heatmap-breadth-summary {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.heatmap-breadth-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.heatmap-breadth-gauge {
+  display: flex;
+  width: 130px;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.heatmap-breadth-gauge-bull {
+  background: linear-gradient(90deg, #10b981, #0ecb81);
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.heatmap-breadth-gauge-bear {
+  background: linear-gradient(90deg, #f6465d, #ef4444);
+  height: 100%;
+  transition: width 0.3s ease;
+}
+
+.heatmap-spotlight-capsule {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.heatmap-spotlight-capsule.bull {
+  background: rgba(14, 203, 129, 0.12);
+  border: 1px solid rgba(14, 203, 129, 0.3);
+  color: #0ecb81;
+}
+
+.heatmap-spotlight-capsule.bear {
+  background: rgba(246, 70, 93, 0.12);
+  border: 1px solid rgba(246, 70, 93, 0.3);
+  color: #f6465d;
+}
+
+.heatmap-spotlight-capsule:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.2);
+}
+
+/* 2. Interactive Sector Filter Ribbon */
+.heatmap-sector-ribbon {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+  width: 100%;
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+.heatmap-sector-ribbon::-webkit-scrollbar {
+  height: 4px;
+}
+
+.heatmap-sector-ribbon::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+}
+
+.heatmap-sector-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.32rem 0.65rem;
+  border-radius: 7px;
+  font-size: 0.73rem;
+  font-weight: 700;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.035);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.heatmap-sector-tab:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.heatmap-sector-tab.active {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.35), rgba(30, 58, 138, 0.5));
+  border-color: #3b82f6;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(37, 99, 235, 0.3);
+}
+
+.heatmap-sector-tab .tab-badge {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  padding: 0.08rem 0.3rem;
+  border-radius: 4px;
+  font-weight: 800;
+}
+
+.heatmap-sector-tab .tab-badge.pos {
+  background: rgba(14, 203, 129, 0.18);
+  color: #0ecb81;
+}
+
+.heatmap-sector-tab .tab-badge.neg {
+  background: rgba(246, 70, 93, 0.18);
+  color: #f6465d;
+}
+
+/* 3. Contiguous Mosaic Treemap Grid (Zero Empty Space) */
+.heatmap-treemap-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 0.85rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (min-width: 1200px) {
+  .heatmap-treemap-compartment.span-2 {
     grid-column: span 2;
   }
 }
 
-.heatmap-sector-cluster {
-  background: linear-gradient(145deg, rgba(15, 23, 42, 0.65) 0%, rgba(10, 15, 30, 0.8) 100%);
+@media (min-width: 1600px) {
+  .heatmap-treemap-compartment.span-3 {
+    grid-column: span 3;
+  }
+}
+
+.heatmap-treemap-compartment {
+  background: linear-gradient(145deg, rgba(15, 23, 42, 0.72) 0%, rgba(10, 15, 30, 0.85) 100%);
   border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 12px;
-  padding: 0.95rem;
+  border-radius: 10px;
+  padding: 0.75rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
-  animation: heatmapClusterFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  gap: 0.55rem;
   box-sizing: border-box;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
-.heatmap-sector-cluster:hover {
+.heatmap-treemap-compartment:hover {
   border-color: rgba(56, 189, 248, 0.35);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
-.heatmap-cluster-header {
+.heatmap-compartment-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: 0.55rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.cluster-perf-badge {
-  font-size: 0.72rem;
-  font-weight: 800;
-  padding: 0.16rem 0.55rem;
-  border-radius: 6px;
-  letter-spacing: 0.02em;
-  font-family: var(--font-mono);
-  display: inline-flex;
+.heatmap-compartment-title {
+  display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  font-family: var(--font-brand);
+  color: #f8fafc;
 }
 
-.cluster-perf-badge.pos {
+.heatmap-compartment-count {
+  font-size: 0.66rem;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.06);
+  padding: 0.08rem 0.35rem;
+  border-radius: 4px;
+  font-weight: 700;
+}
+
+.heatmap-compartment-perf {
+  font-size: 0.7rem;
+  font-weight: 800;
+  font-family: var(--font-mono);
+  padding: 0.12rem 0.45rem;
+  border-radius: 5px;
+}
+
+.heatmap-compartment-perf.pos {
   background: rgba(14, 203, 129, 0.14);
   color: #0ecb81;
-  border: 1px solid rgba(14, 203, 129, 0.35);
-  box-shadow: 0 0 10px rgba(14, 203, 129, 0.12);
+  border: 1px solid rgba(14, 203, 129, 0.3);
 }
 
-.cluster-perf-badge.neg {
+.heatmap-compartment-perf.neg {
   background: rgba(246, 70, 93, 0.14);
   color: #f6465d;
-  border: 1px solid rgba(246, 70, 93, 0.35);
-  box-shadow: 0 0 10px rgba(246, 70, 93, 0.12);
+  border: 1px solid rgba(246, 70, 93, 0.3);
 }
 
-.heatmap-cluster-tiles {
-  display: grid;
-  gap: 0.5rem;
+/* Mosaic Tiles Pack: Contiguous 100% Flush Fit */
+.heatmap-mosaic-pack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
   width: 100%;
   box-sizing: border-box;
 }
 
-/* Individual Tiles */
-.heatmap-tile {
-  position: relative;
-  border-radius: 8px;
-  padding: 0.6rem 0.45rem;
+.heatmap-mosaic-tile {
+  flex: 1 1 calc(25% - 3px);
+  min-width: 78px;
+  min-height: 58px;
+  border-radius: 6px;
+  padding: 0.45rem 0.35rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
   cursor: pointer;
-  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1), filter 0.18s ease, border-color 0.18s ease;
-  user-select: none;
-  min-height: 68px;
-  box-sizing: border-box;
+  position: relative;
   overflow: hidden;
+  user-select: none;
+  box-sizing: border-box;
+  transition: transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.16s cubic-bezier(0.16, 1, 0.3, 1), filter 0.16s ease;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 
-.heatmap-tile::after {
+.heatmap-mosaic-tile::after {
   content: '';
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.12), transparent 70%);
+  background: radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.15), transparent 75%);
   pointer-events: none;
-  opacity: 0.6;
+  opacity: 0.5;
   transition: opacity 0.2s ease;
 }
 
-.heatmap-tile:hover {
-  transform: translateY(-3px) scale(1.025);
-  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.5), 0 0 18px var(--tile-glow, rgba(56, 189, 248, 0.2));
+.heatmap-mosaic-tile:hover {
+  transform: translateY(-2px) scale(1.025);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.55), 0 0 16px var(--tile-glow, rgba(56, 189, 248, 0.25));
   filter: brightness(1.2);
   z-index: 5;
 }
 
-.heatmap-tile:hover::after {
+.heatmap-mosaic-tile:hover::after {
   opacity: 1;
 }
 
-.heatmap-tile:active {
+.heatmap-mosaic-tile:active {
   transform: scale(0.97);
-  transition: transform 0.06s ease;
+  transition: transform 0.05s ease;
 }
 
-/* Solo 1-Item Horizontal Tile (Full-Width Clean Fill) */
-.heatmap-tile-solo {
-  min-height: 52px;
-  padding: 0.65rem 0.85rem;
-  flex-direction: row !important;
-  justify-content: space-between !important;
-  align-items: center !important;
-  text-align: left !important;
+/* Market Cap Weighted Leaders within Sector */
+.heatmap-mosaic-tile.leader {
+  flex: 2 1 calc(50% - 3px);
+  min-width: 125px;
+  min-height: 66px;
 }
 
-.heatmap-tile-solo-left {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  min-width: 0;
-}
-
-.heatmap-tile-solo-right {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-shrink: 0;
-}
-
-.heatmap-tile-sym-row {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  margin-bottom: 0.2rem;
+.heatmap-mosaic-tile.solo {
+  flex: 1 1 100%;
+  min-height: 50px;
+  flex-direction: row;
+  justify-content: space-between;
+  padding: 0.6rem 0.85rem;
 }
 
 .heatmap-tile-sym {
@@ -13721,49 +13880,66 @@ canvas {
   font-family: var(--font-brand);
   color: #ffffff;
   letter-spacing: 0.02em;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
 .heatmap-tile-name {
-  font-size: 0.68rem;
-  color: var(--text-muted);
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.7);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 140px;
+  max-width: 110px;
+  line-height: 1.1;
 }
 
-.heatmap-tile-price-val {
+.heatmap-tile-price {
   font-size: 0.73rem;
   font-weight: 700;
+  font-family: var(--font-mono);
   color: #cbd5e1;
   line-height: 1.15;
-  margin-bottom: 0.15rem;
+  margin: 0.1rem 0;
 }
 
-.heatmap-tile-pct-val {
+.heatmap-tile-pct {
   font-size: 0.72rem;
   font-weight: 800;
-  line-height: 1.1;
-  letter-spacing: 0.01em;
+  font-family: var(--font-mono);
+  letter-spacing: 0.02em;
+  line-height: 1;
 }
 
-[data-theme="light"] .sector-heatmap-wrapper {
+/* Light Theme Overrides */
+[data-theme="light"] .heatmap-hub-container {
   background: #ffffff;
   border-color: #e2e8f0;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06);
 }
 
-[data-theme="light"] .heatmap-sector-cluster {
+[data-theme="light"] .heatmap-treemap-compartment {
   background: #f8fafc;
   border-color: #e2e8f0;
+}
+
+[data-theme="light"] .heatmap-compartment-title {
+  color: #0f172a;
+}
+
+[data-theme="light"] .heatmap-sector-tab {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+  color: #475569;
 }
 
 [data-theme="light"] .heatmap-tile-sym {
   color: #0f172a;
 }
 
-[data-theme="light"] .heatmap-tile-price-val {
-  color: #475569;
+[data-theme="light"] .heatmap-tile-price {
+  color: #334155;
 }
 
 /* World Financial Centers Clocks Grid: 4x2 balanced layout, zero empty space */

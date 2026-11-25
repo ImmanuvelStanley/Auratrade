@@ -1206,7 +1206,7 @@ function PaginationControls({
 }
 
 // ============================================================================
-// INSTITUTIONAL SECTOR HEATMAP MATRIX COMPONENT
+// INSTITUTIONAL MARKET TREEMAP & HEATMAP HUB COMPONENT (ZERO EMPTY SPACE)
 // ============================================================================
 function getHeatmapTileStyle(chgPct) {
   if (chgPct >= 3.0) {
@@ -1268,34 +1268,113 @@ function getHeatmapTileStyle(chgPct) {
 function SectorHeatmapMatrix({
   companies = [],
   allCompanies = [],
+  quotes = {},
   onSelectSymbol,
   watchlistSet
 }) {
-  const [scope, setScope] = useState('full');
+  const [selectedSector, setSelectedSector] = useState('ALL');
+  const [scope, setScope] = useState('full'); // 'full' or 'screen'
 
-  const activePool = useMemo(() => {
-    if (scope === 'full' && allCompanies && allCompanies.length > 0) {
-      return allCompanies;
-    }
-    return companies && companies.length > 0 ? companies : (allCompanies || []);
-  }, [scope, companies, allCompanies]);
+  // Pick dataset based on scope
+  const rawPool = (scope === 'full' && allCompanies && allCompanies.length > 0)
+    ? allCompanies
+    : (companies && companies.length > 0 ? companies : allCompanies);
 
-  const sectorGroups = useMemo(() => {
-    const groups = {};
-    (activePool || []).forEach(c => {
-      const sector = c.sector || 'Diversified';
-      if (!groups[sector]) groups[sector] = [];
-      groups[sector].push(c);
+  // Merge live socket updates for real-time prices & change percentages
+  const enrichedPool = useMemo(() => {
+    return (rawPool || []).map(c => {
+      const live = quotes ? quotes[c.symbol] : null;
+      const price = live && Number(live.price) ? Number(live.price) : (Number(c.price) || 0);
+      const chg = live && Number.isFinite(Number(live.change)) ? Number(live.change) : (Number(c.change) || 0);
+      const chgPct = live && Number.isFinite(Number(live.changePercent)) ? Number(live.changePercent) : (Number(c.changePercent) || 0);
+      const mktCap = Number(c.marketCap) || 0;
+      return {
+        ...c,
+        price,
+        change: chg,
+        changePercent: chgPct,
+        marketCapNum: mktCap
+      };
     });
-    return Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
-  }, [activePool]);
+  }, [rawPool, quotes]);
 
-  if (!activePool || activePool.length === 0) return null;
+  // Market Breadth Sentiment Analytics
+  const marketBreadth = useMemo(() => {
+    let advancing = 0;
+    let declining = 0;
+    let neutral = 0;
+    let topGainer = null;
+    let topLoser = null;
+
+    enrichedPool.forEach(c => {
+      const pct = c.changePercent;
+      if (pct > 0.04) advancing++;
+      else if (pct < -0.04) declining++;
+      else neutral++;
+
+      if (!topGainer || pct > topGainer.changePercent) topGainer = c;
+      if (!topLoser || pct < topLoser.changePercent) topLoser = c;
+    });
+
+    const total = enrichedPool.length || 1;
+    const advancePct = Math.round((advancing / total) * 100);
+    const declinePct = Math.round((declining / total) * 100);
+
+    return {
+      advancing,
+      declining,
+      neutral,
+      total,
+      advancePct,
+      declinePct,
+      topGainer,
+      topLoser
+    };
+  }, [enrichedPool]);
+
+  // Group by sector with aggregate metrics
+  const sectorGroups = useMemo(() => {
+    const map = new Map();
+    enrichedPool.forEach(c => {
+      const sec = c.sector || 'Diversified';
+      if (!map.has(sec)) map.set(sec, []);
+      map.get(sec).push(c);
+    });
+
+    const groups = [];
+    map.forEach((items, sectorName) => {
+      const totalChange = items.reduce((acc, it) => acc + (it.changePercent || 0), 0);
+      const avgPerf = totalChange / (items.length || 1);
+      const totalMarketCap = items.reduce((acc, it) => acc + (it.marketCapNum || 0), 0);
+
+      // Sort items within sector: mega-caps first
+      const sortedItems = [...items].sort((a, b) => (b.marketCapNum || 0) - (a.marketCapNum || 0));
+
+      groups.push({
+        sectorName,
+        items: sortedItems,
+        avgPerf,
+        totalMarketCap,
+        count: items.length
+      });
+    });
+
+    // Sort sectors by constituent count descending (major sectors anchor the mosaic)
+    return groups.sort((a, b) => b.count - a.count);
+  }, [enrichedPool]);
+
+  // Active filtered sectors for display
+  const displayedSectors = useMemo(() => {
+    if (selectedSector === 'ALL') return sectorGroups;
+    return sectorGroups.filter(g => g.sectorName === selectedSector);
+  }, [sectorGroups, selectedSector]);
+
+  if (!enrichedPool || enrichedPool.length === 0) return null;
 
   return (
-    <div className="glass-card sector-heatmap-wrapper" style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
-      {/* Heatmap Header & Controls Bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.85rem', marginBottom: '1.25rem', paddingBottom: '0.85rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+    <div className="glass-card heatmap-hub-container">
+      {/* 1. Macro Market Breadth & Sentiment Toolbar */}
+      <div className="heatmap-breadth-toolbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <PieChart size={17} style={{ color: '#38bdf8' }} />
@@ -1303,97 +1382,142 @@ function SectorHeatmapMatrix({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)', fontFamily: 'var(--font-brand)' }}>
-                Institutional Sector Heatmap Matrix
+                Institutional Market Treemap &amp; Sector Heatmap
               </span>
               <span className="font-mono" style={{ fontSize: '0.7rem', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', padding: '0.1rem 0.45rem', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.2)', fontWeight: 700 }}>
-                {sectorGroups.length} Sectors • {activePool.length} Assets
+                {sectorGroups.length} Sectors • {enrichedPool.length} Assets
               </span>
             </div>
-            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
-              Real-time 24h sector breadth &amp; relative capital momentum
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
+              Real-time capital momentum, sector breadth &amp; relative strength
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-          {/* Scope Toggle: Full Market vs Active Page Filter */}
+        {/* Sentiment Breadth & Spotlight Gainers */}
+        <div className="heatmap-breadth-summary">
+          <div className="heatmap-breadth-stat">
+            <TrendingUp size={15} style={{ color: '#0ecb81' }} />
+            <span className="font-mono text-bull">{marketBreadth.advancing} Advancing ({marketBreadth.advancePct}%)</span>
+          </div>
+
+          <div className="heatmap-breadth-gauge" title={`Market Sentiment: ${marketBreadth.advancePct}% Bullish vs ${marketBreadth.declinePct}% Bearish`}>
+            <div className="heatmap-breadth-gauge-bull" style={{ width: `${marketBreadth.advancePct}%` }} />
+            <div className="heatmap-breadth-gauge-bear" style={{ width: `${marketBreadth.declinePct}%` }} />
+          </div>
+
+          <div className="heatmap-breadth-stat">
+            <TrendingDown size={15} style={{ color: '#f6465d' }} />
+            <span className="font-mono text-bear">{marketBreadth.declining} Declining ({marketBreadth.declinePct}%)</span>
+          </div>
+
+          {marketBreadth.topGainer && (
+            <div
+              className="heatmap-spotlight-capsule bull"
+              onClick={() => onSelectSymbol && onSelectSymbol(marketBreadth.topGainer.symbol)}
+              title="Click to view top gainer in platform workstation"
+            >
+              <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Leader:</span>
+              <span className="font-mono" style={{ fontWeight: 800 }}>{marketBreadth.topGainer.symbol} +{marketBreadth.topGainer.changePercent.toFixed(2)}%</span>
+            </div>
+          )}
+
+          {/* Scope Toggle: Full Market vs Page Screen */}
           {allCompanies && allCompanies.length > 0 && (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: 'rgba(0, 0, 0, 0.35)', padding: '0.22rem', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(0, 0, 0, 0.35)', padding: '0.2rem', borderRadius: '7px', border: '1px solid var(--border-subtle)' }}>
               <button
                 type="button"
                 className={`btn ${scope === 'full' ? 'btn-primary' : 'btn-ghost'}`}
-                style={{ fontSize: '0.72rem', padding: '0.25rem 0.65rem', borderRadius: '6px' }}
-                onClick={() => setScope('full')}
+                style={{ fontSize: '0.7rem', padding: '0.22rem 0.55rem', borderRadius: '5px' }}
+                onClick={() => { setScope('full'); setSelectedSector('ALL'); }}
               >
                 Full Market ({allCompanies.length})
               </button>
               <button
                 type="button"
                 className={`btn ${scope === 'screen' ? 'btn-primary' : 'btn-ghost'}`}
-                style={{ fontSize: '0.72rem', padding: '0.25rem 0.65rem', borderRadius: '6px' }}
-                onClick={() => setScope('screen')}
+                style={{ fontSize: '0.7rem', padding: '0.22rem 0.55rem', borderRadius: '5px' }}
+                onClick={() => { setScope('screen'); setSelectedSector('ALL'); }}
               >
                 Page Screen ({companies.length})
               </button>
             </div>
           )}
-
-          {/* Luminous Legend Bar */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-            <span style={{ color: '#f6465d', fontWeight: 800 }}>&le; -3%</span>
-            <div style={{ display: 'flex', borderRadius: '4px', overflow: 'hidden', height: '14px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-              <span style={{ width: '18px', background: 'rgba(246, 70, 93, 0.85)' }} title="&lt; -3% Oversold" />
-              <span style={{ width: '18px', background: 'rgba(246, 70, 93, 0.45)' }} title="-1% to -3%" />
-              <span style={{ width: '18px', background: 'rgba(246, 70, 93, 0.22)' }} title="0% to -1%" />
-              <span style={{ width: '18px', background: 'rgba(255, 255, 255, 0.08)' }} title="0% Neutral" />
-              <span style={{ width: '18px', background: 'rgba(14, 203, 129, 0.22)' }} title="0% to +1%" />
-              <span style={{ width: '18px', background: 'rgba(14, 203, 129, 0.45)' }} title="+1% to +3%" />
-              <span style={{ width: '18px', background: 'rgba(14, 203, 129, 0.85)' }} title="&gt; +3% Overbought" />
-            </div>
-            <span style={{ color: '#0ecb81', fontWeight: 800 }}>&ge; +3%</span>
-          </div>
         </div>
       </div>
 
-      {/* Heatmap Grid of Sectors */}
-      <div className="heatmap-sectors-masonry">
-        {sectorGroups.map(([sectorName, items], sIdx) => {
-          const avgPerf = items.reduce((acc, it) => acc + (Number(it.changePercent) || 0), 0) / (items.length || 1);
-          const isPos = avgPerf >= 0;
-          const isWide = items.length >= 6;
+      {/* 2. Interactive Sector Navigation & Filter Ribbon */}
+      <div className="heatmap-sector-ribbon">
+        <button
+          type="button"
+          className={`heatmap-sector-tab ${selectedSector === 'ALL' ? 'active' : ''}`}
+          onClick={() => setSelectedSector('ALL')}
+        >
+          <span>ALL SECTORS</span>
+          <span className="tab-badge" style={{ background: 'rgba(255, 255, 255, 0.1)', color: '#ffffff' }}>
+            {enrichedPool.length}
+          </span>
+        </button>
 
-          // Adaptive responsive grid layout: perfectly fills the card with zero voids
-          let gridTemplateCols = 'repeat(auto-fit, minmax(88px, 1fr))';
-          if (items.length === 1) {
-            gridTemplateCols = '1fr';
-          } else if (items.length === 2) {
-            gridTemplateCols = 'repeat(2, 1fr)';
-          } else if (items.length === 3) {
-            gridTemplateCols = 'repeat(3, 1fr)';
-          }
+        {sectorGroups.map(g => {
+          const isPos = g.avgPerf >= 0;
+          return (
+            <button
+              key={g.sectorName}
+              type="button"
+              className={`heatmap-sector-tab ${selectedSector === g.sectorName ? 'active' : ''}`}
+              onClick={() => setSelectedSector(g.sectorName === selectedSector ? 'ALL' : g.sectorName)}
+              title={`${g.sectorName} (${g.count} assets) • 24h Average: ${isPos ? '+' : ''}${g.avgPerf.toFixed(2)}%`}
+            >
+              <span>{g.sectorName}</span>
+              <span className={`tab-badge ${isPos ? 'pos' : 'neg'}`}>
+                {isPos ? '+' : ''}{g.avgPerf.toFixed(1)}%
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* 3. Contiguous Mosaic Treemap Grid (Zero Empty Space) */}
+      <div className="heatmap-treemap-grid">
+        {displayedSectors.map((g, sIdx) => {
+          const isPos = g.avgPerf >= 0;
+          const items = g.items;
+          const isSingleSectorView = selectedSector !== 'ALL';
+          const spanClass = isSingleSectorView ? 'span-3' : (items.length >= 8 ? 'span-2' : '');
 
           return (
             <div
-              key={sectorName}
-              className={`heatmap-sector-cluster ${isWide ? 'cluster-wide' : ''}`}
-              style={{ animationDelay: `${Math.min(sIdx * 35, 400)}ms` }}
+              key={g.sectorName}
+              className={`heatmap-treemap-compartment ${spanClass}`}
+              style={{ animationDelay: `${Math.min(sIdx * 30, 360)}ms` }}
             >
-              <div className="heatmap-cluster-header">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                  <span style={{ fontWeight: 800, fontSize: '0.84rem', color: 'var(--text-primary)', fontFamily: 'var(--font-brand)' }}>
-                    {sectorName}
-                  </span>
-                  <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', background: 'rgba(255, 255, 255, 0.05)', padding: '0.1rem 0.38rem', borderRadius: '4px', fontWeight: 700 }}>
-                    {items.length}
-                  </span>
+              {/* Sector Compartment Header */}
+              <div className="heatmap-compartment-head">
+                <div className="heatmap-compartment-title">
+                  <span>{g.sectorName}</span>
+                  <span className="heatmap-compartment-count">{items.length} assets</span>
                 </div>
-                <span className={`cluster-perf-badge ${isPos ? 'pos' : 'neg'}`}>
-                  {isPos ? '▲ +' : '▼ '}{Math.abs(avgPerf).toFixed(2)}%
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                  <span className={`heatmap-compartment-perf ${isPos ? 'pos' : 'neg'}`}>
+                    {isPos ? '▲ +' : '▼ '}{Math.abs(g.avgPerf).toFixed(2)}%
+                  </span>
+                  {!isSingleSectorView && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSector(g.sectorName)}
+                      style={{ background: 'transparent', border: 'none', color: '#60a5fa', fontSize: '0.68rem', cursor: 'pointer', fontWeight: 700, padding: 0 }}
+                      title={`Filter exclusively to ${g.sectorName}`}
+                    >
+                      Focus
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div className="heatmap-cluster-tiles" style={{ gridTemplateColumns: gridTemplateCols }}>
-                {items.map(c => {
+              {/* Contiguous Mosaic Tile Pack (100% Flush Fit) */}
+              <div className="heatmap-mosaic-pack">
+                {items.map((c, idx) => {
                   const chgPct = Number(c.changePercent) || 0;
                   const price = Number(c.price) || 0;
                   const currPrefix = getCurrencyPrefix(c.currency, c.symbol);
@@ -1404,29 +1528,32 @@ function SectorHeatmapMatrix({
                     ? price.toLocaleString(undefined, { maximumFractionDigits: 1 })
                     : price.toFixed(2);
 
-                  if (items.length === 1) {
+                  // Distinguish major market leaders within large sectors
+                  const isLeader = (idx < 2 && items.length >= 4) || isSingleSectorView;
+                  const isSolo = items.length === 1 && !isSingleSectorView;
+
+                  if (isSolo) {
                     return (
                       <div
                         key={c.symbol}
-                        className="heatmap-tile heatmap-tile-solo"
+                        className="heatmap-mosaic-tile solo"
                         style={{
                           background: styleMeta.bg,
                           border: `1px solid ${styleMeta.border}`,
                           '--tile-glow': styleMeta.glow
                         }}
                         onClick={() => onSelectSymbol && onSelectSymbol(c.symbol)}
-                        title={`${c.name} (${c.symbol})\nPrice: ${currPrefix}${price.toLocaleString()}\n24h Change: ${isTilePos ? '+' : ''}${chgPct.toFixed(2)}%\nSector: ${sectorName}`}
+                        title={`${c.name} (${c.symbol})\nPrice: ${currPrefix}${price.toLocaleString()}\n24h Change: ${isTilePos ? '+' : ''}${chgPct.toFixed(2)}%\nSector: ${g.sectorName}`}
                       >
-                        <div className="heatmap-tile-solo-left">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
+                          <CountryFlag country={c.country} countryCode={c.countryCode} symbol={c.symbol} size="sm" showCode={false} />
                           <span className="heatmap-tile-sym">{c.symbol}</span>
                           <span className="heatmap-tile-name">{c.name}</span>
                           {isInWatch && <Bookmark size={11} style={{ color: 'var(--accent-amber)', fill: 'currentColor' }} />}
                         </div>
-                        <div className="heatmap-tile-solo-right">
-                          <span className="heatmap-tile-price-val font-mono">
-                            {currPrefix}{formattedPrice}
-                          </span>
-                          <span className="heatmap-tile-pct-val font-mono" style={{ color: styleMeta.textColor }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
+                          <span className="heatmap-tile-price">{currPrefix}{formattedPrice}</span>
+                          <span className="heatmap-tile-pct font-mono" style={{ color: styleMeta.textColor }}>
                             {isTilePos ? '▲ +' : '▼ '}{Math.abs(chgPct).toFixed(2)}%
                           </span>
                         </div>
@@ -1437,23 +1564,29 @@ function SectorHeatmapMatrix({
                   return (
                     <div
                       key={c.symbol}
-                      className="heatmap-tile"
+                      className={`heatmap-mosaic-tile ${isLeader ? 'leader' : ''}`}
                       style={{
                         background: styleMeta.bg,
                         border: `1px solid ${styleMeta.border}`,
                         '--tile-glow': styleMeta.glow
                       }}
                       onClick={() => onSelectSymbol && onSelectSymbol(c.symbol)}
-                      title={`${c.name} (${c.symbol})\nPrice: ${currPrefix}${price.toLocaleString()}\n24h Change: ${isTilePos ? '+' : ''}${chgPct.toFixed(2)}%\nSector: ${sectorName}`}
+                      title={`${c.name} (${c.symbol})\nPrice: ${currPrefix}${price.toLocaleString()}\n24h Change: ${isTilePos ? '+' : ''}${chgPct.toFixed(2)}%\nSector: ${g.sectorName}\nMarket Cap: ${c.marketCapFormatted || '--'}`}
                     >
-                      <div className="heatmap-tile-sym-row">
-                        <span className="heatmap-tile-sym">{c.symbol}</span>
-                        {isInWatch && <Bookmark size={10} style={{ color: 'var(--accent-amber)', fill: 'currentColor' }} />}
+                      <div className="heatmap-tile-sym">
+                        <span>{c.symbol}</span>
+                        {isInWatch && <Bookmark size={9} style={{ color: 'var(--accent-amber)', fill: 'currentColor' }} />}
                       </div>
-                      <div className="heatmap-tile-price-val font-mono">
+
+                      {isLeader && c.name && (
+                        <div className="heatmap-tile-name">{c.name}</div>
+                      )}
+
+                      <div className="heatmap-tile-price">
                         {currPrefix}{formattedPrice}
                       </div>
-                      <div className="heatmap-tile-pct-val font-mono" style={{ color: styleMeta.textColor }}>
+
+                      <div className="heatmap-tile-pct" style={{ color: styleMeta.textColor }}>
                         {isTilePos ? '+' : ''}{chgPct.toFixed(2)}%
                       </div>
                     </div>
@@ -2335,6 +2468,7 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
         <SectorHeatmapMatrix
           companies={displayedCompanies}
           allCompanies={filteredRawCompanies}
+          quotes={quotes}
           onSelectSymbol={handleSelectSymbol}
           watchlistSet={watchlistSet}
         />
