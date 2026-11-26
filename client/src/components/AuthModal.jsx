@@ -300,6 +300,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         style={{
           maxWidth: '430px',
           width: '94vw',
+          maxHeight: 'min(94vh, 700px)',
           display: 'flex',
           flexDirection: 'column',
           background: 'var(--bg-card, #0f172a)',
@@ -329,8 +330,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
             onClick={onClose}
             style={{
               position: 'absolute',
-              top: '14px',
-              right: '14px',
+              top: '12px',
+              right: '12px',
               borderRadius: '50%',
               width: '32px',
               height: '32px',
@@ -354,14 +355,14 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         {/* Header Branding */}
         <div
           style={{
-            padding: '1rem 1.25rem 0.75rem',
+            padding: '0.85rem 1.25rem 0.65rem',
             background: 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.05) 50%, transparent 85%)',
             borderBottom: '1px solid var(--border-subtle, rgba(148, 163, 184, 0.12))',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             textAlign: 'center',
-            gap: '0.35rem',
+            gap: '0.25rem',
             position: 'relative',
             flexShrink: 0
           }}
@@ -373,12 +374,13 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         <div
           className="auth-modal-body"
           style={{
-            padding: '1rem clamp(1rem, 3.5vw, 1.35rem) 1.15rem',
+            padding: '0.85rem clamp(1rem, 3.5vw, 1.25rem) 0.95rem',
             display: 'flex',
             flexDirection: 'column',
-            gap: '0.75rem',
+            gap: '0.65rem',
             boxSizing: 'border-box',
-            overflow: 'hidden'
+            overflowY: 'auto',
+            flex: 1
           }}
         >
 
@@ -835,8 +837,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                 <span className="auth-social-divider-line" />
               </div>
 
-              {/* Social Registration Options */}
-              <div className="auth-social-stack">
+              {/* Social Registration Options (Side-by-side to prevent overflow) */}
+              <div className="auth-social-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
                 <button
                   type="button"
                   className="auth-social-btn auth-social-btn--google"
@@ -844,13 +846,14 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                   disabled={loading || !!socialLoading}
                   onClick={() => startSocialOAuthPopup('google')}
                   aria-label="Continue with Google"
+                  style={{ height: '38px', fontSize: '0.82rem', padding: '0 0.5rem', gap: '0.45rem' }}
                 >
                   {socialLoading === 'google' ? (
-                    <RefreshCw size={15} className="spin" />
+                    <RefreshCw size={14} className="spin" />
                   ) : (
                     <GoogleSvg />
                   )}
-                  <span>Continue with Google</span>
+                  <span>Google</span>
                 </button>
 
                 <button
@@ -860,13 +863,14 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                   disabled={loading || !!socialLoading}
                   onClick={() => startSocialOAuthPopup('apple')}
                   aria-label="Continue with Apple"
+                  style={{ height: '38px', fontSize: '0.82rem', padding: '0 0.5rem', gap: '0.45rem' }}
                 >
                   {socialLoading === 'apple' ? (
-                    <RefreshCw size={15} className="spin" />
+                    <RefreshCw size={14} className="spin" />
                   ) : (
                     <AppleSvg />
                   )}
-                  <span>Continue with Apple</span>
+                  <span>Apple</span>
                 </button>
               </div>
 
@@ -1071,7 +1075,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
           )}
 
           {/* Virtual Balance Notice Footer */}
-          <div style={{ textAlign: 'center', paddingTop: '0.35rem', borderTop: '1px solid var(--border-subtle, rgba(148, 163, 184, 0.1))' }}>
+          <div style={{ textAlign: 'center', paddingTop: '0.35rem', borderTop: '1px solid var(--border-subtle, rgba(148, 163, 184, 0.1))', flexShrink: 0 }}>
             <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary, #94a3b8)', lineHeight: 1.4 }}>
               Virtual balance $1,000 credited on registration.
             </span>
