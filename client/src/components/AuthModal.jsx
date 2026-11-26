@@ -300,7 +300,6 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         style={{
           maxWidth: '430px',
           width: '94vw',
-          maxHeight: 'min(92vh, 720px)',
           display: 'flex',
           flexDirection: 'column',
           background: 'var(--bg-card, #0f172a)',
@@ -355,7 +354,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         {/* Header Branding */}
         <div
           style={{
-            padding: '1.1rem 1.25rem 0.85rem',
+            padding: '1rem 1.25rem 0.75rem',
             background: 'radial-gradient(ellipse 85% 65% at 50% 0%, rgba(16, 185, 129, 0.12) 0%, rgba(6, 182, 212, 0.05) 50%, transparent 85%)',
             borderBottom: '1px solid var(--border-subtle, rgba(148, 163, 184, 0.12))',
             display: 'flex',
@@ -374,80 +373,45 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
         <div
           className="auth-modal-body"
           style={{
-            padding: '1.05rem clamp(1rem, 3.5vw, 1.35rem) 1.25rem',
+            padding: '1rem clamp(1rem, 3.5vw, 1.35rem) 1.15rem',
             display: 'flex',
             flexDirection: 'column',
-            gap: '0.85rem',
+            gap: '0.75rem',
             boxSizing: 'border-box',
-            overflowY: 'auto',
-            flex: 1,
-            overscrollBehavior: 'contain'
+            overflow: 'hidden'
           }}
         >
 
-          {/* Mode Switcher Tabs (Sign In / Create Account) */}
-          {mode !== 'forgot' ? (
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                background: 'var(--bg-input, rgba(255, 255, 255, 0.04))',
-                padding: '4px',
-                borderRadius: '10px',
-                border: '1px solid var(--border-subtle, rgba(148, 163, 184, 0.15))'
-              }}
-            >
+          {/* Subview Navigation Header (for Register mode) */}
+          {mode === 'register' && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.1rem' }}>
               <button
                 type="button"
-                id="auth-tab-signin"
                 onClick={() => handleSwitchMode('signin')}
                 style={{
-                  padding: '0.6rem 0.5rem',
-                  borderRadius: '7px',
+                  background: 'transparent',
                   border: 'none',
-                  background: mode === 'signin' ? 'var(--bg-card, #1e293b)' : 'transparent',
-                  color: mode === 'signin' ? 'var(--text-primary, #ffffff)' : 'var(--text-secondary, #94a3b8)',
-                  fontWeight: mode === 'signin' ? 700 : 500,
-                  fontSize: '0.84rem',
+                  color: 'var(--text-secondary, #94a3b8)',
+                  fontSize: '0.8rem',
                   cursor: 'pointer',
-                  display: 'flex',
+                  display: 'inline-flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.45rem',
-                  boxShadow: mode === 'signin' ? '0 2px 8px rgba(0,0,0,0.25), 0 0 1px rgba(255,255,255,0.1)' : 'none',
-                  transition: 'all 0.15s ease'
+                  gap: '0.35rem',
+                  padding: 0
                 }}
               >
-                <LogIn size={14} color={mode === 'signin' ? 'var(--accent-cyan, #06b6d4)' : 'currentColor'} />
-                <span>Sign In</span>
+                <ArrowLeft size={14} />
+                <span>Back to Sign In</span>
               </button>
-              <button
-                type="button"
-                id="auth-tab-register"
-                onClick={() => handleSwitchMode('register')}
-                style={{
-                  padding: '0.6rem 0.5rem',
-                  borderRadius: '7px',
-                  border: 'none',
-                  background: mode === 'register' ? 'var(--bg-card, #1e293b)' : 'transparent',
-                  color: mode === 'register' ? 'var(--text-primary, #ffffff)' : 'var(--text-secondary, #94a3b8)',
-                  fontWeight: mode === 'register' ? 700 : 500,
-                  fontSize: '0.84rem',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '0.45rem',
-                  boxShadow: mode === 'register' ? '0 2px 8px rgba(0,0,0,0.25), 0 0 1px rgba(255,255,255,0.1)' : 'none',
-                  transition: 'all 0.15s ease'
-                }}
-              >
-                <UserPlus size={14} color={mode === 'register' ? 'var(--accent-cyan, #06b6d4)' : 'currentColor'} />
-                <span>Create Account</span>
-              </button>
+              <span style={{ fontSize: '0.84rem', fontWeight: 700, color: 'var(--text-primary, #ffffff)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <UserPlus size={15} color="var(--accent-cyan, #06b6d4)" /> Create Account
+              </span>
             </div>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          )}
+
+          {/* Subview Navigation Header (for Forgot mode) */}
+          {mode === 'forgot' && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.1rem' }}>
               <button
                 type="button"
                 onClick={() => handleSwitchMode('signin')}
@@ -517,11 +481,11 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
           {/* VIEW 1: SIGN IN FORM                                             */}
           {/* ================================================================= */}
           {mode === 'signin' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-              <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                 {/* Email Address */}
                 <div className="input-group">
-                  <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.35rem', display: 'block' }}>
+                  <label className="input-label" style={{ fontSize: '0.74rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.22rem', display: 'block' }}>
                     Email Address
                   </label>
                   <div className="auth-input-wrapper">
@@ -543,8 +507,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
 
                 {/* Password */}
                 <div className="input-group">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
-                    <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.22rem' }}>
+                    <label className="input-label" style={{ fontSize: '0.74rem', color: 'var(--text-secondary, #94a3b8)' }}>
                       Password
                     </label>
                     <button
@@ -608,10 +572,10 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                   disabled={loading || !signInEmail.trim() || !signInPassword.trim()}
                   style={{
                     width: '100%',
-                    padding: '0.72rem',
-                    fontSize: '0.86rem',
+                    padding: '0.65rem',
+                    fontSize: '0.85rem',
                     fontWeight: 700,
-                    marginTop: '0.2rem',
+                    marginTop: '0.15rem',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -676,10 +640,11 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
               </div>
 
               {/* Switch Prompt */}
-              <div style={{ textAlign: 'center', marginTop: '0.25rem', fontSize: '0.78rem', color: 'var(--text-secondary, #94a3b8)' }}>
+              <div style={{ textAlign: 'center', marginTop: '0.15rem', fontSize: '0.78rem', color: 'var(--text-secondary, #94a3b8)' }}>
                 Don't have an account?{' '}
                 <button
                   type="button"
+                  id="auth-switch-to-register-btn"
                   onClick={() => handleSwitchMode('register')}
                   style={{
                     background: 'transparent',
@@ -701,11 +666,11 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
           {/* VIEW 2: CREATE ACCOUNT FORM (Standard 1-Step Registration)       */}
           {/* ================================================================= */}
           {mode === 'register' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-              <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+              <form onSubmit={handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
                 {/* Full Name */}
                 <div className="input-group">
-                  <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.35rem', display: 'block' }}>
+                  <label className="input-label" style={{ fontSize: '0.74rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.2rem', display: 'block' }}>
                     Full Name
                   </label>
                   <div className="auth-input-wrapper">
@@ -727,7 +692,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
 
                 {/* Email Address */}
                 <div className="input-group">
-                  <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.35rem', display: 'block' }}>
+                  <label className="input-label" style={{ fontSize: '0.74rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.2rem', display: 'block' }}>
                     Email Address
                   </label>
                   <div className="auth-input-wrapper">
@@ -748,7 +713,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
 
                 {/* Password */}
                 <div className="input-group">
-                  <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.35rem', display: 'block' }}>
+                  <label className="input-label" style={{ fontSize: '0.74rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.2rem', display: 'block' }}>
                     Password (min. 6 characters)
                   </label>
                   <div className="auth-input-wrapper">
@@ -790,7 +755,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
 
                 {/* Mobile Number (Optional) */}
                 <div className="input-group">
-                  <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.35rem', display: 'block' }}>
+                  <label className="input-label" style={{ fontSize: '0.74rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.2rem', display: 'block' }}>
                     Mobile Number <span style={{ color: 'var(--text-muted, #64748b)' }}>(Optional)</span>
                   </label>
                   <div style={{ display: 'flex', gap: '0.45rem' }}>
@@ -804,7 +769,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                         borderRadius: 'var(--radius-md, 8px)',
                         color: 'var(--text-primary, #ffffff)',
                         fontSize: '0.82rem',
-                        padding: '0.65rem 0.4rem',
+                        padding: '0.55rem 0.4rem',
                         outline: 'none',
                         cursor: 'pointer'
                       }}
@@ -838,10 +803,10 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                   disabled={loading || !regName.trim() || !regEmail.trim() || !regPassword.trim()}
                   style={{
                     width: '100%',
-                    padding: '0.72rem',
-                    fontSize: '0.86rem',
+                    padding: '0.65rem',
+                    fontSize: '0.85rem',
                     fontWeight: 700,
-                    marginTop: '0.2rem',
+                    marginTop: '0.15rem',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -906,10 +871,11 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
               </div>
 
               {/* Switch Prompt */}
-              <div style={{ textAlign: 'center', marginTop: '0.25rem', fontSize: '0.78rem', color: 'var(--text-secondary, #94a3b8)' }}>
+              <div style={{ textAlign: 'center', marginTop: '0.15rem', fontSize: '0.78rem', color: 'var(--text-secondary, #94a3b8)' }}>
                 Already have an account?{' '}
                 <button
                   type="button"
+                  id="auth-switch-to-signin-btn"
                   onClick={() => handleSwitchMode('signin')}
                   style={{
                     background: 'transparent',
@@ -1104,10 +1070,10 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
             </div>
           )}
 
-          {/* Institutional Security Notice Footer */}
-          <div style={{ textAlign: 'center', paddingTop: '0.25rem', borderTop: '1px solid var(--border-subtle, rgba(148, 163, 184, 0.1))' }}>
-            <span style={{ fontSize: '0.68rem', color: 'var(--text-muted, #64748b)', lineHeight: 1.4 }}>
-              Encrypted 256-bit institutional authentication. Virtual balance $1,000 credited on registration.
+          {/* Virtual Balance Notice Footer */}
+          <div style={{ textAlign: 'center', paddingTop: '0.35rem', borderTop: '1px solid var(--border-subtle, rgba(148, 163, 184, 0.1))' }}>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary, #94a3b8)', lineHeight: 1.4 }}>
+              Virtual balance $1,000 credited on registration.
             </span>
           </div>
 
