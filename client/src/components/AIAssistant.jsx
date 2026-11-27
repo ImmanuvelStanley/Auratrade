@@ -706,7 +706,7 @@ export function AIAssistant({ activeSymbol, onNavigate, onOpenTrade, onOpenAutoP
               position: 'fixed',
               inset: 0,
               zIndex: 2450,
-              background: isExpanded ? 'rgba(3, 7, 18, 0.52)' : 'transparent',
+              background: isExpanded ? 'var(--bg-modal-overlay)' : 'transparent',
               backdropFilter: isExpanded ? 'blur(3px)' : 'none',
               WebkitBackdropFilter: isExpanded ? 'blur(3px)' : 'none',
               transition: 'background 0.2s ease'

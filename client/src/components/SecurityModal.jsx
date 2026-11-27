@@ -125,7 +125,7 @@ export function SecurityModal({ isOpen, onClose }) {
         alignItems: 'center',
         justifyContent: 'center',
         padding: '1rem',
-        background: 'rgba(0, 0, 0, 0.75)',
+        background: 'var(--bg-modal-overlay)',
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)'
       }}
@@ -143,7 +143,7 @@ export function SecurityModal({ isOpen, onClose }) {
           borderRadius: 'var(--radius-lg)',
           border: '1px solid rgba(6, 182, 212, 0.35)',
           background: 'var(--bg-surface)',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.65), 0 0 35px rgba(6, 182, 212, 0.15)'
+          boxShadow: 'var(--shadow-modal)'
         }}
         onClick={(e) => e.stopPropagation()}
       >

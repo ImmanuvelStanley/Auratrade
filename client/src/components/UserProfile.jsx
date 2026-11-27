@@ -1829,7 +1829,7 @@ export function UserProfile({
                   </p>
                   <button
                     type="button"
-                    className="btn btn-primary"
+                    className="btn"
                     onClick={() => {
                       setActiveSubTab('profile-edit');
                       setTimeout(() => {
@@ -1843,9 +1843,9 @@ export function UserProfile({
                       fontSize: '0.8rem',
                       gap: '0.45rem',
                       justifyContent: 'center',
-                      background: 'rgba(6, 182, 212, 0.15)',
-                      color: 'var(--accent-cyan)',
-                      border: '1px solid rgba(6, 182, 212, 0.4)',
+                      background: 'rgba(6, 182, 212, 0.14)',
+                      color: 'var(--text-cyan)',
+                      border: '1px solid rgba(2, 132, 199, 0.45)',
                       borderRadius: '8px'
                     }}
                   >
