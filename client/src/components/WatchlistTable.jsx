@@ -140,7 +140,7 @@ const WatchlistRow = React.memo(function WatchlistRow({
                 alignItems: 'center',
                 gap: '0.25rem',
                 color: 'var(--text-muted)',
-                border: '1px dashed rgba(255, 255, 255, 0.15)',
+                border: '1px dashed var(--border-dashed)',
                 background: 'transparent',
                 cursor: 'pointer'
               }}

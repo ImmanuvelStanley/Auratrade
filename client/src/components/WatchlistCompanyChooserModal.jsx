@@ -255,7 +255,7 @@ export function WatchlistCompanyChooserModal({
                   background: isActive
                     ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.25), rgba(99, 102, 241, 0.25))'
                     : 'var(--bg-card)',
-                  color: isActive ? '#38bdf8' : 'var(--text-secondary)',
+                  color: isActive ? 'var(--text-cyan)' : 'var(--text-secondary)',
                   border: isActive
                     ? '1px solid rgba(6, 182, 212, 0.5)'
                     : '1px solid var(--border-subtle)',
@@ -671,7 +671,7 @@ export function WatchlistCompanyChooserModal({
               fontSize: '0.82rem',
               fontWeight: 700,
               background: 'var(--accent-primary, #2563eb)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
+              border: '1px solid var(--border-subtle)',
               borderRadius: '8px'
             }}
           >

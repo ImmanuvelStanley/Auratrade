@@ -148,7 +148,7 @@ export function BrandLogo({
           className="brand-subtext"
           style={{
             fontSize: subtextSize,
-            color: '#94a3b8',
+            color: 'var(--text-muted)',
             letterSpacing: '0.14em',
             lineHeight: 1.15,
             textTransform: 'uppercase',

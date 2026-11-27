@@ -27,6 +27,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
+import { useTheme } from '../context/ThemeContext';
 import { defaultAllCompanies } from '../data/defaultAllCompanies';
 import { CountryFlag } from './CountryFlag';
 import { floatingCardEvents } from '../utils/floatingCardEffect';
@@ -148,10 +149,10 @@ function ComparisonModal({ isOpen, onClose, symbols, allCompanies, onSelectSymbo
                 </div>
 
                 {/* Live Price Box */}
-                <div style={{ padding: '0.75rem', background: '#0e141f', borderRadius: 'var(--radius-md)', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                <div style={{ padding: '0.75rem', background: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
                   <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span>Live Market Price</span>
-                    <span style={{ color: '#0ecb81', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: 600 }}>
+                    <span style={{ color: 'var(--text-bull)', display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: 600 }}>
                       <Zap size={9} fill="currentColor" /> LIVE
                     </span>
                   </div>
@@ -169,7 +170,7 @@ function ComparisonModal({ isOpen, onClose, symbols, allCompanies, onSelectSymbo
                 <div>
                   <div className="comparison-metric-row">
                     <span className="comparison-metric-label">Market Capitalization</span>
-                    <span className="font-mono" style={{ fontWeight: 700, color: '#e2e8f0' }}>{c.marketCapFormatted}</span>
+                    <span className="font-mono" style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{c.marketCapFormatted}</span>
                   </div>
                   <div className="comparison-metric-row">
                     <span className="comparison-metric-label">P/E Ratio</span>
@@ -177,7 +178,7 @@ function ComparisonModal({ isOpen, onClose, symbols, allCompanies, onSelectSymbo
                   </div>
                   <div className="comparison-metric-row">
                     <span className="comparison-metric-label">Dividend Yield</span>
-                    <span className="font-mono" style={{ color: '#0ecb81', fontWeight: 600 }}>{c.dividendYield || '0.0%'}</span>
+                    <span className="font-mono" style={{ color: 'var(--text-bull)', fontWeight: 600 }}>{c.dividendYield || '0.0%'}</span>
                   </div>
                   <div className="comparison-metric-row">
                     <span className="comparison-metric-label">Sector</span>
@@ -185,19 +186,19 @@ function ComparisonModal({ isOpen, onClose, symbols, allCompanies, onSelectSymbo
                   </div>
                   <div className="comparison-metric-row">
                     <span className="comparison-metric-label">Analyst Consensus</span>
-                    <span className="badge-pill" style={{ fontSize: '0.7rem', background: c.rating === 'STRONG BUY' ? 'rgba(14,203,129,0.12)' : 'rgba(37,99,235,0.12)', color: c.rating === 'STRONG BUY' ? '#0ecb81' : '#60a5fa', border: `1px solid ${c.rating === 'STRONG BUY' ? 'rgba(14,203,129,0.25)' : 'rgba(59,130,246,0.25)'}` }}>
+                    <span className="badge-pill" style={{ fontSize: '0.7rem', background: c.rating === 'STRONG BUY' ? 'var(--bull-green-bg)' : 'var(--accent-primary-bg)', color: c.rating === 'STRONG BUY' ? 'var(--text-bull)' : 'var(--text-cyan)', border: `1px solid ${c.rating === 'STRONG BUY' ? 'var(--status-active-border)' : 'rgba(59,130,246,0.3)'}` }}>
                       {c.rating} ({c.ratingScore || 85})
                     </span>
                   </div>
                   <div className="comparison-metric-row">
                     <span className="comparison-metric-label">30D AI Expected Target</span>
-                    <span className="font-mono" style={{ color: '#0ecb81', fontWeight: 700 }}>
+                    <span className="font-mono" style={{ color: 'var(--text-bull)', fontWeight: 700 }}>
                       {currSym}{forecastTarget.toFixed(2)} (+{forecastGain}%)
                     </span>
                   </div>
                   <div className="comparison-metric-row">
                     <span className="comparison-metric-label">Risk Profile</span>
-                    <span style={{ fontWeight: 600, color: c.riskLevel?.includes('Low') ? '#0ecb81' : 'var(--warning-amber)' }}>
+                    <span style={{ fontWeight: 600, color: c.riskLevel?.includes('Low') ? 'var(--text-bull)' : 'var(--warning-amber)' }}>
                       {c.riskLevel}
                     </span>
                   </div>
@@ -209,13 +210,13 @@ function ComparisonModal({ isOpen, onClose, symbols, allCompanies, onSelectSymbo
                     <span>52W Low: {currSym}{c.low52}</span>
                     <span>52W High: {currSym}{c.high52}</span>
                   </div>
-                  <div style={{ width: '100%', height: '5px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', position: 'relative' }}>
+                  <div style={{ width: '100%', height: '5px', background: 'var(--bg-track)', borderRadius: '3px', position: 'relative' }}>
                     <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${posPercent}%`, background: 'linear-gradient(90deg, #2563eb, #0ecb81)', borderRadius: '3px' }} />
                   </div>
                 </div>
 
                 {/* Investment Appeal */}
-                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', background: 'rgba(0,0,0,0.25)', padding: '0.6rem', borderRadius: 'var(--radius-sm)', lineHeight: 1.45, flex: 1, border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', background: 'var(--bg-subtle)', padding: '0.6rem', borderRadius: 'var(--radius-sm)', lineHeight: 1.45, flex: 1, border: '1px solid var(--border-subtle)' }}>
                   <strong style={{ color: 'var(--text-primary)' }}>Investment Case:</strong> {c.investorAppeal}
                 </div>
 
@@ -310,8 +311,8 @@ const MarketTableRow = React.memo(
                 width: '36px',
                 height: '36px',
                 borderRadius: '6px',
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border-subtle)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -339,7 +340,8 @@ const MarketTableRow = React.memo(
                     color: 'var(--text-muted)',
                     fontWeight: 500,
                     padding: '0.1rem 0.35rem',
-                    background: 'rgba(255,255,255,0.05)',
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border-subtle)',
                     borderRadius: '4px'
                   }}
                 >
@@ -349,12 +351,12 @@ const MarketTableRow = React.memo(
                   <span
                     style={{
                       fontSize: '0.62rem',
-                      color: c.tier?.includes('Mega') ? '#93c5fd' : c.tier?.includes('Large') ? '#cbd5e1' : 'var(--text-muted)',
+                      color: c.tier?.includes('Mega') ? 'var(--text-cyan)' : c.tier?.includes('Large') ? 'var(--text-secondary)' : 'var(--text-muted)',
                       fontWeight: 600,
                       padding: '0.08rem 0.3rem',
-                      background: c.tier?.includes('Mega') ? 'rgba(59, 130, 246, 0.12)' : c.tier?.includes('Large') ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255,255,255,0.04)',
+                      background: c.tier?.includes('Mega') ? 'var(--accent-primary-bg)' : 'var(--bg-subtle)',
                       borderRadius: '3px',
-                      border: `1px solid ${c.tier?.includes('Mega') ? 'rgba(59, 130, 246, 0.25)' : 'rgba(255, 255, 255, 0.08)'}`
+                      border: `1px solid ${c.tier?.includes('Mega') ? 'rgba(59, 130, 246, 0.3)' : 'var(--border-subtle)'}`
                     }}
                   >
                     {c.tier?.includes('Mega') ? 'MEGA' : c.tier?.includes('Large') ? 'LARGE' : c.tier?.includes('Growth') ? 'GROWTH' : c.tier?.includes('Index') ? 'INDEX' : ''}
@@ -385,7 +387,7 @@ const MarketTableRow = React.memo(
                 <CountryFlag country={c.country} countryCode={c.countryCode} symbol={c.symbol} size="xs" />
                 <span>{c.country}</span>
               </div>
-              <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                 {c.exchange} • {c.currency}
               </div>
             </div>
@@ -393,7 +395,7 @@ const MarketTableRow = React.memo(
         )}
 
         {/* Market Cap (Always visible) */}
-        <td style={{ textAlign: 'right', fontWeight: 700, fontFamily: 'var(--font-mono)', color: '#e2e8f0' }}>
+        <td style={{ textAlign: 'right', fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
           {c.marketCapFormatted}
         </td>
 
@@ -405,7 +407,7 @@ const MarketTableRow = React.memo(
           <div
             style={{
               fontSize: '0.65rem',
-              color: '#0ecb81',
+              color: 'var(--text-bull)',
               display: 'flex',
               alignItems: 'center',
               gap: '0.15rem',
@@ -441,7 +443,7 @@ const MarketTableRow = React.memo(
                   <span>{currSym}{low52}</span>
                   <span>{currSym}{high52}</span>
                 </div>
-                <div style={{ width: '100%', height: '5px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '3px', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: '5px', background: 'var(--bg-track)', borderRadius: '3px', position: 'relative', overflow: 'hidden' }}>
                   <div
                     style={{
                       position: 'absolute',
@@ -464,7 +466,7 @@ const MarketTableRow = React.memo(
                   <span>{currSym}{dayLow}</span>
                   <span>{currSym}{dayHigh}</span>
                 </div>
-                <div style={{ width: '100%', height: '4px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '2px', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: '4px', background: 'var(--bg-track)', borderRadius: '2px', position: 'relative', overflow: 'hidden' }}>
                   <div
                     style={{
                       position: 'absolute',
@@ -745,12 +747,12 @@ const MarketInvestorCard = React.memo(
                   <span
                     style={{
                       fontSize: '0.56rem',
-                      color: c.tier?.includes('Mega') ? '#93c5fd' : c.tier?.includes('Large') ? '#cbd5e1' : 'var(--text-muted)',
+                      color: c.tier?.includes('Mega') ? 'var(--text-cyan)' : c.tier?.includes('Large') ? 'var(--text-secondary)' : 'var(--text-muted)',
                       fontWeight: 700,
                       padding: '0.06rem 0.25rem',
-                      background: c.tier?.includes('Mega') ? 'rgba(59, 130, 246, 0.12)' : c.tier?.includes('Large') ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255,255,255,0.04)',
+                      background: c.tier?.includes('Mega') ? 'var(--accent-primary-bg)' : 'var(--bg-subtle)',
                       borderRadius: '3px',
-                      border: `1px solid ${c.tier?.includes('Mega') ? 'rgba(59, 130, 246, 0.25)' : 'rgba(255, 255, 255, 0.08)'}`,
+                      border: `1px solid ${c.tier?.includes('Mega') ? 'rgba(59, 130, 246, 0.3)' : 'var(--border-subtle)'}`,
                       flexShrink: 0
                     }}
                   >
@@ -781,9 +783,9 @@ const MarketInvestorCard = React.memo(
               <span
                 className="badge-pill"
                 style={{
-                  background: c.rating === 'STRONG BUY' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(6, 182, 212, 0.15)',
-                  color: c.rating === 'STRONG BUY' ? '#0ecb81' : '#60a5fa',
-                  border: `1px solid ${c.rating === 'STRONG BUY' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(6, 182, 212, 0.3)'}`,
+                  background: c.rating === 'STRONG BUY' ? 'var(--bull-green-bg)' : 'var(--accent-primary-bg)',
+                  color: c.rating === 'STRONG BUY' ? 'var(--text-bull)' : 'var(--text-cyan)',
+                  border: `1px solid ${c.rating === 'STRONG BUY' ? 'var(--status-active-border)' : 'rgba(6, 182, 212, 0.3)'}`,
                   fontSize: '0.64rem',
                   fontWeight: 700,
                   whiteSpace: 'nowrap',
@@ -804,7 +806,7 @@ const MarketInvestorCard = React.memo(
               >
                 {currSym}{fmtNum(price)}
               </span>
-              <span style={{ fontSize: '0.62rem', color: '#0ecb81', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+              <span style={{ fontSize: '0.62rem', color: 'var(--text-bull)', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '2px', whiteSpace: 'nowrap', flexShrink: 0 }}>
                 <Zap size={9} fill="currentColor" /> LIVE
               </span>
             </div>
@@ -823,7 +825,7 @@ const MarketInvestorCard = React.memo(
               display: 'grid',
               gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
               gap: '0.55rem 0.45rem',
-              background: 'rgba(255, 255, 255, 0.025)',
+              background: 'var(--bg-subtle)',
               padding: '0.65rem 0.72rem',
               borderRadius: 'var(--radius-md)',
               border: '1px solid var(--border-subtle)',
@@ -833,7 +835,7 @@ const MarketInvestorCard = React.memo(
           >
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Mkt Cap</div>
-              <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 700, color: '#e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <div className="font-mono" style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {c.marketCapFormatted}
               </div>
             </div>
@@ -953,10 +955,10 @@ const MarketInvestorCard = React.memo(
               fontSize: '0.75rem',
               color: 'var(--text-secondary)',
               lineHeight: 1.45,
-              background: 'rgba(0,0,0,0.16)',
+              background: 'var(--bg-subtle)',
               padding: '0.52rem 0.68rem',
               borderRadius: 'var(--radius-sm)',
-              border: '1px solid rgba(255, 255, 255, 0.04)',
+              border: '1px solid var(--border-subtle)',
               overflow: 'hidden'
             }}
           >
@@ -1208,7 +1210,64 @@ function PaginationControls({
 // ============================================================================
 // INSTITUTIONAL MARKET TREEMAP & HEATMAP HUB COMPONENT (ZERO EMPTY SPACE)
 // ============================================================================
-function getHeatmapTileStyle(chgPct) {
+function getHeatmapTileStyle(chgPct, isLight = false) {
+  if (isLight) {
+    if (chgPct >= 3.0) {
+      return {
+        bg: 'linear-gradient(145deg, #d1fae5, #a7f3d0)',
+        border: '#34d399',
+        textColor: '#065f46',
+        glow: 'rgba(5, 150, 105, 0.16)'
+      };
+    }
+    if (chgPct >= 1.0) {
+      return {
+        bg: 'linear-gradient(145deg, #ecfdf5, #d1fae5)',
+        border: '#6ee7b7',
+        textColor: '#047857',
+        glow: 'rgba(5, 150, 105, 0.12)'
+      };
+    }
+    if (chgPct > 0) {
+      return {
+        bg: '#f0fdf4',
+        border: '#bbf7d0',
+        textColor: '#059669',
+        glow: 'rgba(5, 150, 105, 0.08)'
+      };
+    }
+    if (chgPct <= -3.0) {
+      return {
+        bg: 'linear-gradient(145deg, #fee2e2, #fecaca)',
+        border: '#f87171',
+        textColor: '#991b1b',
+        glow: 'rgba(220, 38, 38, 0.16)'
+      };
+    }
+    if (chgPct <= -1.0) {
+      return {
+        bg: 'linear-gradient(145deg, #fef2f2, #fee2e2)',
+        border: '#fca5a5',
+        textColor: '#b91c1c',
+        glow: 'rgba(220, 38, 38, 0.12)'
+      };
+    }
+    if (chgPct < 0) {
+      return {
+        bg: '#fff1f2',
+        border: '#fecdd3',
+        textColor: '#dc2626',
+        glow: 'rgba(220, 38, 38, 0.08)'
+      };
+    }
+    return {
+      bg: '#f8fafc',
+      border: '#e2e8f0',
+      textColor: '#475569',
+      glow: 'rgba(15, 23, 42, 0.06)'
+    };
+  }
+
   if (chgPct >= 3.0) {
     return {
       bg: 'linear-gradient(145deg, rgba(14, 203, 129, 0.32), rgba(16, 185, 129, 0.16))',
@@ -1272,6 +1331,8 @@ function SectorHeatmapMatrix({
   onSelectSymbol,
   watchlistSet
 }) {
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
   const [selectedSector, setSelectedSector] = useState('ALL');
   const [scope, setScope] = useState('full'); // 'full' or 'screen'
 
@@ -1399,15 +1460,15 @@ function SectorHeatmapMatrix({
       {/* 1. Macro Market Breadth & Sentiment Toolbar */}
       <div className="heatmap-breadth-toolbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <PieChart size={17} style={{ color: '#38bdf8' }} />
+          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--accent-primary-bg)', border: '1px solid rgba(56, 189, 248, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <PieChart size={17} style={{ color: 'var(--text-cyan)' }} />
           </div>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <span style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)', fontFamily: 'var(--font-brand)' }}>
                 Institutional Market Treemap &amp; Sector Heatmap
               </span>
-              <span className="font-mono" style={{ fontSize: '0.7rem', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.1)', padding: '0.1rem 0.45rem', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.2)', fontWeight: 700 }}>
+              <span className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-cyan)', background: 'var(--accent-primary-bg)', padding: '0.1rem 0.45rem', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.25)', fontWeight: 700 }}>
                 {sectorGroups.length} Sectors • {enrichedPool.length} Assets
               </span>
             </div>
@@ -1420,7 +1481,7 @@ function SectorHeatmapMatrix({
         {/* Sentiment Breadth & Spotlight Gainers */}
         <div className="heatmap-breadth-summary">
           <div className="heatmap-breadth-stat">
-            <TrendingUp size={15} style={{ color: '#0ecb81' }} />
+            <TrendingUp size={15} style={{ color: 'var(--text-bull)' }} />
             <span className="font-mono text-bull">{marketBreadth.advancing} Advancing ({marketBreadth.advancePct}%)</span>
           </div>
 
@@ -1430,7 +1491,7 @@ function SectorHeatmapMatrix({
           </div>
 
           <div className="heatmap-breadth-stat">
-            <TrendingDown size={15} style={{ color: '#f6465d' }} />
+            <TrendingDown size={15} style={{ color: 'var(--text-bear)' }} />
             <span className="font-mono text-bear">{marketBreadth.declining} Declining ({marketBreadth.declinePct}%)</span>
           </div>
 
@@ -1447,7 +1508,7 @@ function SectorHeatmapMatrix({
 
           {/* Scope Toggle: Full Market vs Page Screen */}
           {allCompanies && allCompanies.length > 0 && (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: 'rgba(0, 0, 0, 0.35)', padding: '0.2rem', borderRadius: '7px', border: '1px solid var(--border-subtle)' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: 'var(--bg-segment)', padding: '0.2rem', borderRadius: '7px', border: '1px solid var(--border-subtle)' }}>
               <button
                 type="button"
                 className={`btn ${scope === 'full' ? 'btn-primary' : 'btn-ghost'}`}
@@ -1477,7 +1538,13 @@ function SectorHeatmapMatrix({
           onClick={() => setSelectedSector('ALL')}
         >
           <span>ALL SECTORS</span>
-          <span className="tab-badge" style={{ background: 'rgba(255, 255, 255, 0.1)', color: '#ffffff' }}>
+          <span
+            className="tab-badge"
+            style={{
+              background: selectedSector === 'ALL' ? 'rgba(255, 255, 255, 0.2)' : 'var(--bg-subtle-hover)',
+              color: selectedSector === 'ALL' ? '#ffffff' : 'var(--text-primary)'
+            }}
+          >
             {enrichedPool.length}
           </span>
         </button>
@@ -1529,7 +1596,7 @@ function SectorHeatmapMatrix({
                     <button
                       type="button"
                       onClick={() => setSelectedSector(g.sectorName)}
-                      style={{ background: 'transparent', border: 'none', color: '#60a5fa', fontSize: '0.68rem', cursor: 'pointer', fontWeight: 700, padding: 0 }}
+                      style={{ background: 'transparent', border: 'none', color: 'var(--text-cyan)', fontSize: '0.68rem', cursor: 'pointer', fontWeight: 700, padding: 0 }}
                       title={`Filter exclusively to ${g.sectorName}`}
                     >
                       Focus
@@ -1546,7 +1613,7 @@ function SectorHeatmapMatrix({
                   const currPrefix = getCurrencyPrefix(c.currency, c.symbol);
                   const isTilePos = chgPct >= 0;
                   const isInWatch = watchlistSet?.has(c.symbol);
-                  const styleMeta = getHeatmapTileStyle(chgPct);
+                  const styleMeta = getHeatmapTileStyle(chgPct, isLight);
                   const formattedPrice = price >= 1000
                     ? price.toLocaleString(undefined, { maximumFractionDigits: 1 })
                     : price.toFixed(2);

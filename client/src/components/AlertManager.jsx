@@ -205,7 +205,7 @@ export function AlertManager({
                               padding: '0.1rem 0.3rem',
                               fontSize: '0.62rem',
                               color: 'var(--text-muted)',
-                              border: '1px dashed rgba(255, 255, 255, 0.15)',
+                              border: '1px dashed var(--border-dashed)',
                               borderRadius: 'var(--radius-sm)',
                               display: 'inline-flex',
                               alignItems: 'center',

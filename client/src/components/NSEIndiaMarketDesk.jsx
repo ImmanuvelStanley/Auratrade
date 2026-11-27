@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 
 import { getNSEIndiaFallbackData } from '../services/clientFallbackData';
+import { useTheme } from '../context/ThemeContext';
 import { CountryFlag } from './CountryFlag';
 
 export const FII_DII_HISTORICAL_DATA = [
@@ -50,6 +51,8 @@ export const NSE_MARKET_HOLIDAYS_2026 = [
 let nseMemoryCache = null;
 
 function NSEInteractiveSparkline({ points, isBull, sym }) {
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
   const [hoverInfo, setHoverInfo] = useState(null);
 
   if (!points || !Array.isArray(points) || points.length < 2) return null;
@@ -108,11 +111,11 @@ function NSEInteractiveSparkline({ points, isBull, sym }) {
         </defs>
         <path d={areaD} fill={`url(#${gradId})`} />
         <path d={pathD} fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-        <circle cx={lastCoord.x} cy={lastCoord.y} r="3" fill={color} stroke="#ffffff" strokeWidth="1.2" />
+        <circle cx={lastCoord.x} cy={lastCoord.y} r="3" fill={color} stroke="var(--bg-card)" strokeWidth="1.2" />
         {hoverInfo && (
           <>
-            <line x1={hoverInfo.x} y1={0} x2={hoverInfo.x} y2={height} stroke="rgba(56, 189, 248, 0.7)" strokeWidth="1" strokeDasharray="2 2" />
-            <circle cx={hoverInfo.x} cy={hoverInfo.y} r="3.8" fill="#38bdf8" stroke="#ffffff" strokeWidth="1.4" />
+            <line x1={hoverInfo.x} y1={0} x2={hoverInfo.x} y2={height} stroke={isLight ? 'rgba(2, 132, 199, 0.7)' : 'rgba(56, 189, 248, 0.7)'} strokeWidth="1" strokeDasharray="2 2" />
+            <circle cx={hoverInfo.x} cy={hoverInfo.y} r="3.8" fill={isLight ? '#0284c7' : '#38bdf8'} stroke="var(--bg-card)" strokeWidth="1.4" />
           </>
         )}
       </svg>
@@ -126,9 +129,9 @@ function NSEInteractiveSparkline({ points, isBull, sym }) {
             transform: hoverInfo.xPct > 70 ? 'translate(-90%, -4px)' : hoverInfo.xPct < 30 ? 'translate(-10%, -4px)' : 'translate(-50%, -4px)',
             padding: '2px 6px',
             borderRadius: '4px',
-            background: 'rgba(10, 15, 29, 0.95)',
-            border: '1px solid rgba(56, 189, 248, 0.55)',
-            color: '#f8fafc',
+            background: 'var(--bg-tooltip)',
+            border: isLight ? '1px solid rgba(2, 132, 199, 0.45)' : '1px solid rgba(56, 189, 248, 0.55)',
+            color: 'var(--text-primary)',
             fontSize: '0.68rem',
             fontWeight: 800,
             whiteSpace: 'nowrap',
@@ -969,7 +972,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                         {secPrice ? secPrice.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '--'}
                       </div>
 
-                      <div style={{ height: '4px', width: '100%', borderRadius: '999px', background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+                      <div style={{ height: '4px', width: '100%', borderRadius: '999px', background: 'var(--bg-track)', overflow: 'hidden' }}>
                         <div
                           style={{
                             width: `${strengthWidth}%`,
@@ -1139,7 +1142,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
           </div>
 
           {/* Right: Derivatives Sentiment & Strikes Radar */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'rgba(255, 255, 255, 0.02)', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'var(--bg-subtle)', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border-subtle)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <Scale size={14} style={{ color: 'var(--accent-cyan)' }} />
@@ -1149,7 +1152,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.6rem' }}>
-              <div style={{ padding: '0.65rem', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ padding: '0.65rem', borderRadius: '8px', background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}>
                 <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Nifty Put-Call Ratio (PCR)</div>
                 <div className="font-mono text-bull" style={{ fontSize: '1.2rem', fontWeight: 900, marginTop: '0.15rem' }}>
                   1.18
@@ -1157,7 +1160,7 @@ export const NSEIndiaMarketDesk = React.memo(function NSEIndiaMarketDesk({ onSel
                 <div style={{ fontSize: '0.68rem', color: 'var(--bull-green)' }}>Bullish put base building</div>
               </div>
 
-              <div style={{ padding: '0.65rem', borderRadius: '8px', background: 'rgba(255, 255, 255, 0.02)', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ padding: '0.65rem', borderRadius: '8px', background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}>
                 <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Max Pain Strike</div>
                 <div className="font-mono" style={{ fontSize: '1.2rem', fontWeight: 900, color: 'var(--warning-amber)', marginTop: '0.15rem' }}>
                   23,500

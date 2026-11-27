@@ -26,15 +26,15 @@ export class ErrorBoundary extends React.Component {
           style={{
             padding: '2rem',
             margin: '1.5rem 0',
-            background: 'rgba(244, 63, 94, 0.08)',
-            border: '1px solid rgba(244, 63, 94, 0.3)',
+            background: 'var(--bear-red-bg)',
+            border: '1px solid var(--status-triggered-border)',
             borderRadius: '12px',
             textAlign: 'center',
-            color: '#f8fafc',
+            color: 'var(--text-primary)',
             backdropFilter: 'blur(8px)'
           }}
         >
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', color: '#f87171', fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.75rem' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-bear)', fontWeight: 700, fontSize: '1.1rem', marginBottom: '0.75rem' }}>
             <AlertTriangle size={22} />
             <span>Component Display Protected</span>
           </div>
@@ -47,11 +47,11 @@ export class ErrorBoundary extends React.Component {
                 margin: '0 auto 1.25rem',
                 maxWidth: '640px',
                 padding: '0.6rem 0.85rem',
-                background: 'rgba(0, 0, 0, 0.35)',
-                border: '1px solid rgba(244, 63, 94, 0.25)',
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--status-triggered-border)',
                 borderRadius: '6px',
                 fontSize: '0.78rem',
-                color: '#fca5a5',
+                color: 'var(--text-bear)',
                 fontFamily: 'monospace',
                 textAlign: 'left',
                 wordBreak: 'break-word'
@@ -65,7 +65,7 @@ export class ErrorBoundary extends React.Component {
             onClick={this.handleReset}
             style={{
               background: 'var(--accent-primary, #2563eb)',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
+              border: '1px solid transparent',
               borderRadius: '8px',
               color: '#ffffff',
               padding: '0.55rem 1.2rem',

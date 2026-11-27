@@ -421,7 +421,7 @@ export const CountryFlag = React.memo(function CountryFlag({
           height: dims.height,
           borderRadius: dims.borderRadius,
           overflow: 'hidden',
-          boxShadow: '0 0 0 1px rgba(255, 255, 255, 0.18), 0 1px 2px rgba(0, 0, 0, 0.25)',
+          boxShadow: '0 0 0 1px var(--border-subtle), 0 1px 2px rgba(15, 23, 42, 0.14)',
           flexShrink: 0
         }}
       >

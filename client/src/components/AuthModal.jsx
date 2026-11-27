@@ -306,7 +306,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
           background: 'var(--bg-card, #0f172a)',
           border: '1px solid var(--border-subtle, rgba(148, 163, 184, 0.18))',
           borderRadius: '16px',
-          boxShadow: '0 24px 60px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 255, 255, 0.1)',
+          boxShadow: 'var(--shadow-modal)',
           overflow: 'hidden',
           position: 'relative',
           boxSizing: 'border-box'
@@ -335,8 +335,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
               borderRadius: '50%',
               width: '32px',
               height: '32px',
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid var(--border-subtle, rgba(255, 255, 255, 0.1))',
+              background: 'var(--bg-subtle)',
+              border: '1px solid var(--border-subtle)',
               color: 'var(--text-secondary, #94a3b8)',
               display: 'flex',
               alignItems: 'center',
@@ -777,7 +777,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                       }}
                     >
                       {COUNTRY_CODES.map((c) => (
-                        <option key={c.code} value={c.code} style={{ background: '#1e293b', color: '#fff' }}>
+                        <option key={c.code} value={c.code} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>
                           {c.flag} {c.code}
                         </option>
                       ))}

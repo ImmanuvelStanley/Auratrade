@@ -287,7 +287,7 @@ export function NotificationCenter({ onClose, onSelectSymbol }) {
             gap: '0.35rem',
             padding: '0.45rem 0.7rem',
             borderBottom: '1px solid var(--border-subtle)',
-            background: 'rgba(15, 23, 42, 0.25)',
+            background: 'var(--bg-subtle)',
             flexWrap: 'wrap'
           }}
         >

@@ -460,7 +460,7 @@ export const PortfolioView = React.memo(function PortfolioView({
                 <path d={areaD} fill="url(#nav-grad)" />
                 <path d={pathD} fill="none" stroke={strokeColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                 {coords.map((c, i) => (
-                  <circle key={i} cx={c.x} cy={c.y} r="3.5" fill={strokeColor} stroke="#ffffff" strokeWidth="1.2" />
+                  <circle key={i} cx={c.x} cy={c.y} r="3.5" fill={strokeColor} stroke="var(--bg-card)" strokeWidth="1.2" />
                 ))}
               </svg>
             </div>

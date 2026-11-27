@@ -165,7 +165,7 @@ export const AutoPredictorModal = ({
         position: 'fixed',
         inset: 0,
         zIndex: 99999,
-        backgroundColor: 'rgba(6, 10, 20, 0.86)',
+        backgroundColor: 'var(--bg-modal-overlay)',
         backdropFilter: 'blur(10px)',
         display: 'flex',
         alignItems: 'center',
@@ -185,10 +185,10 @@ export const AutoPredictorModal = ({
           overflow: 'hidden',
           position: 'relative',
           zIndex: 100000,
-          background: 'linear-gradient(180deg, #0d1527 0%, #090f1d 100%)',
-          border: '1px solid rgba(56, 189, 248, 0.28)',
+          background: 'var(--bg-card)',
+          border: '1px solid var(--border-medium)',
           borderRadius: '16px',
-          boxShadow: '0 28px 80px rgba(0, 0, 0, 0.72)',
+          boxShadow: 'var(--shadow-modal)',
           color: 'var(--text-primary)'
         }}
       >
@@ -201,7 +201,7 @@ export const AutoPredictorModal = ({
             gap: '12px',
             padding: '16px 22px',
             borderBottom: '1px solid var(--border-subtle)',
-            background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.1) 0%, rgba(56, 189, 248, 0.08) 50%, rgba(99, 102, 241, 0.08) 100%)',
+            background: 'var(--bg-hero-grad)',
             flexShrink: 0
           }}
         >
@@ -211,8 +211,8 @@ export const AutoPredictorModal = ({
                 width: '40px',
                 height: '40px',
                 borderRadius: '11px',
-                background: 'rgba(16, 185, 129, 0.16)',
-                border: '1px solid rgba(16, 185, 129, 0.4)',
+                background: 'var(--bull-green-bg)',
+                border: '1px solid var(--status-active-border)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -224,7 +224,7 @@ export const AutoPredictorModal = ({
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <h2 style={{ margin: 0, fontSize: '1.08rem', fontWeight: 800, letterSpacing: '-0.01em' }}>
+                <h2 style={{ margin: 0, fontSize: '1.08rem', fontWeight: 800, letterSpacing: '-0.01em', color: 'var(--text-primary)' }}>
                   AI Goal-Fit Predictor &amp; Strategy Blueprint
                 </h2>
                 <span
@@ -233,9 +233,9 @@ export const AutoPredictorModal = ({
                     fontWeight: 800,
                     padding: '2px 8px',
                     borderRadius: '999px',
-                    background: 'rgba(56, 189, 248, 0.16)',
+                    background: 'var(--accent-primary-bg)',
                     border: '1px solid rgba(56, 189, 248, 0.35)',
-                    color: '#7dd3fc'
+                    color: 'var(--text-cyan)'
                   }}
                 >
                   {data?.scannedCount || 309} GLOBAL ASSETS • 1Y BACKTESTED
@@ -254,7 +254,7 @@ export const AutoPredictorModal = ({
               width: '34px',
               height: '34px',
               borderRadius: '9px',
-              background: 'rgba(255,255,255,0.06)',
+              background: 'var(--bg-subtle)',
               border: '1px solid var(--border-subtle)',
               color: 'var(--text-secondary)',
               display: 'flex',
@@ -273,15 +273,15 @@ export const AutoPredictorModal = ({
           {/* Interactive Expectation Controls */}
           <div
             style={{
-              background: 'rgba(15, 23, 42, 0.72)',
-              border: '1px solid rgba(148, 163, 184, 0.18)',
+              background: 'var(--bg-subtle)',
+              border: '1px solid var(--border-subtle)',
               borderRadius: '13px',
               padding: '14px 16px'
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '0.75rem', fontWeight: 800, color: '#e2e8f0', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                <SlidersHorizontal size={14} style={{ color: '#38bdf8' }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '7px', fontSize: '0.75rem', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <SlidersHorizontal size={14} style={{ color: 'var(--accent-cyan)' }} />
                 <span>Your Target Expectations</span>
                 {data?.matchedPoolCount && (
                   <span style={{ fontWeight: 600, color: 'var(--text-muted)', textTransform: 'none', letterSpacing: 0 }}>
@@ -307,9 +307,9 @@ export const AutoPredictorModal = ({
                       fontSize: '0.72rem',
                       fontWeight: 700,
                       cursor: 'pointer',
-                      border: riskMode === m.id ? '1px solid rgba(16, 185, 129, 0.55)' : '1px solid var(--border-subtle)',
-                      background: riskMode === m.id ? 'rgba(16, 185, 129, 0.16)' : 'rgba(255,255,255,0.03)',
-                      color: riskMode === m.id ? 'var(--bull-green)' : 'var(--text-secondary)'
+                      border: riskMode === m.id ? '1px solid var(--status-active-border)' : '1px solid var(--border-subtle)',
+                      background: riskMode === m.id ? 'var(--bull-green-bg)' : 'var(--bg-card)',
+                      color: riskMode === m.id ? 'var(--text-bull)' : 'var(--text-secondary)'
                     }}
                   >
                     {m.label}
@@ -344,9 +344,9 @@ export const AutoPredictorModal = ({
                         fontSize: '0.72rem',
                         fontWeight: 800,
                         cursor: 'pointer',
-                        border: horizon === h.key ? '1px solid rgba(56, 189, 248, 0.6)' : '1px solid var(--border-subtle)',
-                        background: horizon === h.key ? 'rgba(56, 189, 248, 0.18)' : 'rgba(255,255,255,0.03)',
-                        color: horizon === h.key ? '#7dd3fc' : 'var(--text-secondary)'
+                        border: horizon === h.key ? '1px solid var(--accent-cyan)' : '1px solid var(--border-subtle)',
+                        background: horizon === h.key ? 'var(--accent-primary-bg)' : 'var(--bg-card)',
+                        color: horizon === h.key ? 'var(--text-cyan)' : 'var(--text-secondary)'
                       }}
                     >
                       {h.key.toUpperCase()}
@@ -359,7 +359,7 @@ export const AutoPredictorModal = ({
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '5px' }}>
                   <span>MIN EXPECTED RETURN</span>
-                  <span style={{ color: 'var(--bull-green)', fontFamily: 'var(--font-mono)' }}>+{targetReturn}%</span>
+                  <span style={{ color: 'var(--text-bull)', fontFamily: 'var(--font-mono)' }}>+{targetReturn}%</span>
                 </div>
                 <input
                   type="range"
@@ -376,7 +376,7 @@ export const AutoPredictorModal = ({
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '5px' }}>
                   <span>MAX RISK CAP</span>
-                  <span style={{ color: 'var(--bear-red)', fontFamily: 'var(--font-mono)' }}>-{maxRisk}%</span>
+                  <span style={{ color: 'var(--text-bear)', fontFamily: 'var(--font-mono)' }}>-{maxRisk}%</span>
                 </div>
                 <input
                   type="range"
@@ -401,8 +401,8 @@ export const AutoPredictorModal = ({
                     width: '100%',
                     padding: '7px 10px',
                     borderRadius: '7px',
-                    background: '#0b1222',
-                    border: '1px solid var(--border-subtle)',
+                    background: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
                     color: 'var(--text-primary)',
                     fontSize: '0.76rem',
                     fontWeight: 600
@@ -426,8 +426,8 @@ export const AutoPredictorModal = ({
                     width: '100%',
                     padding: '7px 10px',
                     borderRadius: '7px',
-                    background: '#0b1222',
-                    border: '1px solid var(--border-subtle)',
+                    background: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
                     color: 'var(--text-primary)',
                     fontSize: '0.76rem',
                     fontWeight: 600
@@ -454,8 +454,8 @@ export const AutoPredictorModal = ({
                     width: '100%',
                     padding: '6px 10px',
                     borderRadius: '7px',
-                    background: '#0b1222',
-                    border: '1px solid var(--border-subtle)',
+                    background: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
                     color: 'var(--text-primary)',
                     fontSize: '0.78rem',
                     fontFamily: 'var(--font-mono)',
@@ -474,7 +474,7 @@ export const AutoPredictorModal = ({
           )}
 
           {error && !activePick && (
-            <div style={{ padding: '20px', borderRadius: '10px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.35)', color: '#fca5a5', fontSize: '0.82rem' }}>
+            <div style={{ padding: '20px', borderRadius: '10px', background: 'var(--bear-red-bg)', border: '1px solid var(--status-triggered-border)', color: 'var(--text-bear)', fontSize: '0.82rem' }}>
               {error}
             </div>
           )}
@@ -483,8 +483,8 @@ export const AutoPredictorModal = ({
           {activePick && (
             <div
               style={{
-                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.92) 55%, rgba(56, 189, 248, 0.06) 100%)',
-                border: '1px solid rgba(16, 185, 129, 0.36)',
+                background: 'var(--bg-hero-grad)',
+                border: '1px solid var(--status-active-border)',
                 borderRadius: '14px',
                 padding: '18px',
                 display: 'flex',
@@ -517,7 +517,8 @@ export const AutoPredictorModal = ({
                         fontWeight: 700,
                         padding: '3px 8px',
                         borderRadius: '6px',
-                        background: 'rgba(255,255,255,0.06)',
+                        background: 'var(--bg-subtle)',
+                        border: '1px solid var(--border-subtle)',
                         color: 'var(--text-secondary)'
                       }}
                     >
@@ -529,8 +530,8 @@ export const AutoPredictorModal = ({
                         fontWeight: 700,
                         padding: '3px 8px',
                         borderRadius: '6px',
-                        background: 'rgba(56, 189, 248, 0.14)',
-                        color: '#7dd3fc'
+                        background: 'var(--accent-primary-bg)',
+                        color: 'var(--text-cyan)'
                       }}
                     >
                       {activePick.safetyRating}
@@ -538,7 +539,7 @@ export const AutoPredictorModal = ({
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '1.38rem', fontWeight: 900, fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em' }}>
+                    <span style={{ fontSize: '1.38rem', fontWeight: 900, fontFamily: 'var(--font-mono)', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
                       {activePick.symbol}
                     </span>
                     <span style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
@@ -549,21 +550,21 @@ export const AutoPredictorModal = ({
 
                 {/* Match Score & Probabilities */}
                 <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  <div style={{ padding: '8px 13px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.14)', border: '1px solid rgba(16, 185, 129, 0.35)', textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#6ee7b7', textTransform: 'uppercase' }}>Expectation Fit</div>
-                    <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#10b981', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ padding: '8px 13px', borderRadius: '10px', background: 'var(--bull-green-bg)', border: '1px solid var(--status-active-border)', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-bull)', textTransform: 'uppercase' }}>Expectation Fit</div>
+                    <div style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--bull-green)', fontFamily: 'var(--font-mono)' }}>
                       {activePick.expectationMatchScore}%
                     </div>
                   </div>
-                  <div style={{ padding: '8px 13px', borderRadius: '10px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)', textAlign: 'center' }}>
-                    <div style={{ fontSize: '0.62rem', fontWeight: 700, color: '#7dd3fc', textTransform: 'uppercase' }}>Win Probability</div>
-                    <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#e2e8f0', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ padding: '8px 13px', borderRadius: '10px', background: 'var(--accent-primary-bg)', border: '1px solid rgba(56, 189, 248, 0.35)', textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-cyan)', textTransform: 'uppercase' }}>Win Probability</div>
+                    <div style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
                       {activePick.winProbability}%
                     </div>
                   </div>
-                  <div style={{ padding: '8px 13px', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.04)', border: '1px solid var(--border-subtle)', textAlign: 'center' }}>
+                  <div style={{ padding: '8px 13px', borderRadius: '10px', background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)', textAlign: 'center' }}>
                     <div style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Reward / Risk</div>
-                    <div style={{ fontSize: '1.15rem', fontWeight: 900, color: '#facc15', fontFamily: 'var(--font-mono)' }}>
+                    <div style={{ fontSize: '1.15rem', fontWeight: 900, color: 'var(--text-amber)', fontFamily: 'var(--font-mono)' }}>
                       {activePick.rewardRiskRatio}:1
                     </div>
                   </div>
@@ -572,37 +573,37 @@ export const AutoPredictorModal = ({
 
               {/* Price Levels & Position Sizing Strip */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '10px' }}>
-                <div style={{ padding: '11px 13px', borderRadius: '10px', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ padding: '11px 13px', borderRadius: '10px', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
                   <div style={{ fontSize: '0.64rem', color: 'var(--text-muted)', fontWeight: 700 }}>CURRENT ENTRY</div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 800, fontFamily: 'var(--font-mono)', marginTop: '3px' }}>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 800, fontFamily: 'var(--font-mono)', marginTop: '3px', color: 'var(--text-primary)' }}>
                     {formatMoney(activePick.entryPrice, pickCurr)}
                   </div>
                   <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginTop: '2px' }}>Live Benchmark Quote</div>
                 </div>
 
-                <div style={{ padding: '11px 13px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                  <div style={{ fontSize: '0.64rem', color: '#6ee7b7', fontWeight: 700 }}>AI GOAL TARGET ({(activePick.horizon || horizon).toUpperCase()})</div>
+                <div style={{ padding: '11px 13px', borderRadius: '10px', background: 'var(--bull-green-bg)', border: '1px solid var(--status-active-border)' }}>
+                  <div style={{ fontSize: '0.64rem', color: 'var(--text-bull)', fontWeight: 700 }}>AI GOAL TARGET ({(activePick.horizon || horizon).toUpperCase()})</div>
                   <div style={{ fontSize: '1.05rem', fontWeight: 900, fontFamily: 'var(--font-mono)', color: 'var(--bull-green)', marginTop: '3px' }}>
                     {formatMoney(activePick.targetPrice, pickCurr)}
                   </div>
-                  <div style={{ fontSize: '0.68rem', color: '#6ee7b7', fontWeight: 700, marginTop: '2px' }}>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-bull)', fontWeight: 700, marginTop: '2px' }}>
                     +{activePick.profitGainPercent}% upside target
                   </div>
                 </div>
 
-                <div style={{ padding: '11px 13px', borderRadius: '10px', background: 'rgba(244, 63, 94, 0.08)', border: '1px solid rgba(244, 63, 94, 0.28)' }}>
-                  <div style={{ fontSize: '0.64rem', color: '#fda4af', fontWeight: 700 }}>ATR RISK GUARD FLOOR</div>
+                <div style={{ padding: '11px 13px', borderRadius: '10px', background: 'var(--bear-red-bg)', border: '1px solid var(--status-triggered-border)' }}>
+                  <div style={{ fontSize: '0.64rem', color: 'var(--text-bear)', fontWeight: 700 }}>ATR RISK GUARD FLOOR</div>
                   <div style={{ fontSize: '1.05rem', fontWeight: 900, fontFamily: 'var(--font-mono)', color: 'var(--bear-red)', marginTop: '3px' }}>
                     {formatMoney(activePick.stopLossPrice, pickCurr)}
                   </div>
-                  <div style={{ fontSize: '0.68rem', color: '#fda4af', fontWeight: 700, marginTop: '2px' }}>
+                  <div style={{ fontSize: '0.68rem', color: 'var(--text-bear)', fontWeight: 700, marginTop: '2px' }}>
                     -{activePick.maxLossPercent}% protective floor
                   </div>
                 </div>
 
-                <div style={{ padding: '11px 13px', borderRadius: '10px', background: 'rgba(56, 189, 248, 0.08)', border: '1px solid rgba(56, 189, 248, 0.26)' }}>
-                  <div style={{ fontSize: '0.64rem', color: '#7dd3fc', fontWeight: 700 }}>POSITION SIZING PLAN</div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: '#e2e8f0', marginTop: '3px' }}>
+                <div style={{ padding: '11px 13px', borderRadius: '10px', background: 'var(--accent-primary-bg)', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
+                  <div style={{ fontSize: '0.64rem', color: 'var(--text-cyan)', fontWeight: 700 }}>POSITION SIZING PLAN</div>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)', marginTop: '3px' }}>
                     {activePick.suggestedShares} Units
                   </div>
                   <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
@@ -628,8 +629,8 @@ export const AutoPredictorModal = ({
                         style={{
                           padding: '8px 11px',
                           borderRadius: '8px',
-                          background: 'rgba(255,255,255,0.025)',
-                          border: '1px solid rgba(255,255,255,0.07)',
+                          background: 'var(--bg-card)',
+                          border: '1px solid var(--border-subtle)',
                           display: 'flex',
                           justifyContent: 'space-between',
                           alignItems: 'center'
@@ -637,11 +638,11 @@ export const AutoPredictorModal = ({
                       >
                         <div>
                           <div style={{ fontSize: '0.62rem', color: 'var(--text-muted)', fontWeight: 700 }}>{item.label}</div>
-                          <div style={{ fontSize: '0.84rem', fontWeight: 800, fontFamily: 'var(--font-mono)', marginTop: '1px' }}>
+                          <div style={{ fontSize: '0.84rem', fontWeight: 800, fontFamily: 'var(--font-mono)', marginTop: '1px', color: 'var(--text-primary)' }}>
                             {formatMoney(t.price, pickCurr)}
                           </div>
                         </div>
-                        <span style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--bull-green)', fontFamily: 'var(--font-mono)' }}>
+                        <span style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--text-bull)', fontFamily: 'var(--font-mono)' }}>
                           +{t.gainPct}%
                         </span>
                       </div>
@@ -653,8 +654,8 @@ export const AutoPredictorModal = ({
               {/* Past-Record Telemetry & Why This Fits */}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: '12px' }}>
                 {/* Why It Fits */}
-                <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'rgba(255,255,255,0.025)', border: '1px solid var(--border-subtle)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', fontWeight: 800, color: '#7dd3fc', textTransform: 'uppercase', marginBottom: '8px' }}>
+                <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-cyan)', textTransform: 'uppercase', marginBottom: '8px' }}>
                     <Sparkles size={13} />
                     Why This Fits Your Expectations
                   </div>
@@ -670,45 +671,45 @@ export const AutoPredictorModal = ({
 
                 {/* Past-Record Verification Telemetry */}
                 {tr && (
-                  <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'rgba(255,255,255,0.025)', border: '1px solid var(--border-subtle)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', fontWeight: 800, color: '#a5b4fc', textTransform: 'uppercase', marginBottom: '8px' }}>
+                  <div style={{ padding: '12px 14px', borderRadius: '10px', background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.72rem', fontWeight: 800, color: 'var(--text-indigo)', textTransform: 'uppercase', marginBottom: '8px' }}>
                       <BarChart3 size={13} />
                       Past-Record Backtest Verification (252D)
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', fontSize: '0.73rem' }}>
                       <div>
                         <div style={{ color: 'var(--text-muted)', fontSize: '0.64rem' }}>Roll Win Rate</div>
-                        <div style={{ fontWeight: 800, color: 'var(--bull-green)', fontFamily: 'var(--font-mono)' }}>
+                        <div style={{ fontWeight: 800, color: 'var(--text-bull)', fontFamily: 'var(--font-mono)' }}>
                           {activeHorizonStat?.winRate ?? tr.historicalWinRate}%
                         </div>
                       </div>
                       <div>
                         <div style={{ color: 'var(--text-muted)', fontSize: '0.64rem' }}>Walk-Fwd Acc</div>
-                        <div style={{ fontWeight: 800, color: '#7dd3fc', fontFamily: 'var(--font-mono)' }}>
+                        <div style={{ fontWeight: 800, color: 'var(--text-cyan)', fontFamily: 'var(--font-mono)' }}>
                           {tr.walkForwardAccuracy}%
                         </div>
                       </div>
                       <div>
                         <div style={{ color: 'var(--text-muted)', fontSize: '0.64rem' }}>1Y Realized</div>
-                        <div style={{ fontWeight: 800, color: tr.realized1YReturn >= 0 ? 'var(--bull-green)' : 'var(--bear-red)', fontFamily: 'var(--font-mono)' }}>
+                        <div style={{ fontWeight: 800, color: tr.realized1YReturn >= 0 ? 'var(--text-bull)' : 'var(--text-bear)', fontFamily: 'var(--font-mono)' }}>
                           {tr.realized1YReturn >= 0 ? '+' : ''}{tr.realized1YReturn}%
                         </div>
                       </div>
                       <div>
                         <div style={{ color: 'var(--text-muted)', fontSize: '0.64rem' }}>Sharpe / Sortino</div>
-                        <div style={{ fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
+                        <div style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
                           {tr.sharpeRatio}x / {tr.sortinoRatio}x
                         </div>
                       </div>
                       <div>
                         <div style={{ color: 'var(--text-muted)', fontSize: '0.64rem' }}>Max 90D DD</div>
-                        <div style={{ fontWeight: 800, color: 'var(--bear-red)', fontFamily: 'var(--font-mono)' }}>
+                        <div style={{ fontWeight: 800, color: 'var(--text-bear)', fontFamily: 'var(--font-mono)' }}>
                           {tr.maxDrawdown90D}%
                         </div>
                       </div>
                       <div>
                         <div style={{ color: 'var(--text-muted)', fontSize: '0.64rem' }}>RSI(14) / ATR</div>
-                        <div style={{ fontWeight: 800, fontFamily: 'var(--font-mono)' }}>
+                        <div style={{ fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
                           {tr.rsi14} / {tr.atrPercent}%
                         </div>
                       </div>
@@ -737,8 +738,8 @@ export const AutoPredictorModal = ({
                     style={{
                       padding: '9px 14px',
                       borderRadius: '9px',
-                      border: '1px solid var(--border-subtle)',
-                      background: 'rgba(255,255,255,0.04)',
+                      border: '1px solid var(--border-medium)',
+                      background: 'var(--bg-card)',
                       color: 'var(--text-secondary)',
                       fontSize: '0.78rem',
                       fontWeight: 700,
@@ -763,8 +764,8 @@ export const AutoPredictorModal = ({
                         padding: '9px 14px',
                         borderRadius: '9px',
                         border: '1px solid rgba(56, 189, 248, 0.45)',
-                        background: 'rgba(56, 189, 248, 0.14)',
-                        color: '#7dd3fc',
+                        background: 'var(--accent-primary-bg)',
+                        color: 'var(--text-cyan)',
                         fontSize: '0.78rem',
                         fontWeight: 800,
                         cursor: 'pointer',
@@ -808,7 +809,7 @@ export const AutoPredictorModal = ({
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <div style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <Layers size={14} style={{ color: '#38bdf8' }} />
+                  <Layers size={14} style={{ color: 'var(--accent-cyan)' }} />
                   Top Ranked Goal-Fit Candidates ({candidates.length})
                 </div>
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
@@ -828,8 +829,8 @@ export const AutoPredictorModal = ({
                         padding: '11px 13px',
                         borderRadius: '11px',
                         cursor: 'pointer',
-                        background: isSel ? 'rgba(56, 189, 248, 0.11)' : 'rgba(255,255,255,0.025)',
-                        border: isSel ? '1px solid rgba(56, 189, 248, 0.5)' : '1px solid var(--border-subtle)',
+                        background: isSel ? 'var(--accent-primary-bg)' : 'var(--bg-subtle)',
+                        border: isSel ? '1px solid var(--accent-cyan)' : '1px solid var(--border-subtle)',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center',
@@ -839,8 +840,8 @@ export const AutoPredictorModal = ({
                     >
                       <div style={{ minWidth: 0 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                          <span style={{ fontSize: '0.68rem', fontWeight: 800, color: '#7dd3fc' }}>#{idx + 1}</span>
-                          <span style={{ fontWeight: 800, fontSize: '0.86rem', fontFamily: 'var(--font-mono)' }}>{cand.symbol}</span>
+                          <span style={{ fontSize: '0.68rem', fontWeight: 800, color: 'var(--text-cyan)' }}>#{idx + 1}</span>
+                          <span style={{ fontWeight: 800, fontSize: '0.86rem', fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>{cand.symbol}</span>
                           <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)' }}>{cand.exchange}</span>
                         </div>
                         <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '185px' }}>
@@ -852,10 +853,10 @@ export const AutoPredictorModal = ({
                       </div>
 
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{ fontSize: '0.78rem', fontWeight: 900, color: 'var(--bull-green)', fontFamily: 'var(--font-mono)' }}>
+                        <div style={{ fontSize: '0.78rem', fontWeight: 900, color: 'var(--text-bull)', fontFamily: 'var(--font-mono)' }}>
                           +{cand.profitGainPercent}%
                         </div>
-                        <div style={{ fontSize: '0.66rem', fontWeight: 700, color: '#7dd3fc' }}>
+                        <div style={{ fontSize: '0.66rem', fontWeight: 700, color: 'var(--text-cyan)' }}>
                           {cand.expectationMatchScore}% Fit • {cand.winProbability}% Win
                         </div>
                         <div style={{ fontSize: '0.64rem', color: 'var(--text-muted)' }}>

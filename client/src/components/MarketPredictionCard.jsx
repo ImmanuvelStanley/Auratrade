@@ -263,8 +263,8 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
     ctx.arc(startX, startY, 4, 0, Math.PI * 2);
     ctx.fillStyle = '#38bdf8';
     ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = theme === 'light' ? '#ffffff' : '#0f172a';
+    ctx.lineWidth = 2;
     ctx.stroke();
 
     // 30-Day Target Pulse Dot at Day 30
@@ -274,8 +274,8 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
     ctx.arc(endX, endY, 5, 0, Math.PI * 2);
     ctx.fillStyle = prediction.target30DUpside >= 0 ? '#10b981' : '#f43f5e';
     ctx.fill();
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = 1.8;
+    ctx.strokeStyle = theme === 'light' ? '#ffffff' : '#0f172a';
+    ctx.lineWidth = 2;
     ctx.stroke();
   }, [prediction, canvasDimensions.width, canvasDimensions.height, theme]);
 
@@ -314,7 +314,7 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
     ctx.arc(x, y, 5, 0, Math.PI * 2);
     ctx.fillStyle = '#38bdf8';
     ctx.fill();
-    ctx.strokeStyle = '#ffffff';
+    ctx.strokeStyle = theme === 'light' ? '#0f172a' : '#ffffff';
     ctx.lineWidth = 2;
     ctx.stroke();
     ctx.restore();
@@ -479,19 +479,19 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
               fontSize: '0.74rem',
               letterSpacing: '0.04em',
               background: prediction.consensusRating.includes('BUY')
-                ? 'rgba(16, 185, 129, 0.16)'
+                ? 'var(--bull-green-bg)'
                 : prediction.consensusRating.includes('SELL')
-                ? 'rgba(244, 63, 94, 0.16)'
-                : 'rgba(255, 255, 255, 0.08)',
+                ? 'var(--bear-red-bg)'
+                : 'var(--bg-subtle)',
               border: prediction.consensusRating.includes('BUY')
-                ? '1px solid rgba(16, 185, 129, 0.4)'
+                ? '1px solid var(--status-active-border)'
                 : prediction.consensusRating.includes('SELL')
-                ? '1px solid rgba(244, 63, 94, 0.4)'
-                : '1px solid rgba(255, 255, 255, 0.15)',
+                ? '1px solid var(--status-triggered-border)'
+                : '1px solid var(--border-medium)',
               color: prediction.consensusRating.includes('BUY')
-                ? '#34d399'
+                ? 'var(--text-bull)'
                 : prediction.consensusRating.includes('SELL')
-                ? '#f87171'
+                ? 'var(--text-bear)'
                 : 'var(--text-primary)'
             }}
           >
@@ -509,7 +509,7 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
               <span style={{ fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--accent-cyan)' }}>
                 Institutional Valuation & Market Outlook
               </span>
-              <span style={{ fontSize: '0.68rem', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
+              <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                 Engine: {audit.engine}
               </span>
             </div>
@@ -545,8 +545,8 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                   <span
                     style={{
-                      background: isPlanActive ? 'rgba(16, 185, 129, 0.2)' : 'rgba(6, 182, 212, 0.2)',
-                      color: isPlanActive ? 'var(--bull-green)' : 'var(--accent-cyan)',
+                      background: isPlanActive ? 'var(--bull-green-bg)' : 'var(--accent-primary-bg)',
+                      color: isPlanActive ? 'var(--text-bull)' : 'var(--text-cyan)',
                       padding: '0.2rem 0.55rem',
                       borderRadius: '4px',
                       fontSize: '0.72rem',
@@ -566,7 +566,7 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                   {lockData.expectationMatchScore && (
                     <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                      Goal Fit: <strong style={{ color: '#7dd3fc' }}>{lockData.expectationMatchScore}%</strong>
+                      Goal Fit: <strong style={{ color: 'var(--text-cyan)' }}>{lockData.expectationMatchScore}%</strong>
                     </span>
                   )}
                   <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
@@ -579,7 +579,7 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
               </div>
 
               {/* Metrics Row: Optimal Entry, Goal Target, Risk Floor, R:R */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: '0.75rem', background: 'rgba(15, 23, 42, 0.45)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(145px, 1fr))', gap: '0.75rem', background: 'var(--bg-card)', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
                 <div>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Optimal Entry</div>
                   <div className="font-mono" style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
@@ -641,7 +641,7 @@ export const MarketPredictionCard = React.memo(function MarketPredictionCard({
                   {onOpenTradeModal && (
                     <button
                       className="btn btn-secondary"
-                      style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem', borderColor: 'rgba(56, 189, 248, 0.45)', color: '#7dd3fc' }}
+                      style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem', borderColor: 'var(--accent-cyan)', color: 'var(--text-cyan)' }}
                       onClick={() => onOpenTradeModal(symbol)}
                     >
                       <Zap size={13} />

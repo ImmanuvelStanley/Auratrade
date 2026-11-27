@@ -50,6 +50,7 @@ import {
 } from 'lucide-react';
 import { useSocket } from '../context/SocketContext';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 import { downloadBullionInvoicePdf, downloadBullionMarketPdf } from '../utils/statementPdfGenerator';
 
 // 57 Major Indian Bullion Hubs across All States & Territories
@@ -913,6 +914,8 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
   isActive = true
 }) {
   const { user } = useAuth();
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
   // Always initialize with instant data so the screen NEVER blocks with a spinner
   const [data, setData] = useState(preciousMetalsCache);
   const [activeSubTab, setActiveSubTab] = useState('catalog'); // 'catalog' | 'citywise' | 'calculator' | 'jewellery' | 'returns' | 'guide'
@@ -1951,7 +1954,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
             position: 'relative',
             overflow: 'hidden',
             border: '1px solid rgba(245, 158, 11, 0.35)',
-            background: 'linear-gradient(135deg, rgba(22, 19, 13, 0.85) 0%, rgba(30, 24, 16, 0.55) 100%)'
+            background: 'var(--bg-banner-gold)'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
@@ -1991,7 +1994,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', flex: 1, alignItems: 'stretch' }}>
-            <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.65rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(245, 158, 11, 0.15)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ background: 'var(--bg-subtle)', padding: '0.65rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(245, 158, 11, 0.15)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                 Spot Gold (XAU)
               </div>
@@ -2001,7 +2004,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>1 Troy Ounce ({currentCurrency.symbol}/oz)</div>
             </div>
 
-            <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.65rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(245, 158, 11, 0.15)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ background: 'var(--bg-subtle)', padding: '0.65rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(245, 158, 11, 0.15)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                 MCX India (10g)
               </div>
@@ -2074,7 +2077,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
             position: 'relative',
             overflow: 'hidden',
             border: '1px solid rgba(6, 182, 212, 0.35)',
-            background: 'linear-gradient(135deg, rgba(14, 25, 36, 0.85) 0%, rgba(18, 33, 49, 0.55) 100%)'
+            background: 'var(--bg-banner-silver)'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
@@ -2114,7 +2117,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', flex: 1, alignItems: 'stretch' }}>
-            <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.65rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(6, 182, 212, 0.15)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ background: 'var(--bg-subtle)', padding: '0.65rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(6, 182, 212, 0.15)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                 Spot Silver (XAG)
               </div>
@@ -2124,7 +2127,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
               <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>1 Troy Ounce ({currentCurrency.symbol}/oz)</div>
             </div>
 
-            <div style={{ background: 'rgba(255, 255, 255, 0.03)', padding: '0.65rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(6, 182, 212, 0.15)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <div style={{ background: 'var(--bg-subtle)', padding: '0.65rem 0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(6, 182, 212, 0.15)', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
                 MCX India Bullion (1kg)
               </div>
@@ -2197,7 +2200,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
             position: 'relative',
             overflow: 'hidden',
             border: '1px solid rgba(99, 102, 241, 0.35)',
-            background: 'linear-gradient(135deg, rgba(17, 24, 39, 0.85) 0%, rgba(30, 27, 75, 0.45) 100%)'
+            background: 'var(--bg-banner-indigo)'
           }}
         >
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
@@ -3079,7 +3082,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                       {[0.25, 0.5, 0.75].map((pct) => {
                         const y = padTop + pct * plotH;
                         return (
-                          <line key={pct} x1={padLeft} y1={y} x2={W - padRight} y2={y} stroke="rgba(255, 255, 255, 0.06)" strokeDasharray="3 3" />
+                          <line key={pct} x1={padLeft} y1={y} x2={W - padRight} y2={y} stroke={isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255, 255, 255, 0.06)'} strokeDasharray="3 3" />
                         );
                       })}
 
@@ -3109,7 +3112,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                             y1={coords[chartHoverIndex].y}
                             x2={coords[chartHoverIndex].x}
                             y2={coords[chartHoverIndex].y}
-                            stroke="rgba(255, 255, 255, 0.22)"
+                            stroke={isLight ? 'rgba(15, 23, 42, 0.25)' : 'rgba(255, 255, 255, 0.22)'}
                             strokeDasharray="2 2"
                             strokeWidth="1"
                           />
@@ -3133,7 +3136,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                             cy={coords[chartHoverIndex].y}
                             r="5.5"
                             fill={strokeColor}
-                            stroke="#ffffff"
+                            stroke={isLight ? '#ffffff' : '#ffffff'}
                             strokeWidth="2.5"
                             style={{ filter: `drop-shadow(0 0 6px ${strokeColor})` }}
                           />
@@ -3145,7 +3148,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                               width="76"
                               height="16"
                               rx="8"
-                              fill="#0b1322"
+                              fill={isLight ? '#ffffff' : '#0b1322'}
                               stroke={strokeColor}
                               strokeWidth="1"
                               strokeOpacity="0.75"
@@ -3154,7 +3157,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                               x="0"
                               y="3.5"
                               textAnchor="middle"
-                              fill="#f8fafc"
+                              fill={isLight ? '#0f172a' : '#f8fafc'}
                               fontSize="8.5"
                               fontWeight="700"
                               fontFamily="var(--font-mono)"
@@ -4508,7 +4511,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                   {/* Clean 50/50 Central & State Share Breakdown */}
                   <div
                     style={{
-                      background: 'rgba(0, 0, 0, 0.22)',
+                      background: 'var(--bg-subtle)',
                       borderRadius: '6px',
                       padding: '0.6rem 0.75rem',
                       display: 'flex',
@@ -5211,7 +5214,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                         </tr>
 
                         {isExpanded && (
-                          <tr className="bis-hallmark-detail-row" style={{ background: 'rgba(15, 23, 42, 0.55)' }}>
+                          <tr className="bis-hallmark-detail-row" style={{ background: 'var(--bg-subtle)' }}>
                             <td colSpan={7} style={{ padding: '1.1rem 1.25rem', borderTop: '1px solid rgba(56, 189, 248, 0.25)', borderBottom: '1px solid rgba(56, 189, 248, 0.25)' }}>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
@@ -5253,7 +5256,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                                 </div>
 
                                 <div className="bis-hallmark-cards-grid">
-                                  <div style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)' }}>
+                                  <div style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}>
                                     <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent-cyan)', marginBottom: '0.3rem' }}>
                                       Alloy Composition
                                     </div>
@@ -5262,7 +5265,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                                     </div>
                                   </div>
 
-                                  <div style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)' }}>
+                                  <div style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}>
                                     <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--warning-amber)', marginBottom: '0.3rem' }}>
                                       BIS Hallmark & HUID Stamps
                                     </div>
@@ -5271,7 +5274,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                                     </div>
                                   </div>
 
-                                  <div style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)' }}>
+                                  <div style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}>
                                     <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--bull-green)', marginBottom: '0.3rem' }}>
                                       Physical Hardness & Finish
                                     </div>
@@ -5280,7 +5283,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                                     </div>
                                   </div>
 
-                                  <div style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)' }}>
+                                  <div style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}>
                                     <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--accent-indigo)', marginBottom: '0.3rem' }}>
                                       Best Use Cases vs Avoid For
                                     </div>
@@ -5290,7 +5293,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                                     </div>
                                   </div>
 
-                                  <div style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)' }}>
+                                  <div style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}>
                                     <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--warning-amber)', marginBottom: '0.3rem' }}>
                                       Making Charges & India GST
                                     </div>
@@ -5300,7 +5303,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                                     </div>
                                   </div>
 
-                                  <div style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)' }}>
+                                  <div style={{ padding: '0.75rem 0.9rem', borderRadius: 'var(--radius-sm)', background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}>
                                     <div style={{ fontSize: '0.68rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--bull-green)', marginBottom: '0.3rem' }}>
                                       Resale / Buyback & Verification
                                     </div>
@@ -5334,7 +5337,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
               style={{
                 padding: '1.4rem',
                 border: '1px solid rgba(245, 158, 11, 0.35)',
-                background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(0, 0, 0, 0.2))'
+                background: 'var(--bg-banner-gold)'
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1.25rem' }}>
@@ -5363,7 +5366,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                   </div>
                 </div>
 
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: 'rgba(0, 0, 0, 0.35)', padding: '0.25rem', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: 'var(--bg-segment)', padding: '0.25rem', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
                   {[
                     { id: 'GOLD24K', label: '24K Gold SIP (11.5%)' },
                     { id: 'SGB', label: 'SGB Bonds (14.0%)' },
@@ -6049,7 +6052,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                     </div>
 
                     {/* Correlation bar visual */}
-                    <div style={{ height: '6px', width: '100%', background: 'rgba(255, 255, 255, 0.08)', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
+                    <div style={{ height: '6px', width: '100%', background: 'var(--bg-track)', borderRadius: '3px', overflow: 'hidden', position: 'relative' }}>
                       <div
                         style={{
                           position: 'absolute',
@@ -6326,7 +6329,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
               style={{
                 padding: '1rem 1.4rem',
                 borderTop: '1px solid var(--border-subtle)',
-                background: 'rgba(0, 0, 0, 0.15)',
+                background: 'var(--bg-subtle)',
                 display: 'flex',
                 justifyContent: 'flex-end',
                 gap: '0.75rem'
@@ -6495,7 +6498,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                 </div>
 
                 {/* 22K Gold */}
-                <div style={{ padding: '0.85rem', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ padding: '0.85rem', borderRadius: '10px', background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>
                     Gold 22K (916 Hallmark)
                   </div>
@@ -6508,7 +6511,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
                 </div>
 
                 {/* 18K Gold */}
-                <div style={{ padding: '0.85rem', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.03)', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ padding: '0.85rem', borderRadius: '10px', background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)' }}>
                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase' }}>
                     Gold 18K (750 Hallmark)
                   </div>
@@ -6535,7 +6538,7 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
               </div>
 
               {/* Futures Benchmarks */}
-              <div style={{ padding: '0.75rem 0.9rem', borderRadius: '8px', background: 'rgba(0, 0, 0, 0.25)', border: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
+              <div style={{ padding: '0.75rem 0.9rem', borderRadius: '8px', background: 'var(--bg-subtle)', border: '1px solid var(--border-subtle)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem' }}>
                 <div>
                   <span style={{ color: 'var(--text-muted)' }}>MCX Gold Futures (10g): </span>
                   <strong className="font-mono" style={{ color: 'var(--warning-amber)' }}>{formatPriceFromInr(mcxGold?.price || 129379, 0)}</strong>

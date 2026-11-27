@@ -22,6 +22,7 @@ import {
   ArrowDownRight
 } from 'lucide-react';
 import { useSocketQuote } from '../context/SocketContext';
+import { useTheme } from '../context/ThemeContext';
 import { CountryFlag } from './CountryFlag';
 import { getCompleteStockRecord, formatRecordPrice, formatScaledMarketCap } from '../utils/stockRecordEngine';
 import { floatingCardEvents } from '../utils/floatingCardEffect';
@@ -37,6 +38,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
   onOpenWorkstationChart,
   onClose
 }) {
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
   const socketQuote = useSocketQuote(symbol);
   const [fetchedQuote, setFetchedQuote] = useState(null);
   const [activeSubTab, setActiveSubTab] = useState('all'); // 'all' | 'trajectory' | 'valuation' | 'calculator' | 'history'
@@ -205,9 +208,9 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
         width: '100%',
         maxWidth: '100%',
         boxSizing: 'border-box',
-        border: isModal ? '1px solid rgba(6, 182, 212, 0.38)' : '1px solid var(--border-subtle)',
-        background: isModal ? 'rgba(10, 15, 29, 0.98)' : 'var(--bg-card)',
-        boxShadow: isModal ? '0 28px 75px rgba(0, 0, 0, 0.82)' : 'var(--shadow-card)',
+        border: isModal ? '1px solid var(--border-medium)' : '1px solid var(--border-subtle)',
+        background: 'var(--bg-card)',
+        boxShadow: isModal ? 'var(--shadow-modal)' : 'var(--shadow-card)',
         overflow: 'hidden'
       }}
     >
@@ -216,7 +219,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
         className="record-header-banner"
         style={{
           padding: '1.15rem 1.5rem 1.25rem',
-          background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(16, 185, 129, 0.05) 50%, rgba(15, 23, 42, 0.94) 100%)',
+          background: 'var(--bg-hero-grad)',
           borderBottom: '1px solid var(--border-subtle)',
           display: 'flex',
           flexDirection: 'column',
@@ -232,7 +235,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
             justifyContent: 'space-between',
             gap: '0.65rem',
             paddingBottom: '0.75rem',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.06)'
+            borderBottom: '1px solid var(--border-subtle)'
           }}
         >
           <div
@@ -275,8 +278,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                   height: '28px',
                   padding: '0 0.6rem',
                   borderRadius: '6px',
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  background: 'var(--bg-subtle)',
+                  border: '1px solid var(--border-subtle)',
                   display: 'inline-flex',
                   alignItems: 'center',
                   whiteSpace: 'nowrap'
@@ -300,9 +303,9 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                   fontWeight: 700,
                   padding: '0 0.6rem',
                   borderRadius: '6px',
-                  background: 'rgba(255, 255, 255, 0.05)',
+                  background: 'var(--bg-subtle)',
                   color: 'var(--text-secondary)',
-                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  border: '1px solid var(--border-subtle)',
                   display: 'inline-flex',
                   alignItems: 'center',
                   whiteSpace: 'nowrap'
@@ -442,8 +445,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                 style={{
                   padding: '0.55rem 0.75rem',
                   borderRadius: '8px',
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid rgba(255, 255, 255, 0.07)'
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-subtle)'
                 }}
               >
                 <div style={{ fontSize: '0.63rem', fontWeight: 800, color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
@@ -458,8 +461,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                 style={{
                   padding: '0.55rem 0.75rem',
                   borderRadius: '8px',
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid rgba(255, 255, 255, 0.07)'
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-subtle)'
                 }}
               >
                 <div style={{ fontSize: '0.63rem', fontWeight: 800, color: 'var(--bull-green)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
@@ -474,8 +477,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                 style={{
                   padding: '0.55rem 0.75rem',
                   borderRadius: '8px',
-                  background: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid rgba(255, 255, 255, 0.07)'
+                  background: 'var(--bg-card)',
+                  border: '1px solid var(--border-subtle)'
                 }}
               >
                 <div style={{ fontSize: '0.63rem', fontWeight: 800, color: 'var(--warning-amber)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
@@ -496,8 +499,9 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
               maxWidth: '100%',
               padding: '0.9rem 1.05rem',
               borderRadius: '12px',
-              background: 'rgba(9, 14, 28, 0.72)',
-              border: '1px solid rgba(255, 255, 255, 0.09)',
+              background: 'var(--bg-card)',
+              border: '1px solid var(--border-medium)',
+              boxShadow: 'var(--shadow-sm)',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
@@ -677,7 +681,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
         className="record-subtab-bar"
         style={{
           padding: '0.7rem 1.5rem',
-          background: 'rgba(15, 23, 42, 0.78)',
+          background: 'var(--bg-subtle)',
           borderBottom: '1px solid var(--border-subtle)',
           display: 'flex',
           alignItems: 'center',
@@ -712,9 +716,9 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: '0.38rem',
-                  background: active ? 'rgba(6, 182, 212, 0.18)' : 'rgba(255, 255, 255, 0.04)',
-                  color: active ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-                  border: active ? '1px solid rgba(6, 182, 212, 0.45)' : '1px solid rgba(255, 255, 255, 0.06)',
+                  background: active ? 'var(--accent-primary-bg)' : 'var(--bg-card)',
+                  color: active ? 'var(--text-cyan)' : 'var(--text-secondary)',
+                  border: active ? '1px solid var(--accent-cyan)' : '1px solid var(--border-subtle)',
                   transition: 'all 0.15s ease'
                 }}
               >
@@ -745,7 +749,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
             style={{
               padding: '0.85rem 0.95rem',
               borderRadius: '10px',
-              background: 'rgba(255, 255, 255, 0.025)',
+              background: 'var(--bg-subtle)',
               border: '1px solid var(--border-subtle)',
               display: 'flex',
               flexDirection: 'column',
@@ -771,7 +775,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
             style={{
               padding: '0.85rem 0.95rem',
               borderRadius: '10px',
-              background: 'rgba(255, 255, 255, 0.025)',
+              background: 'var(--bg-subtle)',
               border: '1px solid var(--border-subtle)',
               display: 'flex',
               flexDirection: 'column',
@@ -797,8 +801,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
             style={{
               padding: '0.85rem 0.95rem',
               borderRadius: '10px',
-              background: 'rgba(16, 185, 129, 0.06)',
-              border: '1px solid rgba(16, 185, 129, 0.28)',
+              background: 'var(--bull-green-bg)',
+              border: '1px solid var(--status-active-border)',
               display: 'flex',
               flexDirection: 'column',
               justifyContent: 'space-between',
@@ -823,7 +827,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
             style={{
               padding: '0.85rem 0.95rem',
               borderRadius: '10px',
-              background: 'rgba(255, 255, 255, 0.025)',
+              background: 'var(--bg-subtle)',
               border: '1px solid var(--border-subtle)',
               display: 'flex',
               flexDirection: 'column',
@@ -849,7 +853,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
             style={{
               padding: '0.85rem 0.95rem',
               borderRadius: '10px',
-              background: 'rgba(255, 255, 255, 0.025)',
+              background: 'var(--bg-subtle)',
               border: '1px solid var(--border-subtle)',
               display: 'flex',
               flexDirection: 'column',
@@ -911,7 +915,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
               style={{
                 padding: '1.1rem 1.25rem',
                 borderRadius: '12px',
-                background: 'rgba(15, 23, 42, 0.65)',
+                background: 'var(--bg-subtle)',
                 border: '1px solid var(--border-subtle)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1006,14 +1010,14 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                           y1={y}
                           x2={chartWidth - padRight}
                           y2={y}
-                          stroke="rgba(255,255,255,0.06)"
+                          stroke={isLight ? 'rgba(15, 23, 42, 0.08)' : 'rgba(255,255,255,0.06)'}
                           strokeDasharray="4 4"
                         />
                         <text
                           x={padLeft - 8}
                           y={y + 4}
                           textAnchor="end"
-                          fill="rgba(148, 163, 184, 0.78)"
+                          fill={isLight ? '#475569' : 'rgba(148, 163, 184, 0.78)'}
                           fontSize="10"
                           fontFamily="monospace"
                         >
@@ -1029,7 +1033,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                   {/* Main Trajectory Line */}
                   <polyline
                     fill="none"
-                    stroke="#10b981"
+                    stroke={isLight ? '#059669' : '#10b981'}
                     strokeWidth="2.75"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -1045,15 +1049,15 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                           cx={n.x}
                           cy={n.y}
                           r={isNearest ? 5 : 3.5}
-                          fill={isNearest ? '#06b6d4' : '#10b981'}
-                          stroke="#0f172a"
+                          fill={isNearest ? '#0284c7' : (isLight ? '#059669' : '#10b981')}
+                          stroke={isLight ? '#ffffff' : '#0f172a'}
                           strokeWidth="2"
                         />
                         <text
                           x={n.x}
                           y={chartHeight - 10}
                           textAnchor="middle"
-                          fill={isNearest ? '#38bdf8' : 'rgba(148, 163, 184, 0.85)'}
+                          fill={isNearest ? (isLight ? '#0284c7' : '#38bdf8') : (isLight ? '#475569' : 'rgba(148, 163, 184, 0.85)')}
                           fontSize={isNearest ? '10.5' : '9.5'}
                           fontWeight={isNearest ? '700' : '500'}
                           fontFamily="monospace"
@@ -1072,7 +1076,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                         y1={padTop}
                         x2={hoveredCursor.x}
                         y2={padTop + plotH}
-                        stroke="rgba(56, 189, 248, 0.7)"
+                        stroke={isLight ? 'rgba(2, 132, 199, 0.6)' : 'rgba(56, 189, 248, 0.7)'}
                         strokeWidth="1.2"
                         strokeDasharray="3 3"
                       />
@@ -1081,7 +1085,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                         y1={hoveredCursor.y}
                         x2={chartWidth - padRight}
                         y2={hoveredCursor.y}
-                        stroke="rgba(56, 189, 248, 0.38)"
+                        stroke={isLight ? 'rgba(2, 132, 199, 0.35)' : 'rgba(56, 189, 248, 0.38)'}
                         strokeWidth="1"
                         strokeDasharray="3 3"
                       />
@@ -1089,13 +1093,13 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                         cx={hoveredCursor.x}
                         cy={hoveredCursor.y}
                         r="11"
-                        fill="rgba(56, 189, 248, 0.18)"
+                        fill={isLight ? 'rgba(2, 132, 199, 0.14)' : 'rgba(56, 189, 248, 0.18)'}
                       />
                       <circle
                         cx={hoveredCursor.x}
                         cy={hoveredCursor.y}
                         r="5.5"
-                        fill="#38bdf8"
+                        fill={isLight ? '#0284c7' : '#38bdf8'}
                         stroke="#ffffff"
                         strokeWidth="2"
                       />
@@ -1119,9 +1123,9 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                       minWidth: '215px',
                       padding: '0.6rem 0.78rem',
                       borderRadius: '10px',
-                      background: 'rgba(9, 14, 28, 0.96)',
-                      border: '1px solid rgba(56, 189, 248, 0.55)',
-                      boxShadow: '0 12px 32px rgba(0, 0, 0, 0.65), 0 0 14px rgba(6, 182, 212, 0.22)',
+                      background: 'var(--bg-tooltip)',
+                      border: '1px solid var(--accent-cyan)',
+                      boxShadow: 'var(--shadow-elevated)',
                       backdropFilter: 'blur(10px)'
                     }}
                   >
@@ -1232,7 +1236,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
               style={{
                 padding: '1.1rem 1.25rem',
                 borderRadius: '12px',
-                background: 'rgba(15, 23, 42, 0.65)',
+                background: 'var(--bg-subtle)',
                 border: '1px solid var(--border-subtle)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -1277,8 +1281,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                         flexShrink: 0,
                         padding: '0.7rem 0.9rem',
                         borderRadius: '8px',
-                        background: isLatest ? 'rgba(16, 185, 129, 0.08)' : 'rgba(255, 255, 255, 0.025)',
-                        border: isLatest ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(255, 255, 255, 0.06)',
+                        background: isLatest ? 'var(--bull-green-bg)' : 'var(--bg-card)',
+                        border: isLatest ? '1px solid var(--status-active-border)' : '1px solid var(--border-subtle)',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '0.28rem'
@@ -1363,9 +1367,9 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                         fontSize: '0.73rem',
                         fontWeight: 700,
                         cursor: 'pointer',
-                        background: active ? 'var(--bull-green)' : 'rgba(15, 23, 42, 0.75)',
-                        color: active ? '#04130d' : 'var(--text-secondary)',
-                        border: active ? '1px solid var(--bull-green)' : '1px solid var(--border-subtle)',
+                        background: active ? 'var(--bull-green)' : 'var(--bg-card)',
+                        color: active ? '#ffffff' : 'var(--text-secondary)',
+                        border: active ? '1px solid var(--bull-green)' : '1px solid var(--border-medium)',
                         textAlign: 'center',
                         justifyContent: 'center'
                       }}
@@ -1393,7 +1397,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                 style={{
                   padding: '0.85rem 1rem',
                   borderRadius: '10px',
-                  background: 'rgba(15, 23, 42, 0.8)',
+                  background: 'var(--bg-card)',
                   border: '1px solid var(--border-subtle)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -1438,9 +1442,9 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                         fontSize: '0.68rem',
                         fontWeight: 700,
                         cursor: 'pointer',
-                        background: investAmount === amt ? 'rgba(6, 182, 212, 0.22)' : 'rgba(255,255,255,0.05)',
-                        color: investAmount === amt ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-                        border: '1px solid rgba(255,255,255,0.1)'
+                        background: investAmount === amt ? 'var(--accent-primary-bg)' : 'var(--bg-subtle)',
+                        color: investAmount === amt ? 'var(--text-cyan)' : 'var(--text-secondary)',
+                        border: investAmount === amt ? '1px solid var(--accent-cyan)' : '1px solid var(--border-subtle)'
                       }}
                     >
                       {curr}{amt.toLocaleString()}
@@ -1456,7 +1460,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                 style={{
                   padding: '0.85rem 1rem',
                   borderRadius: '10px',
-                  background: 'rgba(15, 23, 42, 0.8)',
+                  background: 'var(--bg-card)',
                   border: '1px solid var(--border-subtle)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -1481,8 +1485,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                 style={{
                   padding: '0.85rem 1rem',
                   borderRadius: '10px',
-                  background: 'rgba(16, 185, 129, 0.14)',
-                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  background: 'var(--bull-green-bg)',
+                  border: '1px solid var(--status-active-border)',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'center'
@@ -1506,7 +1510,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                 style={{
                   padding: '0.85rem 1rem',
                   borderRadius: '10px',
-                  background: 'rgba(15, 23, 42, 0.8)',
+                  background: 'var(--bg-card)',
                   border: '1px solid var(--border-subtle)',
                   display: 'flex',
                   flexDirection: 'column',
@@ -1534,7 +1538,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
             style={{
               padding: '1.15rem 1.35rem',
               borderRadius: '12px',
-              background: 'rgba(15, 23, 42, 0.65)',
+              background: 'var(--bg-subtle)',
               border: '1px solid var(--border-subtle)',
               display: 'flex',
               flexDirection: 'column',
@@ -1608,8 +1612,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                   style={{
                     padding: '0.8rem 0.95rem',
                     borderRadius: '8px',
-                    background: 'rgba(255, 255, 255, 0.025)',
-                    border: '1px solid rgba(255, 255, 255, 0.07)',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-subtle)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '0.3rem',
@@ -1657,7 +1661,7 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
             style={{
               padding: '1.15rem 1.35rem',
               borderRadius: '12px',
-              background: 'rgba(15, 23, 42, 0.65)',
+              background: 'var(--bg-subtle)',
               border: '1px solid var(--border-subtle)',
               display: 'flex',
               flexDirection: 'column',
@@ -1696,8 +1700,8 @@ export const StockDeepRecordSection = React.memo(function StockDeepRecordSection
                         key={idx}
                         className="stock-detail-float-row"
                         style={{
-                          borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                          background: idx === 0 ? 'rgba(6, 182, 212, 0.06)' : 'transparent'
+                          borderBottom: '1px solid var(--border-subtle)',
+                          background: idx === 0 ? 'var(--accent-primary-bg)' : 'transparent'
                         }}
                       >
                         <td className="font-mono tabular-nums" style={{ padding: '0.65rem 0.75rem', fontWeight: 800, color: idx === 0 ? 'var(--accent-cyan)' : 'var(--text-primary)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
@@ -1788,7 +1792,7 @@ export const StockDeepRecordModal = React.memo(function StockDeepRecordModal({
         position: 'fixed',
         inset: 0,
         zIndex: 9999,
-        background: 'rgba(3, 7, 18, 0.84)',
+        background: 'var(--bg-modal-overlay)',
         backdropFilter: 'blur(10px)',
         display: 'flex',
         alignItems: 'flex-start',

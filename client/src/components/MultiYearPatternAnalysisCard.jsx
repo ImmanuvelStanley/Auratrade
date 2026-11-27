@@ -494,7 +494,7 @@ export const MultiYearPatternAnalysisCard = React.memo(function MultiYearPattern
         style={{
           marginTop: '0.85rem',
           padding: '0.75rem 0.9rem',
-          background: 'rgba(255, 255, 255, 0.02)',
+          background: 'var(--bg-subtle)',
           borderRadius: 'var(--radius-sm)',
           borderLeft: `3px solid ${patternBadgeColor}`,
           fontSize: '0.76rem',

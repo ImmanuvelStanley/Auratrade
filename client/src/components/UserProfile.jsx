@@ -1376,8 +1376,8 @@ export function UserProfile({
                             fontWeight: isSelected ? 800 : 600,
                             borderRadius: 'var(--radius-full)',
                             border: isSelected ? '1px solid var(--accent-cyan)' : '1px solid var(--border-subtle)',
-                            background: isSelected ? 'rgba(6, 182, 212, 0.18)' : 'rgba(255, 255, 255, 0.03)',
-                            color: isSelected ? 'var(--accent-cyan)' : 'var(--text-secondary)',
+                            background: isSelected ? 'var(--accent-primary-bg)' : 'var(--bg-subtle)',
+                            color: isSelected ? 'var(--text-cyan)' : 'var(--text-secondary)',
                             cursor: 'pointer',
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -2525,12 +2525,12 @@ export function UserProfile({
               id="mandatory-kyc-section"
               className="kyc-section-box"
               style={{
-                background: 'linear-gradient(180deg, rgba(6, 182, 212, 0.04) 0%, rgba(15, 23, 42, 0.65) 100%)',
-                border: kycAlert ? '1.5px solid rgba(239, 68, 68, 0.8)' : '1px solid rgba(6, 182, 212, 0.25)',
+                background: 'var(--bg-banner-kyc)',
+                border: kycAlert ? '1.5px solid var(--status-triggered-border)' : '1px solid var(--border-medium)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '1.35rem',
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.25)',
+                boxShadow: 'var(--shadow-card)',
                 position: 'relative',
                 transition: 'all 0.2s ease'
               }}
@@ -2546,8 +2546,8 @@ export function UserProfile({
                     <span
                       className="badge-pill font-mono"
                       style={{
-                        background: getKycCompletion(profileForm) === 100 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-                        color: getKycCompletion(profileForm) === 100 ? '#34d399' : 'var(--warning-amber)',
+                        background: getKycCompletion(profileForm) === 100 ? 'var(--bull-green-bg)' : 'var(--warning-amber-bg)',
+                        color: getKycCompletion(profileForm) === 100 ? 'var(--text-bull)' : 'var(--text-amber)',
                         fontSize: '0.7rem',
                         fontWeight: 800
                       }}
@@ -2564,11 +2564,11 @@ export function UserProfile({
                 <div style={{ minWidth: '220px', background: 'var(--bg-card)', padding: '0.65rem 0.95rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.74rem', fontWeight: 800, marginBottom: '0.35rem' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>KYC COMPLETION</span>
-                    <span style={{ color: getKycCompletion(profileForm) === 100 ? '#34d399' : 'var(--accent-cyan)' }}>
+                    <span style={{ color: getKycCompletion(profileForm) === 100 ? 'var(--text-bull)' : 'var(--accent-cyan)' }}>
                       {getKycCompletion(profileForm)}%
                     </span>
                   </div>
-                  <div style={{ width: '100%', height: '6px', background: 'var(--bg-input)', borderRadius: '3px', overflow: 'hidden' }}>
+                  <div style={{ width: '100%', height: '6px', background: 'var(--bg-track)', borderRadius: '3px', overflow: 'hidden' }}>
                     <div
                       style={{
                         width: `${getKycCompletion(profileForm)}%`,
@@ -2589,10 +2589,10 @@ export function UserProfile({
                   className="motion-entry"
                   style={{
                     padding: '0.85rem 1.15rem',
-                    background: 'rgba(239, 68, 68, 0.12)',
-                    border: '1px solid rgba(239, 68, 68, 0.45)',
+                    background: 'var(--bear-red-bg)',
+                    border: '1px solid var(--status-triggered-border)',
                     borderRadius: 'var(--radius-md)',
-                    color: '#fca5a5',
+                    color: 'var(--text-bear)',
                     fontSize: '0.82rem',
                     display: 'flex',
                     alignItems: 'center',

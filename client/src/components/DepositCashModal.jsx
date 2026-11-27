@@ -127,7 +127,7 @@ export function DepositCashModal({ isOpen, onClose, currentCashBalance = 0, onDe
           border: '1px solid var(--border-subtle)',
           borderRadius: '16px',
           overflow: 'hidden',
-          boxShadow: '0 25px 70px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.1)'
+          boxShadow: 'var(--shadow-modal)'
         }}
       >
         {/* Top Institutional Accent Line */}
@@ -390,7 +390,7 @@ export function DepositCashModal({ isOpen, onClose, currentCashBalance = 0, onDe
                             fontWeight: 700,
                             padding: '0.12rem 0.4rem',
                             borderRadius: '4px',
-                            background: isSelected ? 'rgba(6, 182, 212, 0.25)' : 'rgba(255, 255, 255, 0.05)',
+                            background: isSelected ? 'rgba(6, 182, 212, 0.25)' : 'var(--bg-subtle)',
                             color: isSelected ? 'var(--accent-cyan)' : 'var(--text-muted)'
                           }}
                         >

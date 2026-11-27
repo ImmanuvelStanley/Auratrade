@@ -517,7 +517,7 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
                 style={{
                   padding: '0.85rem 1rem',
                   borderRadius: '10px',
-                  background: isOpen ? 'rgba(16, 185, 129, 0.05)' : 'rgba(255, 255, 255, 0.02)',
+                  background: isOpen ? 'var(--bull-green-bg)' : 'var(--bg-subtle)',
                   border: `1px solid ${isOpen ? 'rgba(16, 185, 129, 0.28)' : 'var(--border-subtle)'}`,
                   display: 'flex',
                   flexDirection: 'column',
@@ -564,7 +564,7 @@ export const GlobalIndicesDesk = React.memo(function GlobalIndicesDesk({ onSelec
                   </div>
                 </div>
 
-                <div style={{ paddingTop: '0.4rem', borderTop: '1px solid rgba(255, 255, 255, 0.06)', fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ paddingTop: '0.4rem', borderTop: '1px solid var(--border-subtle)', fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: 'var(--text-muted)', fontSize: '0.68rem' }}>Benchmark</span>
                   <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{ex.benchmark}</span>
                 </div>

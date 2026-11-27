@@ -996,8 +996,8 @@ export const StockChart = React.memo(function StockChart({
       ctx.arc(lastX, lastY, 4.5, 0, Math.PI * 2);
       ctx.fillStyle = primaryColor;
       ctx.fill();
-      ctx.strokeStyle = '#ffffff';
-      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = theme === 'light' ? '#ffffff' : '#0f172a';
+      ctx.lineWidth = 1.8;
       ctx.stroke();
     } else {
       // Candlestick rendering with dynamic width based on zoom level
@@ -1034,8 +1034,8 @@ export const StockChart = React.memo(function StockChart({
           ctx.arc(x, yClose, 4.5, 0, Math.PI * 2);
           ctx.fillStyle = color;
           ctx.fill();
-          ctx.strokeStyle = '#ffffff';
-          ctx.lineWidth = 1.5;
+          ctx.strokeStyle = theme === 'light' ? '#ffffff' : '#0f172a';
+          ctx.lineWidth = 1.8;
           ctx.stroke();
         }
       });
@@ -1850,8 +1850,8 @@ export const StockChart = React.memo(function StockChart({
         return (
           <div
             style={{
-              background: 'linear-gradient(90deg, rgba(16, 185, 129, 0.12) 0%, rgba(56, 189, 248, 0.1) 60%, rgba(15, 23, 42, 0.9) 100%)',
-              borderBottom: '1px solid rgba(16, 185, 129, 0.38)',
+              background: 'var(--bg-hero-grad)',
+              borderBottom: '1px solid var(--status-active-border)',
               padding: '0.55rem 1rem',
               display: 'flex',
               flexDirection: 'column',
@@ -1935,10 +1935,10 @@ export const StockChart = React.memo(function StockChart({
 
             {/* Live Risk Floor -> Current Price -> Goal Target Corridor Meter */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-              <span className="font-mono" style={{ color: '#fda4af', fontWeight: 700 }}>
+              <span className="font-mono" style={{ color: 'var(--text-bear)', fontWeight: 700 }}>
                 Floor {planCurr}{stopP.toFixed(2)}
               </span>
-              <div style={{ flex: 1, height: '6px', borderRadius: '999px', background: 'rgba(255,255,255,0.08)', overflow: 'hidden', position: 'relative' }}>
+              <div style={{ flex: 1, height: '6px', borderRadius: '999px', background: 'var(--bg-track)', overflow: 'hidden', position: 'relative' }}>
                 <div
                   style={{
                     width: `${progressPct.toFixed(1)}%`,
@@ -1949,7 +1949,7 @@ export const StockChart = React.memo(function StockChart({
                   }}
                 />
               </div>
-              <span className="font-mono" style={{ color: '#6ee7b7', fontWeight: 700 }}>
+              <span className="font-mono" style={{ color: 'var(--text-bull)', fontWeight: 700 }}>
                 Target {planCurr}{targetP.toFixed(2)} ({Number(distToTargetPct) >= 0 ? `+${distToTargetPct}% to goal` : 'Achieved'})
               </span>
             </div>
@@ -2080,9 +2080,9 @@ export const StockChart = React.memo(function StockChart({
             <button
               onClick={() => setPanOffset(0)}
               style={{
-                background: 'rgba(16, 185, 129, 0.2)',
-                border: '1px solid rgba(16, 185, 129, 0.5)',
-                color: '#34d399',
+                background: 'var(--bull-green-bg)',
+                border: '1px solid var(--status-active-border)',
+                color: 'var(--text-bull)',
                 borderRadius: '4px',
                 padding: '2px 8px',
                 fontSize: '0.68rem',

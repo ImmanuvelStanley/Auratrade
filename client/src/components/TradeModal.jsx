@@ -375,7 +375,7 @@ export function TradeModal({
                 width: '32px',
                 height: '32px',
                 borderRadius: '8px',
-                background: 'rgba(255, 255, 255, 0.05)',
+                background: 'var(--bg-subtle)',
                 border: '1px solid var(--border-subtle)',
                 display: 'flex',
                 alignItems: 'center',
@@ -659,7 +659,7 @@ export function TradeModal({
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '0.4rem',
-                    background: 'rgba(255, 255, 255, 0.05)',
+                    background: 'var(--bg-subtle)',
                     border: '1px solid var(--border-subtle)',
                     borderRadius: 'var(--radius-md)',
                     color: 'var(--text-secondary)',
@@ -684,7 +684,7 @@ export function TradeModal({
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '0.4rem',
-                    background: 'rgba(255, 255, 255, 0.05)',
+                    background: 'var(--bg-subtle)',
                     border: '1px solid var(--border-subtle)',
                     borderRadius: 'var(--radius-md)',
                     color: 'var(--text-secondary)',
@@ -772,8 +772,8 @@ export function TradeModal({
                     paddingRight: '2rem',
                     fontSize: '0.85rem',
                     height: '38px',
-                    background: 'rgba(0, 0, 0, 0.25)',
-                    border: '1px solid var(--border-subtle)',
+                    background: 'var(--bg-input)',
+                    border: '1px solid var(--border-medium)',
                     borderRadius: 'var(--radius-md)',
                     color: 'var(--text-primary)'
                   }}
@@ -803,9 +803,9 @@ export function TradeModal({
                     top: '100%',
                     marginTop: '6px',
                     background: 'var(--bg-card)',
-                    border: '1px solid var(--border-subtle)',
+                    border: '1px solid var(--border-medium)',
                     borderRadius: 'var(--radius-md)',
-                    boxShadow: '0 12px 32px rgba(0, 0, 0, 0.5)',
+                    boxShadow: 'var(--shadow-elevated)',
                     zIndex: 100,
                     maxHeight: '230px',
                     overflowY: 'auto'
@@ -822,11 +822,11 @@ export function TradeModal({
                         justifyContent: 'space-between',
                         cursor: 'pointer',
                         borderBottom: '1px solid var(--border-subtle)',
-                        background: item.symbol === symbol ? 'rgba(6, 182, 212, 0.15)' : 'transparent',
+                        background: item.symbol === symbol ? 'var(--accent-primary-bg)' : 'transparent',
                         transition: 'background 0.15s ease'
                       }}
-                      onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
-                      onMouseLeave={(e) => e.currentTarget.style.background = item.symbol === symbol ? 'rgba(6, 182, 212, 0.15)' : 'transparent'}
+                      onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-subtle-hover)'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = item.symbol === symbol ? 'var(--accent-primary-bg)' : 'transparent'}
                     >
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
@@ -875,12 +875,12 @@ export function TradeModal({
                         cursor: 'pointer',
                         border: isSelected
                           ? (isBullion ? '1px solid #f59e0b' : '1px solid var(--accent-cyan)')
-                          : '1px solid rgba(255, 255, 255, 0.08)',
+                          : '1px solid var(--border-subtle)',
                         background: isSelected
-                          ? (isBullion ? 'rgba(245, 158, 11, 0.2)' : 'rgba(6, 182, 212, 0.22)')
-                          : 'rgba(255, 255, 255, 0.03)',
+                          ? (isBullion ? 'var(--warning-amber-bg)' : 'var(--accent-primary-bg)')
+                          : 'var(--bg-subtle)',
                         color: isSelected
-                          ? (isBullion ? '#fbbf24' : '#38bdf8')
+                          ? (isBullion ? 'var(--text-amber)' : 'var(--text-cyan)')
                           : 'var(--text-secondary)',
                         boxShadow: isSelected
                           ? (isBullion ? '0 0 12px rgba(245, 158, 11, 0.2)' : '0 0 12px rgba(6, 182, 212, 0.2)')
@@ -1100,7 +1100,7 @@ export function TradeModal({
                 <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                   <Zap size={13} style={{ color: 'var(--accent-cyan)' }} /> Execution Type
                 </span>
-                <div style={{ display: 'flex', gap: '0.3rem', background: 'rgba(15, 23, 42, 0.35)', padding: '3px', borderRadius: '7px', border: '1px solid var(--border-subtle)' }}>
+                <div style={{ display: 'flex', gap: '0.3rem', background: 'var(--bg-segment)', padding: '3px', borderRadius: '7px', border: '1px solid var(--border-subtle)' }}>
                   {[
                     { id: 'MARKET', label: 'Market (Instant)' },
                     { id: 'LIMIT', label: 'Limit (Target Price)' }
@@ -1122,8 +1122,9 @@ export function TradeModal({
                         fontWeight: 700,
                         border: 'none',
                         cursor: 'pointer',
-                        background: orderKind === mode.id ? 'rgba(6, 182, 212, 0.18)' : 'transparent',
-                        color: orderKind === mode.id ? 'var(--accent-cyan)' : 'var(--text-secondary)'
+                        background: orderKind === mode.id ? 'var(--bg-card)' : 'transparent',
+                        color: orderKind === mode.id ? 'var(--text-cyan)' : 'var(--text-secondary)',
+                        boxShadow: orderKind === mode.id ? 'var(--shadow-sm)' : 'none'
                       }}
                     >
                       {mode.label}
@@ -1159,7 +1160,7 @@ export function TradeModal({
                         style={{
                           padding: '0.42rem 0.5rem',
                           borderRadius: '6px',
-                          background: 'rgba(255, 255, 255, 0.04)',
+                          background: 'var(--bg-subtle)',
                           border: '1px solid var(--border-subtle)',
                           color: 'var(--text-secondary)',
                           fontSize: '0.68rem',
@@ -1423,7 +1424,7 @@ export function TradeModal({
                       style={{
                         padding: '0.15rem 0.45rem',
                         borderRadius: '4px',
-                        background: 'rgba(255, 255, 255, 0.04)',
+                        background: 'var(--bg-subtle)',
                         border: '1px solid var(--border-subtle)',
                         color: 'var(--text-secondary)',
                         fontSize: '0.66rem',
@@ -1530,7 +1531,7 @@ export function TradeModal({
                   fontSize: '0.96rem',
                   paddingTop: '0.45rem',
                   marginTop: '0.15rem',
-                  borderTop: '1px solid rgba(255, 255, 255, 0.08)'
+                  borderTop: '1px solid var(--border-subtle)'
                 }}
               >
                 <span style={{ color: 'var(--text-primary)' }}>Estimated Value:</span>
