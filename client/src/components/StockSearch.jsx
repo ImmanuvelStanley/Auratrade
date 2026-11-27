@@ -91,8 +91,8 @@ export function StockSearch({ onSelectSymbol }) {
         id="header-global-stock-search-input"
         name="headerGlobalStockSearch"
         autoComplete="off"
-        className="search-input font-mono"
-        placeholder="Search ticker or company (e.g., AAPL, NVDA, TSLA)..."
+        className="search-input"
+        placeholder="Search ticker or company..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         onFocus={() => query.trim() && setIsOpen(true)}

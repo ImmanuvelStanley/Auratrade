@@ -1702,16 +1702,29 @@ select option:checked {
   max-width: 440px;
   z-index: 1000;
 }
+@media (min-width: 769px) {
+  .nav-actions .search-wrapper {
+    width: clamp(260px, 24vw, 340px);
+  }
+}
 .search-input {
   width: 100%;
   background: var(--bg-input);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-full);
-  padding: 0.65rem 1rem 0.65rem 2.5rem;
+  padding: 0.62rem 1rem 0.62rem 2.5rem;
   color: var(--text-primary);
-  font-size: 0.875rem;
+  font-family: var(--font-brand);
+  font-size: 0.855rem;
+  font-weight: 500;
+  letter-spacing: 0.008em;
   outline: none;
   transition: var(--transition-normal);
+}
+.search-input::placeholder {
+  font-family: var(--font-brand);
+  font-weight: 500;
+  letter-spacing: 0.008em;
 }
 ::placeholder {
   color: #94a3b8 !important;
