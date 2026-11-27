@@ -723,24 +723,28 @@ export function handleFallbackRequest(url, options = {}) {
       budget
     });
   } else if (path.includes('/watchlist')) {
-    body = { success: true, data: ['AAPL', 'NVDA', 'TSLA', 'MSFT', 'AMZN', 'GOLD.MCX', 'NIFTY 50'] };
+    body = { success: true, symbols: ['AAPL', 'NVDA', 'TSLA', 'MSFT', 'AMZN', 'GOLD.MCX', 'NIFTY 50'] };
   } else if (path.includes('/alerts/notifications')) {
-    body = { success: true, data: [] };
+    body = { success: true, notifications: [] };
   } else if (path.includes('/alerts')) {
-    body = { success: true, data: [] };
+    body = { success: true, alerts: [] };
   } else if (path.includes('/portfolio')) {
     body = {
       success: true,
-      data: {
-        cash: 100000,
-        portfolioValue: 135450,
-        totalPnL: 35450,
-        pnlPercent: 35.45,
-        holdings: [
-          { symbol: 'AAPL', shares: 25, avgPrice: 198.50, currentPrice: 228.40, pnl: 747.50, pnlPercent: 15.06 },
-          { symbol: 'NVDA', shares: 50, avgPrice: 105.00, currentPrice: 124.60, pnl: 980.00, pnlPercent: 18.67 },
-          { symbol: 'GOLD.MCX', shares: 1, avgPrice: 125000, currentPrice: 129379, pnl: 4379.00, pnlPercent: 3.50 }
-        ]
+      portfolio: {
+        cashBalance: 1000.00,
+        minBalance: 100.00,
+        investedValue: 0.00,
+        totalPortfolioValue: 1000.00,
+        totalUnrealizedPnL: 0.00,
+        totalPnLPercent: 0.00,
+        realizedPnL: 0.00,
+        winRate: 0,
+        closedTradesCount: 0,
+        winningTradesCount: 0,
+        holdings: [],
+        orders: [],
+        transactions: []
       }
     };
   } else if (path.includes('/auth/me')) {

@@ -536,6 +536,20 @@ export function SocketProvider({ children }) {
     }
   }, []);
 
+  const unsubscribeBatch = useCallback((symbols) => {
+    if (!Array.isArray(symbols)) return;
+    const upperList = symbols.map(s => String(s).toUpperCase().trim());
+    setActiveSubscriptions((prev) => {
+      const next = new Set(prev);
+      upperList.forEach(s => next.delete(s));
+      activeSubscriptionsRef.current = next;
+      return next;
+    });
+    if (socketRef.current && socketRef.current.connected) {
+      upperList.forEach(sym => socketRef.current.emit('unsubscribe', sym));
+    }
+  }, []);
+
   const markAllNotificationsRead = useCallback(async () => {
     const readSet = getSessionIdSet('auratrade_read_mkt_ids');
     setNotifications((prev) =>
@@ -605,6 +619,7 @@ export function SocketProvider({ children }) {
     subscribe,
     unsubscribe,
     subscribeBatch,
+    unsubscribeBatch,
     clearNotifications,
     dismissNotification,
     markAllNotificationsRead,
@@ -616,6 +631,7 @@ export function SocketProvider({ children }) {
     subscribe,
     unsubscribe,
     subscribeBatch,
+    unsubscribeBatch,
     clearNotifications,
     dismissNotification,
     markAllNotificationsRead,
@@ -644,6 +660,7 @@ export function SocketProvider({ children }) {
     subscribe,
     unsubscribe,
     subscribeBatch,
+    unsubscribeBatch,
     clearNotifications,
     dismissNotification,
     markAllNotificationsRead,

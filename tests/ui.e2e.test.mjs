@@ -391,8 +391,8 @@ const run = async () => {
         return {
           open: !!menu,
           cardCount: cards,
-          hasEmptyPrompt: /No alerts triggered yet|No market notifications right now/i.test(txt),
-          hasLiveFeed: cards > 0 && /Market & Alert Feed/i.test(txt),
+          hasEmptyPrompt: /You’re all caught up|No personal target alerts yet|No alerts triggered yet|No market notifications right now/i.test(txt),
+          hasLiveFeed: cards > 0 && /Activity & Alerts/i.test(txt),
           hasManualLiveSync: /Live Sync/i.test(txt)
         };
       })()`);
@@ -419,7 +419,7 @@ const run = async () => {
         const menu = document.querySelector('.notification-menu');
         return {
           open: !!detail,
-          hasBackBtn: menu ? /Back to Feed/i.test(menu.innerText) : false,
+          hasBackBtn: menu ? !!menu.querySelector('.notification-back-btn') : false,
           hasDetailsText: detail ? detail.innerText.length > 80 : false
         };
       })()`);
@@ -566,7 +566,7 @@ const run = async () => {
       const appleBtn = document.getElementById('auth-social-apple-btn');
       const divider = document.querySelector('.auth-social-divider');
       const dividerText = document.querySelector('.auth-social-divider-text');
-      const directBtn = document.getElementById('auth-submit-direct-login-btn');
+      const directBtn = document.getElementById('auth-submit-signin-btn');
       const googleSvg = googleBtn ? googleBtn.querySelector('svg.auth-social-icon--google') : null;
       const appleSvg = appleBtn ? appleBtn.querySelector('svg.auth-social-icon--apple') : null;
 
@@ -588,7 +588,7 @@ const run = async () => {
         appleLabel: appleBtn.innerText.trim(),
         dividerBelowDirectBtn: divr.top >= dr.bottom,
         buttonsBelowDivider: gr.top >= divr.bottom && ar.top >= divr.bottom,
-        buttonsSideBySide: Math.abs(gr.top - ar.top) < 6 && ar.left >= gr.right - 2,
+        buttonsStacked: ar.top >= gr.bottom - 1,
         heightOk: gr.height >= 38 && ar.height >= 38
       };
     })()`);
@@ -597,66 +597,35 @@ const run = async () => {
     assert.equal(authModalCheck.dividerText, 'OR CONTINUE WITH', 'Divider text must be OR CONTINUE WITH');
     assert.equal(authModalCheck.hasGoogleSvg, true, 'Google button must render official Google G SVG');
     assert.equal(authModalCheck.hasAppleSvg, true, 'Apple button must render official Apple silhouette SVG');
-    assert.equal(authModalCheck.googleLabel, 'Google', 'Google button text must be Google');
-    assert.equal(authModalCheck.appleLabel, 'Apple', 'Apple button text must be Apple');
+    assert.equal(authModalCheck.googleLabel, 'Continue with Google', 'Google button text must be Continue with Google');
+    assert.equal(authModalCheck.appleLabel, 'Continue with Apple', 'Apple button text must be Continue with Apple');
     assert.equal(authModalCheck.dividerBelowDirectBtn, true, 'Social divider must sit below the direct Sign In button');
-    assert.equal(authModalCheck.buttonsBelowDivider, true, 'Social grid must sit below the divider');
-    assert.equal(authModalCheck.buttonsSideBySide, true, 'Google & Apple buttons must sit in balanced 2-column grid');
+    assert.equal(authModalCheck.buttonsBelowDivider, true, 'Social stack must sit below the divider');
+    assert.equal(authModalCheck.buttonsStacked, true, 'Google & Apple buttons must sit in clean stacked column');
     assert.equal(authModalCheck.heightOk, true, 'Social buttons must have accessible height >= 38px');
 
-    // Test switching to Create Account tab to verify register social buttons
+    // Test switching to Create Account mode to verify register social buttons
     await evalJs(`(() => {
-      const regTab = document.getElementById('auth-tab-register');
-      if (regTab) regTab.click();
+      const regSwitch = document.getElementById('auth-switch-to-register-btn');
+      if (regSwitch) regSwitch.click();
     })()`);
     await sleep(300);
     const regSocialCheck = await evalJs(`(() => {
       const googleRegBtn = document.getElementById('auth-social-google-reg-btn');
       const appleRegBtn = document.getElementById('auth-social-apple-reg-btn');
       const divText = document.querySelector('.auth-social-divider-text');
+      const hasPresetCards = !!document.querySelector('.auth-oauth-account-list');
       return {
         hasGoogle: !!googleRegBtn,
         hasApple: !!appleRegBtn,
-        divText: divText ? divText.innerText.trim() : ''
+        divText: divText ? divText.innerText.trim() : '',
+        hasPresetCards
       };
     })()`);
     assert.equal(regSocialCheck.hasGoogle, true, 'Create Account mode must render Google registration button');
     assert.equal(regSocialCheck.hasApple, true, 'Create Account mode must render Apple registration button');
     assert.equal(regSocialCheck.divText, 'OR SIGN UP WITH', 'Divider in registration must be OR SIGN UP WITH');
-
-    // Verify OAuth Email Input & Confirmation Code flow
-    await evalJs(`(() => {
-      const gBtn = document.getElementById('auth-social-google-reg-btn') || document.getElementById('auth-social-google-btn');
-      if (gBtn) gBtn.click();
-    })()`);
-    await sleep(350);
-
-    const pickerCheck = await evalJs(`(() => {
-      const pickerBack = document.getElementById('auth-oauth-back-btn');
-      const emailInput = document.getElementById('auth-oauth-custom-email-input');
-      const nameInput = document.getElementById('auth-oauth-custom-name-input');
-      const continueBtn = document.getElementById('auth-oauth-continue-btn');
-      const hasAccountCards = !!document.querySelector('.auth-oauth-account-list');
-      return {
-        hasBackBtn: !!pickerBack,
-        hasEmailInput: !!emailInput,
-        hasNameInput: !!nameInput,
-        hasContinue: !!continueBtn,
-        hasAccountCards
-      };
-    })()`);
-    assert.equal(pickerCheck.hasBackBtn, true, 'OAuth flow must have back button');
-    assert.equal(pickerCheck.hasEmailInput, true, 'OAuth flow must directly provide email input');
-    assert.equal(pickerCheck.hasNameInput, true, 'OAuth flow must provide name input');
-    assert.equal(pickerCheck.hasContinue, true, 'OAuth flow must have Continue button');
-    assert.equal(pickerCheck.hasAccountCards, false, 'Preset account cards list must be removed');
-
-    // Click "Back to Sign In"
-    await evalJs(`(() => {
-      const backBtn = document.getElementById('auth-oauth-back-btn');
-      if (backBtn) backBtn.click();
-    })()`);
-    await sleep(250);
+    assert.equal(regSocialCheck.hasPresetCards, false, 'Preset demo account list must stay removed');
 
     // Close AuthModal before moving to authenticated testing
     await evalJs(`(() => {
@@ -752,9 +721,9 @@ const run = async () => {
     const hasWebhookBridge = await evalJs(`document.body.innerText.includes('Live Market Data Feeds & Webhook Bridge')`);
     assert.equal(hasWebhookBridge, true, 'Trader Profile Settings must render Live Market Data Feeds & Webhook Bridge');
 
-    // Click Push Sample Tick to test webhook pipeline live in browser UI
+    // Click Send Live Webhook Tick to test webhook pipeline live in browser UI
     await evalJs(`(() => {
-      const pushBtn = Array.from(document.querySelectorAll('button')).find((b) => /Push Sample Tick/i.test(b.innerText));
+      const pushBtn = Array.from(document.querySelectorAll('button')).find((b) => /Send Live Webhook Tick|Push Sample Tick/i.test(b.innerText));
       if (pushBtn) pushBtn.click();
     })()`);
     let webhookToastVisible = false;

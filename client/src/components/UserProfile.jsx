@@ -5376,7 +5376,7 @@ export function UserProfile({
                 Permanently and irreversibly deletes your account, watchlist, portfolio, all alerts, and all personal data (GDPR erasure). This cannot be undone.
               </p>
             </div>
-            {deleteStatus !== 'confirm' ? (
+            {!['confirm', 'loading', 'error'].includes(deleteStatus) ? (
               <button
                 type="button"
                 onClick={() => setDeleteStatus('confirm')}

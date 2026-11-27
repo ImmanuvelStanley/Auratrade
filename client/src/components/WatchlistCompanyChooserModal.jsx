@@ -511,7 +511,12 @@ export function WatchlistCompanyChooserModal({
                             whiteSpace: 'nowrap',
                             flexShrink: 0
                           }}
-                          onClick={() => onSelectSymbol && onSelectSymbol(c.symbol)}
+                          onClick={() => {
+                            if (onSelectSymbol) {
+                              onSelectSymbol(c.symbol);
+                              if (onClose) onClose();
+                            }
+                          }}
                         >
                           {c.symbol}
                         </span>

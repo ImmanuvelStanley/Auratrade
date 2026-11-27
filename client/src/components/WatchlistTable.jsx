@@ -222,11 +222,15 @@ export const WatchlistTable = React.memo(function WatchlistTable({
 
   const handleAdd = (e) => {
     e.preventDefault();
-    if (!newSymbol.trim()) {
+    const cleaned = newSymbol.trim().toUpperCase();
+    if (!cleaned) {
       setIsChooserOpen(true);
       return;
     }
-    onAddToWatchlist(newSymbol.trim().toUpperCase());
+    if (!/^[A-Z0-9.\-/]{1,16}$/.test(cleaned)) {
+      return;
+    }
+    onAddToWatchlist(cleaned);
     setNewSymbol('');
   };
 

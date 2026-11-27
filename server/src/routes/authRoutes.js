@@ -1058,7 +1058,7 @@ router.get('/verify-reset-token', async (req, res) => {
 // =========================================================
 router.post('/reset-password', async (req, res) => {
   try {
-    const { email, code, token, newPassword } = req.body;
+    const { email, code, token, otpToken, newPassword } = req.body;
     const targetEmail = (email || '').trim().toLowerCase();
 
     if (!newPassword || newPassword.length < 8) {
@@ -1082,14 +1082,28 @@ router.post('/reset-password', async (req, res) => {
         return res.status(400).json({ success: false, error: 'Password reset link has expired or is invalid. Please request a new one.' });
       }
     } else if (code && targetEmail) {
-      // 2. If 6-digit code provided
-      user = await store.verifyOtp({ identifier: targetEmail, code });
+      // 2. If 6-digit code provided (with stateless otpToken fallback for serverless restarts)
+      try {
+        user = await store.verifyOtp({ identifier: targetEmail, code });
+      } catch (otpErr) {
+        if (otpToken) {
+          const decodedOtp = jwt.verify(otpToken, config.jwtSecret);
+          if (
+            decodedOtp.type === 'otp_session' &&
+            decodedOtp.purpose === 'reset' &&
+            decodedOtp.identifier === targetEmail &&
+            String(decodedOtp.code) === String(code).trim()
+          ) {
+            user = await store.findUserByEmail(targetEmail);
+          } else {
+            throw otpErr;
+          }
+        } else {
+          throw otpErr;
+        }
+      }
     } else {
       return res.status(400).json({ success: false, error: 'Valid reset token or 6-digit code with email is required.' });
-    }
-
-    if (!user && targetEmail) {
-      user = await store.createUser(targetEmail, newPassword, targetEmail.split('@')[0], 1000);
     }
 
     if (!user) {

@@ -3,12 +3,12 @@ import { Bell, Menu } from 'lucide-react';
 import { useSocketNotifications } from '../context/SocketContext';
 import { NotificationCenter } from './NotificationCenter';
 import { BrandLogo } from './BrandLogo';
+import { StockSearch } from './StockSearch';
 
 export const Header = React.memo(function Header({
   onToggleSidebar,
   onSelectSymbol,
-  onGoHome,
-  onNavigateTab
+  onGoHome
 }) {
   const { notifications, markAllNotificationsRead } = useSocketNotifications();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -32,6 +32,9 @@ export const Header = React.memo(function Header({
 
       {/* Navigation Actions */}
       <div className="nav-actions">
+        {/* Global Live Asset Search */}
+        <StockSearch onSelectSymbol={onSelectSymbol} />
+
         {/* Quick Utility Control Icons (Notifications, Mobile Topics Drawer) */}
         <div className="header-controls-cluster">
           {/* Notification Bell */}

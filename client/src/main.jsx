@@ -31,8 +31,8 @@ window.fetch = async function (input, init) {
     if (res.ok && contentType.includes('application/json')) {
       return res;
     }
-    // If backend returned 404 (e.g. static host without serverless functions), fall back
-    if (res.status === 404 || !contentType.includes('application/json')) {
+    // Fall back only when static hosting returns non-JSON (e.g., HTML 404/fallback page)
+    if (!contentType.includes('application/json')) {
       return handleFallbackRequest(urlStr, init);
     }
     return res;

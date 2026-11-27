@@ -4,6 +4,26 @@ const marketDataService = require('../services/marketDataService');
 const cacheService = require('../services/cacheService');
 const config = require('../config');
 
+// Root API index for stock endpoints
+router.get('/', (req, res) => {
+  res.json({
+    success: true,
+    service: 'AuraTrade Market Data API',
+    endpoints: [
+      '/api/stocks/search',
+      '/api/stocks/all-markets',
+      '/api/stocks/indices',
+      '/api/stocks/nse-india',
+      '/api/stocks/global-indices',
+      '/api/stocks/precious-metals',
+      '/api/stocks/auto-predictor',
+      '/api/stocks/quote/:symbol',
+      '/api/stocks/history/:symbol',
+      '/api/stocks/prediction/:symbol'
+    ]
+  });
+});
+
 // Search stocks by symbol or company name with automatic background global asset ingestion
 router.get('/search', async (req, res) => {
   try {

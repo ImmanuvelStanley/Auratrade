@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Bell } from 'lucide-react';
 import { useSocketQuote } from '../context/SocketContext';
 
@@ -10,6 +10,12 @@ export function AlertModal({ symbol, currentPrice: propPrice, onClose, onAlertCr
   const [cooldownMinutes, setCooldownMinutes] = useState('30');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!targetPrice && currentPrice) {
+      setTargetPrice((currentPrice * 1.02).toFixed(2));
+    }
+  }, [currentPrice, targetPrice]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

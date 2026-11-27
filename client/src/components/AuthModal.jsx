@@ -75,6 +75,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
   const [forgotEmail, setForgotEmail] = useState('');
   const [resetSent, setResetSent] = useState(false);
   const [resetCode, setResetCode] = useState('');
+  const [resetOtpToken, setResetOtpToken] = useState('');
   const [resetToken, setResetToken] = useState(initialResetData?.token || '');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -212,7 +213,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
 
     setLoading(true);
     try {
-      await forgotPassword(targetEmail);
+      const resp = await forgotPassword(targetEmail);
+      if (resp?.otpToken) setResetOtpToken(resp.otpToken);
       setResetSent(true);
       setSuccessMsg(`Recovery code sent to ${targetEmail}. Please check your inbox.`);
     } catch (err) {
@@ -232,8 +234,8 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
       setError('Please enter the 6-digit verification code from your email.');
       return;
     }
-    if (!newPassword || newPassword.length < 6) {
-      setError('New password must be at least 6 characters long.');
+    if (!newPassword || newPassword.length < 8) {
+      setError('New password must be at least 8 characters long.');
       return;
     }
     if (newPassword !== confirmPassword) {
@@ -243,7 +245,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
 
     setLoading(true);
     try {
-      await resetPassword(forgotEmail.trim().toLowerCase(), resetCode.trim() || null, newPassword, resetToken || null);
+      await resetPassword(forgotEmail.trim().toLowerCase(), resetCode.trim() || null, newPassword, resetToken || null, resetOtpToken || null);
       setSuccessMsg('Password updated successfully! Logged in.');
       setTimeout(() => {
         if (onClose) onClose();
@@ -963,31 +965,33 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                     Enter the code sent to <strong style={{ color: 'var(--text-primary, #fff)' }}>{forgotEmail}</strong> and choose a new password.
                   </p>
 
-                  {/* 6-Digit Code */}
-                  <div className="input-group">
-                    <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.35rem', display: 'block' }}>
-                      6-Digit Code
-                    </label>
-                    <div className="auth-input-wrapper">
-                      <KeyRound size={15} className="auth-input-icon" />
-                      <input
-                        type="text"
-                        required
-                        maxLength={6}
-                        className="auth-input-field"
-                        placeholder="123456"
-                        value={resetCode}
-                        onChange={(e) => setResetCode(e.target.value.replace(/\D/g, ''))}
-                        style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.2em', fontSize: '1rem', fontWeight: 700 }}
-                        autoFocus
-                      />
+                  {/* 6-Digit Code (hidden when opened from email reset link token) */}
+                  {!resetToken && (
+                    <div className="input-group">
+                      <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.35rem', display: 'block' }}>
+                        6-Digit Code
+                      </label>
+                      <div className="auth-input-wrapper">
+                        <KeyRound size={15} className="auth-input-icon" />
+                        <input
+                          type="text"
+                          required
+                          maxLength={6}
+                          className="auth-input-field"
+                          placeholder="123456"
+                          value={resetCode}
+                          onChange={(e) => setResetCode(e.target.value.replace(/\D/g, ''))}
+                          style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.2em', fontSize: '1rem', fontWeight: 700 }}
+                          autoFocus
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* New Password */}
                   <div className="input-group">
                     <label className="input-label" style={{ fontSize: '0.75rem', color: 'var(--text-secondary, #94a3b8)', marginBottom: '0.35rem', display: 'block' }}>
-                      New Password
+                      New Password (min. 8 characters)
                     </label>
                     <div className="auth-input-wrapper">
                       <Lock size={15} className="auth-input-icon" />
@@ -995,7 +999,7 @@ export function AuthModal({ onClose, closable = true, initialResetData = null })
                         type={showResetPassword ? 'text' : 'password'}
                         required
                         className="auth-input-field"
-                        placeholder="At least 6 characters"
+                        placeholder="At least 8 characters"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         style={{ paddingRight: '2.5rem' }}

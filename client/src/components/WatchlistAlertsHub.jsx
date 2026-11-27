@@ -32,13 +32,15 @@ export const WatchlistAlertsHub = React.memo(function WatchlistAlertsHub({
   onToggleAlert,
   onDeleteAlert,
   onOpenCreateAlertModal,
-  onOpenTradeModal,
   initialViewMode = 'dual'
 }) {
   const { quotes } = useSocket();
   const [viewMode, setViewMode] = useState(initialViewMode); // 'dual' | 'watchlist' | 'alerts'
   const [isChooserOpen, setIsChooserOpen] = useState(false);
-  const [filterQuery, setFilterQuery] = useState('');
+
+  React.useEffect(() => {
+    setViewMode(initialViewMode);
+  }, [initialViewMode]);
 
   const activeAlertsCount = useMemo(() => {
     return alerts.filter(a => a.status === 'ACTIVE').length;

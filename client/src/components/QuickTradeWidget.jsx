@@ -18,6 +18,12 @@ export function QuickTradeWidget({ symbol, portfolio, onOpenTradeModal, onTradeC
   const isBull = pnl >= 0;
 
   const handleInstantBuy = async (sharesCount) => {
+    const token = localStorage.getItem('auratrade_token');
+    if (!token) {
+      if (onOpenTradeModal) onOpenTradeModal(symbol);
+      return;
+    }
+
     setLoading(true);
     setQuickStatus('');
 
@@ -33,9 +39,7 @@ export function QuickTradeWidget({ symbol, portfolio, onOpenTradeModal, onTradeC
     }
 
     try {
-      const token = localStorage.getItem('auratrade_token');
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
 
       const res = await fetch('/api/portfolio/trade', {
         method: 'POST',
@@ -102,7 +106,18 @@ export function QuickTradeWidget({ symbol, portfolio, onOpenTradeModal, onTradeC
         </div>
 
         {quickStatus && (
-          <div style={{ fontSize: '0.75rem', color: quickStatus.startsWith('Error') ? 'var(--bear-red)' : 'var(--bull-green)', textAlign: 'center', fontWeight: 600 }}>
+          <div
+            style={{
+              fontSize: '0.75rem',
+              color: quickStatus.startsWith('Error')
+                ? 'var(--bear-red)'
+                : quickStatus.startsWith('ALERT:')
+                  ? 'var(--warning-amber)'
+                  : 'var(--bull-green)',
+              textAlign: 'center',
+              fontWeight: 600
+            }}
+          >
             {quickStatus}
           </div>
         )}

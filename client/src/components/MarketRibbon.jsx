@@ -135,24 +135,25 @@ const MarketTickerChip = React.memo(function MarketTickerChip({ item, onSelect }
 });
 
 // Calibrated to 35s to match NSE Live Pulse speed exactly
-function getRibbonDurationSeconds() {
-  if (typeof window === 'undefined') return 35;
+function getRibbonConfig() {
+  if (typeof window === 'undefined') return { mode: 'normal', duration: 35 };
   try {
     const rawKey = Object.keys(localStorage).find((k) => k.startsWith('trader_workstation_prefs_'));
     const raw = rawKey ? localStorage.getItem(rawKey) : null;
     const prefs = raw ? JSON.parse(raw) : null;
     const mode = prefs?.tickerRibbonSpeed || 'normal';
-    if (mode === 'fast') return 24;
-    if (mode === 'slow') return 52;
-    return 35;
+    if (mode === 'fast') return { mode, duration: 24 };
+    if (mode === 'slow') return { mode, duration: 52 };
+    if (mode === 'paused' || mode === 'hidden') return { mode, duration: 35 };
+    return { mode: 'normal', duration: 35 };
   } catch (_) {
-    return 35;
+    return { mode: 'normal', duration: 35 };
   }
 }
 
 export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol }) {
   const [items] = useState(CORE_BENCHMARKS);
-  const [duration, setDuration] = useState(getRibbonDurationSeconds);
+  const [ribbonCfg, setRibbonCfg] = useState(getRibbonConfig);
   const { getQuote, publishTicks } = useLiveTickerActions();
 
   // Periodically fetch live prices from API without modifying ribbon geometry or triggering layout reflow
@@ -179,14 +180,18 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
     };
   }, [publishTicks]);
 
-  // Sync speed preference if changed in workstation settings
+  // Sync speed preference if changed in workstation settings (same tab & cross-tab)
   useEffect(() => {
     const checkSpeed = () => {
-      const nextDuration = getRibbonDurationSeconds();
-      setDuration((prev) => (prev === nextDuration ? prev : nextDuration));
+      const next = getRibbonConfig();
+      setRibbonCfg((prev) => (prev.mode === next.mode && prev.duration === next.duration ? prev : next));
     };
     window.addEventListener('storage', checkSpeed);
-    return () => window.removeEventListener('storage', checkSpeed);
+    window.addEventListener('workstation_prefs_changed', checkSpeed);
+    return () => {
+      window.removeEventListener('storage', checkSpeed);
+      window.removeEventListener('workstation_prefs_changed', checkSpeed);
+    };
   }, []);
 
   const handleItemClick = useCallback((idx) => {
@@ -202,6 +207,10 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
 
   // Infinite seamless 2x duplicate conveyor running 100% on GPU compositor thread
   const renderedItems = useMemo(() => [...items, ...items], [items]);
+
+  if (ribbonCfg.mode === 'hidden') {
+    return null;
+  }
 
   return (
     <div className="market-ribbon-wrapper">
@@ -223,7 +232,10 @@ export const MarketRibbon = React.memo(function MarketRibbon({ onSelectSymbol })
       <div className="ticker-track-container">
         <div
           className="ticker-track"
-          style={{ animationDuration: `${duration}s` }}
+          style={{
+            animationDuration: `${ribbonCfg.duration}s`,
+            animationPlayState: ribbonCfg.mode === 'paused' ? 'paused' : undefined
+          }}
         >
           {renderedItems.map((idx, index) => (
             <MarketTickerChip

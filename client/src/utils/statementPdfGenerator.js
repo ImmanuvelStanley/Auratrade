@@ -246,7 +246,7 @@ export function downloadOrderPdf(trade, options = {}) {
   const {
     user,
     traderProfile,
-    cashBalance = 100000.00,
+    cashBalance = 1000.00,
     currency = 'USD',
     fxRate = 1.0,
     preview = false
@@ -529,7 +529,7 @@ export function downloadOrderPdf(trade, options = {}) {
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(5.6);
   doc.setTextColor(100, 116, 139);
-  doc.text(`Capacity: Account Holder / Beneficial Owner   •   Date: ____ / ____ / 2026`, leftSigX, y + 26.8);
+  doc.text(`Capacity: Account Holder / Beneficial Owner   •   Date: ____ / ____ / ${new Date().getFullYear()}`, leftSigX, y + 26.8);
 
   // Right Part: Digital Stamp Seal & Cryptographic Verification
   const auditHash = generateAuditHash(`${tradeId}-${trade.symbol}-${trade.price}-${trade.shares}`);
@@ -729,7 +729,9 @@ export function downloadStatementPdf(transactions = [], options = {}) {
 
     // Side
     const isBuy = tx.type === 'BUY';
-    doc.setFillColor(isBuy ? 16 : 244, isBuy ? 185 : 63, isBuy ? 129 : 94);
+    const isDeposit = tx.type === 'DEPOSIT';
+    const badgeRgb = isDeposit ? [6, 182, 212] : (isBuy ? [16, 185, 129] : [244, 63, 94]);
+    doc.setFillColor(...badgeRgb);
     doc.roundedRect(colX[2] + 2, y + 1.8, 12, 4, 1, 1, 'F');
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(5.5);
@@ -740,22 +742,22 @@ export function downloadStatementPdf(transactions = [], options = {}) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7);
     doc.setTextColor(15, 23, 42);
-    doc.text(tx.symbol, colX[3] + 3, y + 4.8);
+    doc.text(tx.symbol || (isDeposit ? 'USD' : '-'), colX[3] + 3, y + 4.8);
 
     // Qty
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6.8);
     doc.setTextColor(15, 23, 42);
-    doc.text(String(tx.shares || 0), colX[4] + colWidths[4] - 3, y + 4.8, { align: 'right' });
+    doc.text(isDeposit ? '-' : String(tx.shares || 0), colX[4] + colWidths[4] - 3, y + 4.8, { align: 'right' });
 
     // Price
-    doc.text(`$${Number(tx.price || 0).toFixed(2)}`, colX[5] + colWidths[5] - 3, y + 4.8, { align: 'right' });
+    doc.text(isDeposit ? '-' : `$${Number(tx.price || 0).toFixed(2)}`, colX[5] + colWidths[5] - 3, y + 4.8, { align: 'right' });
 
     // Consideration
-    const rowVal = (Number(tx.shares) || 0) * (Number(tx.price) || 0);
+    const rowVal = isDeposit ? Number(tx.total || tx.amount || tx.price || 0) : (Number(tx.shares) || 0) * (Number(tx.price) || 0);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(isBuy ? 16 : 244, isBuy ? 185 : 63, isBuy ? 129 : 94);
-    doc.text(`$${rowVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, colX[6] + colWidths[6] - 3, y + 4.8, { align: 'right' });
+    doc.setTextColor(...badgeRgb);
+    doc.text(`${isDeposit ? '+' : ''}$${rowVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, colX[6] + colWidths[6] - 3, y + 4.8, { align: 'right' });
 
     y += rowH;
     pageItemCount++;
@@ -779,7 +781,7 @@ export function downloadStatementPdf(transactions = [], options = {}) {
   doc.setLineWidth(0.3);
   doc.roundedRect(MARGIN, y, CONTENT_WIDTH, 20, 2, 2, 'FD');
 
-  const cashBal = portfolio?.cashBalance !== undefined ? portfolio.cashBalance : 100000.00;
+  const cashBal = portfolio?.cashBalance !== undefined ? portfolio.cashBalance : 1000.00;
   const invVal = portfolio?.investedValue || 0;
   const totVal = portfolio?.totalPortfolioValue || (cashBal + invVal);
 

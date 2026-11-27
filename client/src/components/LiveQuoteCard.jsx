@@ -237,14 +237,6 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
     return cells;
   }, [viewMonthDate]);
 
-  if (!quote) {
-    return (
-      <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-        Loading real-time quote for {symbol}...
-      </div>
-    );
-  }
-
   const isLiveMode = dateSnapshot.mode === 'live';
   const isPastMode = dateSnapshot.mode === 'past';
   const isFutureMode = dateSnapshot.mode === 'future';
@@ -270,6 +262,28 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
     };
   }, [catalogMeta, quote, symbol]);
 
+  const activePrice = isLiveMode ? (quote?.price || 0) : dateSnapshot.price;
+  const activeChange = isLiveMode ? (quote?.change || 0) : dateSnapshot.change;
+  const activeChangePct = isLiveMode ? (quote?.changePercent || 0) : dateSnapshot.changePercent;
+  const activeHigh = isLiveMode ? (quote?.dayHigh ?? (activePrice * 1.01)) : (dateSnapshot.dayHigh ?? activePrice);
+  const activeLow = isLiveMode ? (quote?.dayLow ?? (activePrice * 0.99)) : (dateSnapshot.dayLow ?? activePrice);
+  const activePrevClose = isLiveMode ? (quote?.previousClose ?? (activePrice - activeChange)) : (dateSnapshot.previousClose ?? (activePrice - activeChange));
+  const activeVolume = isLiveMode ? quote?.volume : dateSnapshot.volume;
+
+  const dayRangePct = useMemo(() => {
+    if (!activeHigh || !activeLow || activeHigh <= activeLow) return 50;
+    const pct = ((activePrice - activeLow) / (activeHigh - activeLow)) * 100;
+    return Math.max(3, Math.min(97, Math.round(pct)));
+  }, [activePrice, activeHigh, activeLow]);
+
+  if (!quote) {
+    return (
+      <div className="glass-card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+        Loading real-time quote for {symbol}...
+      </div>
+    );
+  }
+
   const currSym = getCurrencyPrefix(mergedQuote.currency, mergedQuote.symbol, mergedQuote.country);
 
   const parsedPe = typeof mergedQuote.peRatio === 'number'
@@ -279,21 +293,8 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
         : null);
   const hasValidPe = parsedPe !== null && Number.isFinite(parsedPe) && parsedPe > 0;
 
-  const activePrice = isLiveMode ? quote.price : dateSnapshot.price;
-  const activeChange = isLiveMode ? (quote.change || 0) : dateSnapshot.change;
-  const activeChangePct = isLiveMode ? (quote.changePercent || 0) : dateSnapshot.changePercent;
-  const activeHigh = isLiveMode ? (quote.dayHigh ?? (activePrice * 1.01)) : (dateSnapshot.dayHigh ?? activePrice);
-  const activeLow = isLiveMode ? (quote.dayLow ?? (activePrice * 0.99)) : (dateSnapshot.dayLow ?? activePrice);
-  const activePrevClose = isLiveMode ? (quote.previousClose ?? (activePrice - activeChange)) : (dateSnapshot.previousClose ?? (activePrice - activeChange));
-  const activeVolume = isLiveMode ? quote.volume : dateSnapshot.volume;
   const isBull = activeChange >= 0;
   const displayTickDir = tickDirection !== 'neutral' ? tickDirection : (activeChange >= 0 ? 'up' : 'down');
-
-  const dayRangePct = useMemo(() => {
-    if (!activeHigh || !activeLow || activeHigh <= activeLow) return 50;
-    const pct = ((activePrice - activeLow) / (activeHigh - activeLow)) * 100;
-    return Math.max(3, Math.min(97, Math.round(pct)));
-  }, [activePrice, activeHigh, activeLow]);
 
   return (
     <div className="glass-card live-quote-banner-card">

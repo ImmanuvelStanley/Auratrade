@@ -221,11 +221,11 @@ export function AuthProvider({ children }) {
   };
 
   // Reset Password — verify Token or OTP from email then set new password & auto-login
-  const resetPassword = async (email, code, newPassword, resetToken = null) => {
+  const resetPassword = async (email, code, newPassword, resetToken = null, otpToken = null) => {
     const res = await fetch('/api/auth/reset-password', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, code, newPassword, token: resetToken })
+      body: JSON.stringify({ email, code, newPassword, token: resetToken, otpToken })
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Password reset failed.');
@@ -272,10 +272,11 @@ export function AuthProvider({ children }) {
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Account deletion failed.');
-    // Clear session
+    // Clear session & notify App state
     setUser(null);
     setToken(null);
     localStorage.removeItem('auratrade_token');
+    try { window.dispatchEvent(new CustomEvent('auratrade_logout')); } catch (_) {}
     return data;
   };
 
