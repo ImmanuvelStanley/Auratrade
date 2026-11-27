@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import {
   Layers,
   LayoutDashboard,
@@ -101,8 +101,63 @@ export function TopicSidebar({
   const { user, logout } = useAuth();
   const marketTopics = WORKSPACE_TOPICS.filter((t) => t.group === 'markets');
   const accountTopics = WORKSPACE_TOPICS.filter((t) => t.group === 'account');
+  const sidebarRef = useRef(null);
+  const scrollBodyRef = useRef(null);
+  const gliderRef = useRef(null);
+  const rafRef = useRef(null);
 
-  const renderTopicButton = (topic) => {
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, []);
+
+  const handlePointerMove = useCallback((e) => {
+    const sidebarEl = sidebarRef.current;
+    if (!sidebarEl) return;
+
+    const clientX = e.clientX;
+    const clientY = e.clientY;
+    const hoveredBtn = e.target?.closest?.('.sidebar-topic-btn') || null;
+
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = requestAnimationFrame(() => {
+      const sbRect = sidebarEl.getBoundingClientRect();
+      const relX = clientX - sbRect.left;
+      const relY = clientY - sbRect.top;
+
+      sidebarEl.style.setProperty('--sb-mx', `${relX.toFixed(1)}px`);
+      sidebarEl.style.setProperty('--sb-my', `${relY.toFixed(1)}px`);
+      sidebarEl.setAttribute('data-cursor-active', 'true');
+
+      const gliderEl = gliderRef.current;
+      const scrollEl = scrollBodyRef.current;
+      if (gliderEl && scrollEl) {
+        if (hoveredBtn && scrollEl.contains(hoveredBtn)) {
+          const scrollRect = scrollEl.getBoundingClientRect();
+          const btnRect = hoveredBtn.getBoundingClientRect();
+          const top = btnRect.top - scrollRect.top + scrollEl.scrollTop;
+          gliderEl.style.transform = `translate3d(0, ${top.toFixed(1)}px, 0)`;
+          gliderEl.style.height = `${btnRect.height.toFixed(1)}px`;
+          gliderEl.style.opacity = '1';
+        } else {
+          gliderEl.style.opacity = '0';
+        }
+      }
+    });
+  }, []);
+
+  const handlePointerLeave = useCallback(() => {
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    if (sidebarRef.current) {
+      sidebarRef.current.removeAttribute('data-cursor-active');
+    }
+    if (gliderRef.current) {
+      gliderRef.current.style.opacity = '0';
+    }
+  }, []);
+
+  const renderTopicButton = (topic, itemIdx) => {
     const IconComp = topic.icon;
     const active = isTopicActive(activeTab, topic.id);
 
@@ -111,6 +166,7 @@ export function TopicSidebar({
         key={topic.id}
         type="button"
         className={`sidebar-topic-btn ${active ? 'active' : ''}`}
+        style={{ '--item-idx': itemIdx }}
         onClick={() => onSelectTopic(topic.id, topic.requiresAuth)}
         title={topic.label}
         aria-current={active ? 'page' : undefined}
@@ -137,9 +193,14 @@ export function TopicSidebar({
       )}
 
       <aside
+        ref={sidebarRef}
         className={`desk-sidebar ${isMobileOpen ? 'mobile-open' : ''}`}
         aria-label="Market Navigation Sidebar"
+        onPointerMove={handlePointerMove}
+        onPointerLeave={handlePointerLeave}
       >
+        {/* Ambient Cursor-Tracking Radial Spotlight */}
+        <div className="sidebar-cursor-spotlight" aria-hidden="true" />
         {/* Mobile & Drawer Header */}
         <div className="sidebar-drawer-header">
           <BrandLogo
@@ -158,11 +219,13 @@ export function TopicSidebar({
           </button>
         </div>
 
-        <div className="sidebar-scroll-body">
+        <div className="sidebar-scroll-body" ref={scrollBodyRef}>
+          {/* Fluid Cursor Glider Highlight */}
+          <div className="sidebar-cursor-glider" ref={gliderRef} aria-hidden="true" />
           <div className="sidebar-nav-section">
             <div className="sidebar-section-label">Markets &amp; Desks</div>
             <div className="sidebar-nav-list">
-              {marketTopics.map(renderTopicButton)}
+              {marketTopics.map((t, i) => renderTopicButton(t, i))}
             </div>
           </div>
 
@@ -171,7 +234,7 @@ export function TopicSidebar({
           <div className="sidebar-nav-section">
             <div className="sidebar-section-label">Portfolio &amp; Tools</div>
             <div className="sidebar-nav-list">
-              {accountTopics.map(renderTopicButton)}
+              {accountTopics.map((t, i) => renderTopicButton(t, marketTopics.length + i))}
             </div>
           </div>
         </div>
