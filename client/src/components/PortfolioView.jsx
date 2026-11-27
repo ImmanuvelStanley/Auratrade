@@ -401,26 +401,60 @@ export const PortfolioView = React.memo(function PortfolioView({
 
       {/* Portfolio Equity Growth & Net Asset Value (NAV) Performance Curve */}
       <div className="glass-card" style={{ padding: '1.15rem 1.35rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.65rem', marginBottom: '0.85rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem' }}>
-            <TrendingUp size={18} style={{ color: 'var(--bull-green)' }} />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '9px',
+                background: totalValue >= 1000 ? 'var(--bull-green-bg)' : 'var(--bear-red-bg)',
+                border: `1px solid ${totalValue >= 1000 ? 'rgba(16, 185, 129, 0.28)' : 'rgba(244, 63, 94, 0.28)'}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}
+            >
+              <TrendingUp size={16} style={{ color: totalValue >= 1000 ? 'var(--bull-green)' : 'var(--bear-red)' }} />
+            </div>
             <div>
               <h4 style={{ margin: 0, fontSize: '0.96rem', fontWeight: 800, color: 'var(--text-primary)' }}>
                 Portfolio Equity Growth &amp; NAV Trajectory
               </h4>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '1px' }}>
                 Account performance trajectory anchored to $1,000.00 baseline
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.74rem' }}>
-            <div>
-              <span style={{ color: 'var(--text-muted)' }}>High-Water Mark: </span>
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '0.65rem', fontSize: '0.74rem' }}>
+            <div
+              style={{
+                padding: '0.28rem 0.65rem',
+                borderRadius: '8px',
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border-subtle)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem'
+              }}
+            >
+              <span style={{ color: 'var(--text-muted)' }}>High-Water Mark:</span>
               <strong className="font-mono text-bull">${Math.max(1000, totalValue).toFixed(2)}</strong>
             </div>
-            <div>
-              <span style={{ color: 'var(--text-muted)' }}>Net Growth: </span>
+            <div
+              style={{
+                padding: '0.28rem 0.65rem',
+                borderRadius: '8px',
+                background: totalValue >= 1000 ? 'var(--bull-green-bg)' : 'var(--bear-red-bg)',
+                border: `1px solid ${totalValue >= 1000 ? 'rgba(16, 185, 129, 0.28)' : 'rgba(244, 63, 94, 0.28)'}`,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem'
+              }}
+            >
+              <span style={{ color: 'var(--text-muted)' }}>Net Growth:</span>
               <strong className={`font-mono ${totalValue >= 1000 ? 'text-bull' : 'text-bear'}`}>
                 {totalValue >= 1000 ? '+' : ''}{((totalValue - 1000) / 10).toFixed(2)}%
               </strong>
@@ -428,41 +462,205 @@ export const PortfolioView = React.memo(function PortfolioView({
           </div>
         </div>
 
-        {/* SVG Equity Trajectory Curve */}
+        {/* SVG Equity Trajectory Curve with Fixed Viewport & Aligned Y/X Axes */}
         {(() => {
           const vals = navPoints.map((p) => p.val);
-          const minVal = Math.min(...vals, 1000) * 0.98;
-          const maxVal = Math.max(...vals, 1000) * 1.02;
+          const rawMin = Math.min(...vals, 1000);
+          const rawMax = Math.max(...vals, 1000);
+          const span = Math.max(20, rawMax - rawMin);
+          const padAmt = rawMax === rawMin ? 20 : span * 0.22;
+          const minVal = rawMin - padAmt;
+          const maxVal = rawMax + padAmt;
+          const midVal = (minVal + maxVal) / 2;
           const range = maxVal - minVal || 1;
-          const width = 600;
-          const height = 90;
-          const pad = 10;
-          const h = height - pad * 2;
+          const baselinePct = ((maxVal - 1000) / range) * 100;
+
+          const width = 800;
+          const height = 120;
+          const padX = 12;
+          const padY = 12;
+          const plotW = width - padX * 2;
+          const plotH = height - padY * 2;
+
           const coords = navPoints.map((p, i) => {
-            const x = pad + (i / Math.max(1, navPoints.length - 1)) * (width - pad * 2);
-            const y = pad + h - ((p.val - minVal) / range) * h;
-            return { x, y, val: p.val, label: p.label };
+            const xRatio = navPoints.length <= 1 ? 0.5 : i / (navPoints.length - 1);
+            const yRatio = 1 - (p.val - minVal) / range;
+            return {
+              x: padX + xRatio * plotW,
+              y: padY + yRatio * plotH,
+              xPct: ((padX + xRatio * plotW) / width) * 100,
+              yPct: ((padY + yRatio * plotH) / height) * 100,
+              val: p.val,
+              label: p.label
+            };
           });
+
           const pathD = `M ${coords.map((c) => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' L ')}`;
-          const areaD = `${pathD} L ${width - pad},${height} L ${pad},${height} Z`;
+          const areaD = `${pathD} L ${coords[coords.length - 1].x.toFixed(1)},${height} L ${coords[0].x.toFixed(1)},${height} Z`;
           const isGain = totalValue >= 1000;
           const strokeColor = isGain ? '#10b981' : '#f43f5e';
 
           return (
-            <div style={{ position: 'relative', width: '100%', height: '90px' }}>
-              <svg width="100%" height="90" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ overflow: 'visible' }}>
-                <defs>
-                  <linearGradient id="nav-grad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={strokeColor} stopOpacity="0.25" />
-                    <stop offset="100%" stopColor={strokeColor} stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
-                <path d={areaD} fill="url(#nav-grad)" />
-                <path d={pathD} fill="none" stroke={strokeColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-                {coords.map((c, i) => (
-                  <circle key={i} cx={c.x} cy={c.y} r="3.5" fill={strokeColor} stroke="var(--bg-card)" strokeWidth="1.2" />
-                ))}
-              </svg>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.45rem',
+                padding: '0.75rem 0.9rem 0.65rem',
+                borderRadius: '10px',
+                background: 'var(--bg-subtle)',
+                border: '1px solid var(--border-subtle)'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'stretch', gap: '0.65rem' }}>
+                {/* Left Y-Axis Labels */}
+                <div
+                  className="font-mono"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-end',
+                    fontSize: '0.66rem',
+                    fontWeight: 600,
+                    color: 'var(--text-muted)',
+                    minWidth: '58px',
+                    padding: '2px 0',
+                    flexShrink: 0,
+                    userSelect: 'none'
+                  }}
+                >
+                  <span>${maxVal.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                  <span style={{ color: 'var(--text-secondary)', fontWeight: 700 }}>
+                    ${midVal.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                  </span>
+                  <span>${minVal.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                </div>
+
+                {/* Plot Viewport (explicit height overrides global svg { height: auto }) */}
+                <div style={{ position: 'relative', flex: '1 1 auto', minWidth: 0, height: '120px' }}>
+                  {/* Reference Horizontal Gridlines */}
+                  <div
+                    aria-hidden="true"
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      pointerEvents: 'none',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                      padding: '10px 0'
+                    }}
+                  >
+                    <div style={{ borderTop: '1px dashed var(--border-subtle)' }} />
+                    <div style={{ borderTop: '1px dashed var(--border-dashed)' }} />
+                    <div style={{ borderTop: '1px dashed var(--border-subtle)' }} />
+                  </div>
+
+                  {/* Baseline $1,000 Guide Pill if visible */}
+                  {baselinePct >= 8 && baselinePct <= 92 && (
+                    <div
+                      className="font-mono"
+                      style={{
+                        position: 'absolute',
+                        right: '6px',
+                        top: `${baselinePct}%`,
+                        transform: 'translateY(-115%)',
+                        fontSize: '0.6rem',
+                        fontWeight: 700,
+                        padding: '1px 6px',
+                        borderRadius: '4px',
+                        background: 'var(--bg-card)',
+                        border: '1px solid var(--border-subtle)',
+                        color: 'var(--text-muted)',
+                        pointerEvents: 'none',
+                        zIndex: 2
+                      }}
+                    >
+                      $1,000 Baseline
+                    </div>
+                  )}
+
+                  <svg
+                    viewBox={`0 0 ${width} ${height}`}
+                    preserveAspectRatio="none"
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      width: '100%',
+                      height: '100%',
+                      display: 'block',
+                      overflow: 'visible'
+                    }}
+                  >
+                    <defs>
+                      <linearGradient id="nav-grad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={strokeColor} stopOpacity="0.24" />
+                        <stop offset="100%" stopColor={strokeColor} stopOpacity="0.02" />
+                      </linearGradient>
+                    </defs>
+                    <path d={areaD} fill="url(#nav-grad)" />
+                    <path
+                      d={pathD}
+                      fill="none"
+                      stroke={strokeColor}
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                  </svg>
+
+                  {/* Circular HTML Nodes (never distorted by aspect ratio) */}
+                  {coords.map((c, i) => {
+                    const isLatest = i === coords.length - 1;
+                    return (
+                      <div
+                        key={i}
+                        title={`${c.label}: $${c.val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+                        style={{
+                          position: 'absolute',
+                          left: `${c.xPct}%`,
+                          top: `${c.yPct}%`,
+                          transform: 'translate(-50%, -50%)',
+                          width: isLatest ? '11px' : '9px',
+                          height: isLatest ? '11px' : '9px',
+                          borderRadius: '50%',
+                          background: strokeColor,
+                          border: '2px solid var(--bg-card)',
+                          boxShadow: isLatest
+                            ? `0 0 0 3px ${isGain ? 'rgba(16, 185, 129, 0.22)' : 'rgba(244, 63, 94, 0.22)'}`
+                            : '0 1px 3px rgba(15, 23, 42, 0.2)',
+                          cursor: 'pointer',
+                          zIndex: 3
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Bottom X-Axis Labels */}
+              <div
+                className="font-mono"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  paddingLeft: 'calc(58px + 0.65rem)',
+                  fontSize: '0.66rem',
+                  fontWeight: 600,
+                  color: 'var(--text-muted)'
+                }}
+              >
+                <span>{navPoints[0]?.label || 'Inception ($1,000)'}</span>
+                {navPoints.length > 2 && (
+                  <span>{navPoints.length} tracked {navPoints.length === 1 ? 'snapshot' : 'snapshots'}</span>
+                )}
+                <span style={{ color: 'var(--text-secondary)', fontWeight: 700 }}>
+                  {navPoints[navPoints.length - 1]?.label || 'Current Live'} (${totalValue.toFixed(2)})
+                </span>
+              </div>
             </div>
           );
         })()}
