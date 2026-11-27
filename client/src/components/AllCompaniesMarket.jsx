@@ -1208,118 +1208,160 @@ function PaginationControls({
 }
 
 // ============================================================================
-// INSTITUTIONAL MARKET TREEMAP & HEATMAP HUB COMPONENT (ZERO EMPTY SPACE)
+// INSTITUTIONAL MARKET TREEMAP & HEATMAP HUB COMPONENT (EXACT FIT)
 // ============================================================================
 function getHeatmapTileStyle(chgPct, isLight = false) {
   if (isLight) {
     if (chgPct >= 3.0) {
       return {
-        bg: 'linear-gradient(145deg, #d1fae5, #a7f3d0)',
+        bg: 'linear-gradient(155deg, #d1fae5 0%, #a7f3d0 100%)',
         border: '#34d399',
+        accent: '#059669',
         textColor: '#065f46',
-        glow: 'rgba(5, 150, 105, 0.16)'
+        pillBg: 'rgba(5, 150, 105, 0.16)',
+        pillBorder: 'rgba(5, 150, 105, 0.34)',
+        glow: 'rgba(5, 150, 105, 0.18)'
       };
     }
     if (chgPct >= 1.0) {
       return {
-        bg: 'linear-gradient(145deg, #ecfdf5, #d1fae5)',
+        bg: 'linear-gradient(155deg, #ecfdf5 0%, #d1fae5 100%)',
         border: '#6ee7b7',
+        accent: '#10b981',
         textColor: '#047857',
-        glow: 'rgba(5, 150, 105, 0.12)'
+        pillBg: 'rgba(16, 185, 129, 0.14)',
+        pillBorder: 'rgba(16, 185, 129, 0.3)',
+        glow: 'rgba(5, 150, 105, 0.14)'
       };
     }
     if (chgPct > 0) {
       return {
-        bg: '#f0fdf4',
-        border: '#bbf7d0',
-        textColor: '#059669',
-        glow: 'rgba(5, 150, 105, 0.08)'
+        bg: 'linear-gradient(155deg, #f0fdf4 0%, #dcfce7 100%)',
+        border: '#86efac',
+        accent: '#16a34a',
+        textColor: '#047857',
+        pillBg: 'rgba(16, 185, 129, 0.14)',
+        pillBorder: 'rgba(16, 185, 129, 0.28)',
+        glow: 'rgba(5, 150, 105, 0.12)'
       };
     }
     if (chgPct <= -3.0) {
       return {
-        bg: 'linear-gradient(145deg, #fee2e2, #fecaca)',
+        bg: 'linear-gradient(155deg, #fee2e2 0%, #fecaca 100%)',
         border: '#f87171',
+        accent: '#dc2626',
         textColor: '#991b1b',
-        glow: 'rgba(220, 38, 38, 0.16)'
+        pillBg: 'rgba(220, 38, 38, 0.18)',
+        pillBorder: 'rgba(220, 38, 38, 0.36)',
+        glow: 'rgba(220, 38, 38, 0.18)'
       };
     }
     if (chgPct <= -1.0) {
       return {
-        bg: 'linear-gradient(145deg, #fef2f2, #fee2e2)',
+        bg: 'linear-gradient(155deg, #fef2f2 0%, #fee2e2 100%)',
         border: '#fca5a5',
+        accent: '#ef4444',
         textColor: '#b91c1c',
-        glow: 'rgba(220, 38, 38, 0.12)'
+        pillBg: 'rgba(239, 68, 68, 0.15)',
+        pillBorder: 'rgba(239, 68, 68, 0.32)',
+        glow: 'rgba(220, 38, 38, 0.14)'
       };
     }
     if (chgPct < 0) {
       return {
-        bg: '#fff1f2',
-        border: '#fecdd3',
-        textColor: '#dc2626',
-        glow: 'rgba(220, 38, 38, 0.08)'
+        bg: 'linear-gradient(155deg, #fff5f6 0%, #ffe4e6 100%)',
+        border: '#fda4af',
+        accent: '#e11d48',
+        textColor: '#be123c',
+        pillBg: 'rgba(225, 29, 72, 0.12)',
+        pillBorder: 'rgba(225, 29, 72, 0.26)',
+        glow: 'rgba(220, 38, 38, 0.12)'
       };
     }
     return {
       bg: '#f8fafc',
-      border: '#e2e8f0',
+      border: '#cbd5e1',
+      accent: '#94a3b8',
       textColor: '#475569',
-      glow: 'rgba(15, 23, 42, 0.06)'
+      pillBg: 'rgba(100, 116, 139, 0.1)',
+      pillBorder: 'rgba(100, 116, 139, 0.22)',
+      glow: 'rgba(15, 23, 42, 0.08)'
     };
   }
 
   if (chgPct >= 3.0) {
     return {
-      bg: 'linear-gradient(145deg, rgba(14, 203, 129, 0.32), rgba(16, 185, 129, 0.16))',
-      border: 'rgba(14, 203, 129, 0.55)',
-      textColor: '#0ecb81',
-      glow: 'rgba(14, 203, 129, 0.35)'
+      bg: 'linear-gradient(155deg, rgba(14, 203, 129, 0.28) 0%, rgba(16, 185, 129, 0.12) 100%)',
+      border: 'rgba(14, 203, 129, 0.5)',
+      accent: '#0ecb81',
+      textColor: '#34d399',
+      pillBg: 'rgba(14, 203, 129, 0.18)',
+      pillBorder: 'rgba(14, 203, 129, 0.36)',
+      glow: 'rgba(14, 203, 129, 0.32)'
     };
   }
   if (chgPct >= 1.0) {
     return {
-      bg: 'linear-gradient(145deg, rgba(16, 185, 129, 0.22), rgba(16, 185, 129, 0.10))',
+      bg: 'linear-gradient(155deg, rgba(16, 185, 129, 0.2) 0%, rgba(16, 185, 129, 0.08) 100%)',
       border: 'rgba(16, 185, 129, 0.38)',
+      accent: '#10b981',
       textColor: '#34d399',
+      pillBg: 'rgba(16, 185, 129, 0.15)',
+      pillBorder: 'rgba(16, 185, 129, 0.3)',
       glow: 'rgba(16, 185, 129, 0.22)'
     };
   }
   if (chgPct > 0) {
     return {
-      bg: 'linear-gradient(145deg, rgba(16, 185, 129, 0.12), rgba(16, 185, 129, 0.05))',
-      border: 'rgba(16, 185, 129, 0.25)',
+      bg: 'linear-gradient(155deg, rgba(16, 185, 129, 0.11) 0%, rgba(15, 23, 42, 0.55) 100%)',
+      border: 'rgba(16, 185, 129, 0.26)',
+      accent: '#34d399',
       textColor: '#6ee7b7',
+      pillBg: 'rgba(16, 185, 129, 0.12)',
+      pillBorder: 'rgba(16, 185, 129, 0.24)',
       glow: 'rgba(16, 185, 129, 0.15)'
     };
   }
   if (chgPct <= -3.0) {
     return {
-      bg: 'linear-gradient(145deg, rgba(246, 70, 93, 0.32), rgba(239, 68, 68, 0.16))',
-      border: 'rgba(246, 70, 93, 0.55)',
-      textColor: '#f6465d',
-      glow: 'rgba(246, 70, 93, 0.35)'
+      bg: 'linear-gradient(155deg, rgba(246, 70, 93, 0.28) 0%, rgba(239, 68, 68, 0.12) 100%)',
+      border: 'rgba(246, 70, 93, 0.5)',
+      accent: '#f6465d',
+      textColor: '#fb7185',
+      pillBg: 'rgba(246, 70, 93, 0.18)',
+      pillBorder: 'rgba(246, 70, 93, 0.36)',
+      glow: 'rgba(246, 70, 93, 0.32)'
     };
   }
   if (chgPct <= -1.0) {
     return {
-      bg: 'linear-gradient(145deg, rgba(246, 70, 93, 0.22), rgba(239, 68, 68, 0.10))',
+      bg: 'linear-gradient(155deg, rgba(246, 70, 93, 0.2) 0%, rgba(239, 68, 68, 0.08) 100%)',
       border: 'rgba(246, 70, 93, 0.38)',
-      textColor: '#f87171',
+      accent: '#f43f5e',
+      textColor: '#fda4af',
+      pillBg: 'rgba(246, 70, 93, 0.15)',
+      pillBorder: 'rgba(246, 70, 93, 0.3)',
       glow: 'rgba(246, 70, 93, 0.22)'
     };
   }
   if (chgPct < 0) {
     return {
-      bg: 'linear-gradient(145deg, rgba(246, 70, 93, 0.12), rgba(246, 70, 93, 0.05))',
-      border: 'rgba(246, 70, 93, 0.25)',
-      textColor: '#fca5a5',
+      bg: 'linear-gradient(155deg, rgba(246, 70, 93, 0.11) 0%, rgba(15, 23, 42, 0.55) 100%)',
+      border: 'rgba(246, 70, 93, 0.26)',
+      accent: '#fb7185',
+      textColor: '#fda4af',
+      pillBg: 'rgba(246, 70, 93, 0.12)',
+      pillBorder: 'rgba(246, 70, 93, 0.24)',
       glow: 'rgba(246, 70, 93, 0.15)'
     };
   }
   return {
-    bg: 'linear-gradient(145deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02))',
-    border: 'rgba(255, 255, 255, 0.09)',
+    bg: 'linear-gradient(155deg, rgba(255, 255, 255, 0.045) 0%, rgba(15, 23, 42, 0.6) 100%)',
+    border: 'rgba(255, 255, 255, 0.1)',
+    accent: '#64748b',
     textColor: 'var(--text-secondary)',
+    pillBg: 'rgba(148, 163, 184, 0.12)',
+    pillBorder: 'rgba(148, 163, 184, 0.22)',
     glow: 'rgba(255, 255, 255, 0.1)'
   };
 }
@@ -1335,6 +1377,8 @@ function SectorHeatmapMatrix({
   const isLight = theme === 'light';
   const [selectedSector, setSelectedSector] = useState('ALL');
   const [scope, setScope] = useState('full'); // 'full' or 'screen'
+  const [heatmapQuery, setHeatmapQuery] = useState('');
+  const ribbonRef = useRef(null);
 
   // Throttled quotes to limit heavy 300+ constituent heatmap calculations to 1s cadence
   const [throttledQuotes, setThrottledQuotes] = useState(quotes);
@@ -1364,7 +1408,7 @@ function SectorHeatmapMatrix({
     ? allCompanies
     : (companies && companies.length > 0 ? companies : allCompanies);
 
-  // Merge live socket updates for real-time prices & change percentages (throttled for 60fps responsiveness)
+  // Merge live socket updates for real-time prices & change percentages
   const enrichedPool = useMemo(() => {
     return (rawPool || []).map(c => {
       const live = throttledQuotes ? throttledQuotes[c.symbol] : null;
@@ -1382,6 +1426,17 @@ function SectorHeatmapMatrix({
     });
   }, [rawPool, throttledQuotes]);
 
+  // Filter by inline heatmap search query if present
+  const activePool = useMemo(() => {
+    const q = heatmapQuery.trim().toLowerCase();
+    if (!q) return enrichedPool;
+    return enrichedPool.filter(c =>
+      (c.symbol && c.symbol.toLowerCase().includes(q)) ||
+      (c.name && c.name.toLowerCase().includes(q)) ||
+      (c.sector && c.sector.toLowerCase().includes(q))
+    );
+  }, [enrichedPool, heatmapQuery]);
+
   // Market Breadth Sentiment Analytics
   const marketBreadth = useMemo(() => {
     let advancing = 0;
@@ -1390,7 +1445,7 @@ function SectorHeatmapMatrix({
     let topGainer = null;
     let topLoser = null;
 
-    enrichedPool.forEach(c => {
+    activePool.forEach(c => {
       const pct = c.changePercent;
       if (pct > 0.04) advancing++;
       else if (pct < -0.04) declining++;
@@ -1400,26 +1455,28 @@ function SectorHeatmapMatrix({
       if (!topLoser || pct < topLoser.changePercent) topLoser = c;
     });
 
-    const total = enrichedPool.length || 1;
+    const total = activePool.length || 1;
     const advancePct = Math.round((advancing / total) * 100);
     const declinePct = Math.round((declining / total) * 100);
+    const neutralPct = Math.max(0, 100 - advancePct - declinePct);
 
     return {
       advancing,
       declining,
       neutral,
-      total,
+      total: activePool.length,
       advancePct,
       declinePct,
+      neutralPct,
       topGainer,
       topLoser
     };
-  }, [enrichedPool]);
+  }, [activePool]);
 
   // Group by sector with aggregate metrics
   const sectorGroups = useMemo(() => {
     const map = new Map();
-    enrichedPool.forEach(c => {
+    activePool.forEach(c => {
       const sec = c.sector || 'Diversified';
       if (!map.has(sec)) map.set(sec, []);
       map.get(sec).push(c);
@@ -1430,8 +1487,6 @@ function SectorHeatmapMatrix({
       const totalChange = items.reduce((acc, it) => acc + (it.changePercent || 0), 0);
       const avgPerf = totalChange / (items.length || 1);
       const totalMarketCap = items.reduce((acc, it) => acc + (it.marketCapNum || 0), 0);
-
-      // Sort items within sector: mega-caps first
       const sortedItems = [...items].sort((a, b) => (b.marketCapNum || 0) - (a.marketCapNum || 0));
 
       groups.push({
@@ -1443,84 +1498,157 @@ function SectorHeatmapMatrix({
       });
     });
 
-    // Sort sectors by constituent count descending (major sectors anchor the mosaic)
     return groups.sort((a, b) => b.count - a.count);
-  }, [enrichedPool]);
+  }, [activePool]);
 
   // Active filtered sectors for display
   const displayedSectors = useMemo(() => {
     if (selectedSector === 'ALL') return sectorGroups;
-    return sectorGroups.filter(g => g.sectorName === selectedSector);
+    const match = sectorGroups.filter(g => g.sectorName === selectedSector);
+    return match.length > 0 ? match : sectorGroups;
   }, [sectorGroups, selectedSector]);
+
+  // Pack compartments into exact 12-column rows so zero trailing empty cells ever appear
+  const packedCompartments = useMemo(() => {
+    if (!displayedSectors || displayedSectors.length === 0) return [];
+    if (displayedSectors.length === 1) {
+      return [{ ...displayedSectors[0], colSpan: 12, tabletFull: true }];
+    }
+
+    const packed = [];
+    const compactQueue = [];
+
+    displayedSectors.forEach(g => {
+      // Sectors with >= 10 companies anchor a full 12-column band across the layout
+      if (g.items.length >= 10) {
+        packed.push({ ...g, colSpan: 12, tabletFull: true });
+      } else {
+        compactQueue.push(g);
+      }
+    });
+
+    // Pack medium/small compartments cleanly into rows summing to exactly 12 columns
+    const rows = [];
+    let currentRow = [];
+    let currentWeight = 0;
+
+    compactQueue.forEach(g => {
+      const desiredWeight = g.items.length >= 5 ? 6 : 4;
+      if (currentRow.length > 0 && currentWeight + desiredWeight > 12) {
+        rows.push(currentRow);
+        currentRow = [];
+        currentWeight = 0;
+      }
+      currentRow.push({ ...g, desiredWeight });
+      currentWeight += desiredWeight;
+      if (currentWeight === 12) {
+        rows.push(currentRow);
+        currentRow = [];
+        currentWeight = 0;
+      }
+    });
+    if (currentRow.length > 0) rows.push(currentRow);
+
+    // Balance every row to sum to exact 12 columns on desktop
+    const compactResults = [];
+    rows.forEach(row => {
+      if (row.length === 1) {
+        compactResults.push({ ...row[0], colSpan: 12, tabletFull: true });
+      } else if (row.length === 2) {
+        const w0 = row[0].desiredWeight;
+        const w1 = row[1].desiredWeight;
+        if (w0 !== w1) {
+          compactResults.push({ ...row[0], colSpan: 7, tabletFull: false });
+          compactResults.push({ ...row[1], colSpan: 5, tabletFull: false });
+        } else {
+          compactResults.push({ ...row[0], colSpan: 6, tabletFull: false });
+          compactResults.push({ ...row[1], colSpan: 6, tabletFull: false });
+        }
+      } else {
+        const evenSpan = Math.floor(12 / row.length);
+        let remainder = 12 - evenSpan * row.length;
+        row.forEach(item => {
+          const bonus = remainder > 0 ? 1 : 0;
+          if (remainder > 0) remainder--;
+          compactResults.push({ ...item, colSpan: evenSpan + bonus, tabletFull: false });
+        });
+      }
+    });
+
+    // Ensure tablet 2-col view has no trailing orphan half-row among non-full compartments
+    const nonFullCompact = compactResults.filter(c => !c.tabletFull);
+    if (nonFullCompact.length % 2 === 1) {
+      nonFullCompact[nonFullCompact.length - 1].tabletFull = true;
+    }
+
+    return [...packed, ...compactResults];
+  }, [displayedSectors]);
+
+  const scrollRibbon = useCallback((dir) => {
+    if (!ribbonRef.current) return;
+    ribbonRef.current.scrollBy({ left: dir * 280, behavior: 'smooth' });
+  }, []);
 
   if (!enrichedPool || enrichedPool.length === 0) return null;
 
   return (
     <div className="glass-card heatmap-hub-container">
-      {/* 1. Macro Market Breadth & Sentiment Toolbar */}
-      <div className="heatmap-breadth-toolbar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--accent-primary-bg)', border: '1px solid rgba(56, 189, 248, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      {/* 1. Balanced Header Row (Left Title + Right Filter & Scope Controls) */}
+      <div className="heatmap-hub-header">
+        <div className="heatmap-hub-title-group">
+          <div className="heatmap-hub-icon">
             <PieChart size={17} style={{ color: 'var(--text-cyan)' }} />
           </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span style={{ fontWeight: 800, fontSize: '1rem', color: 'var(--text-primary)', fontFamily: 'var(--font-brand)' }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <span className="heatmap-hub-title">
                 Institutional Market Treemap &amp; Sector Heatmap
               </span>
-              <span className="font-mono" style={{ fontSize: '0.7rem', color: 'var(--text-cyan)', background: 'var(--accent-primary-bg)', padding: '0.1rem 0.45rem', borderRadius: '4px', border: '1px solid rgba(56, 189, 248, 0.25)', fontWeight: 700 }}>
-                {sectorGroups.length} Sectors • {enrichedPool.length} Assets
+              <span className="font-mono heatmap-hub-count-pill">
+                {sectorGroups.length} Sectors • {activePool.length} Assets
               </span>
             </div>
-            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
-              Real-time capital momentum, sector breadth &amp; relative strength
+            <div className="heatmap-hub-subtitle">
+              Real-time capital momentum, sector breadth &amp; company identification
             </div>
           </div>
         </div>
 
-        {/* Sentiment Breadth & Spotlight Gainers */}
-        <div className="heatmap-breadth-summary">
-          <div className="heatmap-breadth-stat">
-            <TrendingUp size={15} style={{ color: 'var(--text-bull)' }} />
-            <span className="font-mono text-bull">{marketBreadth.advancing} Advancing ({marketBreadth.advancePct}%)</span>
-          </div>
-
-          <div className="heatmap-breadth-gauge" title={`Market Sentiment: ${marketBreadth.advancePct}% Bullish vs ${marketBreadth.declinePct}% Bearish`}>
-            <div className="heatmap-breadth-gauge-bull" style={{ width: `${marketBreadth.advancePct}%` }} />
-            <div className="heatmap-breadth-gauge-bear" style={{ width: `${marketBreadth.declinePct}%` }} />
-          </div>
-
-          <div className="heatmap-breadth-stat">
-            <TrendingDown size={15} style={{ color: 'var(--text-bear)' }} />
-            <span className="font-mono text-bear">{marketBreadth.declining} Declining ({marketBreadth.declinePct}%)</span>
-          </div>
-
-          {marketBreadth.topGainer && (
-            <div
-              className="heatmap-spotlight-capsule bull"
-              onClick={() => onSelectSymbol && onSelectSymbol(marketBreadth.topGainer.symbol)}
-              title="Click to view top gainer in platform workstation"
-            >
-              <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Leader:</span>
-              <span className="font-mono" style={{ fontWeight: 800 }}>{marketBreadth.topGainer.symbol} +{marketBreadth.topGainer.changePercent.toFixed(2)}%</span>
-            </div>
-          )}
-
-          {/* Scope Toggle: Full Market vs Page Screen */}
-          {allCompanies && allCompanies.length > 0 && (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', background: 'var(--bg-segment)', padding: '0.2rem', borderRadius: '7px', border: '1px solid var(--border-subtle)' }}>
+        {/* Right Controls: Quick Heatmap Search + Scope Switcher */}
+        <div className="heatmap-hub-actions">
+          <div className="heatmap-inline-search">
+            <Search size={13} className="heatmap-inline-search-icon" />
+            <input
+              type="text"
+              value={heatmapQuery}
+              onChange={(e) => setHeatmapQuery(e.target.value)}
+              placeholder="Find ticker or company..."
+              aria-label="Filter companies in heatmap"
+            />
+            {heatmapQuery && (
               <button
                 type="button"
-                className={`btn ${scope === 'full' ? 'btn-primary' : 'btn-ghost'}`}
-                style={{ fontSize: '0.7rem', padding: '0.22rem 0.55rem', borderRadius: '5px' }}
+                onClick={() => setHeatmapQuery('')}
+                className="heatmap-inline-clear"
+                title="Clear heatmap filter"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+
+          {allCompanies && allCompanies.length > 0 && (
+            <div className="heatmap-scope-switch">
+              <button
+                type="button"
+                className={`heatmap-scope-btn ${scope === 'full' ? 'active' : ''}`}
                 onClick={() => { setScope('full'); setSelectedSector('ALL'); }}
               >
                 Full Market ({allCompanies.length})
               </button>
               <button
                 type="button"
-                className={`btn ${scope === 'screen' ? 'btn-primary' : 'btn-ghost'}`}
-                style={{ fontSize: '0.7rem', padding: '0.22rem 0.55rem', borderRadius: '5px' }}
+                className={`heatmap-scope-btn ${scope === 'screen' ? 'active' : ''}`}
                 onClick={() => { setScope('screen'); setSelectedSector('ALL'); }}
               >
                 Page Screen ({companies.length})
@@ -1530,163 +1658,297 @@ function SectorHeatmapMatrix({
         </div>
       </div>
 
-      {/* 2. Interactive Sector Navigation & Filter Ribbon */}
-      <div className="heatmap-sector-ribbon">
-        <button
-          type="button"
-          className={`heatmap-sector-tab ${selectedSector === 'ALL' ? 'active' : ''}`}
-          onClick={() => setSelectedSector('ALL')}
-        >
-          <span>ALL SECTORS</span>
-          <span
-            className="tab-badge"
-            style={{
-              background: selectedSector === 'ALL' ? 'rgba(255, 255, 255, 0.2)' : 'var(--bg-subtle-hover)',
-              color: selectedSector === 'ALL' ? '#ffffff' : 'var(--text-primary)'
-            }}
-          >
-            {enrichedPool.length}
-          </span>
-        </button>
+      {/* 2. Full-Width Market Breadth & Color Intensity Bar (Zero Trailing Empty Space) */}
+      <div className="heatmap-breadth-strip">
+        <div className="heatmap-breadth-left">
+          <div className="heatmap-breadth-stat">
+            <TrendingUp size={14} style={{ color: 'var(--text-bull)' }} />
+            <span className="font-mono text-bull">
+              {marketBreadth.advancing} Advancing ({marketBreadth.advancePct}%)
+            </span>
+          </div>
 
-        {sectorGroups.map(g => {
-          const isPos = g.avgPerf >= 0;
-          return (
+          <div
+            className="heatmap-breadth-gauge"
+            title={`Market Sentiment: ${marketBreadth.advancePct}% Advancing • ${marketBreadth.neutralPct}% Flat • ${marketBreadth.declinePct}% Declining`}
+          >
+            <div className="heatmap-breadth-gauge-bull" style={{ width: `${marketBreadth.advancePct}%` }} />
+            <div className="heatmap-breadth-gauge-neutral" style={{ width: `${marketBreadth.neutralPct}%` }} />
+            <div className="heatmap-breadth-gauge-bear" style={{ width: `${marketBreadth.declinePct}%` }} />
+          </div>
+
+          <div className="heatmap-breadth-stat">
+            <TrendingDown size={14} style={{ color: 'var(--text-bear)' }} />
+            <span className="font-mono text-bear">
+              {marketBreadth.declining} Declining ({marketBreadth.declinePct}%)
+            </span>
+          </div>
+
+          {marketBreadth.neutral > 0 && (
+            <span className="heatmap-breadth-flat font-mono">
+              {marketBreadth.neutral} Flat
+            </span>
+          )}
+        </div>
+
+        <div className="heatmap-breadth-right">
+          <div className="heatmap-scale-legend" title="24h Change Color Intensity">
+            <span className="font-mono">-3%</span>
+            <span className="legend-swatch bear-strong" />
+            <span className="legend-swatch bear-mild" />
+            <span className="legend-swatch flat" />
+            <span className="legend-swatch bull-mild" />
+            <span className="legend-swatch bull-strong" />
+            <span className="font-mono">+3%</span>
+          </div>
+
+          {marketBreadth.topGainer && (
             <button
-              key={g.sectorName}
               type="button"
-              className={`heatmap-sector-tab ${selectedSector === g.sectorName ? 'active' : ''}`}
-              onClick={() => setSelectedSector(g.sectorName === selectedSector ? 'ALL' : g.sectorName)}
-              title={`${g.sectorName} (${g.count} assets) • 24h Average: ${isPos ? '+' : ''}${g.avgPerf.toFixed(2)}%`}
+              className="heatmap-spotlight-capsule bull"
+              onClick={() => onSelectSymbol && onSelectSymbol(marketBreadth.topGainer.symbol)}
+              title={`${marketBreadth.topGainer.name} (${marketBreadth.topGainer.symbol}) — Click to inspect`}
             >
-              <span>{g.sectorName}</span>
-              <span className={`tab-badge ${isPos ? 'pos' : 'neg'}`}>
-                {isPos ? '+' : ''}{g.avgPerf.toFixed(1)}%
+              <span className="spotlight-label">Leader</span>
+              <span className="font-mono" style={{ fontWeight: 800 }}>
+                {marketBreadth.topGainer.symbol} {marketBreadth.topGainer.changePercent >= 0 ? '+' : ''}{marketBreadth.topGainer.changePercent.toFixed(2)}%
               </span>
             </button>
-          );
-        })}
+          )}
+
+          {marketBreadth.topLoser && marketBreadth.topLoser.symbol !== marketBreadth.topGainer?.symbol && (
+            <button
+              type="button"
+              className="heatmap-spotlight-capsule bear"
+              onClick={() => onSelectSymbol && onSelectSymbol(marketBreadth.topLoser.symbol)}
+              title={`${marketBreadth.topLoser.name} (${marketBreadth.topLoser.symbol}) — Click to inspect`}
+            >
+              <span className="spotlight-label">Laggard</span>
+              <span className="font-mono" style={{ fontWeight: 800 }}>
+                {marketBreadth.topLoser.symbol} {marketBreadth.topLoser.changePercent.toFixed(2)}%
+              </span>
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* 3. Contiguous Mosaic Treemap Grid (Zero Empty Space) */}
-      <div className="heatmap-treemap-grid">
-        {displayedSectors.map((g, sIdx) => {
-          const isPos = g.avgPerf >= 0;
-          const items = g.items;
-          const isSingleSectorView = selectedSector !== 'ALL';
-          const spanClass = isSingleSectorView ? 'span-3' : (items.length >= 8 ? 'span-2' : '');
+      {/* 3. Sector Navigation Bar with Clean Chevron Controls (No Clunky Native Scrollbar) */}
+      <div className="heatmap-sector-bar">
+        <button
+          type="button"
+          className="heatmap-ribbon-arrow"
+          onClick={() => scrollRibbon(-1)}
+          aria-label="Scroll sectors left"
+          title="Scroll sectors left"
+        >
+          <ChevronLeft size={14} />
+        </button>
 
-          return (
-            <div
-              key={g.sectorName}
-              className={`heatmap-treemap-compartment ${spanClass}`}
-              style={{ animationDelay: `${Math.min(sIdx * 30, 360)}ms` }}
-            >
-              {/* Sector Compartment Header */}
-              <div className="heatmap-compartment-head">
-                <div className="heatmap-compartment-title">
-                  <span>{g.sectorName}</span>
-                  <span className="heatmap-compartment-count">{items.length} assets</span>
+        <div className="heatmap-sector-ribbon" ref={ribbonRef}>
+          <button
+            type="button"
+            className={`heatmap-sector-tab ${selectedSector === 'ALL' ? 'active' : ''}`}
+            onClick={() => setSelectedSector('ALL')}
+          >
+            <span>ALL SECTORS</span>
+            <span className="tab-badge neutral">
+              {activePool.length}
+            </span>
+          </button>
+
+          {sectorGroups.map(g => {
+            const isPos = g.avgPerf >= 0;
+            return (
+              <button
+                key={g.sectorName}
+                type="button"
+                className={`heatmap-sector-tab ${selectedSector === g.sectorName ? 'active' : ''}`}
+                onClick={() => setSelectedSector(g.sectorName === selectedSector ? 'ALL' : g.sectorName)}
+                title={`${g.sectorName} (${g.count} assets) • Avg 24h: ${isPos ? '+' : ''}${g.avgPerf.toFixed(2)}%`}
+              >
+                <span>{g.sectorName}</span>
+                <span className={`tab-badge ${isPos ? 'pos' : 'neg'}`}>
+                  {isPos ? '+' : ''}{g.avgPerf.toFixed(1)}%
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          type="button"
+          className="heatmap-ribbon-arrow"
+          onClick={() => scrollRibbon(1)}
+          aria-label="Scroll sectors right"
+          title="Scroll sectors right"
+        >
+          <ChevronRight size={14} />
+        </button>
+      </div>
+
+      {/* 4. Exact-Fit 12-Column Treemap Grid */}
+      {packedCompartments.length === 0 ? (
+        <div className="heatmap-empty-state">
+          <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)' }}>
+            No matching companies in heatmap for "{heatmapQuery}"
+          </div>
+          <button
+            type="button"
+            className="btn btn-primary"
+            style={{ fontSize: '0.78rem', padding: '0.38rem 0.9rem', marginTop: '0.5rem' }}
+            onClick={() => { setHeatmapQuery(''); setSelectedSector('ALL'); }}
+          >
+            Reset Heatmap Filter
+          </button>
+        </div>
+      ) : (
+        <div className="heatmap-treemap-grid">
+          {packedCompartments.map((g, sIdx) => {
+            const isPos = g.avgPerf >= 0;
+            const items = g.items;
+            const isSingleSectorView = selectedSector !== 'ALL';
+            const spanClass = `col-span-${g.colSpan} ${g.tabletFull ? 'tablet-span-full' : ''}`;
+
+            return (
+              <div
+                key={g.sectorName}
+                className={`heatmap-treemap-compartment ${spanClass}`}
+                style={{ animationDelay: `${Math.min(sIdx * 25, 280)}ms` }}
+              >
+                {/* Sector Compartment Header */}
+                <div className="heatmap-compartment-head">
+                  <div className="heatmap-compartment-title">
+                    <span>{g.sectorName}</span>
+                    <span className="heatmap-compartment-count font-mono">{items.length}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                    <span className={`heatmap-compartment-perf ${isPos ? 'pos' : 'neg'}`}>
+                      {isPos ? '▲ +' : '▼ '}{Math.abs(g.avgPerf).toFixed(2)}%
+                    </span>
+                    {!isSingleSectorView ? (
+                      <button
+                        type="button"
+                        className="heatmap-focus-btn"
+                        onClick={() => setSelectedSector(g.sectorName)}
+                        title={`Focus exclusively on ${g.sectorName}`}
+                      >
+                        Focus
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="heatmap-focus-btn"
+                        onClick={() => setSelectedSector('ALL')}
+                        title="Return to all sectors"
+                      >
+                        All Sectors
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                  <span className={`heatmap-compartment-perf ${isPos ? 'pos' : 'neg'}`}>
-                    {isPos ? '▲ +' : '▼ '}{Math.abs(g.avgPerf).toFixed(2)}%
-                  </span>
-                  {!isSingleSectorView && (
-                    <button
-                      type="button"
-                      onClick={() => setSelectedSector(g.sectorName)}
-                      style={{ background: 'transparent', border: 'none', color: 'var(--text-cyan)', fontSize: '0.68rem', cursor: 'pointer', fontWeight: 700, padding: 0 }}
-                      title={`Filter exclusively to ${g.sectorName}`}
-                    >
-                      Focus
-                    </button>
-                  )}
-                </div>
-              </div>
 
-              {/* Contiguous Mosaic Tile Pack (100% Flush Fit) */}
-              <div className="heatmap-mosaic-pack">
-                {items.map((c, idx) => {
-                  const chgPct = Number(c.changePercent) || 0;
-                  const price = Number(c.price) || 0;
-                  const currPrefix = getCurrencyPrefix(c.currency, c.symbol);
-                  const isTilePos = chgPct >= 0;
-                  const isInWatch = watchlistSet?.has(c.symbol);
-                  const styleMeta = getHeatmapTileStyle(chgPct, isLight);
-                  const formattedPrice = price >= 1000
-                    ? price.toLocaleString(undefined, { maximumFractionDigits: 1 })
-                    : price.toFixed(2);
+                {/* Exact-Fit Company Card Pack */}
+                <div className={`heatmap-mosaic-pack ${g.colSpan <= 6 ? 'compact-pack' : ''}`}>
+                  {items.map((c, idx) => {
+                    const chgPct = Number(c.changePercent) || 0;
+                    const price = Number(c.price) || 0;
+                    const currPrefix = getCurrencyPrefix(c.currency, c.symbol);
+                    const isTilePos = chgPct >= 0;
+                    const isInWatch = watchlistSet?.has(c.symbol);
+                    const styleMeta = getHeatmapTileStyle(chgPct, isLight);
+                    const formattedPrice = price >= 1000
+                      ? price.toLocaleString(undefined, { maximumFractionDigits: 1 })
+                      : price.toFixed(2);
 
-                  // Distinguish major market leaders within large sectors
-                  const isLeader = (idx < 2 && items.length >= 4) || isSingleSectorView;
-                  const isSolo = items.length === 1 && !isSingleSectorView;
+                    const isLeader = idx < 2 && items.length >= 6 && g.colSpan >= 7;
+                    const isSolo = items.length === 1 && !isSingleSectorView;
 
-                  if (isSolo) {
+                    if (isSolo) {
+                      return (
+                        <div
+                          key={c.symbol}
+                          className="heatmap-mosaic-tile solo"
+                          style={{
+                            background: styleMeta.bg,
+                            border: `1px solid ${styleMeta.border}`,
+                            '--tile-accent': styleMeta.accent,
+                            '--tile-glow': styleMeta.glow
+                          }}
+                          onClick={() => onSelectSymbol && onSelectSymbol(c.symbol)}
+                          title={`${c.name} (${c.symbol})\nPrice: ${currPrefix}${price.toLocaleString()}\n24h Change: ${isTilePos ? '+' : ''}${chgPct.toFixed(2)}%\nSector: ${g.sectorName}\nMarket Cap: ${c.marketCapFormatted || '--'}`}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', minWidth: 0 }}>
+                            <CountryFlag country={c.country} countryCode={c.countryCode} symbol={c.symbol} size="sm" showCode={false} />
+                            <div style={{ minWidth: 0 }}>
+                              <div className="heatmap-tile-sym-wrap">
+                                <span className="heatmap-tile-sym">{c.symbol}</span>
+                                {isInWatch && <Bookmark size={10} style={{ color: 'var(--accent-amber)', fill: 'currentColor', flexShrink: 0 }} />}
+                              </div>
+                              <div className="heatmap-tile-name">{c.name || c.symbol}</div>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexShrink: 0 }}>
+                            <div style={{ textAlign: 'right' }}>
+                              <div className="heatmap-tile-price font-mono">{currPrefix}{formattedPrice}</div>
+                              {c.marketCapFormatted && <div className="heatmap-tile-mcap font-mono">{c.marketCapFormatted}</div>}
+                            </div>
+                            <span
+                              className="heatmap-tile-pct font-mono"
+                              style={{ color: styleMeta.textColor, background: styleMeta.pillBg, borderColor: styleMeta.pillBorder }}
+                            >
+                              {isTilePos ? '+' : ''}{chgPct.toFixed(2)}%
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
+
                     return (
                       <div
                         key={c.symbol}
-                        className="heatmap-mosaic-tile solo"
+                        className={`heatmap-mosaic-tile ${isLeader ? 'leader' : ''}`}
                         style={{
                           background: styleMeta.bg,
                           border: `1px solid ${styleMeta.border}`,
+                          '--tile-accent': styleMeta.accent,
                           '--tile-glow': styleMeta.glow
                         }}
                         onClick={() => onSelectSymbol && onSelectSymbol(c.symbol)}
-                        title={`${c.name} (${c.symbol})\nPrice: ${currPrefix}${price.toLocaleString()}\n24h Change: ${isTilePos ? '+' : ''}${chgPct.toFixed(2)}%\nSector: ${g.sectorName}`}
+                        title={`${c.name} (${c.symbol})\nPrice: ${currPrefix}${price.toLocaleString()}\n24h Change: ${isTilePos ? '+' : ''}${chgPct.toFixed(2)}%\nSector: ${g.sectorName}\nMarket Cap: ${c.marketCapFormatted || '--'}`}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
-                          <CountryFlag country={c.country} countryCode={c.countryCode} symbol={c.symbol} size="sm" showCode={false} />
-                          <span className="heatmap-tile-sym">{c.symbol}</span>
-                          <span className="heatmap-tile-name">{c.name}</span>
-                          {isInWatch && <Bookmark size={11} style={{ color: 'var(--accent-amber)', fill: 'currentColor' }} />}
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexShrink: 0 }}>
-                          <span className="heatmap-tile-price">{currPrefix}{formattedPrice}</span>
-                          <span className="heatmap-tile-pct font-mono" style={{ color: styleMeta.textColor }}>
-                            {isTilePos ? '▲ +' : '▼ '}{Math.abs(chgPct).toFixed(2)}%
+                        <div className="heatmap-tile-top">
+                          <div className="heatmap-tile-sym-wrap">
+                            <CountryFlag country={c.country} countryCode={c.countryCode} symbol={c.symbol} size="xs" showCode={false} />
+                            <span className="heatmap-tile-sym">{c.symbol}</span>
+                            {isInWatch && <Bookmark size={9} style={{ color: 'var(--accent-amber)', fill: 'currentColor', flexShrink: 0 }} />}
+                          </div>
+                          <span
+                            className="heatmap-tile-pct font-mono"
+                            style={{ color: styleMeta.textColor, background: styleMeta.pillBg, borderColor: styleMeta.pillBorder }}
+                          >
+                            {isTilePos ? '+' : ''}{chgPct.toFixed(2)}%
                           </span>
+                        </div>
+
+                        <div className="heatmap-tile-name">{c.name || c.symbol}</div>
+
+                        <div className="heatmap-tile-foot">
+                          <span className="heatmap-tile-price font-mono">
+                            {currPrefix}{formattedPrice}
+                          </span>
+                          {c.marketCapFormatted && (
+                            <span className="heatmap-tile-mcap font-mono">{c.marketCapFormatted}</span>
+                          )}
                         </div>
                       </div>
                     );
-                  }
-
-                  return (
-                    <div
-                      key={c.symbol}
-                      className={`heatmap-mosaic-tile ${isLeader ? 'leader' : ''}`}
-                      style={{
-                        background: styleMeta.bg,
-                        border: `1px solid ${styleMeta.border}`,
-                        '--tile-glow': styleMeta.glow
-                      }}
-                      onClick={() => onSelectSymbol && onSelectSymbol(c.symbol)}
-                      title={`${c.name} (${c.symbol})\nPrice: ${currPrefix}${price.toLocaleString()}\n24h Change: ${isTilePos ? '+' : ''}${chgPct.toFixed(2)}%\nSector: ${g.sectorName}\nMarket Cap: ${c.marketCapFormatted || '--'}`}
-                    >
-                      <div className="heatmap-tile-sym">
-                        <span>{c.symbol}</span>
-                        {isInWatch && <Bookmark size={9} style={{ color: 'var(--accent-amber)', fill: 'currentColor' }} />}
-                      </div>
-
-                      {isLeader && c.name && (
-                        <div className="heatmap-tile-name">{c.name}</div>
-                      )}
-
-                      <div className="heatmap-tile-price">
-                        {currPrefix}{formattedPrice}
-                      </div>
-
-                      <div className="heatmap-tile-pct" style={{ color: styleMeta.textColor }}>
-                        {isTilePos ? '+' : ''}{chgPct.toFixed(2)}%
-                      </div>
-                    </div>
-                  );
-                })}
+                  })}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
