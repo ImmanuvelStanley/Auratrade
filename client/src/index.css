@@ -5390,8 +5390,8 @@ select option:checked {
 .screener-band {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.68rem 1rem;
+  gap: 0.72rem;
+  padding: 0.56rem 0.95rem;
   width: 100%;
   box-sizing: border-box;
 }
@@ -5402,37 +5402,27 @@ select option:checked {
 
 .screener-band--discovery {
   justify-content: space-between;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .screener-band--utility {
-  justify-content: space-between;
-  flex-wrap: wrap;
   background: rgba(255, 255, 255, 0.015);
 }
 
-.screener-band-left,
-.screener-utility-left {
+.screener-band-left {
   display: flex;
   align-items: center;
   gap: 0.72rem;
   min-width: 0;
-  flex: 1 1 auto;
-}
-
-.screener-utility-right {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  flex-wrap: wrap;
+  flex: 1 1 0;
 }
 
 .screener-band-kicker {
-  width: 58px;
+  width: 62px;
   flex-shrink: 0;
   font-family: var(--font-mono);
   font-size: 0.63rem;
-  font-weight: 600;
+  font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -5440,16 +5430,18 @@ select option:checked {
 }
 
 .screener-strategy-segment {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: center;
   gap: 0.22rem;
   padding: 3px;
+  height: 34px;
   border-radius: 9px;
   background: #090e17;
   border: 1px solid rgba(255, 255, 255, 0.07);
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-width: 0;
-  max-width: 100%;
+  box-sizing: border-box;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -5462,18 +5454,20 @@ select option:checked {
 .screener-strategy-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.36rem;
-  height: 28px;
-  padding: 0 0.72rem;
+  justify-content: center;
+  gap: 0.34rem;
+  height: 26px;
+  width: 100%;
+  padding: 0 0.55rem;
   border-radius: 6px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-muted);
-  font-size: 0.74rem;
+  font-size: 0.73rem;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  flex-shrink: 0;
+  box-sizing: border-box;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -5498,13 +5492,14 @@ select option:checked {
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  flex: 0 1 auto;
+  flex: 0 0 clamp(270px, 24vw, 355px);
 }
 
 .screener-search-wrap {
   position: relative;
-  width: 268px;
-  max-width: 100%;
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
   height: 34px;
 }
 
@@ -5594,13 +5589,20 @@ select option:checked {
   color: #ffffff;
 }
 
-/* Band 2: Clean Hairline Regions Rail */
+/* Band 2: Unified Edge-to-Edge Regions Rail */
 .screener-region-rail {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1.15fr repeat(6, minmax(0, 1fr));
   align-items: center;
-  gap: 0.28rem;
-  flex: 1 1 auto;
+  gap: 0.22rem;
+  flex: 1 1 0;
   min-width: 0;
+  height: 34px;
+  padding: 3px;
+  border-radius: 9px;
+  background: #090e17;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-sizing: border-box;
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -5608,18 +5610,20 @@ select option:checked {
 .screener-region-tab {
   display: inline-flex;
   align-items: center;
-  gap: 0.36rem;
-  height: 30px;
-  padding: 0 0.62rem;
+  justify-content: center;
+  gap: 0.35rem;
+  height: 26px;
+  width: 100%;
+  padding: 0 0.5rem;
   border-radius: 6px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-secondary);
-  font-size: 0.74rem;
+  font-size: 0.73rem;
   font-weight: 600;
   white-space: nowrap;
-  flex-shrink: 0;
   cursor: pointer;
+  box-sizing: border-box;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -5636,21 +5640,27 @@ select option:checked {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
-/* Band 3: Unified Refine Select Chips & Joined Sort Control */
-.screener-select-group {
-  display: flex;
+/* Band 3: Equal-Level Full-Width Utility Grid */
+.screener-utility-track {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(180px, 1.25fr) minmax(245px, 1.35fr) minmax(225px, 1.2fr);
   align-items: center;
-  flex-wrap: wrap;
-  gap: 0.48rem;
+  gap: 0.52rem;
+  flex: 1 1 0;
   min-width: 0;
+}
+
+.screener-utility-track.is-compact-3col {
+  grid-template-columns: minmax(160px, 1fr) minmax(195px, 1.25fr) minmax(235px, 1.15fr);
 }
 
 .screener-control-chip,
 .screener-sort-join {
   display: inline-flex;
   align-items: center;
-  height: 32px;
-  border-radius: 7px;
+  width: 100%;
+  height: 34px;
+  border-radius: 8px;
   background: #090e17;
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-sizing: border-box;
@@ -5659,8 +5669,13 @@ select option:checked {
 
 .screener-control-chip {
   gap: 0.42rem;
-  padding: 0 0.62rem;
+  padding: 0 0.7rem;
   cursor: pointer;
+}
+
+.screener-control-chip .modern-select-chevron,
+.modern-select-trigger--embedded .modern-select-chevron {
+  margin-left: auto;
 }
 
 .screener-control-chip:hover,
@@ -5702,6 +5717,8 @@ select option:checked {
   display: inline-flex;
   align-items: center;
   gap: 0.42rem;
+  flex: 1 1 auto;
+  min-width: 0;
   height: 100%;
   padding: 0 0.56rem 0 0.65rem;
   background: transparent;
@@ -5858,15 +5875,21 @@ select option:checked {
 }
 
 .screener-col-tabs {
-  height: 32px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  width: 100%;
+  height: 34px;
   padding: 3px;
-  border-radius: 7px;
+  border-radius: 8px;
   background: #090e17;
   border: 1px solid rgba(255, 255, 255, 0.08);
+  box-sizing: border-box;
 }
 
 .screener-col-tabs .column-view-btn {
-  height: 24px;
+  height: 26px;
+  width: 100%;
   font-size: 0.73rem;
 }
 
@@ -5874,6 +5897,7 @@ select option:checked {
   padding-left: 0;
   gap: 0;
   overflow: hidden;
+  justify-content: space-between;
 }
 
 .screener-sort-dir {
@@ -5890,6 +5914,7 @@ select option:checked {
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+  flex-shrink: 0;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
@@ -5898,19 +5923,38 @@ select option:checked {
   color: #60a5fa;
 }
 
-@media (max-width: 960px) {
+@media (max-width: 1120px) {
   .screener-band--discovery {
     flex-direction: column;
     align-items: stretch;
   }
 
   .screener-band-search {
+    flex: 1 1 auto;
     width: 100%;
   }
 
   .screener-search-wrap {
     flex: 1 1 auto;
     width: 100%;
+  }
+
+  .screener-region-rail {
+    display: flex;
+    height: auto;
+    min-height: 34px;
+    padding: 3px;
+  }
+
+  .screener-region-tab {
+    width: auto;
+    flex-shrink: 0;
+    padding: 0 0.62rem;
+  }
+
+  .screener-utility-track,
+  .screener-utility-track.is-compact-3col {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -5922,11 +5966,23 @@ select option:checked {
     padding: 0.68rem 0.78rem;
   }
 
-  .screener-band-left,
-  .screener-utility-left {
+  .screener-band-left {
     flex-direction: column;
     align-items: stretch;
     gap: 0.42rem;
+  }
+
+  .screener-utility-track,
+  .screener-utility-track.is-compact-3col {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.42rem;
+    flex: 0 0 auto;
+    height: auto;
+  }
+
+  .screener-utility-track .screener-col-tabs,
+  .screener-utility-track .screener-sort-join {
+    grid-column: 1 / -1;
   }
 
   .screener-band-kicker {
@@ -5937,6 +5993,8 @@ select option:checked {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
+    height: auto;
+    flex: 0 0 auto;
     overflow: visible;
     gap: 0.36rem;
     padding: 0.36rem;
@@ -5977,6 +6035,9 @@ select option:checked {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     width: 100%;
+    height: auto;
+    min-height: 0;
+    flex: 0 0 auto;
     overflow: visible;
     gap: 0.36rem;
     padding: 0.36rem;
@@ -6818,6 +6879,7 @@ select option:checked {
   background: #f8fafc !important;
 }
 [data-theme="light"] .screener-strategy-segment,
+[data-theme="light"] .screener-region-rail,
 [data-theme="light"] .screener-col-tabs {
   background: #f1f5f9 !important;
   border-color: #cbd5e1 !important;

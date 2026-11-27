@@ -2681,35 +2681,31 @@ export const AllCompaniesMarket = React.memo(function AllCompaniesMarket({
 
         {/* Band 3: Unified Refine (Cap + Sector) & Display (Columns + Sort) */}
         <div className="screener-band screener-band--utility">
-          <div className="screener-utility-left">
-            <span className="screener-band-kicker">Refine</span>
-            <div className="screener-select-group">
-              <ModernSelect
-                prefix="Cap"
-                ariaLabel="Filter by Market Cap Tier"
-                menuTitle="Market Cap Tier"
-                value={selectedTier}
-                onChange={setSelectedTier}
-                options={tiers}
-                menuWidth={236}
-                align="left"
-              />
+          <span className="screener-band-kicker">Refine</span>
+          <div className={`screener-utility-track${viewMode !== 'table' ? ' is-compact-3col' : ''}`}>
+            <ModernSelect
+              prefix="Cap"
+              ariaLabel="Filter by Market Cap Tier"
+              menuTitle="Market Cap Tier"
+              value={selectedTier}
+              onChange={setSelectedTier}
+              options={tiers}
+              menuWidth={236}
+              align="left"
+            />
 
-              <ModernSelect
-                prefix="Sector"
-                ariaLabel="Filter by Industry Sector"
-                menuTitle="Industry & Asset Class"
-                value={selectedSector}
-                onChange={setSelectedSector}
-                options={sectorOptions}
-                columns={2}
-                menuWidth={392}
-                align="left"
-              />
-            </div>
-          </div>
+            <ModernSelect
+              prefix="Sector"
+              ariaLabel="Filter by Industry Sector"
+              menuTitle="Industry & Asset Class"
+              value={selectedSector}
+              onChange={setSelectedSector}
+              options={sectorOptions}
+              columns={2}
+              menuWidth={392}
+              align="left"
+            />
 
-          <div className="screener-utility-right">
             {viewMode === 'table' && (
               <div className="column-view-segmented screener-col-tabs" role="group" aria-label="Table column preset">
                 <button
