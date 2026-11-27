@@ -13740,14 +13740,14 @@ canvas {
   color: #34d399;
 }
 
-/* Geometric Architectural Display Headline (Space Grotesk + Plus Jakarta Sans fallback) */
+/* Editorial Times New Roman Headline */
 .opening-hero-headline {
   margin: 0;
-  font-family: "Space Grotesk", "Plus Jakarta Sans", "Inter", sans-serif;
-  font-size: clamp(1.85rem, 3.25vw, 2.75rem);
+  font-family: "Times New Roman", Times, serif;
+  font-size: clamp(2rem, 3.45vw, 2.95rem);
   font-weight: 700;
-  line-height: 1.07;
-  letter-spacing: -0.038em;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
   text-rendering: optimizeLegibility;
   color: #f8fafc;
   animation: openingElementReveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.06s both;

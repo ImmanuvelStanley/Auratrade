@@ -236,7 +236,7 @@ const run = async () => {
         hasSortJoin: !!sortJoin,
         regionTabs,
         nativeSelects: document.querySelectorAll('.screener-command-dock select').length,
-        hasProFont: /Plus Jakarta Sans/i.test(headlineFont) && accentStyle === 'normal',
+        hasProFont: /Times New Roman/i.test(headlineFont) && accentStyle === 'normal',
         hasRemovedAlphaBtn: !/AI 30D Alpha Picks/i.test(bodyTxt),
         hasRemovedRedundantPresets: !/Mega-Cap Club|Dividend Aristocrats/i.test(bodyTxt),
         hasRemovedAssetsBadge: !document.querySelector('.screener-matched-badge'),
@@ -275,7 +275,7 @@ const run = async () => {
     assert.equal(selectPopCheck.fitsViewport, true, 'ModernSelect popover must stay inside viewport bounds');
     await evalJs(`window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))`);
     await sleep(120);
-    assert.equal(openingHeroCheck.hasProFont, true, 'Opening hero headline must use unified Plus Jakarta Sans upright professional typography');
+    assert.equal(openingHeroCheck.hasProFont, true, 'Opening hero headline must use Times New Roman upright editorial typography');
     assert.equal(openingHeroCheck.hasRemovedAlphaBtn, true, 'Redundant AI 30D Alpha Picks secondary CTA must be removed');
     assert.equal(openingHeroCheck.hasRemovedRedundantPresets, true, 'Redundant Mega-Cap Club and Dividend Aristocrats presets must be removed');
     assert.equal(openingHeroCheck.hasRemovedAssetsBadge, true, '309 Assets badge must be removed');

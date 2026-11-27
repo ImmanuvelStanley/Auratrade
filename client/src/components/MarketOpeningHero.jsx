@@ -236,16 +236,6 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
               <span>Open {activeSpotlight.symbol} Workstation</span>
               <ArrowUpRight size={15} strokeWidth={2.4} className="opening-cta-arrow" />
             </button>
-
-            <button
-              type="button"
-              className="opening-cta-secondary"
-              onClick={handleSelectSpotlightDossier}
-              title={`View full institutional dossier for ${activeSpotlight.symbol}`}
-            >
-              <Sparkles size={14} className="opening-cta-sec-icon" />
-              <span>Deep Dossier · {activeSpotlight.symbol}</span>
-            </button>
           </div>
 
           {/* Balanced 4-Column Live Quick-Focus Strip */}
