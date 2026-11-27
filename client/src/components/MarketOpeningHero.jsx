@@ -236,11 +236,24 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
               <span>Open {activeSpotlight.symbol} Workstation</span>
               <ArrowUpRight size={15} strokeWidth={2.4} className="opening-cta-arrow" />
             </button>
+
+            <button
+              type="button"
+              className="opening-cta-secondary"
+              onClick={handleSelectSpotlightDossier}
+              title={`View full institutional dossier for ${activeSpotlight.symbol}`}
+            >
+              <Sparkles size={14} className="opening-cta-sec-icon" />
+              <span>Deep Dossier · {activeSpotlight.symbol}</span>
+            </button>
           </div>
 
-          {/* Unboxed Borderless Live Quick-Jump Strip */}
+          {/* Balanced 4-Column Live Quick-Focus Strip */}
           <div className="opening-quick-dock" aria-label="Quick focus live assets">
-            <span className="opening-quick-label">FOCUS</span>
+            <div className="opening-quick-head">
+              <span className="opening-quick-label">LIVE FOCUS</span>
+              <span className="opening-quick-hint">Click any asset to stream in workstation</span>
+            </div>
             <div className="opening-quick-links">
               {quickTickersLive.map((item) => {
                 const pos = item.pct >= 0;
@@ -252,7 +265,10 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
                     onClick={() => onSelectSymbol && onSelectSymbol(item.symbol)}
                     title={`Open live Workstation chart for ${item.symbol}`}
                   >
-                    <span className="opening-quick-sym">{item.label}</span>
+                    <span className="opening-quick-sym-row">
+                      <span className={`opening-quick-dot ${pos ? 'is-bull' : 'is-bear'}`} aria-hidden="true" />
+                      <span className="opening-quick-sym">{item.label}</span>
+                    </span>
                     <span className={`opening-quick-delta ${pos ? 'is-bull' : 'is-bear'}`}>
                       {formatSignedPct(item.pct)}
                     </span>
@@ -263,15 +279,17 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
           </div>
         </div>
 
-        {/* RIGHT CHAMBER: Box-Free Seamless Observatory Stage */}
+        {/* RIGHT CHAMBER: Unified Frosted Observatory Stage */}
         <div
           className="opening-observatory-stage"
           onMouseEnter={() => setTabPaused(true)}
           onMouseLeave={() => setTabPaused(false)}
         >
-          {/* Underlined Minimal Tab Strip */}
           <div className="opening-obs-header">
-            <span className="opening-obs-mode-badge">{activeSpotlight.modeLabel}</span>
+            <span className="opening-obs-mode-badge">
+              <span className="opening-mode-dot" aria-hidden="true" />
+              <span>{activeSpotlight.modeLabel}</span>
+            </span>
 
             <div className="opening-obs-tabs" role="tablist" aria-label="Spotlight asset mode">
               {[
@@ -296,7 +314,7 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
             </div>
           </div>
 
-          {/* Typographic Spotlight Pair */}
+          {/* Unified Spotlight Readout + Animated Live Curve */}
           <div
             key={spotlightTab}
             className="opening-obs-hero-readout motion-spotlight"
@@ -333,42 +351,46 @@ export const MarketOpeningHero = React.memo(function MarketOpeningHero({
             </div>
 
             <p className="opening-obs-desc">{activeSpotlight.subtitle}</p>
+
+            {/* Integrated Animated Momentum Curve with Subtle Reference Grid */}
+            <div className="opening-obs-wave-box" aria-hidden="true">
+              <svg viewBox="0 0 360 88" className="opening-pulse-svg" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="obsCleanFill" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor={activeSpotlight.isPositive ? '#0ecb81' : '#f6465d'} stopOpacity="0.26" />
+                    <stop offset="100%" stopColor={activeSpotlight.isPositive ? '#0ecb81' : '#f6465d'} stopOpacity="0" />
+                  </linearGradient>
+                  <linearGradient id="obsCleanStroke" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stopColor="#64748b" stopOpacity="0.35" />
+                    <stop offset="45%" stopColor={activeSpotlight.isPositive ? '#0ecb81' : '#f6465d'} />
+                    <stop offset="100%" stopColor={activeSpotlight.isPositive ? '#34d399' : '#fb7185'} />
+                  </linearGradient>
+                </defs>
+                <line x1="0" y1="22" x2="360" y2="22" className="opening-wave-gridline" />
+                <line x1="0" y1="48" x2="360" y2="48" className="opening-wave-gridline" />
+                <line x1="0" y1="74" x2="360" y2="74" className="opening-wave-gridline" />
+                <path d={pulsePaths.areaD} fill="url(#obsCleanFill)" className="opening-wave-area-reveal" />
+                <path
+                  d={pulsePaths.mainD}
+                  fill="none"
+                  stroke="url(#obsCleanStroke)"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  className="opening-wave-stroke-draw"
+                  style={{
+                    filter: activeSpotlight.isPositive
+                      ? 'drop-shadow(0 2px 8px rgba(14, 203, 129, 0.45))'
+                      : 'drop-shadow(0 2px 8px rgba(246, 70, 93, 0.45))'
+                  }}
+                />
+                <circle cx={pulsePaths.endX} cy={pulsePaths.endY} r="9" fill={activeSpotlight.isPositive ? 'rgba(14, 203, 129, 0.22)' : 'rgba(246, 70, 93, 0.22)'} className="opening-wave-halo-outer" />
+                <circle cx={pulsePaths.endX} cy={pulsePaths.endY} r="5" fill={activeSpotlight.isPositive ? 'rgba(14, 203, 129, 0.45)' : 'rgba(246, 70, 93, 0.45)'} className="opening-wave-halo" />
+                <circle cx={pulsePaths.endX} cy={pulsePaths.endY} r="3.2" fill={activeSpotlight.isPositive ? '#10b981' : '#f43f5e'} />
+              </svg>
+            </div>
           </div>
 
-          {/* Crisp Monoline Gradient Curve SVG with Dynamic Glow */}
-          <div className="opening-obs-wave-box" aria-hidden="true">
-            <svg viewBox="0 0 360 88" className="opening-pulse-svg" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="obsCleanFill" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor={activeSpotlight.isPositive ? '#0ecb81' : '#f6465d'} stopOpacity="0.22" />
-                  <stop offset="100%" stopColor={activeSpotlight.isPositive ? '#0ecb81' : '#f6465d'} stopOpacity="0" />
-                </linearGradient>
-                <linearGradient id="obsCleanStroke" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#475569" stopOpacity="0.3" />
-                  <stop offset="45%" stopColor={activeSpotlight.isPositive ? '#0ecb81' : '#f6465d'} />
-                  <stop offset="100%" stopColor={activeSpotlight.isPositive ? '#26e7a6' : '#ff6b7e'} />
-                </linearGradient>
-              </defs>
-              <path d={pulsePaths.areaD} fill="url(#obsCleanFill)" />
-              <path
-                d={pulsePaths.mainD}
-                fill="none"
-                stroke="url(#obsCleanStroke)"
-                strokeWidth="2.3"
-                strokeLinecap="round"
-                style={{
-                  filter: activeSpotlight.isPositive
-                    ? 'drop-shadow(0 2px 6px rgba(14, 203, 129, 0.45))'
-                    : 'drop-shadow(0 2px 6px rgba(246, 70, 93, 0.45))'
-                }}
-              />
-              <circle cx={pulsePaths.endX} cy={pulsePaths.endY} r="8" fill={activeSpotlight.isPositive ? 'rgba(14, 203, 129, 0.2)' : 'rgba(246, 70, 93, 0.2)'} className="opening-wave-halo-outer" />
-              <circle cx={pulsePaths.endX} cy={pulsePaths.endY} r="5" fill={activeSpotlight.isPositive ? 'rgba(14, 203, 129, 0.4)' : 'rgba(246, 70, 93, 0.4)'} className="opening-wave-halo" />
-              <circle cx={pulsePaths.endX} cy={pulsePaths.endY} r="3" fill={activeSpotlight.isPositive ? '#0ecb81' : '#f6465d'} />
-            </svg>
-          </div>
-
-          {/* Quiet Slim Breadth Hairline Bar */}
+          {/* Slim Framed Session Breadth Bar */}
           <div className="opening-breadth-meter">
             <div className="opening-breadth-labels">
               <span className="opening-breadth-title">
