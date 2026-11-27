@@ -66,7 +66,6 @@ const MarketTickerChip = React.memo(function MarketTickerChip({ item, onSelect }
   const changeWrapRef = useRef(null);
   const arrowRef = useRef(null);
   const changeTextRef = useRef(null);
-  const tickRef = useRef(null);
   const prevPriceRef = useRef(initialPrice);
 
   useEffect(() => {
@@ -76,8 +75,14 @@ const MarketTickerChip = React.memo(function MarketTickerChip({ item, onSelect }
       const newPrice = Number(tick.price);
       if (Number.isNaN(newPrice)) return;
 
+      const prevPrice = prevPriceRef.current;
       if (priceRef.current) {
         priceRef.current.textContent = formatPriceText(currSymbol, newPrice);
+        if (prevPrice !== undefined && prevPrice !== null && newPrice !== prevPrice) {
+          priceRef.current.classList.remove('tick-flash-up', 'tick-flash-down');
+          void priceRef.current.offsetWidth;
+          priceRef.current.classList.add(newPrice > prevPrice ? 'tick-flash-up' : 'tick-flash-down');
+        }
       }
 
       if (tick.changePercent !== undefined && tick.changePercent !== null) {
@@ -92,16 +97,6 @@ const MarketTickerChip = React.memo(function MarketTickerChip({ item, onSelect }
         }
         if (arrowRef.current) {
           arrowRef.current.textContent = isBull ? '↗' : '↘';
-        }
-      }
-
-      const prevPrice = prevPriceRef.current;
-      if (prevPrice !== undefined && prevPrice !== null && newPrice !== prevPrice) {
-        const dir = newPrice > prevPrice ? 'up' : 'down';
-        if (tickRef.current) {
-          tickRef.current.textContent = dir === 'up' ? '▲' : '▼';
-          tickRef.current.style.display = 'inline';
-          tickRef.current.className = `chip-tick ${dir === 'up' ? 'text-bull' : 'text-bear'}`;
         }
       }
 
@@ -122,7 +117,10 @@ const MarketTickerChip = React.memo(function MarketTickerChip({ item, onSelect }
     >
       <span className="region-pill">{item.badgeCode}</span>
       <span className="chip-symbol">{item.symbol}</span>
-      <span ref={priceRef} className="chip-price">
+      <span
+        ref={priceRef}
+        className={`chip-price ${initialDir === 'up' ? 'tick-flash-up' : initialDir === 'down' ? 'tick-flash-down' : ''}`}
+      >
         {formatPriceText(currSymbol, initialPrice)}
       </span>
       <span
@@ -131,14 +129,6 @@ const MarketTickerChip = React.memo(function MarketTickerChip({ item, onSelect }
       >
         <span ref={arrowRef} aria-hidden="true">{initialBull ? '↗' : '↘'}</span>
         <span ref={changeTextRef}>{formatPercentText(initialPct)}</span>
-      </span>
-      <span
-        ref={tickRef}
-        className={`chip-tick ${initialDir === 'up' ? 'text-bull' : initialDir === 'down' ? 'text-bear' : ''}`}
-        style={{ display: initialDir !== 'neutral' ? 'inline' : 'none' }}
-        aria-hidden="true"
-      >
-        {initialDir === 'up' ? '▲' : initialDir === 'down' ? '▼' : ''}
       </span>
     </div>
   );

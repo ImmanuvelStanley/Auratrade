@@ -597,13 +597,13 @@ body:before {
 }
 .market-ribbon-wrapper {
   width: 100%;
-  background: #0b1322;
+  background: var(--bg-card);
   border-bottom: 1px solid var(--border-subtle);
   overflow: hidden;
   position: relative;
   display: flex;
   align-items: center;
-  padding: 0.25rem 0;
+  padding: 0.42rem 0;
   z-index: 100;
   contain: layout style;
   isolation: isolate;
@@ -614,14 +614,14 @@ body:before {
   gap: 0.55rem;
   color: var(--accent-cyan);
   font-weight: 800;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   letter-spacing: 0.04em;
-  padding: 0.35rem 1.15rem;
-  background: linear-gradient(90deg, #0b1322 85%, #0b1322f2);
-  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0.28rem 1rem;
+  background: var(--bg-card);
+  border-right: 1px solid rgba(56, 189, 248, 0.25);
   z-index: 20;
   flex-shrink: 0;
-  box-shadow: 14px 0 22px #0b1322f2;
+  box-shadow: 12px 0 20px rgba(11, 19, 34, 0.85);
 }
 .ticker-track-container {
   display: flex;
@@ -629,8 +629,8 @@ body:before {
   white-space: nowrap;
   width: 100%;
   position: relative;
-  min-height: 36px;
-  height: 36px;
+  min-height: 32px;
+  height: 32px;
   align-items: center;
   contain: strict;
   isolation: isolate;
@@ -638,7 +638,7 @@ body:before {
 .ticker-track {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1.15rem;
   width: max-content;
   white-space: nowrap;
   animation: marketRibbonScroll 35s linear infinite;
@@ -668,15 +668,15 @@ body:before {
 .market-ticker-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.52rem;
-  padding: 0.2rem 0.55rem;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 6px;
+  gap: 0.5rem;
+  padding: 0.25rem 0.65rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
   color: var(--text-primary);
   white-space: nowrap;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.16s ease;
   user-select: none;
   font-family: var(--font-sans);
   flex-shrink: 0;
@@ -685,11 +685,11 @@ body:before {
 }
 .market-ticker-chip:hover,
 .market-ticker-chip:focus-visible {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(56, 189, 248, 0.12);
+  border-color: rgba(56, 189, 248, 0.45);
 }
 .market-ticker-chip .region-pill {
-  font-size: 0.62rem;
+  font-size: 0.6rem;
   font-family: var(--font-mono);
   font-weight: 800;
   padding: 1px 5px;
@@ -701,17 +701,19 @@ body:before {
   line-height: 1.2;
 }
 .market-ticker-chip .chip-symbol {
-  font-size: 0.76rem;
+  font-size: 0.75rem;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: 0.01em;
 }
 .market-ticker-chip .chip-price {
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 800;
   color: var(--text-primary);
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
+  border-radius: 3px;
+  padding: 0 2px;
 }
 .market-ticker-chip .chip-change {
   font-size: 0.72rem;
@@ -721,11 +723,6 @@ body:before {
   align-items: center;
   gap: 0.14rem;
   font-variant-numeric: tabular-nums;
-}
-.market-ticker-chip .chip-tick {
-  font-size: 0.6rem;
-  font-weight: 800;
-  line-height: 1;
 }
 .market-ribbon-item {
   display: inline-flex;
