@@ -1797,78 +1797,66 @@ export const GoldSilverMarketDesk = React.memo(function GoldSilverMarketDesk({
 
       {/* Quick Multi-Currency Pill Switcher Bar */}
       <div className="glass-card bullion-currency-bar">
-        <div className="bullion-currency-main-group" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap', minWidth: 0, flex: '1 1 auto' }}>
-          <span className="bullion-currency-label" style={{ fontSize: '0.78rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontWeight: 700, flexShrink: 0 }}>
-            <DollarSign size={14} style={{ color: 'var(--warning-amber)' }} />
-            Display Currency:
-          </span>
-
-          <div className="bullion-currency-pills-wrap">
-            {[
-              { code: 'USD', label: 'USD ($)', isDefault: true },
-              { code: 'INR', label: 'INR (₹)' },
-              { code: 'GBP', label: 'GBP (£)' },
-              { code: 'EUR', label: 'EUR (€)' },
-              { code: 'AED', label: 'AED (د.إ)' },
-              { code: 'SGD', label: 'SGD (S$)' },
-              { code: 'AUD', label: 'AUD (A$)' },
-              { code: 'CAD', label: 'CAD (C$)' },
-              { code: 'CHF', label: 'CHF (Fr)' },
-              { code: 'JPY', label: 'JPY (¥)' },
-              { code: 'SAR', label: 'SAR (﷼)' }
-            ].map(item => {
-              const isSelected = activeCurrency === item.code;
-              const currObj = WORLD_CURRENCIES[item.code];
-              return (
-                <button
-                  key={item.code}
-                  type="button"
-                  className={`bullion-currency-pill-btn ${item.isDefault ? 'is-default-currency' : ''} ${isSelected ? 'active' : ''}`}
-                  onClick={() => handleQuickCurrencySelect(item.code)}
-                  style={{
-                    padding: '0.3rem 0.6rem',
-                    fontSize: '0.74rem',
-                    borderRadius: 'var(--radius-sm)',
-                    border: isSelected ? '1px solid var(--warning-amber)' : '1px solid var(--border-subtle)',
-                    background: isSelected ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(217, 119, 6, 0.15))' : 'rgba(255, 255, 255, 0.04)',
-                    color: isSelected ? 'var(--warning-amber)' : 'var(--text-secondary)',
-                    fontWeight: isSelected ? 800 : 600,
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.28rem',
-                    whiteSpace: 'nowrap',
-                    flexShrink: 0,
-                    lineHeight: 1.2,
-                    transition: 'all 0.2s ease'
-                  }}
-                  title={`Switch live market prices to ${currObj?.name || item.code} (${currObj?.symbol})`}
-                >
-                  <span>{item.label}</span>
-                  {item.isDefault && <span style={{ fontSize: '0.6rem', opacity: 0.85, textTransform: 'uppercase', letterSpacing: '0.02em' }}>[Default]</span>}
-                </button>
-              );
-            })}
+        <div className="bullion-currency-top-row">
+          <div className="bullion-currency-title-cluster">
+            <span className="bullion-currency-label">
+              <DollarSign size={14} style={{ color: 'var(--warning-amber)', flexShrink: 0 }} />
+              <span>Display Currency</span>
+            </span>
+            <span className="bullion-currency-divider" aria-hidden="true" />
+            <div className="bullion-currency-active-status">
+              Active:{' '}
+              <strong style={{ color: 'var(--warning-amber)' }}>
+                {currentCurrency.symbol} {currentCurrency.code}
+              </strong>{' '}
+              <span className="bullion-currency-active-meta">
+                ({activeCurrency === 'USD'
+                  ? 'Default Dollar'
+                  : `${currentCurrency.name} • 1 USD = ${currentCurrency.symbol}${fxRates[activeCurrency]?.toLocaleString()}`})
+              </span>
+            </div>
           </div>
-        </div>
 
-        {/* Currency Indicator & Share Rates Action */}
-        <div className="bullion-currency-active-status" style={{ fontSize: '0.74rem', color: 'var(--text-muted)', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
-          <div>
-            Active: <strong style={{ color: 'var(--warning-amber)' }}>{currentCurrency.symbol} {currentCurrency.code}</strong>
-            {' '}({activeCurrency === 'USD' ? 'Default Dollar' : `${currentCurrency.name} • 1 USD = ${currentCurrency.symbol}${fxRates[activeCurrency]?.toLocaleString()}`})
-          </div>
           <button
             type="button"
-            className="btn btn-secondary"
+            className="btn btn-secondary bullion-share-rates-btn"
             onClick={() => setShowShareRateModal(true)}
-            style={{ padding: '0.28rem 0.65rem', fontSize: '0.74rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer' }}
             title="Share or Copy Today's Live Bullion Rate Card"
           >
-            <Share2 size={12} style={{ color: 'var(--warning-amber)' }} />
+            <Share2 size={13} style={{ color: 'var(--warning-amber)', flexShrink: 0 }} />
             <span>Share Today's Rates</span>
           </button>
+        </div>
+
+        <div className="bullion-currency-pills-wrap">
+          {[
+            { code: 'USD', label: 'USD ($)', isDefault: true },
+            { code: 'INR', label: 'INR (₹)' },
+            { code: 'GBP', label: 'GBP (£)' },
+            { code: 'EUR', label: 'EUR (€)' },
+            { code: 'AED', label: 'AED (د.إ)' },
+            { code: 'SGD', label: 'SGD (S$)' },
+            { code: 'AUD', label: 'AUD (A$)' },
+            { code: 'CAD', label: 'CAD (C$)' },
+            { code: 'CHF', label: 'CHF (Fr)' },
+            { code: 'JPY', label: 'JPY (¥)' },
+            { code: 'SAR', label: 'SAR (﷼)' }
+          ].map(item => {
+            const isSelected = activeCurrency === item.code;
+            const currObj = WORLD_CURRENCIES[item.code];
+            return (
+              <button
+                key={item.code}
+                type="button"
+                className={`bullion-currency-pill-btn ${item.isDefault ? 'is-default-currency' : ''} ${isSelected ? 'active' : ''}`}
+                onClick={() => handleQuickCurrencySelect(item.code)}
+                title={`Switch live market prices to ${currObj?.name || item.code} (${currObj?.symbol})`}
+              >
+                <span>{item.label}</span>
+                {item.isDefault && <span className="bullion-currency-default-tag">Default</span>}
+              </button>
+            );
+          })}
         </div>
       </div>
 
