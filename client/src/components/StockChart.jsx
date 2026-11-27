@@ -1608,7 +1608,7 @@ export const StockChart = React.memo(function StockChart({
         {/* Right Chart Actions: Timeframes, Type & Auto Predictor */}
         <div className="chart-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', minWidth: 0, flexWrap: 'wrap' }}>
           {/* Chart Type Toggle */}
-          <div style={{ display: 'flex', background: 'var(--bg-input)', padding: '2px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', flexShrink: 0 }}>
+          <div className="chart-type-toggle" style={{ display: 'flex', background: 'var(--bg-input)', padding: '2px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)', flexShrink: 0 }}>
             <button
               className={`btn-icon ${chartType === 'area' ? 'btn-primary' : ''}`}
               style={{ padding: '0.3rem 0.5rem', borderRadius: 'var(--radius-sm)' }}
@@ -1653,7 +1653,7 @@ export const StockChart = React.memo(function StockChart({
 
           {/* Auto Predictor & Profit Lock Action */}
           <button
-            className="btn"
+            className="btn chart-ai-predictor-btn"
             style={{
               display: 'flex',
               alignItems: 'center',

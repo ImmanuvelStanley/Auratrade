@@ -460,7 +460,7 @@ export const LiveQuoteCard = React.memo(function LiveQuoteCard({
                   ? `Today (${formatCalendarDate(todayISO, { month: 'short', day: 'numeric' })})`
                   : `${isPastMode ? 'Session' : 'Projected'} (${formatCalendarDate(selectedDateStr, { month: 'short', day: 'numeric', year: 'numeric' })})`}
               </span>
-              <span className="live-quote-meta-separator">•</span>
+              <span className="live-quote-meta-separator live-quote-meta-sep-tick">•</span>
               <span className="live-quote-live-tick">
                 <span className="live-pulse-dot" />
                 {isLiveMode

@@ -5146,11 +5146,47 @@ select option:checked {
   .notification-menu {
     top: 102px !important;
   }
+  .live-quote-meta-sep-tick {
+    display: none !important;
+  }
   .live-quote-session-meta {
     gap: 0.35rem 0.45rem !important;
   }
-  .live-quote-meta-separator:last-of-type {
-    display: none !important;
+  .live-quote-live-tick {
+    flex: 1 0 100% !important;
+  }
+  .live-quote-identity-row {
+    gap: 0.4rem 0.5rem !important;
+  }
+  .chart-header-actions {
+    display: grid !important;
+    grid-template-columns: auto 1fr !important;
+    align-items: center !important;
+    gap: 0.45rem !important;
+    width: 100% !important;
+  }
+  .chart-type-toggle {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: start;
+  }
+  .chart-ai-predictor-btn {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+  }
+  .chart-timeframe-bar {
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
+    display: grid !important;
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .chart-timeframe-bar button {
+    width: 100% !important;
+    padding: 0.32rem 0 !important;
+    text-align: center !important;
   }
 }
 
@@ -5209,13 +5245,26 @@ select option:checked {
     gap: 0.42rem !important;
     flex-shrink: 0 !important;
   }
-  .header-controls-cluster .btn-icon,
-  .header-bell-btn {
+  .header-controls-cluster .btn-icon {
     width: 34px !important;
     height: 34px !important;
     padding: 0 !important;
     border-radius: 9px !important;
     flex-shrink: 0 !important;
+  }
+  .header-bell-btn {
+    width: auto !important;
+    min-width: 34px !important;
+    height: 34px !important;
+    padding: 0 0.46rem !important;
+    gap: 0.34rem !important;
+    border-radius: 9px !important;
+    flex-shrink: 0 !important;
+    justify-content: center !important;
+    align-items: center !important;
+  }
+  .header-bell-btn.has-unread {
+    padding: 0 0.5rem !important;
   }
   .header-controls-cluster .btn-icon svg {
     width: 16px !important;
@@ -5296,10 +5345,25 @@ select option:checked {
     font-size: 0.68rem !important;
   }
   .live-quote-symbol-heading {
-    font-size: 1.55rem !important;
+    font-size: 1.5rem !important;
+  }
+  .live-quote-price-hero {
+    gap: 0.4rem 0.5rem !important;
   }
   .live-quote-big-price {
-    font-size: 1.85rem !important;
+    font-size: 1.62rem !important;
+    padding: 0.08rem 0 !important;
+  }
+  .live-quote-tick-pill {
+    min-width: auto !important;
+    height: 22px !important;
+    max-height: 22px !important;
+    padding: 0 0.45rem !important;
+    font-size: 0.62rem !important;
+  }
+  .live-quote-change-badge {
+    font-size: 0.76rem !important;
+    padding: 0.2rem 0.52rem !important;
   }
   .live-quote-action-btn {
     font-size: 0.72rem !important;
