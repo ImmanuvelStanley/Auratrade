@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Bell,
   CheckCheck,
   BellOff,
   X,
@@ -10,23 +11,55 @@ import {
   ChevronLeft,
   ArrowLeft,
   Info,
-  BarChart2
+  BarChart2,
+  Sparkles,
+  Newspaper,
+  Globe,
+  Coins,
+  Landmark,
+  Activity,
+  Zap,
+  Target
 } from 'lucide-react';
 import { useSocketNotifications, useLiveTickerActions } from '../context/SocketContext';
+import { useTheme } from '../context/ThemeContext';
 
-const CATEGORY_STYLES = {
-  NEWS: { bg: 'rgba(99, 102, 241, 0.16)', border: 'rgba(99, 102, 241, 0.4)', color: '#818cf8' },
-  MOVER: { bg: 'rgba(16, 185, 129, 0.16)', border: 'rgba(16, 185, 129, 0.4)', color: 'var(--bull-green)' },
-  PULLBACK: { bg: 'rgba(244, 63, 94, 0.16)', border: 'rgba(244, 63, 94, 0.4)', color: 'var(--bear-red)' },
-  MACRO: { bg: 'rgba(6, 182, 212, 0.16)', border: 'rgba(6, 182, 212, 0.4)', color: 'var(--accent-cyan)' },
-  NSE: { bg: 'rgba(245, 158, 11, 0.16)', border: 'rgba(245, 158, 11, 0.4)', color: 'var(--warning-amber)' },
-  BULLION: { bg: 'rgba(234, 179, 8, 0.16)', border: 'rgba(234, 179, 8, 0.4)', color: '#eab308' },
-  SIGNAL: { bg: 'rgba(16, 185, 129, 0.16)', border: 'rgba(16, 185, 129, 0.4)', color: 'var(--bull-green)' },
-  RELATED: { bg: 'rgba(56, 189, 248, 0.16)', border: 'rgba(56, 189, 248, 0.42)', color: '#38bdf8' },
-  'LIVE FEED': { bg: 'rgba(16, 185, 129, 0.18)', border: 'rgba(16, 185, 129, 0.45)', color: 'var(--bull-green)' },
-  ORDER: { bg: 'rgba(6, 182, 212, 0.18)', border: 'rgba(6, 182, 212, 0.45)', color: 'var(--accent-cyan)' },
-  TRIGGERED: { bg: 'rgba(245, 158, 11, 0.18)', border: 'rgba(245, 158, 11, 0.45)', color: 'var(--warning-amber)' }
+const DARK_CATEGORY_STYLES = {
+  NEWS: { bg: 'rgba(99, 102, 241, 0.16)', border: 'rgba(129, 140, 248, 0.35)', color: '#a5b4fc', icon: Newspaper },
+  MOVER: { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(52, 211, 153, 0.35)', color: '#34d399', icon: TrendingUp },
+  PULLBACK: { bg: 'rgba(244, 63, 94, 0.15)', border: 'rgba(251, 113, 133, 0.35)', color: '#fb7185', icon: TrendingDown },
+  MACRO: { bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.35)', color: '#38bdf8', icon: Globe },
+  NSE: { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(251, 191, 36, 0.35)', color: '#fbbf24', icon: Landmark },
+  BULLION: { bg: 'rgba(234, 179, 8, 0.15)', border: 'rgba(250, 204, 21, 0.35)', color: '#facc15', icon: Coins },
+  SIGNAL: { bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(52, 211, 153, 0.35)', color: '#34d399', icon: Sparkles },
+  RELATED: { bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.35)', color: '#7dd3fc', icon: Activity },
+  'LIVE FEED': { bg: 'rgba(16, 185, 129, 0.16)', border: 'rgba(52, 211, 153, 0.4)', color: '#34d399', icon: Zap },
+  ORDER: { bg: 'rgba(6, 182, 212, 0.16)', border: 'rgba(34, 211, 238, 0.4)', color: '#22d3ee', icon: Target },
+  TRIGGERED: { bg: 'rgba(245, 158, 11, 0.16)', border: 'rgba(251, 191, 36, 0.4)', color: '#fbbf24', icon: Bell }
 };
+
+const LIGHT_CATEGORY_STYLES = {
+  NEWS: { bg: '#eef2ff', border: '#c7d2fe', color: '#4338ca', icon: Newspaper },
+  MOVER: { bg: '#ecfdf5', border: '#a7f3d0', color: '#047857', icon: TrendingUp },
+  PULLBACK: { bg: '#fff1f2', border: '#fecdd3', color: '#be123c', icon: TrendingDown },
+  MACRO: { bg: '#f0f9ff', border: '#bae6fd', color: '#0369a1', icon: Globe },
+  NSE: { bg: '#fffbeb', border: '#fde68a', color: '#b45309', icon: Landmark },
+  BULLION: { bg: '#fefce8', border: '#fef08a', color: '#a16207', icon: Coins },
+  SIGNAL: { bg: '#ecfdf5', border: '#a7f3d0', color: '#047857', icon: Sparkles },
+  RELATED: { bg: '#f0f9ff', border: '#bae6fd', color: '#0369a1', icon: Activity },
+  'LIVE FEED': { bg: '#ecfdf5', border: '#6ee7b7', color: '#047857', icon: Zap },
+  ORDER: { bg: '#ecfeff', border: '#a5f3fc', color: '#0e7490', icon: Target },
+  TRIGGERED: { bg: '#fffbeb', border: '#fcd34d', color: '#b45309', icon: Bell }
+};
+
+function formatRelativeTime(ts) {
+  const value = ts ? new Date(ts).getTime() : Date.now();
+  const diffSec = Math.max(0, Math.floor((Date.now() - value) / 1000));
+  if (diffSec < 45) return 'Just now';
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+  return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
 
 function buildFallbackDetails(n, liveQuote) {
   const cs = n.currencySymbol || '$';
@@ -83,6 +116,8 @@ export function NotificationCenter({ onClose, onSelectSymbol }) {
     refreshMarketNotifications
   } = useSocketNotifications();
   const { getQuote } = useLiveTickerActions();
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
   const [filterTab, setFilterTab] = useState('ALL'); // 'ALL' | 'MARKET' | 'ALERTS'
   const [selectedNotifId, setSelectedNotifId] = useState(null);
   const menuRef = useRef(null);
@@ -144,190 +179,132 @@ export function NotificationCenter({ onClose, onSelectSymbol }) {
     ? visibleNotifications.findIndex((n, idx) => getNotifKey(n, idx) === selectedNotifId)
     : -1;
   const selectedNotification = selectedIndex >= 0 ? visibleNotifications[selectedIndex] : null;
+  const styleMap = isLight ? LIGHT_CATEGORY_STYLES : DARK_CATEGORY_STYLES;
 
   return (
-    <div ref={menuRef} className="notification-menu" style={{ width: 'min(425px, calc(100vw - 24px))' }}>
+    <div ref={menuRef} className="notification-menu" role="dialog" aria-label="Activity and Alerts Center">
+      {/* Modern Header */}
       <div className="notification-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontWeight: 700, fontSize: '0.86rem' }}>
+        <div className="notification-header-left">
           {selectedNotification ? (
             <button
               type="button"
+              className="notification-back-btn"
               onClick={() => setSelectedNotifId(null)}
-              style={{
-                background: 'rgba(56, 189, 248, 0.12)',
-                border: '1px solid rgba(56, 189, 248, 0.35)',
-                borderRadius: '6px',
-                color: 'var(--accent-cyan)',
-                padding: '0.2rem 0.5rem',
-                fontSize: '0.72rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '0.3rem'
-              }}
             >
-              <ArrowLeft size={13} /> Back to Feed
+              <ArrowLeft size={13} />
+              <span>Feed</span>
             </button>
           ) : (
-            <>
-              <span>Market &amp; Alert Feed</span>
-              <span className="font-mono" style={{ fontSize: '0.72rem', color: 'var(--accent-cyan)' }}>
-                ({notifications.length})
+            <div className="notification-title-group">
+              <span className="notification-header-icon" aria-hidden="true">
+                <Bell size={14} />
               </span>
-            </>
+              <span className="notification-header-title">Activity &amp; Alerts</span>
+              <span className="notification-count-pill font-mono">{notifications.length}</span>
+            </div>
           )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+        <div className="notification-header-actions">
           {selectedNotification ? (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+            <div className="notification-stepper">
               <button
                 type="button"
+                className="notification-stepper-btn"
                 disabled={selectedIndex <= 0}
                 onClick={() => {
                   const prev = visibleNotifications[selectedIndex - 1];
                   if (prev) setSelectedNotifId(getNotifKey(prev, selectedIndex - 1));
                 }}
-                style={{
-                  background: 'var(--bg-input)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '5px',
-                  color: selectedIndex <= 0 ? 'var(--text-muted)' : 'var(--text-primary)',
-                  padding: '0.2rem 0.35rem',
-                  cursor: selectedIndex <= 0 ? 'not-allowed' : 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center'
-                }}
-                title="Previous message"
+                title="Previous notification"
+                aria-label="Previous notification"
               >
                 <ChevronLeft size={14} />
               </button>
-              <span className="font-mono" style={{ fontSize: '0.68rem', color: 'var(--text-muted)', padding: '0 0.2rem' }}>
-                {selectedIndex + 1}/{visibleNotifications.length}
+              <span className="notification-stepper-count font-mono">
+                {selectedIndex + 1} / {visibleNotifications.length}
               </span>
               <button
                 type="button"
+                className="notification-stepper-btn"
                 disabled={selectedIndex >= visibleNotifications.length - 1}
                 onClick={() => {
                   const next = visibleNotifications[selectedIndex + 1];
                   if (next) setSelectedNotifId(getNotifKey(next, selectedIndex + 1));
                 }}
-                style={{
-                  background: 'var(--bg-input)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '5px',
-                  color: selectedIndex >= visibleNotifications.length - 1 ? 'var(--text-muted)' : 'var(--text-primary)',
-                  padding: '0.2rem 0.35rem',
-                  cursor: selectedIndex >= visibleNotifications.length - 1 ? 'not-allowed' : 'pointer',
-                  display: 'inline-flex',
-                  alignItems: 'center'
-                }}
-                title="Next message"
+                title="Next notification"
+                aria-label="Next notification"
               >
                 <ChevronRight size={14} />
               </button>
             </div>
           ) : (
-            <>
-              {notifications.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedNotifId(null);
-                    clearNotifications();
-                  }}
-                  style={{
-                    background: 'rgba(6, 182, 212, 0.1)',
-                    border: '1px solid rgba(6, 182, 212, 0.3)',
-                    borderRadius: 'var(--radius-sm)',
-                    color: 'var(--accent-cyan)',
-                    fontSize: '0.7rem',
-                    fontWeight: 600,
-                    padding: '0.2rem 0.48rem',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.22rem'
-                  }}
-                  title="Clear all notifications"
-                >
-                  <CheckCheck size={13} /> Clear
-                </button>
-              )}
-            </>
+            notifications.length > 0 && (
+              <button
+                type="button"
+                className="notification-clear-btn"
+                onClick={() => {
+                  setSelectedNotifId(null);
+                  clearNotifications();
+                }}
+                title="Clear all notifications"
+              >
+                <CheckCheck size={13} />
+                <span>Clear all</span>
+              </button>
+            )
           )}
 
           <button
             type="button"
+            className="notification-close-btn"
             onClick={onClose}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--text-muted)',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              padding: '2px',
-              borderRadius: '4px'
-            }}
             title="Close notifications"
+            aria-label="Close notifications"
           >
-            <X size={16} />
+            <X size={15} />
           </button>
         </div>
       </div>
 
-      {/* Category Filter Strip (hidden while inspecting a chosen message for clean reading) */}
+      {/* Modern Segmented Tabs Control */}
       {!selectedNotification && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.35rem',
-            padding: '0.45rem 0.7rem',
-            borderBottom: '1px solid var(--border-subtle)',
-            background: 'var(--bg-subtle)',
-            flexWrap: 'wrap'
-          }}
-        >
-          {[
-            { id: 'ALL', label: `All (${notifications.length})` },
-            { id: 'MARKET', label: `Market & News (${marketCount})` },
-            { id: 'ALERTS', label: `Alerts & Orders (${personalCount})` }
-          ].map((tab) => {
-            const active = filterTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => {
-                  setFilterTab(tab.id);
-                  setSelectedNotifId(null);
-                }}
-                style={{
-                  padding: '0.2rem 0.55rem',
-                  borderRadius: '999px',
-                  fontSize: '0.69rem',
-                  fontWeight: 700,
-                  border: active ? '1px solid rgba(56, 189, 248, 0.55)' : '1px solid var(--border-subtle)',
-                  background: active ? 'rgba(56, 189, 248, 0.16)' : 'transparent',
-                  color: active ? '#38bdf8' : 'var(--text-muted)',
-                  cursor: 'pointer'
-                }}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
+        <div className="notification-tabs-bar">
+          <div className="notification-segmented-tabs" role="tablist" aria-label="Notification filters">
+            {[
+              { id: 'ALL', label: 'All', count: notifications.length },
+              { id: 'MARKET', label: 'Market', count: marketCount },
+              { id: 'ALERTS', label: 'Alerts', count: personalCount }
+            ].map((tab) => {
+              const active = filterTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  className={`notification-seg-tab ${active ? 'active' : ''}`}
+                  onClick={() => {
+                    setFilterTab(tab.id);
+                    setSelectedNotifId(null);
+                  }}
+                >
+                  <span>{tab.label}</span>
+                  <span className="notification-seg-count font-mono">{tab.count}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
-      {/* Main Content: Selected Message Detail Inspector OR Clickable Message Feed */}
+      {/* Detail Inspector View OR Scrollable Activity Feed */}
       {selectedNotification ? (() => {
         const n = selectedNotification;
         const cat = (n.category || (n.orderId ? 'ORDER' : isMarketItem(n) ? 'MOVER' : 'TRIGGERED')).toUpperCase();
-        const pillStyle = CATEGORY_STYLES[cat] || CATEGORY_STYLES.MACRO;
+        const pillStyle = styleMap[cat] || styleMap.MACRO;
+        const CatIcon = pillStyle.icon || Activity;
         const cs = n.currencySymbol || '$';
         const liveQuote = n.symbol && getQuote ? getQuote(n.symbol) : null;
         const details = n.details || buildFallbackDetails(n, liveQuote);
@@ -336,81 +313,46 @@ export function NotificationCenter({ onClose, onSelectSymbol }) {
         const displayPrice = n.price !== undefined ? Number(n.price) : (liveQuote?.price ? Number(liveQuote.price) : null);
 
         return (
-          <div
-            className="notification-detail-view"
-            style={{
-              maxHeight: '420px',
-              overflowY: 'auto',
-              padding: '0.85rem',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.7rem'
-            }}
-          >
-            {/* Header Meta Strip */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+          <div className="notification-detail-view notification-scroll-area">
+            <div className="notification-detail-meta">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
                 <span
+                  className="notification-cat-pill"
                   style={{
-                    fontSize: '0.64rem',
-                    fontWeight: 800,
-                    padding: '0.12rem 0.45rem',
-                    borderRadius: '4px',
                     background: pillStyle.bg,
-                    border: `1px solid ${pillStyle.border}`,
-                    color: pillStyle.color,
-                    fontFamily: 'var(--font-mono)'
+                    borderColor: pillStyle.border,
+                    color: pillStyle.color
                   }}
                 >
-                  {cat}
+                  <CatIcon size={11} />
+                  <span>{cat}</span>
                 </span>
                 {n.symbol && (
-                  <span className="font-mono" style={{ fontWeight: 800, fontSize: '0.9rem', color: 'var(--accent-cyan)' }}>
+                  <span className="notification-ticker-chip font-mono">
                     {n.symbol}
                   </span>
                 )}
               </div>
-              <span style={{ fontSize: '0.69rem', color: 'var(--text-muted)' }}>
+              <span className="notification-time-label">
                 {new Date(n.timestamp || Date.now()).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
 
-            {/* Title & Live Value Snapshot */}
-            <div
-              style={{
-                padding: '0.75rem 0.85rem',
-                borderRadius: 'var(--radius-md)',
-                background: 'var(--bg-input)',
-                border: '1px solid var(--border-subtle)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.4rem'
-              }}
-            >
-              <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.35 }}>
+            <div className="notification-detail-hero">
+              <h4 className="notification-detail-title">
                 {n.title || `${n.symbol || 'Market'} Alert`}
-              </div>
+              </h4>
 
               {(displayPrice !== null || pctVal !== null) && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                <div className="notification-detail-price-row">
                   {displayPrice !== null && (
-                    <span className="font-mono" style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    <span className="notification-detail-price font-mono">
                       {cs}{displayPrice.toFixed(2)}
                     </span>
                   )}
                   {pctVal !== null && (
                     <span
-                      className={`font-mono ${isPositive ? 'text-bull' : 'text-bear'}`}
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '3px',
-                        fontSize: '0.78rem',
-                        fontWeight: 700,
-                        padding: '0.1rem 0.42rem',
-                        borderRadius: '4px',
-                        background: isPositive ? 'var(--bull-green-bg)' : 'var(--bear-red-bg)'
-                      }}
+                      className={`notification-trend-pill font-mono ${isPositive ? 'is-bull' : 'is-bear'}`}
                     >
                       {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                       {isPositive ? '+' : ''}{pctVal.toFixed(2)}%
@@ -419,85 +361,42 @@ export function NotificationCenter({ onClose, onSelectSymbol }) {
                 </div>
               )}
 
-              <p style={{ fontSize: '0.77rem', color: 'var(--text-secondary)', lineHeight: 1.45, margin: 0 }}>
-                {n.message}
-              </p>
+              <p className="notification-detail-copy">{n.message}</p>
             </div>
 
-            {/* What This Message Is About */}
-            <div
-              style={{
-                padding: '0.7rem 0.85rem',
-                borderRadius: 'var(--radius-md)',
-                background: 'rgba(56, 189, 248, 0.07)',
-                border: '1px solid rgba(56, 189, 248, 0.25)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.32rem'
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.71rem', fontWeight: 800, color: 'var(--accent-cyan)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div className="notification-context-box">
+              <div className="notification-context-hdr">
                 <Info size={13} />
-                <span>{details.categoryLabel || 'Additional Context'}</span>
+                <span>{details.categoryLabel || 'Signal Context'}</span>
               </div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.48, margin: 0 }}>
-                {details.whatItMeans}
-              </p>
+              <p className="notification-context-copy">{details.whatItMeans}</p>
               {details.summary && details.summary !== n.title && details.summary !== n.message && (
-                <p style={{ fontSize: '0.73rem', color: 'var(--text-muted)', lineHeight: 1.42, margin: '0.2rem 0 0 0' }}>
-                  {details.summary}
-                </p>
+                <p className="notification-context-sub">{details.summary}</p>
               )}
             </div>
 
-            {/* Supporting Telemetry Grid */}
             {Array.isArray(details.metrics) && details.metrics.length > 0 && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.45rem' }}>
+              <div className="notification-metrics-grid">
                 {details.metrics.map((m, mIdx) => (
-                  <div
-                    key={mIdx}
-                    style={{
-                      padding: '0.5rem 0.65rem',
-                      borderRadius: '6px',
-                      background: 'var(--bg-input)',
-                      border: '1px solid var(--border-subtle)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '2px'
-                    }}
-                  >
-                    <span style={{ fontSize: '0.64rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                      {m.label}
-                    </span>
-                    <span className="font-mono" style={{ fontSize: '0.76rem', color: 'var(--text-primary)', fontWeight: 700 }}>
-                      {m.value}
-                    </span>
+                  <div key={mIdx} className="notification-metric-cell">
+                    <span className="notification-metric-label">{m.label}</span>
+                    <span className="notification-metric-val font-mono">{m.value}</span>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* Quick Action Footer */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap', paddingTop: '0.15rem' }}>
+            <div className="notification-detail-footer">
               {n.symbol && onSelectSymbol && (
                 <button
                   type="button"
-                  className="btn btn-primary"
+                  className="btn btn-primary notification-primary-action"
                   onClick={() => {
                     onSelectSymbol(n.symbol);
                     if (onClose) onClose();
                   }}
-                  style={{
-                    flex: 1,
-                    fontSize: '0.75rem',
-                    padding: '0.45rem 0.7rem',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '0.35rem'
-                  }}
                 >
-                  <BarChart2 size={13} />
+                  <BarChart2 size={14} />
                   <span>Open {n.symbol} Chart</span>
                 </button>
               )}
@@ -507,31 +406,21 @@ export function NotificationCenter({ onClose, onSelectSymbol }) {
                   href={n.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn btn-secondary"
-                  style={{
-                    fontSize: '0.74rem',
-                    padding: '0.45rem 0.7rem',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '0.3rem',
-                    textDecoration: 'none',
-                    color: 'var(--accent-cyan)'
-                  }}
+                  className="notification-secondary-link"
                 >
-                  <span>Read News</span>
+                  <span>Read Article</span>
                   <ExternalLink size={12} />
                 </a>
               )}
 
               <button
                 type="button"
-                className="btn btn-secondary"
+                className="notification-danger-btn"
                 onClick={() => {
                   const idToRemove = getNotifKey(n, selectedIndex);
                   setSelectedNotifId(null);
                   dismissNotification(idToRemove);
                 }}
-                style={{ fontSize: '0.73rem', padding: '0.45rem 0.65rem', color: 'var(--bear-red)' }}
               >
                 Dismiss
               </button>
@@ -540,48 +429,38 @@ export function NotificationCenter({ onClose, onSelectSymbol }) {
         );
       })() : (
         <div
+          className="notification-feed-list notification-scroll-area"
           onClick={() => {
             if (visibleNotifications.length === 0 && notifications.length === 0 && onClose) {
               onClose();
             }
           }}
           style={{
-            maxHeight: '390px',
-            overflowY: 'auto',
-            padding: '0.6rem',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.5rem',
             cursor: visibleNotifications.length === 0 && notifications.length === 0 ? 'pointer' : 'default'
           }}
         >
           {visibleNotifications.length === 0 ? (
-            <div
-              style={{
-                padding: '2rem 1rem',
-                textAlign: 'center',
-                color: 'var(--text-muted)',
-                fontSize: '0.84rem',
-                borderRadius: 'var(--radius-md)'
-              }}
-            >
-              <BellOff size={28} style={{ margin: '0 auto 0.55rem auto', opacity: 0.45, color: 'var(--accent-cyan)' }} />
-              <p style={{ fontWeight: 600, color: 'var(--text-secondary)', margin: 0 }}>
+            <div className="notification-empty-state">
+              <div className="notification-empty-icon">
+                <BellOff size={22} />
+              </div>
+              <p className="notification-empty-title">
                 {filterTab === 'ALERTS'
-                  ? 'No personal target alerts or limit orders triggered yet'
-                  : 'No market notifications right now'}
+                  ? 'No personal target alerts yet'
+                  : 'You’re all caught up'}
               </p>
-              <p style={{ fontSize: '0.74rem', marginTop: '0.35rem', color: 'var(--text-muted)' }}>
+              <p className="notification-empty-sub">
                 {filterTab === 'ALERTS'
-                  ? 'Set target price alerts or bracket orders to get notified immediately.'
-                  : 'Live market movers and breaking headlines sync automatically as updates arrive.'}
+                  ? 'Set target price alerts or bracket orders to track executions here.'
+                  : 'Live market movers and breaking headlines sync automatically as ticks arrive.'}
               </p>
             </div>
           ) : (
             visibleNotifications.map((n, idx) => {
               const notifId = getNotifKey(n, idx);
               const cat = (n.category || (n.orderId ? 'ORDER' : isMarketItem(n) ? 'MOVER' : 'TRIGGERED')).toUpperCase();
-              const pillStyle = CATEGORY_STYLES[cat] || CATEGORY_STYLES.MACRO;
+              const pillStyle = styleMap[cat] || styleMap.MACRO;
+              const CatIcon = pillStyle.icon || Activity;
               const cs = n.currencySymbol || '$';
               const hasPct = n.changePercent !== undefined && n.changePercent !== null;
               const pctVal = Number(n.changePercent || 0);
@@ -600,148 +479,111 @@ export function NotificationCenter({ onClose, onSelectSymbol }) {
                     }
                   }}
                   className="notification-feed-card"
-                  style={{
-                    padding: '0.72rem 0.85rem',
-                    borderRadius: 'var(--radius-md)',
-                    background: 'var(--bg-input)',
-                    border: '1px solid var(--border-subtle)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.32rem',
-                    position: 'relative',
-                    cursor: 'pointer',
-                    transition: 'border-color 0.16s ease, background 0.16s ease, transform 0.14s ease'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.5)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--border-subtle)';
-                  }}
+                  style={{ '--notif-accent': pillStyle.color }}
                   title="Click to inspect full details about this message"
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.4rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                      {n.symbol && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (onSelectSymbol) onSelectSymbol(n.symbol);
-                            if (onClose) onClose();
-                          }}
-                          title={`Open ${n.symbol} interactive chart`}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            padding: 0,
-                            cursor: onSelectSymbol ? 'pointer' : 'default',
-                            fontFamily: 'var(--font-mono)',
-                            fontWeight: 800,
-                            color: 'var(--accent-cyan)',
-                            fontSize: '0.84rem',
-                            textDecoration: onSelectSymbol ? 'underline' : 'none',
-                            textUnderlineOffset: '2px'
-                          }}
-                        >
-                          {n.symbol}
-                        </button>
-                      )}
-
-                      <span
-                        style={{
-                          fontSize: '0.6rem',
-                          fontWeight: 800,
-                          padding: '0.08rem 0.38rem',
-                          borderRadius: '4px',
-                          background: pillStyle.bg,
-                          border: `1px solid ${pillStyle.border}`,
-                          color: pillStyle.color,
-                          letterSpacing: '0.03em',
-                          fontFamily: 'var(--font-mono)'
-                        }}
-                      >
-                        {cat}
-                      </span>
-
-                      <span style={{ fontSize: '0.66rem', color: 'var(--text-muted)' }}>
-                        {new Date(n.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        dismissNotification(notifId);
-                      }}
+                  <div className="notification-card-icon-col">
+                    <span
+                      className="notification-card-avatar"
                       style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'var(--text-muted)',
-                        cursor: 'pointer',
-                        padding: '2px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        borderRadius: '4px'
+                        background: pillStyle.bg,
+                        borderColor: pillStyle.border,
+                        color: pillStyle.color
                       }}
-                      title="Dismiss notification"
                     >
-                      <X size={14} />
-                    </button>
+                      <CatIcon size={14} />
+                    </span>
                   </div>
 
-                  {n.title && (
-                    <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.3 }}>
-                      {n.title}
-                    </div>
-                  )}
+                  <div className="notification-card-content">
+                    <div className="notification-card-top">
+                      <div className="notification-card-badges">
+                        {n.symbol && (
+                          <button
+                            type="button"
+                            className="notification-ticker-chip font-mono"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (onSelectSymbol) onSelectSymbol(n.symbol);
+                              if (onClose) onClose();
+                            }}
+                            title={`Open ${n.symbol} interactive chart`}
+                          >
+                            {n.symbol}
+                          </button>
+                        )}
 
-                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4, margin: 0 }}>
-                    {n.message}
-                  </p>
-
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem', fontSize: '0.71rem', marginTop: '0.15rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                      {n.price !== undefined && (
-                        <span className="font-mono" style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
-                          {isMarketItem(n) ? `${cs}${Number(n.price).toFixed(2)}` : `Fill/Breach: ${cs}${Number(n.price).toFixed(2)}`}
-                        </span>
-                      )}
-                      {hasPct && (
                         <span
-                          className={`font-mono ${isPositive ? 'text-bull' : 'text-bear'}`}
-                          style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', fontWeight: 700 }}
-                        >
-                          {isPositive ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                          {isPositive ? '+' : ''}{pctVal.toFixed(2)}%
-                        </span>
-                      )}
-                    </div>
-
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}>
-                      {n.url && (
-                        <a
-                          href={n.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
+                          className="notification-cat-pill"
                           style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '3px',
-                            color: 'var(--accent-cyan)',
-                            fontSize: '0.7rem',
-                            fontWeight: 700,
-                            textDecoration: 'none'
+                            background: pillStyle.bg,
+                            borderColor: pillStyle.border,
+                            color: pillStyle.color
                           }}
                         >
-                          News <ExternalLink size={10} />
-                        </a>
-                      )}
-                      <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2px', color: 'var(--accent-cyan)', fontWeight: 700, fontSize: '0.68rem' }}>
-                        Details <ChevronRight size={12} />
-                      </span>
+                          {cat}
+                        </span>
+                      </div>
+
+                      <div className="notification-card-right-meta">
+                        <span className="notification-time-label">
+                          {formatRelativeTime(n.timestamp)}
+                        </span>
+                        <button
+                          type="button"
+                          className="notification-dismiss-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dismissNotification(notifId);
+                          }}
+                          title="Dismiss notification"
+                          aria-label="Dismiss notification"
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {n.title && (
+                      <div className="notification-card-title">{n.title}</div>
+                    )}
+
+                    <p className="notification-card-msg">{n.message}</p>
+
+                    <div className="notification-card-footer">
+                      <div className="notification-card-telemetry">
+                        {n.price !== undefined && (
+                          <span className="notification-card-price font-mono">
+                            {isMarketItem(n) ? `${cs}${Number(n.price).toFixed(2)}` : `Fill/Breach: ${cs}${Number(n.price).toFixed(2)}`}
+                          </span>
+                        )}
+                        {hasPct && (
+                          <span
+                            className={`notification-trend-pill font-mono ${isPositive ? 'is-bull' : 'is-bear'}`}
+                          >
+                            {isPositive ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                            {isPositive ? '+' : ''}{pctVal.toFixed(2)}%
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="notification-card-links">
+                        {n.url && (
+                          <a
+                            href={n.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="notification-inline-link"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <span>News</span>
+                            <ExternalLink size={10} />
+                          </a>
+                        )}
+                        <span className="notification-inspect-cue">
+                          Details <ChevronRight size={12} />
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
